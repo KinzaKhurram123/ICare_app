@@ -11,6 +11,7 @@ class CustomInputField extends StatefulWidget {
   final Color? bgColor;
   final Color? borderColor;
   final double borderRadius;
+  final double borderWidth; 
   final EdgeInsetsGeometry? padding;
   final TextEditingController? controller;
   final Function(String)? onChanged;
@@ -38,6 +39,7 @@ class CustomInputField extends StatefulWidget {
     this.bgColor,
     this.borderColor,
     this.borderRadius = 30,
+    this.borderWidth = 1.0,
     this.padding,
     this.controller,
     this.onChanged,
@@ -76,7 +78,6 @@ class _CustomInputFieldState extends State<CustomInputField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title Label
           if (widget.title != null) ...[
             Text(
               widget.title!,
@@ -89,16 +90,16 @@ class _CustomInputFieldState extends State<CustomInputField> {
             ),
             const SizedBox(height: 6),
           ],
-
-          // Input Field Container
           Container(
-            height: widget.height ?? 55,
-            padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 20),
+            height: widget.height ?? 60,
+            padding:
+                widget.padding ?? const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: widget.bgColor ?? AppColors.white,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               border: Border.all(
                 color: widget.borderColor ?? Colors.transparent,
+                width: widget.borderWidth,
               ),
             ),
             child: Row(
@@ -118,7 +119,8 @@ class _CustomInputFieldState extends State<CustomInputField> {
                     focusNode: widget.focusNode,
                     autofocus: widget.autoFocus,
                     enabled: widget.enabled,
-                    style: widget.textStyle ??
+                    style:
+                        widget.textStyle ??
                         const TextStyle(
                           fontFamily: "Gilroy",
                           fontWeight: FontWeight.w500,
@@ -128,7 +130,8 @@ class _CustomInputFieldState extends State<CustomInputField> {
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: widget.hintText,
-                      hintStyle: widget.hintStyle ??
+                      hintStyle:
+                          widget.hintStyle ??
                           TextStyle(
                             color: Colors.grey.shade500,
                             fontFamily: "Gilroy",

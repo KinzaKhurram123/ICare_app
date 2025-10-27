@@ -35,6 +35,9 @@ class ImagePaths {
   static const search ='$basePath/search.svg';
   static const filters ='$basePath/filters.svg';
   static const menu ='$basePath/menu.svg';
+  static const google_icon ='$basePath/google_icon.png';
+  static const facebook_icon ='$basePath/facebook_icon.png';
+
 
 
 }

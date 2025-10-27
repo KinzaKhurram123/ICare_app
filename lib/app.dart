@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:icare/screens/create_profile.dart';
+import 'package:icare/screens/reset_password.dart';
 import 'package:icare/screens/splash.dart';
-import 'package:icare/screens/walkthrough.dart';
+import 'package:icare/screens/verify_code.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -26,11 +28,9 @@ class _AppState extends State<App> {
     if(!mounted) return;
     
     setState(() {
-      content = Walkthrough(); 
+      content = CreateProfile(); 
     });
-  } 
-
-  
+  }  
 
   
   @override
