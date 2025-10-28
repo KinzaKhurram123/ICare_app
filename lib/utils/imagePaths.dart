@@ -11,6 +11,12 @@ class ImagePaths {
   static const walkthrough1= '$basePath/walkthrough1.png'; 
   static const walkthrough2= '$basePath/walkthrough2.png'; 
   static const walkthrough3= '$basePath/walkthrough3.png'; 
+  
+  // user TYpes 
+  static const userType1= '$basePath/doctor.png'; 
+  static const userType2= '$basePath/doctor.png'; 
+  static const userType3= '$basePath/doctor.png'; 
+  static const userType4= '$basePath/doctor.png'; 
 
   static const success = '$basePath/success.svg';
   static const failed = '$basePath/denial.svg';
@@ -31,6 +37,7 @@ class ImagePaths {
   static const key = '$basePath/key.svg';
   static const email = '$basePath/email.svg';
   static const profile = '$basePath/profile.svg';
+
 
   static const search ='$basePath/search.svg';
   static const filters ='$basePath/filters.svg';

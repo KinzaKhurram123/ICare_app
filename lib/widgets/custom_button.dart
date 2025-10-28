@@ -1,6 +1,9 @@
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/custom_text.dart';
 
 class CustomButton extends StatelessWidget {
   final String label;
@@ -95,16 +98,23 @@ class CustomButton extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: outlined ? (labelColor) : labelColor,
-                  fontSize: labelSize,
-                  fontWeight: labelWeight,
-                ),
-              ),
+              child: 
+              // Text(
+              //   label,
+              //   overflow: TextOverflow.ellipsis,
+              //   textAlign: TextAlign.center,
+              //   style: TextStyle(
+              //     color: outlined ? (labelColor) : labelColor,
+              //     fontSize: labelSize,
+              //     fontWeight: labelWeight,
+              //   ),
+              // ),
+              CustomText(
+                text: label,
+                color: labelColor,
+                isBold: true,
+                fontSize: ScallingConfig.moderateScale(labelSize),
+              )
             ),
             if (trailingIcon != null) ...[
               const SizedBox(width: 8),

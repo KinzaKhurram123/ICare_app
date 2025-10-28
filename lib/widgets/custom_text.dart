@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 
 class CustomText extends StatelessWidget {
@@ -78,7 +79,7 @@ class CustomText extends StatelessWidget {
       style: style ??
           TextStyle(
             color: disabled ? AppColors.grayColor : color ?? AppColors.primary500,
-            fontSize: fontSize,
+            fontSize: ScallingConfig.moderateScale(fontSize),
             fontWeight: resolvedWeight,
             fontFamily: fontFamily,
             fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,

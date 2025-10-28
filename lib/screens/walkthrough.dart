@@ -1,18 +1,25 @@
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/custom_button.dart';
 import 'package:intro_slider/intro_slider.dart';
 
-class Walkthrough extends StatefulWidget {
+class Walkthrough extends ConsumerStatefulWidget {
   const Walkthrough({super.key});
 
   @override
-  State<Walkthrough> createState() => _WalkthroughState();
+  ConsumerState<Walkthrough> createState() => _WalkthroughState();
 }
 
-class _WalkthroughState extends State<Walkthrough> {
+class _WalkthroughState extends ConsumerState<Walkthrough> {
       final List<ContentConfig> listContentConfig = [
         ContentConfig(
           title: "More Comfortable Chat With the Doctor",
@@ -48,6 +55,17 @@ class _WalkthroughState extends State<Walkthrough> {
          onTabChangeCompleted: (index) {
           setState(() => currentIndex = index);
         },
+        
+        navigationBarConfig: NavigationBarConfig(
+        navPosition: NavPosition.top,
+          backgroundColor: Colors.black,
+
+        ),
+        isShowDoneBtn: false,
+        isShowNextBtn: false,
+        isShowSkipBtn: false,
+        isShowPrevBtn: false,
+        indicatorConfig: IndicatorConfig(isShowIndicator: false),
         listCustomTabs: listContentConfig.asMap().entries.map((entry) {
           final int index = entry.key;
           final ContentConfig item = entry.value; 
@@ -63,31 +81,33 @@ class _WalkthroughState extends State<Walkthrough> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: EdgeInsetsGeometry.only(right: ScallingConfig.moderateScale(12), bottom: ScallingConfig.moderateScale(22) ),
-                child:
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: [
+            //     Padding(
+            //       padding: EdgeInsetsGeometry.only(right: ScallingConfig.moderateScale(12), bottom: ScallingConfig.moderateScale(22) ),
+            //     child:
+            //         ElevatedButton(
+            //           style: ElevatedButton.styleFrom(
                         
-                        backgroundColor:AppColors.white.withValues(alpha: 0.3)
-                      ),
-                      onPressed: 
-                    () {}, child: Text(
-                      "Skip"
-                    ))
+            //             backgroundColor:AppColors.white.withValues(alpha: 0.3)
+            //           ),
+            //           onPressed: 
+            //         () {
+            //           log("Pressed");
+            //         }, child: Text(
+            //           "Skip"
+            //         ))
                 
-                ),
-              ],
-            ),
+            //     ),
+            //   ],
+            // ),
             SizedBox(
               width: Utils.windowWidth(context) * 0.7,
-              height: Utils.windowHeight(context) * 0.5,
+              height: Utils.windowHeight(context) * 0.55,
               child: Image.asset(item.pathImage!,
            
-              fit: BoxFit.contain,   
+              fit: BoxFit.cover,   
               ),
             ),
             Container(
@@ -102,6 +122,8 @@ class _WalkthroughState extends State<Walkthrough> {
               child: Column(
                 spacing: 25,
                 children: [
+                            
+
                   Text(item.title!,
                   style:  TextStyle(
                     fontSize: ScallingConfig.moderateScale(23.7),
@@ -115,47 +137,39 @@ class _WalkthroughState extends State<Walkthrough> {
                     fontSize: ScallingConfig.moderateScale(12.5)
                   ),
                   ),
-            Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        listContentConfig.length,
-                        (dotIndex) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 5),
-                          height: 8,
-                          width: currentIndex == dotIndex ? 20 : 8,
-                          decoration: BoxDecoration(
-                            color: currentIndex == dotIndex
-                                ? Colors.red
-                                : Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-           
-                  SizedBox(
-                    width: Utils.windowWidth(context) * 0.8,
-                    height: Utils.windowHeight(context) * 0.06,
-                    child: ElevatedButton(
-                      
-                      onPressed: () {
-                        if(currentIndex < listContentConfig.length -1) {
-                      
-                          print(currentIndex);
-                          
-                          goToTab(currentIndex + 1);  
-                        }else{
-                            print("index=======> " + currentIndex.toString());
-                        }
-                      }, child: Text("Next", style: TextStyle(
-                    
-                      color: AppColors.white,
-                      fontSize: ScallingConfig.moderateScale(18),
-                      fontWeight: FontWeight.bold
-                    
-                    ),)),
-                  ) 
+      
+            // Row(
+            //           mainAxisAlignment: MainAxisAlignment.center,
+            //           children: List.generate(
+            //             listContentConfig.length,
+            //             (dotIndex) => AnimatedContainer(
+            //               duration: const Duration(milliseconds: 10),
+            //               margin: const EdgeInsets.symmetric(horizontal: 5),
+            //               height: 8,
+            //               width: currentIndex == dotIndex ? 20 : 8,
+            //               decoration: BoxDecoration(
+            //                 color: currentIndex == dotIndex
+            //                     ? Colors.red
+            //                     : Colors.grey.shade300,
+            //                 borderRadius: BorderRadius.circular(10),
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+
+                  CustomButton(label: currentIndex < index ? "Next" : "Done", 
+                  onPressed: (){
+                 print('${currentIndex < index}');
+                if(currentIndex <= index) {
+                 goToTab(currentIndex + 1);
+                }else{
+                  ref.watch(authProvider.notifier).setUserWalkthrough(true);
+                  SharedPref().setUserWalkthrough(true);
+                }
+                  },
+                  borderRadius: 40, 
+                  
+                  )
                 ])
             )
           ]

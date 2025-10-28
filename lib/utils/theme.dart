@@ -18,6 +18,7 @@ static const darkGreyColor = Color(0xFF545F71);
 static const lightGrey100= Color(0x80ffd6dde4);
 static const lightGrey200= Color(0x80ffb2b9c0);
 
+static const themeBlue= Color(0xFF00288D);
 static const themeGreen = Color(0xFF2EC447);
 static const white= Color(0xFFFFFFFF);
 static const veryLightBlue = Color(0xff5ed2d212);

@@ -6,7 +6,8 @@ class AuthNotifier extends StateNotifier<Auth> {
     token: null,
     fcmToken: null,
     userWalkthrough: false,
-    isLoggedIn: false
+    isLoggedIn: false,
+    userRole: ''
    ));
 
 
@@ -18,9 +19,14 @@ class AuthNotifier extends StateNotifier<Auth> {
     state = state.copyWith(userWalkthrough: value);
    }
 
+    void setUserRole(String role) {
+      state = state.copyWith(userRole: role);
+    }
+
    void setFcmToken(String _token){
     state = state.copyWith(fcmToken: _token);
    }
+
 
    void setUserLogout(){
     state= Auth();

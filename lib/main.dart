@@ -5,6 +5,7 @@ import 'package:icare/app.dart';
 import 'package:icare/utils/theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ProviderScope(child: const MyApp())
     );

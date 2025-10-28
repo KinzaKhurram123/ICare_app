@@ -3,12 +3,13 @@ class Auth {
   final String? fcmToken;
   final bool userWalkthrough;
   final bool isLoggedIn;
-
+  final String userRole;
   Auth({
     this.token,
     this.fcmToken,
     this.userWalkthrough = false,
     this.isLoggedIn = false,
+    this.userRole=""
   });
 
   // 🔹 This lets you update one or more fields easily
@@ -17,12 +18,14 @@ class Auth {
     String? fcmToken,
     bool? userWalkthrough,
     bool? isLoggedIn,
+    String? userRole
   }) {
     return Auth(
       token: token ?? this.token,
       fcmToken: fcmToken ?? this.fcmToken,
       userWalkthrough: userWalkthrough ?? this.userWalkthrough,
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      userRole: userRole ?? this.userRole,
     );
   }
 }
