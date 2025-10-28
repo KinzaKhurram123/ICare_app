@@ -1,0 +1,295 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/custom_text.dart';
+import 'package:icare/widgets/custom_text_input.dart';
+
+class CreateProfile extends StatefulWidget {
+  const CreateProfile({super.key});
+
+  @override
+  State<CreateProfile> createState() => _CreateProfileState();
+}
+
+class _CreateProfileState extends State<CreateProfile> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Controllers
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
+  final TextEditingController qualificationController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ScallingConfig.moderateScale(20),
+              vertical: ScallingConfig.moderateScale(20),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.black,
+                        size: 22,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Spacer(),
+                    CustomText(
+                      text: "Create Profile",
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                    const Spacer(flex: 2),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(35),
+                          border: Border.all(
+                            color: AppColors.primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              borderRadius: BorderRadius.circular(35),
+                              border: Border.all(
+                                color: AppColors.primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 45,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        bottom: -5,
+                        right: -5,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1EA7FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.lock_outline,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      CustomInputField(
+                        hintText: "Name",
+                        leadingIcon: const Icon(
+                          Icons.person_outline,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: nameController,
+                      ),
+                      CustomInputField(
+                        hintText: "Email",
+                        leadingIcon: const Icon(
+                          Icons.email_outlined,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: emailController,
+                      ),
+                      CustomInputField(
+                        hintText: "Phone Number",
+                        leadingIcon: const Icon(
+                          Icons.phone_outlined,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: phoneController,
+                      ),
+                      CustomInputField(
+                        hintText: "Type your bio here....",
+                        leadingIcon: const Icon(
+                          Icons.text_snippet_outlined,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: bioController,
+                      ),
+                      CustomInputField(
+                        hintText: "Add Qualification",
+                        leadingIcon: const Icon(
+                          Icons.school_outlined,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: qualificationController,
+                      ),
+                      CustomInputField(
+                        hintText: "Age",
+                        leadingIcon: const Icon(
+                          Icons.calendar_today_outlined,
+                          color: AppColors.lightGrey200,
+                        ),
+                        bgColor: AppColors.bgColor,
+                        borderRadius: 30,
+                        borderColor: AppColors.lightGrey200,
+                        controller: ageController,
+                      ),
+                      const SizedBox(height: 30),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _showSuccessModal(context);
+                            }
+                          },
+                          child: const Text(
+                            "Create Profile",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showSuccessModal(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 70,
+                width: 70,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Successful", 
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
+              ), 
+              const SizedBox(height: 8),
+              const Text(
+                "You have complete your profile setup successfully.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 25),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () {},
+                  // onPressed: () {
+                  //   Navigator.pop(context); // Close modal
+                  //   Navigator.pop(context); // Go back to login screen
+                  // },
+                  child: const Text(
+                    "Go Back",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}

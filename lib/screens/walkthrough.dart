@@ -50,9 +50,9 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
     return Scaffold(
       body: IntroSlider(
         refFuncGoToTab: (refFunc) {
-        goToTab = refFunc;
-      },
-         onTabChangeCompleted: (index) {
+          goToTab = refFunc;
+        },
+        onTabChangeCompleted: (index) {
           setState(() => currentIndex = index);
         },
         
@@ -181,4 +181,3 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
     );
   }
 }
-

@@ -6,9 +6,7 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/providers/common_provider.dart';
 import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/splash.dart';
-import 'package:icare/screens/walkthrough.dart';
-import 'package:icare/utils/shared_pref.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:icare/screens/verify_code.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -55,15 +53,9 @@ class _AppState extends ConsumerState<App> {
     
     
     setState(() {
-      if(userWalkthrough == false){
-        content = Walkthrough(); 
-      }else if(userRole == ""){
-        content = SelectUserType();
-      }
+      content = CreateProfile(); 
     });
-  } 
-
-  
+  }  
 
   
   @override
