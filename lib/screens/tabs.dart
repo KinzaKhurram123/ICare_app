@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/app.dart';
 import 'package:icare/screens/bookings.dart';
-import 'package:icare/screens/chat.dart';
+import 'package:icare/screens/chatlist.dart';
 import 'package:icare/screens/home.dart';
+import 'package:icare/screens/notifications.dart';
 import 'package:icare/screens/profile.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:icare/widgets/drawer.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
 class TabsScreen extends StatefulWidget {
@@ -28,9 +31,11 @@ class _TabsScreenState extends State<TabsScreen> {
   Widget build(BuildContext context) {
    Widget  activePage = HomeScreen();
    if(currentIndex == 1){
-    activePage= BookingsScreen();
+    activePage= Center(
+      child: CustomText(text: "Bookings",),
+    );
    } else if(currentIndex == 2){
-    activePage = ChatScreen();
+    activePage = ChatlistScreen();
    }else if(currentIndex == 3){
     activePage= ProfileScreen();
    } else {
@@ -38,7 +43,36 @@ class _TabsScreenState extends State<TabsScreen> {
    }
 
     return Scaffold(
+
+      appBar: AppBar(
+        
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) {
+            return GestureDetector(
+              onTap: (){
+                Scaffold.of(context).openDrawer();
+              },
+              child: CircleAvatar(
+                backgroundColor: AppColors.white,
+                child: SvgWrapper(assetPath: ImagePaths.menu),
+              ));
+          }
+        ),
+          actions: [
+             GestureDetector(
+              onTap: (){
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => NotificationScreen()));
+              },
+          child: CircleAvatar(
+            backgroundColor: AppColors.white,
+            child: SvgWrapper(assetPath: ImagePaths.notification),
+          )),  
+          ],
+      ),
+      drawer: CustomDrawer(),
       body: activePage,
+
        bottomNavigationBar: SafeArea(
          child: Stack(
           clipBehavior: Clip.none,

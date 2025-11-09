@@ -8,6 +8,8 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 
 class CustomDropdown<T> extends StatelessWidget {
   final String title;
+  final bool showTitle;
+  final Color? textColor; 
   final T? selectedItem;
   final List<T> items;
   final ValueChanged<T?> onChanged;
@@ -22,9 +24,11 @@ class CustomDropdown<T> extends StatelessWidget {
 
   const CustomDropdown({
     super.key,
-    required this.title,
+    this.title ="",
+    this.showTitle= true,
     required this.items,
     required this.onChanged,
+    this.textColor,
     this.selectedItem,
     this.width,
     this.displayField,
@@ -70,14 +74,15 @@ class CustomDropdown<T> extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CustomText(
+            if(showTitle)
+...[            CustomText(
               text: title,
               isBold: true,
               fontSize: ScallingConfig.moderateScale(14.68),
               color: AppColors.primary500,
               fontWeight: FontWeight.w400,
             ),
-            SizedBox(height: ScallingConfig.verticalScale(5)),
+            SizedBox(height: ScallingConfig.verticalScale(5))],
             Container(
               // width: Utils.windowWidth(context) * 0.9,
               padding: padding ??
@@ -96,14 +101,16 @@ class CustomDropdown<T> extends StatelessWidget {
               ),
               child:  DropdownButton<T>(
                   isExpanded: true,
+                  
                   value: selectedItem,
                   icon: icon ??
                       SvgWrapper(assetPath: ImagePaths.arrowDown),
                   dropdownColor: AppColors.white,
+                  underline: Divider(color: AppColors.white,),
                   style: const TextStyle(color: Colors.black),
                   hint: CustomText(
                     text: "Select $title",
-                    color: AppColors.primary500,
+                    color: textColor == null ?  AppColors.primary500 : textColor,
                   ),
                   
                   items: items.map((item) {

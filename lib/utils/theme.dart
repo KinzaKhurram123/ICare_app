@@ -38,8 +38,9 @@ class AppTheme {
       textTheme:  TextTheme(
         // titleLarge:    
       ),
-
+    
       appBarTheme: AppBarTheme(
+      
         backgroundColor:  AppColors.bgColor,
         centerTitle: true,
         titleTextStyle: TextStyle(

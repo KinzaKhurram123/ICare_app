@@ -6,6 +6,7 @@ import 'package:icare/screens/soap_notes.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
@@ -16,7 +17,10 @@ class ProfileOrAppointmentViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: CustomText(text: "View Profile")),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: CustomBackButton(),
+        title: CustomText(text: "View Profile")),
       body: SingleChildScrollView(
         child: Column(
           children: [

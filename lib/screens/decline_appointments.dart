@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
 class DeclineAppointments extends StatefulWidget {
-  const DeclineAppointments({super.key});
+  const DeclineAppointments({super.key, this.fromBooking = false });
+  final bool fromBooking;
 
   @override
   State<DeclineAppointments> createState() => _DeclineAppointmentsState();
@@ -29,10 +31,7 @@ class _DeclineAppointmentsState extends State<DeclineAppointments> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-             leading: IconButton(onPressed: () {
-        Navigator.of(context).pop();
-      }, icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primaryColor,)),
-      
+             leading: CustomBackButton(),
         title: CustomText(text: "Decline Appointments")),
       body: SingleChildScrollView(
         child: Column(

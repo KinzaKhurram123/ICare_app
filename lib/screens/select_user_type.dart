@@ -68,14 +68,15 @@ void onSelect(int id) {
   @override
   Widget build(BuildContext context) {
 
-    
 
     return Container(
         width: Utils.windowWidth(context),
         height: Utils.windowHeight(context),
         // margin: EdgeInsets.only(top: ),
         // padding: EdgeInsets.only(top:ScallingConfig.verticalScale(40), left:ScallingConfig.scale(10) , right: ScallingConfig.scale(10)),
+        
         decoration: BoxDecoration(
+        
         image: DecorationImage(image: AssetImage("assets/images/bgImage.jpeg", ),
          fit: BoxFit.cover
         )
@@ -109,18 +110,21 @@ void onSelect(int id) {
               Expanded(child: Stack(
                 children: [
                   Container(
+                    clipBehavior: Clip.hardEdge,
                    width: Utils.windowWidth(context),
                    padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)), 
                     decoration: BoxDecoration(
+
                         color: AppColors.bgColor,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(40),
                           topRight: Radius.circular(40),
                         ),
+                        
                       ),
                       child: Center(
                         child: ListView.builder(
-                          
+                          padding: EdgeInsets.only(bottom: ScallingConfig.verticalScale(60)),                          
                           itemCount: userTypes.length,
                           itemBuilder: (ctx,i) {
                           return UserTypeCard(
@@ -146,10 +150,7 @@ void onSelect(int id) {
                     Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LoginScreen()));
                   },))
                 ],
-              ))
-                         
-              
-          
+              ))         
             ],
           ),
         ) 

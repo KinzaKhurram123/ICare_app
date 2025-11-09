@@ -99,10 +99,15 @@ var _selectedLanguage;
                     _selectedAvailablity = value!;
                   });
                 }),
-                CustomDropdown<String>(title: "Consultation Type", 
+                CustomDropdown<String>(
+                title: "Consultation Type", 
                 selectedItem: _selectedConsultationType,
-                 margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6) ),
-                items: consultationTypeArray, onChanged: (value){
+                 margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6) 
+                  ),
+                items: consultationTypeArray,
+
+                onChanged: (value){
                   setState(() {
                     _selectedConsultationType = value!;
                   });

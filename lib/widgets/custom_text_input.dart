@@ -113,7 +113,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
                 ],
                 Expanded(
                   child: TextFormField(
-                    maxLines: widget.maxLines,
+                    maxLines: widget.maxLines ?? 1,
                     controller: widget.controller,
                     obscureText: widget.isPassword ? _obscureText : false,
                     onChanged: widget.onChanged,

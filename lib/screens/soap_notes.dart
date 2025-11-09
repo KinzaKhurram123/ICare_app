@@ -44,6 +44,7 @@ class _SoapNotesState extends State<SoapNotes> {
                 fontFamily: "Gilroy-SemiBold",
                 fontSize: 12,
               ),
+              
               height: Utils.windowHeight(context) * 0.15,
               maxLines: 50,
               borderRadius: 20,

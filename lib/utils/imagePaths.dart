@@ -18,6 +18,15 @@ class ImagePaths {
   static const userType3= '$basePath/pharmacist.png'; 
   static const userType4= '$basePath/lab-tech.png'; 
 
+  static const attachment= '$basePath/attachment.png';
+
+  // booking's Categories
+  static const inProgress= '$basePath/in-progress.png';
+  static const completed= '$basePath/completed.png';
+  static const upcoming= '$basePath/upcoming.png';
+  static const cancelled= '$basePath/cancelled.png';
+  static const pending= '$basePath/pending.png';
+
   static const success = '$basePath/success.svg';
   static const failed = '$basePath/denial.svg';
   static const warning = '$basePath/warning.svg';
@@ -43,6 +52,7 @@ class ImagePaths {
   static const search ='$basePath/search.svg';
   static const filters ='$basePath/filters.svg';
   static const menu ='$basePath/menu.svg';
+  static const notification ='$basePath/notifications.svg';
   static const google_icon ='$basePath/google_icon.png';
   static const facebook_icon ='$basePath/facebook_icon.png';
 
@@ -60,6 +70,12 @@ class ImagePaths {
 
   static const clock = '$basePath/clock.svg';
   static const calendar = '$basePath/calendar.svg';
+
+  static const wallet = '$basePath/wallet.svg';
+  static const payMethod = '$basePath/pay_method.svg';
+  static const topUp = '$basePath/top-up.svg';
+  static const recievedAmount = '$basePath/recieved-amounts.svg';
+  static const user7 = '$basePath/user7.png';
 
 
 

@@ -9,7 +9,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: CustomButton(label: 
-      "Creaye Profile",
+      "Create Profile",
       onPressed: () {
         Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => CreateProfile()));
       },

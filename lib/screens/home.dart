@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/filters.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -16,9 +17,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Home"),
-      ),
+      // appBar: AppBar(
+      //   title: Text("Home"),
+      // ),
       body: SingleChildScrollView(
         
         child: Column(
@@ -115,7 +116,10 @@ class ProfileInfoWidget extends StatelessWidget {
                       CustomText(
                         text: "View Profile",
                         underline: true,
-                        onTap: () {},
+                        onTap: () {
+               Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen()));
+
+                        },
       
                         isSemiBold: true,
                       ),
@@ -218,6 +222,10 @@ SizedBox(height: Utils.windowHeight(context) * 0.017 ,),
                   borderRadius: 20,
                   label: "Join",
                   labelSize: 14,
+                  onPressed: () {
+             Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VideoCall()));
+
+                  },
                   )
               ],
             ),
