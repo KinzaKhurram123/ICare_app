@@ -108,8 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
               fontFamily: "Gilroy-SemiBold",
               
               text:date.day.toString(), color: isSelected ? AppColors.white : AppColors.darkGray400, ),
+            SizedBox(
+              height: ScallingConfig.scale(10),
+            ),
             CustomText(
-              fontSize: 22,
+              fontSize: 14,
               fontFamily: "Gilroy-SemiBold",
 
               text:DateFormat('EEE').format(date).toString(), color: isSelected ? AppColors.white : AppColors.darkGray400, ),
@@ -126,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
   },
 ),
-  AppointmentCard(),
+   SizedBox(
+    width: Utils.windowWidth(context) * 0.9,
+    child: AppointmentCard()),
   SizedBox(height: ScallingConfig.scale(20),),
   CustomText(text:"View All Upcoming Appointments", 
   onTap: () {

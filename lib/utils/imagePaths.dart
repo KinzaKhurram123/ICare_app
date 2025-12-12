@@ -17,6 +17,10 @@ class ImagePaths {
   static const userType2= '$basePath/doctor.png'; 
   static const userType3= '$basePath/pharmacist.png'; 
   static const userType4= '$basePath/lab-tech.png'; 
+  
+  static const user10= '$basePath/user10.png'; 
+  static const user11= '$basePath/user11.png'; 
+  static const user12= '$basePath/user12.png'; 
 
   static const attachment= '$basePath/attachment.png';
 
@@ -98,4 +102,10 @@ class ImagePaths {
   static const profile2User = '$basePath/profile-2user.svg';
   static const edit = '$basePath/edit.svg';
   
+  static const pharmacyLogo = '$basePath/pharmcyLogo.png';
+  static const delievry = '$basePath/delievry.svg';
+  
+  static const lab1 = '$basePath/lab1.png';
+  static const lab2 = '$basePath/lab2.png';
+
 }

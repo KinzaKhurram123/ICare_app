@@ -2,6 +2,7 @@ import 'package:easy_date_timeline/easy_date_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/appointment_card.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
@@ -60,7 +61,7 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
               height: ScallingConfig.scale(10),
             ),
             CustomText(
-              fontSize: 10,
+              fontSize: 14,
               fontFamily: "Gilroy-SemiBold",
 
               text:DateFormat('EEE').format(date).toString(), color: isSelected ? AppColors.white : AppColors.darkGray400, ),
@@ -87,7 +88,9 @@ SizedBox(height: ScallingConfig.scale(20) ,),
                 return AppointmentCard();
               }) 
                ),
+          SizedBox(height: Utils.windowHeight(context) * 0.08,)
           ],
+
         ),
       
     );
