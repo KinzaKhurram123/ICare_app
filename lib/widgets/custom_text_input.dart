@@ -5,6 +5,7 @@ class CustomInputField extends StatefulWidget {
   final String? title;
   final String hintText;
   final Widget? leadingIcon;
+  final Widget? trailingIcon;
   final bool isPassword;
   final double? width;
   final double? height;
@@ -27,12 +28,13 @@ class CustomInputField extends StatefulWidget {
   final double titleFontSize;
   final FontWeight titleFontWeight;
   final EdgeInsetsGeometry? margin;
-
+  final int? maxLines;
   const CustomInputField({
     Key? key,
     this.title,
     required this.hintText,
     this.leadingIcon,
+    this.trailingIcon,
     this.isPassword = false,
     this.width,
     this.height,
@@ -50,6 +52,7 @@ class CustomInputField extends StatefulWidget {
     this.hintStyle,
     this.textStyle,
     this.focusNode,
+    this.maxLines,
     this.autoFocus = false,
     this.titleColor,
     this.titleFontSize = 15,
@@ -110,6 +113,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
                 ],
                 Expanded(
                   child: TextFormField(
+                    maxLines: widget.maxLines ?? 1,
                     controller: widget.controller,
                     obscureText: widget.isPassword ? _obscureText : false,
                     onChanged: widget.onChanged,
@@ -143,6 +147,10 @@ class _CustomInputFieldState extends State<CustomInputField> {
                     ),
                   ),
                 ),
+                 if (widget.trailingIcon != null) ...[
+                  widget.trailingIcon!,
+                  const SizedBox(width: 10),
+                ],
                 if (widget.isPassword)
                   GestureDetector(
                     onTap: () {

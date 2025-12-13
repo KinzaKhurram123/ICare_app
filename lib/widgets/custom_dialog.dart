@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 import 'custom_button.dart';
 import 'custom_text.dart';
@@ -16,6 +17,7 @@ class CustomDialog {
     double? titleSize,
     String? description,
     double? descriptionSize,
+    int? descriptionMaxLines,
     Widget? customContent,
     bool showButtons = true,
     bool showCancel = false,
@@ -38,103 +40,111 @@ class CustomDialog {
       barrierDismissible: isDismissible,
       builder: (context) {
         return Dialog(
+          
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           backgroundColor: backgroundColor ?? AppColors.white,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: ScallingConfig.moderateScale(22), vertical: ScallingConfig.moderateScale(25)),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Status Icon
-                if (status != null) ...[
-                  // Container(
-                  //   padding: const EdgeInsets.all(12),
-                  //   decoration: BoxDecoration(
-                  //     color: _statusColor.withOpacity(0.1),
-                  //     shape: BoxShape.circle,
-                  //   ),
-                  //   child: Icon(
-                  //     _statusIcon,
-                  //     color: _statusColor,
-                  //     size: 40,
-                  //   ),
-                  // ),
-                    SvgWrapper(assetPath: _statusIcon, 
-                    width: ScallingConfig.scale(50),
-                    height: ScallingConfig.scale(50),
-                    ),
-
-                  const SizedBox(height: 15),
-                ],
-
-                // Custom widget OR title + description
-                if (customContent != null) ...[
-                  customContent,
-                ] else ...[
-                  if (title != null)
-                    CustomText(
-                      text:title,
-                      fontSize: titleSize ??  ScallingConfig.moderateScale(16.76),
-                      isBold: true,
-                      color: Colors.black,
-                      textAlign: TextAlign.center,
-                    ),
-                  if (description != null) ...[
-                    const SizedBox(height: 8),
-                    CustomText(
-                     text:  description,
-                      fontSize: descriptionSize ?? ScallingConfig.moderateScale(10.59) ,
-                      color: Colors.black54,
-                      textAlign: TextAlign.center,
-                      isSemiBold: true,
+          child: SizedBox(
+            // width: Utils.windowWidth(context) * 0.9,
+            child: Padding(
+              
+              padding: EdgeInsets.symmetric(horizontal: ScallingConfig.moderateScale(22), vertical: ScallingConfig.moderateScale(25)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Status Icon
+                  if (status != null) ...[
+                    // Container(
+                    //   padding: const EdgeInsets.all(12),
+                    //   decoration: BoxDecoration(
+                    //     color: _statusColor.withOpacity(0.1),
+                    //     shape: BoxShape.circle,
+                    //   ),
+                    //   child: Icon(
+                    //     _statusIcon,
+                    //     color: _statusColor,
+                    //     size: 40,
+                    //   ),
+                    // ),
+                      SvgWrapper(assetPath: _statusIcon, 
+                      width: ScallingConfig.scale(50),
+                      height: ScallingConfig.scale(50),
+                      ),
+            
+                    const SizedBox(height: 15),
+                  ],
+            
+                  // Custom widget OR title + description
+                  if (customContent != null) ...[
+                    customContent,
+                  ] else ...[
+                    if (title != null)
+                      CustomText(
+                        text:title,
+                        fontSize: titleSize ??  ScallingConfig.moderateScale(16.76),
+                        isBold: true,
+                        color: Colors.black,
+                        textAlign: TextAlign.center,
+                      ),
+                    if (description != null) ...[
+                      const SizedBox(height: 8),
+                      CustomText(
+                       text:  description,
+                        fontSize: descriptionSize ?? ScallingConfig.moderateScale(10.59) ,
+                        color: Colors.black54,
+                        textAlign: TextAlign.center,
+                        isSemiBold: true,
+                        maxLines: descriptionMaxLines,
+                      ),
+                    ],
+                  ],
+            
+                  const SizedBox(height: 25),
+            
+                  // Action buttons
+                  if (showButtons) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (showCancel)
+                          Expanded(
+                            child: CustomButton(
+                              label: cancelText,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                if (onCancel != null) onCancel();
+                              },
+                              outlined: true,
+                            ),
+                          ),
+                        if (showCancel) const SizedBox(width: 10),
+                        Expanded(
+                          child: CustomButton(
+                            label: showDone ? doneText : okText,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              if (showDone && onDone != null) {
+                                onDone();
+                              } else if (onOk != null) {
+                                onOk();
+                              }
+                            },
+                            borderRadius: 30,
+                            bgColor: AppColors.primaryColor,
+                            // gradient: LinearGradient(
+                            //   colors: [
+                            //     _statusColor.withOpacity(0.9),
+                            //     _statusColor,
+                            //   ],
+                            // ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
-
-                const SizedBox(height: 25),
-
-                // Action buttons
-                if (showButtons) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (showCancel)
-                        Expanded(
-                          child: CustomButton(
-                            label: cancelText,
-                            onPressed: () {
-                              Navigator.pop(context);
-                              if (onCancel != null) onCancel();
-                            },
-                            outlined: true,
-                          ),
-                        ),
-                      if (showCancel) const SizedBox(width: 10),
-                      Expanded(
-                        child: CustomButton(
-                          label: showDone ? doneText : okText,
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (showDone && onDone != null) {
-                              onDone();
-                            } else if (onOk != null) {
-                              onOk();
-                            }
-                          },
-                          gradient: LinearGradient(
-                            colors: [
-                              _statusColor.withOpacity(0.9),
-                              _statusColor,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         );

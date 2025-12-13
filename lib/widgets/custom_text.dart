@@ -72,7 +72,7 @@ class CustomText extends StatelessWidget {
                         : FontWeight.w400);
 
     final textWidget = Text(
-      text!,
+      text ?? "",
       textAlign: textAlign,
       maxLines: maxLines,
       overflow: overflow,

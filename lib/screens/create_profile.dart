@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
 class CreateProfile extends StatefulWidget {
-  const CreateProfile({super.key});
+  const CreateProfile({super.key, this.isEdit=false});
+  final bool isEdit;
 
   @override
   State<CreateProfile> createState() => _CreateProfileState();
@@ -37,17 +40,12 @@ class _CreateProfileState extends State<CreateProfile> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.black,
-                        size: 22,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                   CustomBackButton(
+                    margin: EdgeInsets.only(left: 0),
+                   ),
                     const Spacer(),
                     CustomText(
-                      text: "Create Profile",
+                      text: widget.isEdit ? "Edit Profile" :  "Create Profile",
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
                       color: Colors.black,
@@ -224,10 +222,10 @@ class _CreateProfileState extends State<CreateProfile> {
   }
 }
 
-void _showSuccessModal(BuildContext context) {
+void _showSuccessModal(BuildContext ctx) {
   showDialog(
-    context: context,
-    barrierDismissible: false,
+    context: ctx,
+    // barrierDismissible: false,
     builder: (BuildContext context) {
       return Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -271,9 +269,11 @@ void _showSuccessModal(BuildContext context) {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                  },
                   // onPressed: () {
-                  //   Navigator.pop(context); // Close modal
+                    // Navigator.pop(context); // Close modal
                   //   Navigator.pop(context); // Go back to login screen
                   // },
                   child: const Text(

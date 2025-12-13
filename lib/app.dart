@@ -4,9 +4,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/providers/common_provider.dart';
+import 'package:icare/screens/add_card.dart';
+import 'package:icare/screens/appointments.dart';
+import 'package:icare/screens/book_lab.dart';
+import 'package:icare/screens/booking_categories.dart';
+import 'package:icare/screens/bookings.dart';
+import 'package:icare/screens/change_password.dart';
+import 'package:icare/screens/chat.dart';
+import 'package:icare/screens/chatlist.dart';
+import 'package:icare/screens/confirm_details.dart';
+import 'package:icare/screens/consultations.dart';
+import 'package:icare/screens/courses.dart';
+import 'package:icare/screens/create_profile.dart';
+import 'package:icare/screens/create_reminder.dart';
+import 'package:icare/screens/decline_appointments.dart';
+import 'package:icare/screens/doctor_profile.dart';
+import 'package:icare/screens/doctors_list.dart';
+import 'package:icare/screens/filters.dart';
+import 'package:icare/screens/intake_notes.dart';
+import 'package:icare/screens/notifications.dart';
+import 'package:icare/screens/patient_profile.dart';
+import 'package:icare/screens/pharmacies.dart';
+import 'package:icare/screens/privacy_policy.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/rating_n_reviews.dart';
+import 'package:icare/screens/reminder_list.dart';
+import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/screens/select_user_type.dart';
+import 'package:icare/screens/settings.dart';
+import 'package:icare/screens/soap_notes.dart';
 import 'package:icare/screens/splash.dart';
+import 'package:icare/screens/tabs.dart';
+import 'package:icare/screens/tasks.dart';
 import 'package:icare/screens/verify_code.dart';
+import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/view_course.dart';
+import 'package:icare/screens/walkthrough.dart';
+import 'package:icare/screens/wallet.dart';
+import 'package:icare/utils/shared_pref.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -53,7 +88,7 @@ class _AppState extends ConsumerState<App> {
     
     
     setState(() {
-      content = CreateProfile(); 
+      content = Walkthrough(); 
     });
   }  
 
@@ -61,8 +96,8 @@ class _AppState extends ConsumerState<App> {
   @override
   Widget build(BuildContext context) {
 
-    return Scaffold(
-      body: SelectUserType(),
-    );
+    return BookLabScreen();
+    // return content;
   }
 }
+

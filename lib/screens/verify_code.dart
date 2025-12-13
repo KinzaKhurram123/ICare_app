@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/screens/reset_password.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -36,6 +38,11 @@ class _VerifyCodeState extends State<VerifyCode> {
               ),
             ),
           ),
+               Positioned
+          (
+            top: 30,
+            left: -10,
+            child: CustomBackButton()),
           Positioned(
             top: 30,
             child: IconButton(
@@ -141,7 +148,10 @@ class _VerifyCodeState extends State<VerifyCode> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ResetPassword()));
+
+                          },
                           child: Text(
                             "Confirm",
                             style: TextStyle(color: Colors.white, fontSize: 16),

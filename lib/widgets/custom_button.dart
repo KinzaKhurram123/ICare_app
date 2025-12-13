@@ -6,7 +6,7 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class CustomButton extends StatelessWidget {
-  final String label;
+  final String? label;
   final VoidCallback? onPressed;
   final double? width;
   final double? height;
@@ -15,6 +15,7 @@ class CustomButton extends StatelessWidget {
   final Gradient? gradient;
   final Color labelColor;
   final double labelSize;
+  final double? labelWidth;
   final FontWeight labelWeight;
   final Widget? leadingIcon;
   final Widget? trailingIcon;
@@ -29,9 +30,10 @@ class CustomButton extends StatelessWidget {
 
   const CustomButton({
     super.key,
-    required this.label,
+    this.label,
     this.onPressed,
     this.width,
+    this.labelWidth,
     this.height,
     this.bgColor,
     this.gradient,
@@ -74,12 +76,14 @@ class CustomButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
           border: outlined
               ? Border.all(
+
                   color: borderColor ?? AppColors.primaryColor,
                   width: borderWidth,
                 )
               : null,
           boxShadow: outlined
-              ? []
+              ? [] 
+              
               : [
                   boxShadow ??
                       BoxShadow(
@@ -95,9 +99,10 @@ class CustomButton extends StatelessWidget {
           children: [
             if (leadingIcon != null) ...[
             leadingIcon!,
-              const SizedBox(width: 8),
+              SizedBox(width: label == null ? 0: 8),
             ],
-            Flexible(
+            if(label !=null)
+             ...[Flexible(
               child: 
               // Text(
               //   label,
@@ -110,12 +115,13 @@ class CustomButton extends StatelessWidget {
               //   ),
               // ),
               CustomText(
+                width: labelWidth,
                 text: label,
                 color: labelColor,
                 isBold: true,
                 fontSize: ScallingConfig.moderateScale(labelSize),
               )
-            ),
+            ),],
             if (trailingIcon != null) ...[
               const SizedBox(width: 8),
                 trailingIcon!

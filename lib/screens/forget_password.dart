@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/screens/verify_code.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 // import 'package:firebase_auth/firebase_auth.dart'; // Uncomment if using Firebase
@@ -25,8 +27,10 @@ class _ForgetPasswordState extends State<ForgetPassword> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      
       body: Stack(
         children: [
+    
           Container(
             width: Utils.windowWidth(context),
             height: Utils.windowHeight(context),
@@ -37,6 +41,11 @@ class _ForgetPasswordState extends State<ForgetPassword> {
               ),
             ),
           ),
+                Positioned
+          (
+            top: 30,
+            left: -10,
+            child: CustomBackButton()),
           Positioned(
             top: 30,
             child: IconButton(
@@ -123,7 +132,10 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+               Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VerifyCode()));
+
+                          },
                           child: Text(
                             "Send",
                             style: TextStyle(color: Colors.white, fontSize: 16),

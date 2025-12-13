@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 // import 'package:firebase_auth/firebase_auth.dart'; // Uncomment if using Firebase
@@ -37,6 +39,12 @@ class _ResetPasswordState extends State<ResetPassword> {
               ),
             ),
           ),
+                Positioned
+          
+          (
+            top: 30,
+            left: -10,
+            child: CustomBackButton()),
           Positioned(
             top: 30,
             child: IconButton(
@@ -142,9 +150,10 @@ class _ResetPasswordState extends State<ResetPassword> {
                             ),
                           ),
                           onPressed: () {
-                            if (_formKey.currentState!.validate()) {
+                            // if (_formKey.currentState!.validate()) {
+                            //   _showSuccessModal(context);
+                            // }
                               _showSuccessModal(context);
-                            }
                           },
                           child: Text(
                             "Confirm",
@@ -169,7 +178,7 @@ void _showSuccessModal(BuildContext context) {
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (BuildContext context) {
+    builder: (BuildContext ctx) {
       return Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -212,10 +221,14 @@ void _showSuccessModal(BuildContext context) {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigator.pop(ctx);
+                    // // Go back to login screen
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LoginScreen()));
+
+                  },
                   // onPressed: () {
                   //   Navigator.pop(context); // Close modal
-                  //   Navigator.pop(context); // Go back to login screen
                   // },
                   child: const Text(
                     "Go Back",
