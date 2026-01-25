@@ -9,13 +9,14 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
 class Laboratory extends StatelessWidget {
-  const Laboratory({super.key});
-
+  const Laboratory({super.key, this.margin});
+  final EdgeInsets? margin;
   @override
   Widget build(BuildContext context) {
     return Container(
       width: Utils.windowWidth(context) * 0.85,
       height: Utils.windowHeight(context) * 0.25,
+      margin: margin ?? EdgeInsets.zero,
       // padding: EdgeInsets.only(top: ScallingConfig.verticalScale(20)),
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(

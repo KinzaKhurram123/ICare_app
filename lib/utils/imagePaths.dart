@@ -17,6 +17,10 @@ class ImagePaths {
   static const userType2= '$basePath/doctor.png'; 
   static const userType3= '$basePath/pharmacist.png'; 
   static const userType4= '$basePath/lab-tech.png'; 
+  static const userType5= '$basePath/instructor.png'; 
+  static const userType6= '$basePath/student.png'; 
+
+  static const marker3 = '$basePath/marker3.svg';
   
   static const user10= '$basePath/user10.png'; 
   static const user11= '$basePath/user11.png'; 
@@ -43,9 +47,12 @@ class ImagePaths {
   // tab's icons
   static const home = '$basePath/home.svg'; 
   static const bookings = '$basePath/bookings.svg'; 
-  static const chat = '$basePath/chat.svg'; 
+  static const chat = '$basePath/chat.png'; 
   static const profile2 = '$basePath/profile2.svg'; 
-  static const centerIcon = '$basePath/document.svg'; 
+  static const centerIcon = '$basePath/document.svg';
+  static const prescription= '$basePath/prescription.svg';
+  static const cart2 = '$basePath/cart2.svg';
+  static const track = '$basePath/track.svg'; 
 
   static const user = '$basePath/user.svg';
   static const key = '$basePath/key.svg';
@@ -75,6 +82,7 @@ class ImagePaths {
   static const clock = '$basePath/clock.svg';
   static const calendar = '$basePath/calendar.svg';
 
+  static const card = '$basePath/card.svg';
   static const wallet = '$basePath/wallet.svg';
   static const payMethod = '$basePath/pay_method.svg';
   static const topUp = '$basePath/top-up.svg';
@@ -115,6 +123,31 @@ class ImagePaths {
   
   static const lab_tech = '$basePath/lab.svg'; 
   static const home_edit  = '$basePath/home_edit.svg'; 
-  static const marker2 = '$basePath/marker2.svg'; 
+  static const marker2 = '$basePath/marker2.svg';
+  static const gender= '$basePath/gender.svg'; 
+
+  static const baby_care = '$basePath/baby_care.svg';
+  static const skin_care = '$basePath/skin_care.svg';
+  static const vitamins = '$basePath/vitamins.svg';
+  static const pain = '$basePath/pain.svg';
+
+  static const capsule = '$basePath/liver_capsule.png';
+  static const capsule2 = '$basePath/capsule2.png';
+
+  static const cart = '$basePath/cart.svg';
+  static const star_filled = '$basePath/star2.svg';
+
+  //orders Types
+static const recent_orders= '$basePath/recent_orders.svg';
+static const delievered_orders= '$basePath/delievered_orders.svg';
+static const cancelled_orders= '$basePath/cancelled_orders.svg';
+static const transit_orders= '$basePath/transit_orders.svg';
+
+static const trash= '$basePath/trash.svg';
+static const cloud_upload= '$basePath/cloud_upload.svg';
+static const upload= '$basePath/upload.svg';
+
+static const prescription1= '$basePath/upload1.png';
+static const prescription2= '$basePath/upload2.png';
 
 }

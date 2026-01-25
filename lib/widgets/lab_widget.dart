@@ -19,7 +19,7 @@ class LabWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: Utils.windowWidth(context) * 0.85,
+      width: Utils.windowWidth(context) * 0.9,
       padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(15), horizontal: ScallingConfig.scale(10)),
       margin: EdgeInsets.only(top: ScallingConfig.verticalScale(10)),
       decoration: BoxDecoration(

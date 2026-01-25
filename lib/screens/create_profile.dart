@@ -1,10 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
+import 'package:icare/widgets/svg_wrapper.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreateProfile extends StatefulWidget {
   const CreateProfile({super.key, this.isEdit=false});
@@ -28,7 +34,20 @@ class _CreateProfileState extends State<CreateProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgColor,
+   appBar: AppBar(
+    backgroundColor: AppColors.bgColor,
+    leading: CustomBackButton(),
+    automaticallyImplyLeading: false,
+    title: CustomText(
+      text: widget.isEdit ? "Edit Profile" : "Create Profile",
+          fontSize: 16.78, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          color: AppColors.primary500,
+    ),
+   ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -38,79 +57,11 @@ class _CreateProfileState extends State<CreateProfile> {
             ),
             child: Column(
               children: [
-                Row(
-                  children: [
-                   CustomBackButton(
-                    margin: EdgeInsets.only(left: 0),
-                   ),
-                    const Spacer(),
-                    CustomText(
-                      text: widget.isEdit ? "Edit Profile" :  "Create Profile",
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                      color: Colors.black,
-                    ),
-                    const Spacer(flex: 2),
-                  ],
-                ),
+             
                 const SizedBox(height: 20),
+ProfilePicker(onPickImage: (pickedImage)=> {
 
-                Center(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(35),
-                          border: Border.all(
-                            color: AppColors.primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              borderRadius: BorderRadius.circular(35),
-                              border: Border.all(
-                                color: AppColors.primaryColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: Colors.white,
-                              size: 45,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      Positioned(
-                        bottom: -5,
-                        right: -5,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1EA7FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.lock_outline,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
+}),
                 const SizedBox(height: 30),
 
                 Form(
@@ -221,6 +172,134 @@ class _CreateProfileState extends State<CreateProfile> {
     );
   }
 }
+
+class ProfilePicker extends StatefulWidget {
+  const ProfilePicker({
+    super.key,
+    required this.onPickImage,
+  });
+
+  final void Function(File pickedImage) onPickImage;
+
+  @override
+  State<ProfilePicker> createState() => _ProfilePickerState();
+}
+
+class _ProfilePickerState extends State<ProfilePicker> {
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedImage = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 600,
+    );
+
+    if (pickedImage == null) return;
+
+    final imageFile = File(pickedImage.path);
+
+    setState(() {
+      _selectedImage = imageFile;
+    });
+
+    widget.onPickImage(imageFile);
+  }
+
+  void _showImageSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: Utils.windowWidth(context) * 0.3,
+          height: Utils.windowHeight(context) * 0.15,
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            border: Border.all(
+              width: 2,
+              color: AppColors.primaryColor,
+            ),
+            borderRadius: BorderRadius.circular(35),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Container(
+              color: AppColors.primaryColor,
+              width: Utils.windowWidth(context) * 0.26,
+              height: Utils.windowHeight(context) * 0.1,
+              child: _selectedImage != null
+                  ? Image.file(
+                      _selectedImage!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                    )
+                  : Center(
+                          child: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 45,
+                            ),
+                          ),
+                        
+            ),
+          ),
+        ),
+
+        Positioned(
+          right: ScallingConfig.scale(-5),
+          bottom: ScallingConfig.scale(-5),
+          child: CustomButton(
+            onPressed: _showImageSourcePicker,
+            padding: EdgeInsets.zero,
+            width: ScallingConfig.scale(30),
+            height: ScallingConfig.scale(25),
+            borderRadius: 10,
+            bgColor: AppColors.secondaryColor,
+            leadingIcon: SvgWrapper(
+              width: ScallingConfig.scale(20),
+              assetPath: ImagePaths.camera,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 void _showSuccessModal(BuildContext ctx) {
   showDialog(

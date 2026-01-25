@@ -48,6 +48,20 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
     "role": "pharmacist",
     "image": ImagePaths.userType3,
   },
+    {
+    "id": 5,
+    "title": "I am an Instructor",
+    "description": "The easy way to manage and guide your students.",
+    "role": "instructor",
+    "image": ImagePaths.userType5,
+  },
+  {
+    "id": 6,
+    "title": "I am a Student",
+    "description": "The easy way to learn and connect with instructors.",
+    "role": "student",
+    "image": ImagePaths.userType6,
+  },
 ];
 
 var selected_id = null;

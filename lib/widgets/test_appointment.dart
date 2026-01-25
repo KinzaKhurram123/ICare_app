@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
-import 'package:icare/models/bookingStatus.dart';
+import 'package:icare/models/app_enums.dart';
 import 'package:icare/screens/home.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/utils/imagePaths.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:flutter_switch/flutter_switch.dart';
-import 'package:icare/models/bookingStatus.dart';
+import 'package:icare/models/app_enums.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -133,11 +133,7 @@ class BookingCard extends ConsumerWidget {
               ],
             ),
       
-            // SwitchListTile(
-            //   title: CustomText(text: "Reminds me",),
-            //   value: true, onChanged: (value){
-      
-            // })
+            
             SizedBox(height: ScallingConfig.scale(10)),
             Row(
               children: [

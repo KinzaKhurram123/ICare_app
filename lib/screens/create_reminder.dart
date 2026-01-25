@@ -1,6 +1,4 @@
 
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -47,7 +45,12 @@ class _CreateReminderState extends State<CreateReminder> {
       appBar: AppBar(
                 leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text:"Create Reminder"),),
+        title: CustomText(text:"Create Reminder",
+          fontSize: 16.78, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.w400,
+          color: AppColors.primary500,
+        ),),
       body: SingleChildScrollView(
         child: Column( 
           children: [

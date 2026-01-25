@@ -53,7 +53,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 child: CustomText(
                width: double.infinity, 
                 text:amount.isEmpty ? "Enter Amount" : amount ,
-                fontSize: amount.isEmpty ? 18 : 39,
+                fontSize: amount.isEmpty ? 18 : 24,
                 fontFamily: "Gilroy-Bold",
                 color: amount.isEmpty ? AppColors.tertiaryColor : AppColors.primary500,
 

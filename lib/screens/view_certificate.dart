@@ -5,6 +5,7 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:icare/utils/theme.dart';
 
 class ViewCertificate extends StatelessWidget {
   const ViewCertificate({super.key});
@@ -15,7 +16,14 @@ class ViewCertificate extends StatelessWidget {
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text:"Certificate"),
+        title: CustomText(text:"Certificate",
+        fontWeight: FontWeight.bold,
+            letterSpacing: -0.31,
+            lineHeight: 1.0,
+                      fontSize: 16.78, 
+          fontFamily: "Gilroy-Bold",
+          color: AppColors.primary500,
+        ),
       ),
       body: Center(
         child: Column(

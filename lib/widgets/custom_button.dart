@@ -64,7 +64,7 @@ class CustomButton extends StatelessWidget {
         height: height ?? Utils.windowHeight(context) * 0.07,
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: hasGradient || outlined ? null : (bgColor ?? AppColors.primaryColor),
+          color: hasGradient || outlined && bgColor ==null ? null : (bgColor ?? AppColors.primaryColor),
           gradient: hasGradient
               ? gradient
               : (disabled

@@ -20,7 +20,10 @@ class PharmaciesScreen extends StatelessWidget {
         title: CustomText(
           text: "Pharmacies",
           fontFamily: "Gilroy-Bold",
-          fontSize: 18,
+          fontSize: 16.78,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
           color: AppColors.darkGray500,
         ),
       ),
@@ -28,9 +31,7 @@ class PharmaciesScreen extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
         itemCount: 3,
         itemBuilder: (ctx, i) {
-          return (
-            PharmacyWidget()
-            );
+          return (PharmacyWidget());
         },
       ),
     );
@@ -44,22 +45,26 @@ class PharmacyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(10)),
-      margin: EdgeInsets.only(top: ScallingConfig.verticalScale(10) ),
+      margin: EdgeInsets.only(top: ScallingConfig.verticalScale(10)),
       decoration: BoxDecoration(
-        boxShadow: [BoxShadow(
-          color: AppColors.lightGrey100,
-          offset: Offset(0, 4),
-          blurRadius: 8
-        )],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.lightGrey100,
+            offset: Offset(0, 4),
+            blurRadius: 8,
+          ),
+        ],
         borderRadius: BorderRadius.circular(10),
-        color: AppColors.white),
+        color: AppColors.white,
+      ),
       child: Column(
         children: [
           Row(
             children: [
-              Image.asset(ImagePaths.pharmacyLogo,
-              width: ScallingConfig.scale(100),
-            height: ScallingConfig.scale(100),
+              Image.asset(
+                ImagePaths.pharmacyLogo,
+                width: ScallingConfig.scale(100),
+                height: ScallingConfig.scale(100),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,12 +76,12 @@ class PharmacyWidget extends StatelessWidget {
                     fontFamily: "Gilroy-Bold",
                     color: AppColors.themeDarkGrey,
                   ),
-                  SizedBox(height: ScallingConfig.verticalScale(5) ,),
+                  SizedBox(height: ScallingConfig.verticalScale(5)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SvgWrapper(assetPath: ImagePaths.location),
-                      SizedBox(width: ScallingConfig.scale(6),),
+                      SizedBox(width: ScallingConfig.scale(6)),
                       CustomText(
                         text: "20 Cooper Square, USA",
                         color: AppColors.darkGreyColor,
@@ -88,7 +93,7 @@ class PharmacyWidget extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SvgWrapper(assetPath: ImagePaths.delievry),
-                      SizedBox(width: ScallingConfig.scale(6),),
+                      SizedBox(width: ScallingConfig.scale(6)),
                       CustomText(
                         text: "Home Delievery: 25min",
                         color: AppColors.darkGreyColor,

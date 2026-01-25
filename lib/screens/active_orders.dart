@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/custom_text.dart';
 
 class ActiveOrdersScreen extends StatelessWidget {
   const ActiveOrdersScreen({super.key});
@@ -9,18 +12,24 @@ class ActiveOrdersScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBFA),
       appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle(
+      
+       statusBarIconBrightness: Brightness.dark,
+       statusBarBrightness: Brightness.light,   
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
-        title: const Text(
-          'Active Orders',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-          ),
+        title: CustomText(
+          text: "Active Orders",
+          fontSize: 16.78,
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          color: AppColors.primary500,
         ),
-        centerTitle: true,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -32,6 +41,7 @@ class ActiveOrdersScreen extends StatelessWidget {
     );
   }
 }
+
 class CompletedReportCard extends StatelessWidget {
   const CompletedReportCard({super.key});
 
@@ -39,9 +49,9 @@ class CompletedReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 19),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color:AppColors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -54,13 +64,13 @@ class CompletedReportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Quantum Spar Lab',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          CustomText(
+              text: "Quantum Spar Lab",
+              fontSize: 18, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.bold,
+          color: AppColors.themeDarkGrey,
             ),
-          ),
           const SizedBox(height: 12),
 
           _infoRow('Patient Name', 'Sadia'),
@@ -71,25 +81,26 @@ class CompletedReportCard extends StatelessWidget {
           _infoRow('Phone Number', '03098949375'),
 
           const SizedBox(height: 12),
-          const Divider(),
+          // const Divider(),
 
           Row(
+
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text(
-                'Amount',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-              Text(
-                '6000',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              CustomText(
+              text: "Status",
+              fontSize: 12, 
+          fontFamily: "Gilroy-Medium",
+          fontWeight: FontWeight.w400,
+          color: AppColors.themeDarkGrey,
+            ),
+CustomText(
+              text: "Sample Ready for test",
+              fontSize: 12, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.w400,
+          color: AppColors.themeDarkGrey,
+            )
             ],
           ),
         ],
@@ -99,31 +110,26 @@ class CompletedReportCard extends StatelessWidget {
 
   static Widget _infoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-              ),
+ CustomText(
+              text: label,
+              fontSize: 13, 
+          fontFamily: "Gilroy-Medium",
+          fontWeight: FontWeight.w400,
+          color: AppColors.themeDarkGrey,
             ),
-          ),
-          Expanded(
-            flex: 5,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+
+CustomText(
+              text: value,
+              fontSize: 13, 
+          fontFamily: "Gilroy-SemiBold",
+          fontWeight: FontWeight.w400,
+          color: AppColors.themeDarkGrey,
+            ) 
         ],
       ),
     );

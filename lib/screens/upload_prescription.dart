@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -47,11 +48,16 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text: "Upload Prescription" , 
-        fontFamily: "Gilroy-Bold",
-        fontSize: 16.78,
-        color: AppColors.primary500,),
-      
+        title: CustomText(
+          text: "Upload Prescription",
+          fontFamily: "Gilroy-Bold",
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          fontWeight: FontWeight.bold,
+          fontSize: 16.78,
+          color: AppColors.primary500,
+        ),
+
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 12),
@@ -79,17 +85,15 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                   height: Utils.windowHeight(context) * 0.25,
                   width: double.infinity,
                   alignment: Alignment.center,
-                  child: _file == null
-                      ? const Text(
-                          'Upload Prescription',
-                          style: TextStyle(color: Colors.grey),
-                        )
-                      : Image.file(_file!, fit: BoxFit.cover),
+                  child: const Text(
+                    'Upload Prescription',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ),
             ),
 
-           SizedBox(height: ScallingConfig.scale(45)),
+            SizedBox(height: ScallingConfig.scale(45)),
 
             if (_uploading)
               Column(
@@ -111,7 +115,16 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                 ],
               ),
 
-            SizedBox(height: ScallingConfig.scale(80),),
+            if (!_uploading && _file != null)
+              Image.file(
+                _file!,
+                fit: BoxFit.cover,
+                width: ScallingConfig.scale(80),
+
+                height: ScallingConfig.scale(80),
+              ),
+
+            SizedBox(height: ScallingConfig.scale(80)),
 
             CustomButton(
               width: Utils.windowWidth(context) * 0.9,
@@ -122,7 +135,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
 
             const SizedBox(height: 12),
 
-             CustomButton(
+            CustomButton(
               width: Utils.windowWidth(context) * 0.9,
               borderRadius: 40,
               label: "Previous Prescription",

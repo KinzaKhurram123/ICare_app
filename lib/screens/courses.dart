@@ -1,8 +1,10 @@
 import 'dart:developer';
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/filters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -15,35 +17,58 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
-class Courses extends StatefulWidget {
+class Courses extends ConsumerStatefulWidget {
   const Courses({super.key});
 
   @override
-  State<Courses> createState() => _CoursesState();
+  ConsumerState<Courses> createState() => _CoursesState();
 }
 
-class _CoursesState extends State<Courses> with SingleTickerProviderStateMixin {
+class _CoursesState extends ConsumerState<Courses> with SingleTickerProviderStateMixin {
   
    late TabController controller;
+int? _currentTabLength;
 
+// @override
+// void didChangeDependencies() {
+//   super.didChangeDependencies();
+
+//   final role = ref.read(authProvider).userRole;
+//   final newLength = role == "instructor" ? 1 : 3;
+
+//   if (_currentTabLength != newLength) {
+//     controller?.dispose();
+//     controller = TabController(length: newLength, vsync: this);
+//     _currentTabLength = newLength;
+//   }
+// }
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 3, vsync: this);
+   final role = ref.read(authProvider).userRole;
+    controller = TabController(length: role == "instructor" ? 1 : 3, vsync: this);
   }
 
   
   
   @override
-
-
   Widget build(BuildContext context) {
- 
+   final role = ref.read(authProvider).userRole;
+    log(role);
+    log(controller.length.toString()); 
+    
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
-        title: CustomText(text: "Courses",),
+        title: CustomText(text: "Courses",
+        fontFamily: "Gilroy-Bold",
+            fontSize: 16.78,
+            color: AppColors.primary500,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.31,
+            lineHeight: 1.0,
+        ),
 
       ),
       body: Center(
@@ -76,7 +101,10 @@ class _CoursesState extends State<Courses> with SingleTickerProviderStateMixin {
                 width: Utils.windowWidth(context) * 0.33,
                 textAlign: TextAlign.center,
               ),
-              CustomText(
+           if(role == "instructor") ...[
+             SizedBox(width: Utils.windowWidth(context) * 0.33,),
+             SizedBox(width: Utils.windowWidth(context) * 0.33,),],
+            if(role != "instructor") ...[CustomText(
                 text: "My Purchase",
                 padding: EdgeInsets.only(bottom:5),
                 width: Utils.windowWidth(context) * 0.33,
@@ -87,7 +115,7 @@ class _CoursesState extends State<Courses> with SingleTickerProviderStateMixin {
                 width: Utils.windowWidth(context) * 0.33,
                 textAlign: TextAlign.center,
                 text: "Certificates",
-              ),
+              ),]
             ],
                     ),
           ),   
@@ -95,8 +123,11 @@ class _CoursesState extends State<Courses> with SingleTickerProviderStateMixin {
         controller: controller,
         children: [
           CoursesList(),
+          if(role != "instructor")...[
+
          CoursesList(mypurchased: true),
           CertificatesList(),
+          ]
           
           
         ],

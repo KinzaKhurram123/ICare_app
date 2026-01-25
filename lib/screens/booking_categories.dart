@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
-import 'package:icare/models/bookingStatus.dart';
+import 'package:icare/models/app_enums.dart';
 import 'package:icare/providers/auth_provider.dart';
 
 import 'package:icare/utils/theme.dart';

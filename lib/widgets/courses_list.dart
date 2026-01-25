@@ -6,8 +6,13 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/course_card.dart';
 
 class CoursesList extends StatelessWidget {
-  const CoursesList({super.key, this.mypurchased = false});
+  const CoursesList({super.key, 
+  this.numOfCourses,
+  this.constraintHeight,
+  this.mypurchased = false, });
 final bool mypurchased;
+final double? constraintHeight;
+final int? numOfCourses;
   @override
   Widget build(BuildContext context) {
     var courses =   [
@@ -111,9 +116,9 @@ final bool mypurchased;
     return ConstrainedBox(
               // width: double.infinity,
               constraints: BoxConstraints(
-                maxHeight:  Utils.windowHeight(context) * 0.7,),
+                maxHeight: constraintHeight ??  Utils.windowHeight(context) * 0.7,),
               child: GridView.builder(
-                itemCount: mypurchased ? 1 : courses.length,
+                itemCount: mypurchased ? 1 : numOfCourses ?? courses.length,
                 padding: EdgeInsets.all(20),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,

@@ -7,7 +7,8 @@ class CommonNotifier extends StateNotifier<CommonData> {
    CommonNotifier () : super(CommonData(
     cartData: [],
     userData: null, 
-    profileCreated: false
+    profileCreated: false,
+  selectedReason: "",
    ));
 
 
@@ -22,8 +23,15 @@ class CommonNotifier extends StateNotifier<CommonData> {
    void setCartData(List<Map<dynamic, dynamic>> _cartData){
     state = state.copyWith(cartData: _cartData);
    }
+    
+    void setSelectedReason(String? reason){
+    state = state.copyWith(selectedReason: reason);
+    }  
+    
+    // void setSelectedReason(String reason){
+    // state = state.copyWith(selectedReason: reason);
+    // }  
 
-  
 }
 
 

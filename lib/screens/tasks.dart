@@ -30,9 +30,12 @@ class _TaskScreenState extends State<TaskScreen>
         automaticallyImplyLeading: false,
         title: CustomText(
           text: "My Tasks",
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
-          fontSize: 18,
-          color: AppColors.darkGray500,
+          color: AppColors.primary500,
         ),
         bottom: TabBar(
           controller: controller,

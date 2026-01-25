@@ -1,3 +1,179 @@
+// import 'dart:math';
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_chat_core/flutter_chat_core.dart';
+// import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+// import 'package:flutter_size_matters/flutter_size_matters.dart';
+// import 'package:icare/app.dart';
+// import 'package:icare/utils/imagePaths.dart';
+// import 'package:icare/utils/theme.dart';
+// import 'package:icare/widgets/back_button.dart';
+// import 'package:icare/widgets/custom_text.dart';
+// import 'package:icare/widgets/svg_wrapper.dart';
+
+// class ChatScreen extends StatefulWidget {
+//   const ChatScreen({super.key});
+
+//   @override
+//   ChatScreenState createState() => ChatScreenState();
+// }
+
+// class ChatScreenState extends State<ChatScreen> {
+//   final _chatController = InMemoryChatController();
+
+//   @override
+//   void initState() {
+//     _chatController.insertAllMessages([
+//       TextMessage(
+//         // Better to use UUID or similar for the ID - IDs must be unique
+//         id: '${Random().nextInt(1000) + 1}',
+//         authorId: 'user1',
+//         createdAt: DateTime.now().toUtc(),
+//         text: "Hello",
+//       ),
+//       TextMessage(
+//         // Better to use UUID or similar for the ID - IDs must be unique
+//         id: '${Random().nextInt(1000) + 1}',
+//         authorId: 'user2',
+//         createdAt: DateTime.now().toUtc(),
+//         text: "Hello",
+//       ),
+//     ]);
+//     super.initState();
+//   }
+
+//   @override
+//   void dispose() {
+//     _chatController.dispose();
+//     super.dispose();
+//   }
+
+//   final Widget _sendIcon = Container(
+//     width: ScallingConfig.scale(50),
+//     height: ScallingConfig.scale(50),
+//     decoration: BoxDecoration(
+//       borderRadius: BorderRadius.circular(50),
+//       color: AppColors.primaryColor,
+//     ),
+//     child: SvgWrapper(
+//       assetPath: ImagePaths.send,
+//       width: ScallingConfig.scale(10),
+//       fit: BoxFit.none,
+//       height: ScallingConfig.scale(10),
+//     ),
+//   );
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         centerTitle: true,
+//         automaticallyImplyLeading: false,
+//         leading: CustomBackButton(),
+//         title: CustomText(
+//           text: "Chat",
+//           fontFamily: "GIlroy-Bold",
+//           fontWeight: FontWeight.w400,
+//           fontSize: 16.78,
+//         ),
+//       ),
+//       body: SafeArea(
+//         child: Chat(
+//           chatController: _chatController,
+//           currentUserId: 'user1',
+//           backgroundColor: AppColors.secondaryColor,
+//           theme: ChatTheme(
+//             shape: BorderRadiusGeometry.circular(20),
+
+//             typography: ChatTypography(
+//               bodyLarge: TextStyle(
+//                 fontSize: 16,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//               bodyMedium: TextStyle(
+//                 fontSize: 14,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//               bodySmall: TextStyle(
+//                 fontSize: 12,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//               labelLarge: TextStyle(
+//                 fontSize: 16,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//               labelMedium: TextStyle(
+//                 fontSize: 14,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//               labelSmall: TextStyle(
+//                 fontSize: 12,
+//                 fontWeight: FontWeight.w400,
+//                 color: AppColors.primary500,
+//               ),
+//             ),
+//             colors: ChatColors(
+//               primary: AppColors.secondaryColor,
+//               onPrimary: AppColors.white,
+//               surface: AppColors.secondaryColor,
+//               onSurface: AppColors.darkGray400,
+//               surfaceContainer: AppColors.lightGrey100,
+//               surfaceContainerLow: AppColors.darkGray300,
+//               surfaceContainerHigh: AppColors.white,
+//             ),
+//           ),
+//           decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+//           builders: Builders(
+//             composerBuilder: (ctx) => Composer(
+//               backgroundColor: AppColors.bgColor,
+//               sendIcon: _sendIcon,
+//             ),
+
+//             chatMessageBuilder: _buildMessage,
+//           ),
+//           onMessageSend: (text) {
+//             _chatController.insertMessage(
+//               TextMessage(
+//                 // Better to use UUID or similar for the ID - IDs must be unique
+//                 id: '${Random().nextInt(1000) + 1}',
+//                 authorId: 'user1',
+//                 createdAt: DateTime.now().toUtc(),
+//                 text: text,
+//               ),
+//             );
+//           },
+//           resolveUser: (UserID id) async {
+//             return User(id: id, name: 'John Doe');
+//           },
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// Widget _buildMessage(
+//   ctx,
+//   message,
+//   index,
+//   animation,
+//   child, {
+//   groupStatus,
+//   isRemoved,
+//   required isSentByMe,
+// }) => ChatMessage(
+//   message: message,
+//   index: index,
+//   animation: animation,
+//   child: child,
+// );
+
+
+
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -73,7 +249,13 @@ class BasicState extends State<ChatScreen> {
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text:"Chat"),
+        title: CustomText(
+          text: "Chat",
+          fontSize: 16.78, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.w400,
+          color: AppColors.primary500,
+          ),
         actions: [
           GestureDetector(
             onTap: () {

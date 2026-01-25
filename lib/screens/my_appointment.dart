@@ -14,13 +14,16 @@ class MyAppointment extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.bgColor,
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
           text: "My Appointment",
           fontSize: 16.78,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
           fontFamily: "Gilroy-Bold",
-          fontWeight: FontWeight.w400,
+fontWeight: FontWeight.bold,
         ),
       ),
       body: SingleChildScrollView(
@@ -73,7 +76,7 @@ class MyAppointment extends StatelessWidget {
               leadingText: "Total Balance",
               trailingText: "Rs. 1800",
             ),
-            SizedBox(height: ScallingConfig.scale(20),)
+            SizedBox(height: ScallingConfig.scale(20)),
           ],
         ),
       ),
@@ -130,6 +133,7 @@ class ProfileInfoWidget extends StatelessWidget {
                     ),
                   ],
                 ),
+                SizedBox(height: ScallingConfig.scale(6)),
                 Row(
                   children: [
                     SvgWrapper(assetPath: ImagePaths.scan),
@@ -243,14 +247,14 @@ class AmountContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: Utils.windowWidth(context) * 0.85,
-      padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(20), vertical: ScallingConfig.verticalScale(20)),
+      padding: EdgeInsets.symmetric(
+        horizontal: ScallingConfig.scale(20),
+        vertical: ScallingConfig.verticalScale(20),
+      ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border.all(
-          color: AppColors.lightGrey200,  
-        ),
-        borderRadius: BorderRadius.circular(40)
-
+        border: Border.all(color: AppColors.lightGrey200),
+        borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

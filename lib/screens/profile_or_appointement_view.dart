@@ -24,12 +24,19 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
-        title: CustomText(text: "View Profile"),
+        title: CustomText(
+          text: "View Profile",
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          fontSize: 16.78,
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary500,
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-
             ProfileInfoWidget(),
             DetailsInfoWidget(
               title: "Scheduled Appointment",
@@ -48,23 +55,21 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                 "Problem": "N/A",
               },
             ),
-           if(selectedRole == "lab_technician") ...[
-                Tests()
-            ],
+            if (selectedRole == "lab_technician") ...[Tests()],
 
-              ConsultationTypeCard(
-                chat: true,
-                title: "Messaging",
-                description: "Chat With Doctor",
-                duration: "30 Minutes",
-              ),
-              SizedBox(height: ScallingConfig.scale(10)),
-              ConsultationTypeCard(
-                call: true,
-                title: "Voice Call",
-                description: "Voice call With Doctor",
-                duration: "30 Minutes",
-              ),
+            ConsultationTypeCard(
+              chat: true,
+              title: "Messaging",
+              description: "Chat With Doctor",
+              duration: "30 Minutes",
+            ),
+            SizedBox(height: ScallingConfig.scale(10)),
+            ConsultationTypeCard(
+              call: true,
+              title: "Voice Call",
+              description: "Voice call With Doctor",
+              duration: "30 Minutes",
+            ),
 
             if (selectedRole == "patient" || selectedRole == "doctor") ...[
               Padding(
@@ -100,7 +105,7 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
               ),
             ],
             SizedBox(height: ScallingConfig.scale(15)),
-            
+
             if (selectedRole == "doctor") ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +152,9 @@ class ProfileInfoWidget extends ConsumerWidget {
 
     var profile_name = selectedRole == "patient"
         ? "Dr. Aron Smith"
-        : selectedRole == "lab_technician" ? "Alyana" : "Emily Jordan";
+        : selectedRole == "lab_technician"
+        ? "Alyana"
+        : "Emily Jordan";
     // TODO: implement build
     return Container(
       width: Utils.windowWidth(context),
@@ -166,8 +173,8 @@ class ProfileInfoWidget extends ConsumerWidget {
               selectedRole == "patient"
                   ? ImagePaths.walkthrough1
                   : selectedRole == "lab_technician"
-                  
-                  ? ImagePaths.user13 : ImagePaths.user1,
+                  ? ImagePaths.user13
+                  : ImagePaths.user1,
               fit: selectedRole == "patient" ? BoxFit.contain : BoxFit.cover,
             ),
           ),
@@ -193,7 +200,6 @@ class ProfileInfoWidget extends ConsumerWidget {
                           ),
                         );
                       },
-
                       isSemiBold: true,
                     ),
                   ],
@@ -352,14 +358,17 @@ class Tests extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:  EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
+      padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomText(
             // width: Utils.windowWidth(context) * 0.9,
-            text: "Test Names", fontSize: 14, isBold: true),
-                    SizedBox(height: ScallingConfig.scale(10),),
+            text: "Test Names",
+            fontSize: 14,
+            isBold: true,
+          ),
+          SizedBox(height: ScallingConfig.scale(10)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -375,7 +384,7 @@ class Tests extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: ScallingConfig.scale(10),),
+          SizedBox(height: ScallingConfig.scale(10)),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -392,7 +401,7 @@ class Tests extends StatelessWidget {
               ),
             ],
           ),
-              SizedBox(height: ScallingConfig.scale(10),),
+          SizedBox(height: ScallingConfig.scale(10)),
         ],
       ),
     );

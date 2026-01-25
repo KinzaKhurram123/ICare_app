@@ -18,6 +18,9 @@ class PaymentInvoices extends StatelessWidget {
         title: CustomText(text: "Receipt" , 
         fontFamily: "Gilroy-Bold",
         fontSize: 16.78,
+        fontWeight: FontWeight.bold,
+            letterSpacing: -0.31,
+            lineHeight: 1.0,
         color: AppColors.primary500,),
       ),
       body: ListView.builder(

@@ -25,8 +25,10 @@ class _WrtieReviewScreenState extends State<WrtieReviewScreen> {
         title: CustomText(
         text:"Write A Review", 
         fontFamily: "Gilroy-Bold", 
-        fontSize: 18,
-        color: AppColors.darkGray500,
+        fontSize: 16.78,
+        color: AppColors.primary500,
+            letterSpacing: -0.31,
+            lineHeight: 1.0,
         ),
       ),
       body: SingleChildScrollView(

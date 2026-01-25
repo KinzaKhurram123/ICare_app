@@ -22,7 +22,15 @@ class NotificationSettings extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
-        title: CustomText(text: "Notifications Settings"),
+        title: CustomText(
+          text: "Notifications Settings",
+          fontSize: 16.78,
+          fontFamily: "Gilroy-Bold",
+          color: AppColors.primary500,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(20)),
@@ -31,7 +39,6 @@ class NotificationSettings extends StatelessWidget {
           children: [
             Container(
               width: Utils.windowWidth(context) * 0.85,
-
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(20),

@@ -1,3 +1,4 @@
+import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -23,17 +24,24 @@ class _SoapNotesState extends State<SoapNotes> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: CustomText(text: "Soap Notes"), 
-      leading: IconButton(onPressed: () {
-        Navigator.of(context).pop();
-      }, icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primaryColor,)),
-      
+      appBar: AppBar(
+        title: CustomText(
+          text: "Soap Notes",
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
+          fontSize: 16.78,
+          fontFamily: "Gilroy-Bold",
+          color: AppColors.primary500,
+        ),
+        leading: CustomBackButton(),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(height: ScallingConfig.scale(30),),
+            SizedBox(height: ScallingConfig.scale(30)),
             CustomInputField(
               // margin: EdgeInsets.only(left: ScallingConfig.scale(2) ),
               width: Utils.windowWidth(context) * 0.85,
@@ -44,7 +52,7 @@ class _SoapNotesState extends State<SoapNotes> {
                 fontFamily: "Gilroy-SemiBold",
                 fontSize: 12,
               ),
-              
+
               height: Utils.windowHeight(context) * 0.15,
               maxLines: 50,
               borderRadius: 20,
@@ -87,7 +95,7 @@ class _SoapNotesState extends State<SoapNotes> {
                     child: SvgWrapper(assetPath: ImagePaths.calendar),
                   ),
                 ),
-                SizedBox(width: ScallingConfig.scale(10) ,),
+                SizedBox(width: ScallingConfig.scale(10)),
                 CustomButton(
                   boxShadow: BoxShadow(offset: Offset(0, 0)),
                   labelWidth: Utils.windowWidth(context) * 0.35,
@@ -117,12 +125,12 @@ class _SoapNotesState extends State<SoapNotes> {
                 ),
               ],
             ),
-            SizedBox(height: ScallingConfig.scale(10) ,),
+            SizedBox(height: ScallingConfig.scale(10)),
             CustomButton(
               boxShadow: BoxShadow(offset: Offset(0, 0)),
               borderRadius: 35,
               outlined: true,
-               borderColor: AppColors.grayColor.withAlpha(50),
+              borderColor: AppColors.grayColor.withAlpha(50),
 
               width: Utils.windowWidth(context) * 0.9,
               bgColor: AppColors.veryLightGrey,
@@ -131,11 +139,12 @@ class _SoapNotesState extends State<SoapNotes> {
               labelColor: AppColors.grayColor,
               labelSize: 15,
             ),
-            SizedBox(height: ScallingConfig.scale(20),),
-            CustomButton(label:"Submit",
-            width: Utils.windowWidth(context) * 0.9,
-            borderRadius: 35,
-            )
+            SizedBox(height: ScallingConfig.scale(20)),
+            CustomButton(
+              label: "Submit",
+              width: Utils.windowWidth(context) * 0.9,
+              borderRadius: 35,
+            ),
           ],
         ),
       ),

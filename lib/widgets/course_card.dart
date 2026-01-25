@@ -46,6 +46,7 @@ class CourseCard extends StatelessWidget {
             Image.asset(
              image ?? ImagePaths.course1,
               width: double.infinity,
+              height: Utils.windowHeight(context) * 0.15,
               fit: BoxFit.cover,
             ),
             SizedBox(height: Utils.windowHeight(context) * 0.01 ,),

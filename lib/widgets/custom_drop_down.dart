@@ -78,9 +78,10 @@ class CustomDropdown<T> extends StatelessWidget {
 ...[            CustomText(
               text: title,
               isBold: true,
-              fontSize: ScallingConfig.moderateScale(14.68),
+              fontSize: ScallingConfig.moderateScale(14.78),
               color: AppColors.primary500,
               fontWeight: FontWeight.w400,
+              fontFamily: "GIlroy-SemiBold",
             ),
             SizedBox(height: ScallingConfig.verticalScale(5))],
             Container(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -8,16 +10,25 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-class ViewCourse extends StatelessWidget {
+class ViewCourse extends ConsumerWidget {
   const ViewCourse({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role =ref.read(authProvider).userRole;
     return Scaffold(
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text: "Course"),
+        title: CustomText(text: "Course",
+                      fontFamily: "Gilroy-Bold",
+              fontSize: 16.78,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary500,
+              letterSpacing: -0.31,
+              lineHeight: 1.0,
+
+        ),
       ),
       body: SingleChildScrollView(
         child: Stack(
@@ -26,6 +37,17 @@ class ViewCourse extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+               if(role == "student") ...[ CustomText(
+                maxLines: 4,
+                width: Utils.windowWidth(context) * 0.9,
+                padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(10)  ),
+                              fontFamily: "Gilroy-SemiBold",
+              fontSize: 14,
+              color: AppColors.themeRed,
+              letterSpacing: -0.31,
+              lineHeight: 1.0,
+                text: "You just have 10 sec trial to gain idea, what this course about.  You have to purchase this course to see full video.",
+               ),],
                 Stack(
                   children: [
                     ClipRRect(
@@ -113,9 +135,9 @@ class ViewCourse extends StatelessWidget {
                 SizedBox(height: Utils.windowHeight(context) * 0.05),
               ],
             ),
-            Positioned(
+            if(role != "instructor") ...[Positioned(
               left: ScallingConfig.scale(30),
-              bottom: ScallingConfig.verticalScale(110),
+              bottom: ScallingConfig.verticalScale(80),
               child: CustomButton(
                 label: "Buy Full Course",
                  borderRadius: 30,
@@ -123,7 +145,7 @@ class ViewCourse extends StatelessWidget {
                   Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => SelectPaymentMethod()));
                  },
               ) 
-            ),
+            ),]
           ],
         ),
       ),

@@ -3,10 +3,10 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_drop_down.dart';
 import 'package:icare/widgets/custom_text.dart';
-import 'package:icare/widgets/svg_wrapper.dart';
 
 class FiltersScreen extends StatefulWidget {
   const FiltersScreen({super.key});
@@ -73,10 +73,17 @@ var _selectedLanguage;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Filter"),
-           leading: IconButton(onPressed: () {
-        Navigator.of(context).pop();
-      }, icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primaryColor,)),
+      appBar: AppBar(title: CustomText(
+              text: "Filter",
+              fontSize: 16.78, 
+          fontFamily: "Gilroy-Bold",
+          fontWeight: FontWeight.bold,
+              letterSpacing: -0.31,
+            lineHeight: 1.0,
+          color: AppColors.primary500,
+            ),
+           leading: CustomBackButton(),
+           automaticallyImplyLeading: false,
       
       ),
       body: SingleChildScrollView(

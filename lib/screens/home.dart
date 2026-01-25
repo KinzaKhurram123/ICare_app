@@ -9,6 +9,9 @@ import 'package:icare/screens/active_orders.dart';
 import 'package:icare/screens/completed-reports.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/filters.dart';
+import 'package:icare/screens/lab_filters.dart';
+import 'package:icare/screens/patient_filters.dart';
+import 'package:icare/screens/pharmacy_home.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/upcoming_appointments.dart';
 import 'package:icare/screens/video_call.dart';
@@ -20,7 +23,9 @@ import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_record_card.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
+import 'package:icare/widgets/instructor_home.dart';
 import 'package:icare/widgets/laboratory.dart';
+import 'package:icare/widgets/student_home.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:easy_date_timeline/easy_date_timeline.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _selectedDate;
   @override
   Widget build(BuildContext context) {
+    //  final selectedRole = "instructor";
      final selectedRole = ref.watch(authProvider).userRole;
      log("ROLE ==> ${selectedRole}");
      var userRole = 'Lab Technician';
@@ -186,7 +192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onPress: () {
                     Navigator.of(
                       context,
-                    ).push(MaterialPageRoute(builder: (ctx) => FiltersScreen()));
+                    ).push(MaterialPageRoute(builder: (ctx) => LabFilters()));
                   },
                 ),
                 leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
@@ -323,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onPress: () {
                     Navigator.of(
                       context,
-                    ).push(MaterialPageRoute(builder: (ctx) => FiltersScreen()));
+                    ).push(MaterialPageRoute(builder: (ctx) => PatientFiltersScreen()));
                   },
                 ),
                 leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
@@ -427,10 +433,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
        ),
       );
+     } else if(selectedRole == "instructor") {
+      content=InstructorHome();
+     } else if(selectedRole == "pharmacist") {
+      content=PharmacyHome();
+     }else if(selectedRole == "student") {
+      content= StudentHome();
      }
 
 
     return SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: ScallingConfig.scale(50)),
         child:  content, 
       );
 
