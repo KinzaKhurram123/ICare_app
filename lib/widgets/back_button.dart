@@ -10,8 +10,10 @@ import 'package:icare/widgets/svg_wrapper.dart';
 class CustomBackButton extends StatelessWidget {
   const CustomBackButton({super.key, this.margin});
   final EdgeInsets? margin;
+
   @override
   Widget build(BuildContext context) {
+  print("Pressed");
     return GestureDetector(
       onTap: () {
          Navigator.of(context).pop();        
