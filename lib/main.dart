@@ -29,9 +29,9 @@ class MyApp extends StatelessWidget {
           child: FlutterSmartDialog.init()(context, child),
           breakpoints: const [
             Breakpoint(start: 0, end: 600, name: MOBILE),
-            Breakpoint(start: 601 , end: 850, name: TABLET),
-            Breakpoint(start: 851, end: 1200, name: DESKTOP),
-            Breakpoint(start: 1201, end: double.infinity, name: '4K'),
+            Breakpoint(start: 600, end: 900, name: TABLET), 
+            Breakpoint(start: 901, end: 1920, name: DESKTOP),
+            Breakpoint(start: 1921, end: double.infinity, name: '4K'),
           ],
         );
       },

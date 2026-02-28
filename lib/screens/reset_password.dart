@@ -24,78 +24,219 @@ class _ResetPasswordState extends State<ResetPassword> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
+      final isMobile = ResponsiveHelper.isMobile(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
+      body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(isTablet: isTablet),
+    );
+  }
+
+
+
+
+
+
+ Widget _buildDesktopLayout() {
+    return SingleChildScrollView(
+    
+      child: Column(
         children: [
-          Container(
-            width: Utils.windowWidth(context),
-            height: Utils.windowHeight(context),
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(ImagePaths.backgroundImage),
-                fit: BoxFit.cover,
+          Row(
+            children: [
+              SizedBox(
+                width: Utils.windowWidth(context) * 0.5,
+                height: Utils.windowHeight(context),
+                child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
               ),
-            ),
-          ),
-                Positioned
-          
-          (
-            top: 30,
-            left: -10,
-            child: CustomBackButton()),
-          Positioned(
-            top: 30,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: ScallingConfig.moderateScale(15),
-              vertical: ScallingConfig.moderateScale(100),
-            ),
+                      Container(
+          color: AppColors.bgColor,
+          width: Utils.windowWidth(context) * 0.5,
+          height: Utils.windowHeight(context),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(30)),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: ScallingConfig.moderateScale(30)),
-                CustomText(
+                    CustomText(
                   text: "Reset Password",
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.bold,
+                  maxLines: 2,
+                  textAlign:  TextAlign.center,                  // textAlign: TextAlign.center,
+                  width:  Utils.windowWidth(context) ,
                   fontSize: 22,
                   color: AppColors.primaryColor,
                 ),
+                // CustomText(
+                //   text: isLogin ? "Your Account" : "Your Account",
+                //   fontWeight: FontWeight.bold,
+                //   fontSize: 22,
+                //   color: AppColors.primaryColor,
+                // ),
+                
+                SizedBox(height: 20),
+                    Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomInputField(
+                        hintText: "Password",
+                        leadingIcon: Icon(
+                          Icons.key,
+                          color: AppColors.primary500,
+                        ),
+                        isPassword: true,
+                        bgColor: AppColors.white,
+                        borderRadius: 30,
+                        borderColor: AppColors.veryLightGrey,
+                        borderWidth: 2,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return "Please enter your username";
+                          }
+                          return null;
+                        },
+                      ),
+
+                      CustomInputField(
+                        hintText: "Confirm Password",
+                        leadingIcon: Icon(
+                          Icons.key,
+                          color: AppColors.primary500,
+                        ),
+                        isPassword: true,
+                        bgColor: AppColors.white,
+                        borderRadius: 30,
+                        borderColor: AppColors.veryLightGrey,
+                        borderWidth: 2,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return "Please enter your username";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 70),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          onPressed: () {
+                            // if (_formKey.currentState!.validate()) {
+                            //   _showSuccessModal(context);
+                            // }
+                              _showSuccessModal(context, isDesktop: true);
+                          },
+                          child: Text(
+                            "Confirm",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),         
+        )
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout({bool isTablet = false}) {
+    return Container(
+      width: Utils.windowWidth(context),
+      height: Utils.windowHeight(context),
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(ImagePaths.backgroundImage),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Container(
+            width: Utils.windowWidth(context),
+            height: isTablet ?  Utils.windowHeight(context) * 0.35 : double.infinity,
+            // color: AppColors.themeRed,
+            padding: EdgeInsets.symmetric(
+              horizontal: ScallingConfig.moderateScale(15),
+              vertical: ScallingConfig.moderateScale(isTablet ? 12: 80),
+            ),
+            child: Column(
+              mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: ScallingConfig.moderateScale(isTablet ? 5 : 30)),
+                CustomText(
+                  text: "Reset Password",
+                  fontWeight: FontWeight.bold,
+                  maxLines: 2,
+                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,                  // textAlign: TextAlign.center,
+                  width: isTablet ? Utils.windowWidth(context)  :Utils.windowWidth(context) * 0.6,
+                  fontSize: 22,
+                  color: AppColors.primaryColor,
+                ),
+                // CustomText(
+                //   text: isLogin ? "Your Account" : "Your Account",
+                //   fontWeight: FontWeight.bold,
+                //   fontSize: 22,
+                //   color: AppColors.primaryColor,
+                // ),
                 SizedBox(height: 3),
                 CustomText(
                   maxLines: 2,
-                  text:
-                      "Forgot Password To Enjoy The Best Doctor Consultation Experience",
+                  text: "Forgot Password To Enjoy The Best Doctor Consultation Experience",
                   fontSize: 13,
-                  width: Utils.windowHeight(context) * 0.4,
+                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,
+                  width: isTablet ? Utils.windowWidth(context) :  Utils.windowHeight(context) * 0.4,
                   color: AppColors.themeBlack,
                 ),
                 SizedBox(height: 20),
               ],
             ),
           ),
-
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: size.height * 0.7,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppColors.bgColor,
+              width: isTablet ? Utils.windowWidth(context) * 0.7 : double.infinity,
+              height: Utils.windowHeight(context) * 0.67,
+              decoration: BoxDecoration(
+                color: isTablet ?  AppColors.bgColor.withAlpha(70) : AppColors.bgColor,
+                // color: AppColors.grayColor.withAlpha(60),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 30),
               child: SingleChildScrollView(
-                child: Form(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.moderateScale(isTablet ? 50 :  15),
+                  vertical: ScallingConfig.moderateScale( 22),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+
+                    SizedBox(height: 25),
+
+                    /// FORM FIELDS
+                   Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,6 +306,8 @@ class _ResetPasswordState extends State<ResetPassword> {
                     ],
                   ),
                 ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -172,14 +315,17 @@ class _ResetPasswordState extends State<ResetPassword> {
       ),
     );
   }
-}
 
-void _showSuccessModal(BuildContext context) {
+
+void _showSuccessModal(BuildContext context, {bool isDesktop = false}) {
   showDialog(
     context: context,
     barrierDismissible: false,
     builder: (BuildContext ctx) {
       return Dialog(
+        constraints: BoxConstraints(
+          maxWidth: isDesktop ? Utils.windowWidth(context) * 0.4 : double.infinity,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -246,4 +392,6 @@ void _showSuccessModal(BuildContext context) {
       );
     },
   );
+}
+
 }
