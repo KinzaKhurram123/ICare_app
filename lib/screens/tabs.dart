@@ -257,7 +257,12 @@ class _WebSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = [
       _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-      _SidebarItem(icon: Icons.calendar_month_rounded, label: 'Appointments', index: 1),
+      _SidebarItem(
+          icon: role == 'pharmacist'
+              ? Icons.shopping_cart_rounded
+              : Icons.calendar_month_rounded,
+          label: role == 'pharmacist' ? 'My Cart' : 'Appointments',
+          index: 1),
       _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
       _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
     ];
