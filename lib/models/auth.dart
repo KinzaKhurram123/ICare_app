@@ -1,24 +1,29 @@
+import '../models/user.dart';
+
 class Auth {
   final String? token;
   final String? fcmToken;
   final bool userWalkthrough;
   final bool isLoggedIn;
   final String userRole;
+  final User? user;
+  
   Auth({
     this.token,
     this.fcmToken,
     this.userWalkthrough = false,
     this.isLoggedIn = false,
-    this.userRole=""
+    this.userRole = "",
+    this.user,
   });
 
-  // 🔹 This lets you update one or more fields easily
   Auth copyWith({
     String? token,
     String? fcmToken,
     bool? userWalkthrough,
     bool? isLoggedIn,
-    String? userRole
+    String? userRole,
+    User? user,
   }) {
     return Auth(
       token: token ?? this.token,
@@ -26,6 +31,7 @@ class Auth {
       userWalkthrough: userWalkthrough ?? this.userWalkthrough,
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
       userRole: userRole ?? this.userRole,
+      user: user ?? this.user,
     );
   }
 }

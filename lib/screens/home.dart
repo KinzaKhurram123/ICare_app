@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/models/doctor.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/active_orders.dart';
 import 'package:icare/screens/completed-reports.dart';
@@ -9,9 +10,10 @@ import 'package:icare/screens/filters.dart';
 import 'package:icare/screens/lab_filters.dart';
 import 'package:icare/screens/patient_filters.dart';
 import 'package:icare/screens/pharmacy_home.dart';
-import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/screens/upcoming_appointments.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/services/doctor_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -38,6 +40,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _selectedDate;
   final PageController _pageController = PageController();
   int _currentSlide = 0;
+  final DoctorService _doctorService = DoctorService();
+  List<Doctor> _topDoctors = [];
+  bool _loadingDoctors = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopDoctors();
+  }
+
+  Future<void> _loadTopDoctors() async {
+    setState(() => _loadingDoctors = true);
+    final result = await _doctorService.getAllDoctors();
+    if (result['success']) {
+      final doctors = (result['doctors'] as List)
+          .map((json) => Doctor.fromJson(json))
+          .toList();
+      setState(() {
+        _topDoctors = doctors.take(3).toList(); // Take first 3 for home page
+        _loadingDoctors = false;
+      });
+    } else {
+      setState(() => _loadingDoctors = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -47,7 +74,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedRole = ref.watch(authProvider).userRole;
+    final auth = ref.watch(authProvider);
+    final selectedRole = auth.userRole;
+    final userName = auth.user?.name ?? 'User';
     final bool isDesktop = Utils.windowWidth(context) > 600;
     Widget content;
 
@@ -79,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           const SizedBox(height: 4),
                           CustomText(
-                            text: "Aron Smith",
+                            text: userName,
                             fontSize: 32,
                             color: const Color(0xFF0F172A),
                             fontWeight: FontWeight.w900,
@@ -430,7 +459,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             CustomText(
-                              text: "Muhammad",
+                              text: userName,
                               fontSize: 30,
                               color: const Color(0xFF0F172A),
                               fontWeight: FontWeight.w900,
@@ -963,7 +992,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             CustomText(
-                              text: "Emily Jordan",
+                              text: ref.watch(authProvider).user?.name ?? "User",
                               fontSize: 32,
                               color: const Color(0xFF0F172A),
                               fontWeight: FontWeight.w900,
@@ -1115,24 +1144,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // Doctors Responsive Grid
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Wrap(
-                      spacing: 24,
-                      runSpacing: 24,
-                      children: [
-                        DoctorProfileCard(
-                          width: 380,
-                          padding: const EdgeInsets.all(20),
-                        ),
-                        DoctorProfileCard(
-                          width: 380,
-                          padding: const EdgeInsets.all(20),
-                        ),
-                        DoctorProfileCard(
-                          width: 380,
-                          padding: const EdgeInsets.all(20),
-                        ),
-                      ],
-                    ),
+                    child: _loadingDoctors
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        : _topDoctors.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(40),
+                                  child: CustomText(
+                                    text: 'No doctors available',
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                            : Wrap(
+                                spacing: 24,
+                                runSpacing: 24,
+                                children: _topDoctors.map((doctor) {
+                                  return DoctorProfileCard(
+                                    doctor: doctor,
+                                    width: 380,
+                                    padding: const EdgeInsets.all(20),
+                                  );
+                                }).toList(),
+                              ),
                   ),
                   const SizedBox(height: 60),
                 ],
@@ -1234,20 +1274,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SizedBox(height: ScallingConfig.scale(20)),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(15)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DoctorProfileCard(
-                      width: Utils.windowWidth(context) * 0.4,
-                      padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(10)),
-                    ),
-                    const SizedBox(width: 15),
-                    DoctorProfileCard(
-                      width: Utils.windowWidth(context) * 0.4,
-                      padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(10)),
-                    ),
-                  ],
-                ),
+                child: _loadingDoctors
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : _topDoctors.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: CustomText(
+                                text: 'No doctors available',
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_topDoctors.isNotEmpty)
+                                DoctorProfileCard(
+                                  doctor: _topDoctors[0],
+                                  width: Utils.windowWidth(context) * 0.4,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: ScallingConfig.verticalScale(10),
+                                  ),
+                                ),
+                              if (_topDoctors.length > 1) ...[
+                                const SizedBox(width: 15),
+                                DoctorProfileCard(
+                                  doctor: _topDoctors[1],
+                                  width: Utils.windowWidth(context) * 0.4,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: ScallingConfig.verticalScale(10),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
               ),
               SizedBox(height: ScallingConfig.scale(80),)
             ],
@@ -1786,79 +1853,72 @@ class TimeStampWidget extends StatelessWidget {
   }
 }
 
-class ProfileInfoWidget extends StatelessWidget {
+class ProfileInfoWidget extends ConsumerWidget {
   const ProfileInfoWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (ctx) => const ProfileOrAppointmentViewScreen()),
-        );
-      },
-      child: Container(
-        width: Utils.windowWidth(context),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: const BoxDecoration(color: AppColors.white),
-        child: Row(
-          children: [
-            Container(
-              width: Utils.windowWidth(context) * 0.25,
-              height: Utils.windowWidth(context) * 0.25,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Image.asset(ImagePaths.user1, fit: BoxFit.cover),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: Utils.windowWidth(context),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(color: AppColors.white),
+      child: Row(
+        children: [
+          Container(
+            width: Utils.windowWidth(context) * 0.25,
+            height: Utils.windowWidth(context) * 0.25,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CustomText(text: "Emily Jordan", isSemiBold: true),
-                      const SizedBox(width: 50),
-                      CustomText(
-                        text: "View Profile",
-                        underline: true,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (ctx) => const ProfileOrAppointmentViewScreen(),
-                            ),
-                          );
-                        },
-                        isSemiBold: true,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const SvgWrapper(assetPath: ImagePaths.location),
-                      SizedBox(width: Utils.windowWidth(context) * 0.025),
-                      const CustomText(
-                        text: "20 Cooper Square, USA",
-                        fontSize: 12,
-                        color: AppColors.darkGreyColor,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const SvgWrapper(assetPath: ImagePaths.scan),
-                      SizedBox(width: Utils.windowWidth(context) * 0.025),
-                      const CustomText(text: "Booking ID: #DR452SA54", fontSize: 12),
-                    ],
-                  ),
-                ],
-              ),
+            child: Image.asset(ImagePaths.user1, fit: BoxFit.cover),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomText(text: ref.watch(authProvider).user?.name ?? "User", isSemiBold: true),
+                    const SizedBox(width: 50),
+                    CustomText(
+                      text: "View Profile",
+                      underline: true,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const ProfileEditScreen(),
+                          ),
+                        );
+                      },
+                      isSemiBold: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const SvgWrapper(assetPath: ImagePaths.location),
+                    SizedBox(width: Utils.windowWidth(context) * 0.025),
+                    const CustomText(
+                      text: "20 Cooper Square, USA",
+                      fontSize: 12,
+                      color: AppColors.darkGreyColor,
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const SvgWrapper(assetPath: ImagePaths.scan),
+                    SizedBox(width: Utils.windowWidth(context) * 0.025),
+                    const CustomText(text: "Booking ID: #DR452SA54", fontSize: 12),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1911,44 +1971,57 @@ class DoctorConsultationCard extends StatelessWidget {
             SizedBox(height: Utils.windowHeight(context) * 0.017),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: ScallingConfig.scale(30),
-                    foregroundImage: AssetImage(ImagePaths.user5),
-                  ),
-                  SizedBox(width: ScallingConfig.scale(20)),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final userName = ref.watch(authProvider).user?.name ?? 'User';
+                  return Row(
                     children: [
-                      CustomText(
-                        text: "Adam",
-                        fontSize: 16.78,
-                        fontWeight: FontWeight.w400,
-                        isBold: true,
+                      CircleAvatar(
+                        radius: ScallingConfig.scale(30),
+                        backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                        child: Text(
+                          userName.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
                       ),
-                      CustomText(
-                        text: "9:00 Am",
-                        fontSize: 16.78,
-                        fontWeight: FontWeight.w400,
-                        isBold: true,
+                      SizedBox(width: ScallingConfig.scale(20)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomText(
+                            text: userName,
+                            fontSize: 16.78,
+                            fontWeight: FontWeight.w400,
+                            isBold: true,
+                          ),
+                          CustomText(
+                            text: "9:00 Am",
+                            fontSize: 16.78,
+                            fontWeight: FontWeight.w400,
+                            isBold: true,
+                          ),
+                        ],
+                      ),
+                      Spacer(),
+                      CustomButton(
+                        width: Utils.windowWidth(context) * 0.2,
+                        height: ScallingConfig.verticalScale(25),
+                        borderRadius: 20,
+                        label: "Join",
+                        labelSize: 14,
+                        onPressed: () {
+                          Navigator.of(
+                            context,
+                          ).push(MaterialPageRoute(builder: (ctx) => VideoCall()));
+                        },
                       ),
                     ],
-                  ),
-                  Spacer(),
-                  CustomButton(
-                    width: Utils.windowWidth(context) * 0.2,
-                    height: ScallingConfig.verticalScale(25),
-                    borderRadius: 20,
-                    label: "Join",
-                    labelSize: 14,
-                    onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (ctx) => VideoCall()));
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -2036,85 +2109,98 @@ class DoctorConsultationCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      // Premium Avatar with ring
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.secondaryColor.withOpacity(0.2), width: 3),
-                        ),
-                        child: CircleAvatar(
-                          radius: 45,
-                          backgroundColor: Color(0xFFF1F5F9),
-                          foregroundImage: AssetImage(ImagePaths.user5),
-                        ),
-                      ),
-                      const SizedBox(width: 28),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomText(
-                              text: "Dr. Adam Smith",
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF0F172A),
-                              letterSpacing: -0.5,
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final auth = ref.watch(authProvider);
+                      final userName = auth.user?.name ?? 'User';
+                      return Row(
+                        children: [
+                          // Premium Avatar with ring
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.secondaryColor.withOpacity(0.2), width: 3),
                             ),
-                            const SizedBox(height: 4),
-                            CustomText(
-                              text: "Specialist Health Advisor",
-                              fontSize: 15,
-                              color: AppColors.darkGray400,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(Icons.videocam_rounded, size: 20, color: AppColors.primaryColor.withOpacity(0.6)),
-                                const SizedBox(width: 10),
-                                CustomText(
-                                  text: "Starts in 20 min",
-                                  fontSize: 15,
+                            child: CircleAvatar(
+                              radius: 45,
+                              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                              child: Text(
+                                userName.substring(0, 1).toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
                                   color: AppColors.primaryColor,
-                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 28),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CustomText(
+                                  text: userName,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF0F172A),
+                                  letterSpacing: -0.5,
+                                ),
+                                const SizedBox(height: 4),
+                                CustomText(
+                                  text: auth.user?.role ?? 'User',
+                                  fontSize: 15,
+                                  color: AppColors.darkGray400,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Icon(Icons.videocam_rounded, size: 20, color: AppColors.primaryColor.withOpacity(0.6)),
+                                    const SizedBox(width: 10),
+                                    CustomText(
+                                      text: "Starts in 20 min",
+                                      fontSize: 15,
+                                      color: AppColors.primaryColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      // Flagship Button
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: CustomButton(
-                          width: isDesktop ? 220 : 130,
-                          height: 64,
-                          borderRadius: 20,
-                          label: isDesktop ? "Join Session Now" : "Join",
-                          labelSize: 18,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
                           ),
-                          boxShadow: BoxShadow(
-                            color: AppColors.primaryColor.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                          const SizedBox(width: 24),
+                          // Flagship Button
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: CustomButton(
+                              width: isDesktop ? 220 : 130,
+                              height: 64,
+                              borderRadius: 20,
+                              label: isDesktop ? "Join Session Now" : "Join",
+                              labelSize: 18,
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
+                              ),
+                              boxShadow: BoxShadow(
+                                color: AppColors.primaryColor.withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                              trailingIcon: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (ctx) => const VideoCall()),
+                                );
+                              },
+                            ),
                           ),
-                          trailingIcon: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (ctx) => const VideoCall()),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

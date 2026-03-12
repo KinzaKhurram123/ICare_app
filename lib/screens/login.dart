@@ -6,6 +6,9 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/forget_password.dart';
 import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/tabs.dart';
+import 'package:icare/services/auth_service.dart';
+import 'package:icare/services/user_service.dart';
+import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -25,13 +28,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
   bool rememberMe = false;
   bool isLogin = true;
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final isDesktop = ResponsiveHelper.isDesktop(context);
     print("====> $isTablet  ${Utils.windowWidth(context)} ");
@@ -250,6 +256,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     return null;
                                   },
                                 ),
+                                const SizedBox(height: 16),
+                                CustomInputField(
+                                  hintText: "Phone Number",
+                                  leadingIcon: const Icon(
+                                    Icons.phone_outlined,
+                                    color: Color(0xFF94A3B8),
+                                    size: 22,
+                                  ),
+                                  controller: phoneController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty) {
+                                      return "Please enter your phone number";
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ],
                               const SizedBox(height: 16),
 
@@ -381,22 +407,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     elevation: 0,
                                     shadowColor: Colors.transparent,
                                   ),
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (ctx) => const TabsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    isLogin ? "Sign In" : "Create Account",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Gilroy-Bold",
-                                    ),
-                                  ),
+                                  onPressed: isLoading ? null : _handleSubmit,
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(
+                                          isLogin ? "Sign In" : "Create Account",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: "Gilroy-Bold",
+                                          ),
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -465,32 +494,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFeatureRow(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
-        ),
-        const SizedBox(width: 16),
-        Text(
-          text,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            fontFamily: "Gilroy-Medium",
-          ),
-        ),
-      ],
     );
   }
 
@@ -685,6 +688,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 return null;
                               },
                             ),
+                          if (!isLogin) SizedBox(height: 5),
+                          if (!isLogin)
+                            CustomInputField(
+                              hintText: "Email Address",
+                              leadingIcon: Icon(
+                                Icons.email_outlined,
+                                color: AppColors.primary500,
+                              ),
+                              controller: emailController,
+                              bgColor: AppColors.white,
+                              borderRadius: 30,
+                              borderColor: AppColors.veryLightGrey,
+                              borderWidth: 2,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return "Please enter your email";
+                                }
+                                return null;
+                              },
+                            ),
+                          if (!isLogin) SizedBox(height: 5),
+                          if (!isLogin)
+                            CustomInputField(
+                              hintText: "Phone Number",
+                              leadingIcon: Icon(
+                                Icons.phone_outlined,
+                                color: AppColors.primary500,
+                              ),
+                              controller: phoneController,
+                              bgColor: AppColors.white,
+                              borderRadius: 30,
+                              borderColor: AppColors.veryLightGrey,
+                              borderWidth: 2,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return "Please enter your phone number";
+                                }
+                                return null;
+                              },
+                            ),
                           SizedBox(height: 5),
                           if (isLogin)
                             CustomInputField(
@@ -828,20 +871,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (ctx) => const TabsScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                isLogin ? "Sign In" : "Sign Up",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              onPressed: isLoading ? null : _handleSubmit,
+                              child: isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      isLogin ? "Sign In" : "Sign Up",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                             ),
                           ),
 
@@ -892,6 +938,118 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           SizedBox(width: 10),
           Text(label, style: TextStyle(color: Colors.grey[700])),
         ],
+      ),
+    );
+  }
+
+  void _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      if (isLogin) {
+        // Login
+        final result = await _authService.login(
+          email: usernameController.text.trim(),
+          password: passwordController.text.trim(),
+        );
+
+        if (result['success']) {
+          // Fetch user profile after login
+          final profileResult = await _userService.getUserProfile();
+          
+          if (profileResult['success'] && mounted) {
+            // Store user data in provider
+            final userData = profileResult['user'];
+            final user = app_user.User.fromJson(userData);
+            ref.read(authProvider.notifier).setUser(user);
+            ref.read(authProvider.notifier).setUserToken(result['data']['token']);
+            
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const TabsScreen()),
+            );
+          } else {
+            _showError('Failed to load user profile');
+          }
+        } else {
+          _showError(result['message']);
+        }
+      } else {
+        // Sign Up - Get role from provider
+        final selectedRole = ref.read(authProvider).userRole;
+        
+        if (selectedRole.isEmpty) {
+          _showError('Please select your role first');
+          setState(() => isLoading = false);
+          return;
+        }
+
+        // Map frontend roles to backend roles
+        String backendRole = _mapRoleToBackend(selectedRole);
+
+        final result = await _authService.register(
+          name: usernameController.text.trim(),
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+          role: backendRole,
+          phoneNumber: phoneController.text.trim(),
+        );
+
+        if (result['success']) {
+          // Fetch user profile after registration
+          final profileResult = await _userService.getUserProfile();
+          
+          if (profileResult['success'] && mounted) {
+            final userData = profileResult['user'];
+            final user = app_user.User.fromJson(userData);
+            ref.read(authProvider.notifier).setUser(user);
+            ref.read(authProvider.notifier).setUserToken(result['data']['token']);
+            
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const TabsScreen()),
+            );
+          } else {
+            _showError('Failed to load user profile');
+          }
+        } else {
+          _showError(result['message']);
+        }
+      }
+    } catch (e) {
+      _showError('An error occurred. Please try again.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  String _mapRoleToBackend(String frontendRole) {
+    // Map frontend roles to backend enum values
+    switch (frontendRole.toLowerCase()) {
+      case 'patient':
+        return 'Patient';
+      case 'doctor':
+        return 'Doctor';
+      case 'pharmacist':
+        return 'Pharmacy';
+      case 'lab_technician':
+        return 'Laboratory';
+      case 'instructor':
+        return 'Instructor';
+      case 'student':
+        return 'Student';
+      default:
+        return 'Patient';
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

@@ -49,7 +49,7 @@ class _CreateProfileState extends State<CreateProfile> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.bgColor,
-        leading: CustomBackButton(),
+        leading: CustomBackButton(color: AppColors.primaryColor),
         automaticallyImplyLeading: false,
         title: CustomText(
           text: widget.isEdit ? "Edit Profile" : "Create Profile",

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/verify_code.dart';
+import 'package:icare/services/auth_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
@@ -19,6 +19,52 @@ class ForgetPassword extends StatefulWidget {
 class _ForgetPasswordState extends State<ForgetPassword> {
   final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  bool isLoading = false;
+
+  void _handleSendOTP() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final result = await _authService.forgotPassword(
+        email: emailController.text.trim(),
+      );
+
+      if (result['success']) {
+        if (mounted) {
+          // Show OTP in console for testing
+          print('OTP for testing: ${result['otp']}');
+          
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => VerifyCode(
+                email: emailController.text.trim(),
+              ),
+            ),
+          );
+        }
+      } else {
+        _showError(result['message']);
+      }
+    } catch (e) {
+      _showError('An error occurred. Please try again.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,14 +214,19 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                                   ),
                                   onPressed: () {
                                     if (_formKey.currentState!.validate()) {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (ctx) => const VerifyCode(),
-                                        ),
-                                      );
+                                      _handleSendOTP();
                                     }
                                   },
-                                  child: const Text(
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text(
                                     "Send Verification Code",
                                     style: TextStyle(
                                       color: Colors.white,
@@ -380,10 +431,19 @@ Widget _buildMobileLayout({bool isTablet = false}) {
                             ),
                           ),
                           onPressed: () {
-               Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VerifyCode()));
+               _handleSendOTP();
 
                           },
-                          child: Text(
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
                             "Send",
                             style: TextStyle(color: Colors.white, fontSize: 16),
                           ),

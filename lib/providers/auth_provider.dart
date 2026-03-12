@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:icare/models/auth.dart';
+import 'package:icare/models/user.dart';
 
 class AuthNotifier extends StateNotifier<Auth> {
    AuthNotifier () : super(Auth(
@@ -9,7 +10,8 @@ class AuthNotifier extends StateNotifier<Auth> {
     fcmToken: null,
     userWalkthrough: false,
     isLoggedIn: false,
-    userRole: ''
+    userRole: '',
+    user: null,
    ));
 
 
@@ -30,6 +32,11 @@ class AuthNotifier extends StateNotifier<Auth> {
     state = state.copyWith(fcmToken: _token);
    }
 
+   void setUser(User user) {
+     // Convert role to lowercase to match frontend expectations
+     final normalizedRole = user.role.toLowerCase();
+     state = state.copyWith(user: user, userRole: normalizedRole);
+   }
 
    void setUserLogout(){
     state= Auth();

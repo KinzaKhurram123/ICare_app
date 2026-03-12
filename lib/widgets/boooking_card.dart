@@ -4,7 +4,6 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:icare/models/app_enums.dart';
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -63,7 +62,8 @@ class BookingCard extends ConsumerWidget {
                   labelSize: 15,
                   label: "View",
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen()));
+                    // TODO: Navigate to appointment detail with actual appointment data
+                    // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
                   },
                 ),
               ),
@@ -89,7 +89,8 @@ class BookingCard extends ConsumerWidget {
             borderRadius: 30,
             labelSize: 15,
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen()));
+              // TODO: Navigate to appointment detail with actual appointment data
+              // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
             },
             ) 
           : CustomButton(
@@ -459,12 +460,16 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         const SizedBox(width: 12),
                         _buildWebButton(
                           "View Full Profile",
-                          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen())),
+                          onPressed: () {
+                            // TODO: Navigate to appointment detail with actual appointment data
+                          },
                         ),
                       ] else if (widget.status == BookingStatus.cancelled) ...[
                         _buildWebButton(
                           "View History",
-                          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen())),
+                          onPressed: () {
+                            // TODO: Navigate to appointment detail with actual appointment data
+                          },
                         ),
                       ] else ...[
                         _buildWebButton("Send Message", onPressed: () {}, icon: Icons.chat_bubble_rounded),

@@ -1,11 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_size_matters/flutter_size_matters.dart';
-import 'package:icare/utils/imagePaths.dart';
-import 'package:icare/utils/theme.dart';
-import 'package:icare/utils/utils.dart';
-import 'package:icare/widgets/svg_wrapper.dart';
 
 class CustomBackButton extends StatelessWidget {
   const CustomBackButton({super.key, this.margin, this.color});
@@ -14,28 +7,19 @@ class CustomBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  print("Pressed");
     return GestureDetector(
       onTap: () {
          Navigator.of(context).pop();        
       },
       child: Container(
-       margin: margin ?? EdgeInsets.only(left:21), 
-        // width: ScallingConfig.scale(30), 
-        // height: ScallingConfig.scale(10), 
-        // padding: EdgeInsets.all(12),
-        // decoration: BoxDecoration(
-        //   border: Border.all(
-        //     // color: Colors.black
-        //   ),
-          // color: AppColors.themeRed,
-          // borderRadius: BorderRadius.circular((Utils.windowWidth(context) * 0.2 / 2)),
-        // ),
+        margin: margin ?? EdgeInsets.only(left: 21), 
         child: Center(
-          child: SvgWrapper(
-            color: color,
-            assetPath: ImagePaths.back 
-        )),
+          child: Icon(
+            Icons.arrow_back_ios_new,
+            color: color ?? Colors.black,
+            size: 20,
+          ),
+        ),
       ),
     );
   }

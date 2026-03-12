@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/login.dart';
+import 'package:icare/services/auth_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
-// import 'package:firebase_auth/firebase_auth.dart'; // Uncomment if using Firebase
-// import 'your_app/constants/app_colors.dart'; // Optional if you have color constants
 
 class ResetPassword extends StatefulWidget {
-  const ResetPassword({super.key});
+  final String email;
+  const ResetPassword({super.key, required this.email});
 
   @override
   _ResetPasswordState createState() => _ResetPasswordState();
@@ -21,6 +21,45 @@ class _ResetPasswordState extends State<ResetPassword> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  bool isLoading = false;
+
+  void _handleResetPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final result = await _authService.resetPassword(
+        email: widget.email,
+        password: passwordController.text.trim(),
+        confirmPassword: confirmPasswordController.text.trim(),
+      );
+
+      if (result['success']) {
+        if (mounted) {
+          _showSuccessModal(context, isDesktop: ResponsiveHelper.isDesktop(context));
+        }
+      } else {
+        _showError(result['message']);
+      }
+    } catch (e) {
+      _showError('An error occurred. Please try again.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,12 +234,17 @@ class _ResetPasswordState extends State<ResetPassword> {
                                     ),
                                     elevation: 0,
                                   ),
-                                  onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      _showSuccessModal(context, isDesktop: true);
-                                    }
-                                  },
-                                  child: const Text(
+                                  onPressed: isLoading ? null : _handleResetPassword,
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text(
                                     "Save Password",
                                     style: TextStyle(
                                       color: Colors.white,
@@ -421,13 +465,17 @@ class _ResetPasswordState extends State<ResetPassword> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () {
-                            // if (_formKey.currentState!.validate()) {
-                            //   _showSuccessModal(context);
-                            // }
-                              _showSuccessModal(context);
-                          },
-                          child: Text(
+                          onPressed: isLoading ? null : _handleResetPassword,
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
                             "Confirm",
                             style: TextStyle(color: Colors.white, fontSize: 16),
                           ),

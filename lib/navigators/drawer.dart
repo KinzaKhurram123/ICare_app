@@ -2,26 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/booking_categories.dart';
 import 'package:icare/screens/bookings.dart';
+import 'package:icare/screens/bookings_history.dart';
 import 'package:icare/screens/courses.dart';
-import 'package:icare/screens/doctor_profile.dart';
+import 'package:icare/screens/doctor_appointments.dart';
+import 'package:icare/screens/doctor_schedule_calendar.dart';
+import 'package:icare/screens/doctor_analytics.dart';
+import 'package:icare/screens/doctor_notifications.dart';
+import 'package:icare/screens/doctor_reviews.dart';
+import 'package:icare/screens/doctor_availability.dart';
+import 'package:icare/screens/doctor_profile_setup.dart';
 import 'package:icare/screens/help_and_support.dart';
+import 'package:icare/screens/patient_records_list.dart';
 import 'package:icare/screens/lab_list.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/screens/my_appointment.dart';
+import 'package:icare/screens/my_appointments_list.dart';
 import 'package:icare/screens/my_orders.dart';
-import 'package:icare/screens/patient_profile.dart';
 import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/pharmacy_management.dart';
+import 'package:icare/screens/pharmacist_dashboard.dart';
+import 'package:icare/screens/pharmacy_inventory.dart';
+import 'package:icare/screens/pharmacy_orders.dart';
+import 'package:icare/screens/pharmacy_analytics.dart';
 import 'package:icare/screens/prescriptions.dart';
-import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/reminder_list.dart';
 import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/tasks.dart';
-import 'package:icare/screens/upload_prescription.dart';
 import 'package:icare/screens/view_profile.dart';
 import 'package:icare/screens/wallet.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -67,7 +76,7 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabsListScreen()));
         }),
         _drawerItem('My Appointment', Icons.calendar_month_rounded, () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const ProfileOrAppointmentViewScreen()));
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const MyAppointmentsListScreen()));
         }),
         _drawerItem('Payment Invoices', Icons.receipt_long_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
@@ -78,6 +87,12 @@ class CustomDrawer extends ConsumerWidget {
       ];
     } else if (selectedRole == "patient") {
       drawerItems = [
+        _drawerItem('Dashboard', Icons.dashboard_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const TabsScreen()));
+        }),
+        _drawerItem('Bookings History', Icons.history_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const BookingsHistoryScreen()));
+        }),
         _drawerItem('Tasks', Icons.task_alt_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
         }),
@@ -97,8 +112,53 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const Courses()));
         }),
       ];
-    } else if (selectedRole == "pharmacist") {
+    } else if (selectedRole == "doctor") {
       drawerItems = [
+        _drawerItem('My Appointments', Icons.calendar_month_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorAppointmentsScreen()));
+        }),
+        _drawerItem('My Schedule', Icons.schedule_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorScheduleCalendar()));
+        }),
+        _drawerItem('Patient Records', Icons.folder_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PatientRecordsListScreen()));
+        }),
+        _drawerItem('Analytics', Icons.analytics_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorAnalytics()));
+        }),
+        _drawerItem('Reviews', Icons.star_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorReviews()));
+        }),
+        _drawerItem('Availability', Icons.event_available_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorAvailability()));
+        }),
+        _drawerItem('Notifications', Icons.notifications_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorNotifications()));
+        }),
+        _drawerItem('My Profile', Icons.person_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()));
+        }),
+        _drawerItem('Help & Support', Icons.help_outline_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
+        }),
+        _drawerItem('Settings', Icons.settings_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
+      ];
+    } else if (selectedRole == "pharmacy") {
+      drawerItems = [
+        _drawerItem('Dashboard', Icons.dashboard_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacistDashboard()));
+        }),
+        _drawerItem('Inventory', Icons.inventory_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyInventory()));
+        }),
+        _drawerItem('Orders', Icons.shopping_cart_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyOrders()));
+        }),
+        _drawerItem('Analytics', Icons.analytics_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyAnalytics()));
+        }),
         _drawerItem('Tasks', Icons.task_alt_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
         }),
@@ -129,6 +189,9 @@ class CustomDrawer extends ConsumerWidget {
         _drawerItem('Pharmacy Management', Icons.admin_panel_settings_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyManagementScreen()));
         }),
+        _drawerItem('Settings', Icons.settings_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
       ];
     } else if (selectedRole == "instructor") {
       drawerItems = [
@@ -141,6 +204,9 @@ class CustomDrawer extends ConsumerWidget {
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
         }),
+        _drawerItem('Settings', Icons.settings_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
       ];
     } else if (selectedRole == "student") {
       drawerItems = [
@@ -152,6 +218,9 @@ class CustomDrawer extends ConsumerWidget {
         }),
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
+        }),
+        _drawerItem('Settings', Icons.settings_rounded, () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
         }),
       ];
     }
@@ -236,25 +305,27 @@ class CustomDrawer extends ConsumerWidget {
               ),
 
               const SizedBox(height: 10),
-              Text(
-                selectedRole == "patient"
-                    ? 'Emily Jordan'
-                    : selectedRole == "lab_technician"
-                    ? "Muhammad"
-                    : "Aron Smith",
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: Colors.black,
-                ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final userName = ref.watch(authProvider).user?.name ?? 'User';
+                  return Text(
+                    userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Colors.black,
+                    ),
+                  );
+                },
               ),
-              Text(
-                selectedRole == "patient"
-                    ? 'emily@gmail.com'
-                    : selectedRole == "lab_technician"
-                    ? "muhamma21@gmail.com"
-                    : 'aaron@gmail.com',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              Consumer(
+                builder: (context, ref, child) {
+                  final userEmail = ref.watch(authProvider).user?.email ?? '';
+                  return Text(
+                    userEmail,
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  );
+                },
               ),
               const SizedBox(height: 25),
 
@@ -306,12 +377,6 @@ class CustomDrawer extends ConsumerWidget {
 
                     // _drawerItem('Reports/Lab Results', () {}),
                     ...drawerItems,
-
-                    _drawerItem('Settings', Icons.settings_rounded, () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
-                      );
-                    }),
                   ],
                 ),
               ),

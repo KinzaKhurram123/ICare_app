@@ -1,209 +1,46 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import '../utils/api_constants.dart';
-import '../utils/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class ApiService {
-  late Dio _dio;
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
 
-  ApiService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: ApiConstants.getHeaders(),
-      ),
-    );
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: ApiConfig.baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
 
-    // Add interceptor for token
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await StorageService.getToken();
-          // Merge headers using getHeaders
-          final headers = ApiConstants.getHeaders(token: token);
-          options.headers.addAll(headers);
-          return handler.next(options);
-        },
-        onError: (error, handler) {
-          return handler.next(error);
-        },
-      ),
-    );
-  }
-
-  // GET request
-  Future<Response<T>> get<T>(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    try {
-      final response = await _dio.get<T>(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
+  Future<void> _setAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null) {
+      _dio.options.headers['Authorization'] = 'Bearer $token';
     }
   }
 
-  // POST request
-  Future<Response<T>> post<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    try {
-      final response = await _dio.post<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
+  Future<Response> post(String endpoint, Map<String, dynamic> data) async {
+    await _setAuthToken();
+    return await _dio.post(endpoint, data: data);
   }
 
-  // PUT request
-  Future<Response<T>> put<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    try {
-      final response = await _dio.put<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
+  Future<Response> get(String endpoint) async {
+    await _setAuthToken();
+    return await _dio.get(endpoint);
   }
 
-  // PATCH request
-  Future<Response<T>> patch<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    try {
-      final response = await _dio.patch<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
+  Future<Response> put(String endpoint, Map<String, dynamic> data) async {
+    await _setAuthToken();
+    return await _dio.put(endpoint, data: data);
   }
 
-  // DELETE request
-  Future<Response<T>> delete<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    try {
-      final response = await _dio.delete<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // POST request with file upload (multipart)
-  Future<Response<T>> postFile<T>(
-    String path, {
-    required Map<String, dynamic> fields,
-    File? file,
-    String fileFieldName = 'file',
-    Options? options,
-  }) async {
-    try {
-      final formData = FormData.fromMap(fields);
-
-      if (file != null) {
-        formData.files.add(
-          MapEntry(
-            fileFieldName,
-            await MultipartFile.fromFile(
-              file.path,
-              filename: file.path.split('/').last,
-            ),
-          ),
-        );
-      }
-
-      final response = await _dio.post<T>(
-        path,
-        data: formData,
-        options: options ??
-            Options(
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              },
-            ),
-      );
-      return response;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Error handler
-  String _handleError(DioException error) {
-    String errorMessage = 'An error occurred';
-
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        errorMessage = 'Connection timeout. Please try again.';
-        break;
-      case DioExceptionType.badResponse:
-        if (error.response != null) {
-          final data = error.response?.data;
-          if (data is Map && data.containsKey('message')) {
-            errorMessage = data['message'];
-          } else {
-            errorMessage = 'Server error: ${error.response?.statusCode}';
-          }
-        }
-        break;
-      case DioExceptionType.cancel:
-        errorMessage = 'Request cancelled';
-        break;
-      case DioExceptionType.unknown:
-        if (error.message?.contains('SocketException') ?? false) {
-          errorMessage = 'No internet connection';
-        } else {
-          errorMessage = error.message ?? 'Unknown error occurred';
-        }
-        break;
-      default:
-        errorMessage = error.message ?? 'An error occurred';
-    }
-
-    return errorMessage;
+  Future<Response> delete(String endpoint) async {
+    await _setAuthToken();
+    return await _dio.delete(endpoint);
   }
 }

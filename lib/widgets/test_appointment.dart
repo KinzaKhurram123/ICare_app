@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/app_enums.dart';
 import 'package:icare/screens/home.dart';
-import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -27,7 +26,8 @@ final bool showActions;
                 labelSize: 15,
                 label: "View",
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen()));
+                  // TODO: Navigate to appointment detail with actual appointment data
+                  // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
                 },
               ),
               SizedBox(width: ScallingConfig.scale(10)),
@@ -51,7 +51,8 @@ final bool showActions;
             borderRadius: 30,
             labelSize: 15,
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen()));
+              // TODO: Navigate to appointment detail with actual appointment data
+              // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
             },
             ) 
           : CustomButton(

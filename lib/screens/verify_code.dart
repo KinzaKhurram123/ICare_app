@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/reset_password.dart';
+import 'package:icare/services/auth_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 class VerifyCode extends StatefulWidget {
-  const VerifyCode({super.key});
+  final String email;
+  const VerifyCode({super.key, required this.email});
 
   @override
   State<VerifyCode> createState() => _VerifyCodeState();
@@ -19,6 +20,81 @@ class VerifyCode extends StatefulWidget {
 class _VerifyCodeState extends State<VerifyCode> {
   final TextEditingController codeController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  bool isLoading = false;
+
+  void _handleVerifyOTP() async {
+    if (codeController.text.length != 6) {
+      _showError('Please enter the 6-digit code');
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final result = await _authService.verifyOTP(
+        email: widget.email,
+        code: codeController.text.trim(),
+      );
+
+      if (result['success']) {
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => ResetPassword(email: widget.email),
+            ),
+          );
+        }
+      } else {
+        _showError(result['message']);
+      }
+    } catch (e) {
+      _showError('An error occurred. Please try again.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _handleResendOTP() async {
+    setState(() => isLoading = true);
+
+    try {
+      final result = await _authService.forgotPassword(email: widget.email);
+
+      if (result['success']) {
+        print('New OTP for testing: ${result['otp']}');
+        _showSuccess('OTP resent successfully');
+      } else {
+        _showError(result['message']);
+      }
+    } catch (e) {
+      _showError('Failed to resend OTP');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 @override
 void dispose() {
   codeController.dispose();
@@ -139,7 +215,7 @@ void dispose() {
                             children: [
                               PinCodeTextField(
                                 appContext: context,
-                                length: 5,
+                                length: 6,
                                 controller: codeController,
                                 animationType: AnimationType.fade,
                                 keyboardType: TextInputType.number,
@@ -178,9 +254,7 @@ void dispose() {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () {
-                                      // Resend logic
-                                    },
+                                    onPressed: isLoading ? null : _handleResendOTP,
                                     child: const Text(
                                       "Resend",
                                       style: TextStyle(
@@ -206,16 +280,17 @@ void dispose() {
                                     ),
                                     elevation: 0,
                                   ),
-                                  onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (ctx) => const ResetPassword(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: const Text(
+                                  onPressed: isLoading ? null : _handleVerifyOTP,
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text(
                                     "Confirm & Verify",
                                     style: TextStyle(
                                       color: Colors.white,
@@ -373,7 +448,7 @@ void dispose() {
                     children: [
                       PinCodeTextField(
                         appContext: context,
-                        length: 5,
+                        length: 6,
                         controller: codeController,
                         animationType: AnimationType.fade,
 
@@ -394,14 +469,12 @@ void dispose() {
                         ),
                         cursorColor: Colors.blue,
                         enableActiveFill: false,
-                        onChanged: (value) {
-                          print("OTP: $value");
-                        },
+                        onChanged: (value) {},
                       ),
                       Container(
                         alignment: Alignment.topRight,
                         child: TextButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: isLoading ? null : _handleResendOTP,
                           child:  Text(
                             "Resend Code",
                             style: TextStyle(
@@ -424,11 +497,17 @@ void dispose() {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ResetPassword()));
-
-                          },
-                          child: Text(
+                          onPressed: isLoading ? null : _handleVerifyOTP,
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
                             "Confirm",
                             style: TextStyle(color: Colors.white, fontSize: 16),
                           ),

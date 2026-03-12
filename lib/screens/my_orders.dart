@@ -1,59 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/services/order_service.dart';
 import 'package:icare/screens/order_tracking.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:intl/intl.dart';
 
-class MyOrdersScreen extends StatelessWidget {
+class MyOrdersScreen extends ConsumerStatefulWidget {
   const MyOrdersScreen({super.key});
+
+  @override
+  ConsumerState<MyOrdersScreen> createState() => _MyOrdersScreenState();
+}
+
+class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
+  final OrderService _orderService = OrderService();
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _orders = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
+    try {
+      setState(() => _isLoading = true);
+      final orders = await _orderService.getMyOrders();
+      setState(() {
+        _orders = orders.map((o) => {
+          '_id': o['_id'],
+          'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
+          'status': _formatStatus(o['status'] ?? 'pending'),
+          'color': _getStatusColor(o['status'] ?? 'pending'),
+          'products': (o['items'] as List?)?.map((item) => {
+            'name': item['productName'] ?? 'Unknown',
+            'image': ImagePaths.capsule,
+          }).toList() ?? [],
+          'pharmacy': 'Pharmacy',
+          'date': o['createdAt'] != null ? DateFormat('dd MMM yyyy').format(DateTime.parse(o['createdAt'])) : 'N/A',
+          'amount': (o['totalAmount'] ?? 0).toString(),
+          'qty': (o['items'] as List?)?.length ?? 0,
+          'isDelivered': o['status'] == 'completed',
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading orders: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading orders: $e')),
+        );
+      }
+    }
+  }
+
+  String _formatStatus(String status) {
+    switch (status) {
+      case 'pending': return 'Pending';
+      case 'confirmed': return 'Confirmed';
+      case 'preparing': return 'Preparing';
+      case 'out_for_delivery': return 'In Transit';
+      case 'completed': return 'Delivered';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'completed': return const Color(0xFF10B981);
+      case 'out_for_delivery': return const Color(0xFFF59E0B);
+      case 'preparing': return const Color(0xFF6366F1);
+      case 'confirmed': return const Color(0xFF3B82F6);
+      case 'cancelled': return const Color(0xFFEF4444);
+      default: return const Color(0xFF94A3B8);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final bool isWeb = MediaQuery.of(context).size.width > 900;
     
-    final List<Map<String, dynamic>> orders = [
-      {
-        "id": "ORD-5521",
-        "status": "Delivered",
-        "color": const Color(0xFF10B981),
-        "products": [
-          {"name": "Liver Cleanse", "image": ImagePaths.capsule},
-        ],
-        "pharmacy": "Green Pharma",
-        "date": "22 Sep 2025",
-        "amount": "2,000",
-        "qty": 1,
-        "isDelivered": true,
-      },
-      {
-        "id": "ORD-5522",
-        "status": "In Transit",
-        "color": const Color(0xFFF59E0B),
-        "products": [
-          {"name": "Vitamin C", "image": ImagePaths.capsule2},
-        ],
-        "pharmacy": "HealthCare Plus",
-        "date": "24 Sep 2025",
-        "amount": "1,500",
-        "qty": 2,
-        "isDelivered": false,
-      },
-      {
-        "id": "ORD-5523",
-        "status": "Processing",
-        "color": const Color(0xFF6366F1),
-        "products": [
-          {"name": "Pain Relief", "image": ImagePaths.capsule},
-          {"name": "Syrup", "image": ImagePaths.capsule2},
-        ],
-        "pharmacy": "City Pharmacy",
-        "date": "25 Sep 2025",
-        "amount": "3,200",
-        "qty": 3,
-        "isDelivered": false,
-      },
-    ];
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const CustomText(
+            text: "My Orders",
+            fontFamily: "Gilroy-Bold",
+            fontSize: 16.78,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary500,
+          ),
+          automaticallyImplyLeading: false,
+          leading: const CustomBackButton(),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_orders.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const CustomText(
+            text: "My Orders",
+            fontFamily: "Gilroy-Bold",
+            fontSize: 16.78,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary500,
+          ),
+          automaticallyImplyLeading: false,
+          leading: const CustomBackButton(),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              const Text('No orders yet', style: TextStyle(fontSize: 16, color: Color(0xFF64748B))),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
@@ -146,14 +220,14 @@ class MyOrdersScreen extends StatelessWidget {
                     mainAxisSpacing: 24,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _buildModernOrderCard(context, orders[i], isWeb),
-                    childCount: orders.length,
+                    (ctx, i) => _buildModernOrderCard(context, _orders[i], isWeb),
+                    childCount: _orders.length,
                   ),
                 )
               : SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _buildModernOrderCard(context, orders[i], isWeb),
-                    childCount: orders.length,
+                    (ctx, i) => _buildModernOrderCard(context, _orders[i], isWeb),
+                    childCount: _orders.length,
                   ),
                 ),
           ),
