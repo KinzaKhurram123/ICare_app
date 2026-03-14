@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -47,7 +46,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      body: isDesktop ?  _buildDesktopLayout() : _buildMobileLayout(isTablet: isTablet),
+      body: isDesktop
+          ? _buildDesktopLayout()
+          : _buildMobileLayout(isTablet: isTablet),
     );
   }
 
@@ -67,10 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             flex: 5,
             child: SizedBox(
               height: screenHeight,
-              child: Image.asset(
-                "assets/images/splash.jpg",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
             ),
           ),
 
@@ -86,7 +84,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Container(
                     width: 480,
-                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 48),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 48,
+                      vertical: 48,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(28),
@@ -122,14 +123,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeInOut,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isLogin ? AppColors.primaryColor : Colors.transparent,
+                                      color: isLogin
+                                          ? AppColors.primaryColor
+                                          : Colors.transparent,
                                       borderRadius: BorderRadius.circular(13),
                                       boxShadow: isLogin
                                           ? [
                                               BoxShadow(
-                                                color: AppColors.primaryColor.withOpacity(0.3),
+                                                color: AppColors.primaryColor
+                                                    .withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 4),
                                               ),
@@ -140,7 +146,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       child: Text(
                                         "Login",
                                         style: TextStyle(
-                                          color: isLogin ? Colors.white : const Color(0xFF64748B),
+                                          color: isLogin
+                                              ? Colors.white
+                                              : const Color(0xFF64748B),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 15,
                                           fontFamily: "Gilroy-Bold",
@@ -156,14 +164,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeInOut,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: !isLogin ? AppColors.primaryColor : Colors.transparent,
+                                      color: !isLogin
+                                          ? AppColors.primaryColor
+                                          : Colors.transparent,
                                       borderRadius: BorderRadius.circular(13),
                                       boxShadow: !isLogin
                                           ? [
                                               BoxShadow(
-                                                color: AppColors.primaryColor.withOpacity(0.3),
+                                                color: AppColors.primaryColor
+                                                    .withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 4),
                                               ),
@@ -174,7 +187,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       child: Text(
                                         "Sign Up",
                                         style: TextStyle(
-                                          color: !isLogin ? Colors.white : const Color(0xFF64748B),
+                                          color: !isLogin
+                                              ? Colors.white
+                                              : const Color(0xFF64748B),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 15,
                                           fontFamily: "Gilroy-Bold",
@@ -220,7 +235,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               // Username field (always shown)
                               CustomInputField(
-                                hintText: isLogin ? "Username or Email" : "Full Name",
+                                hintText: isLogin
+                                    ? "Username or Email"
+                                    : "Full Name",
                                 leadingIcon: const Icon(
                                   Icons.person_outline_rounded,
                                   color: Color(0xFF94A3B8),
@@ -321,7 +338,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   validator: (val) {
                                     if (val == null || val.isEmpty) {
                                       return "Please confirm your password";
-                                    } else if (val != passwordController.text.trim()) {
+                                    } else if (val !=
+                                        passwordController.text.trim()) {
                                       return "Passwords do not match";
                                     }
                                     return null;
@@ -332,7 +350,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (isLogin) ...[
                                 const SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
@@ -347,7 +366,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             activeColor: AppColors.primaryColor,
                                             checkColor: Colors.white,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(5),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
                                             ),
                                             side: const BorderSide(
                                               color: Color(0xFFCBD5E1),
@@ -378,7 +398,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       style: TextButton.styleFrom(
                                         padding: EdgeInsets.zero,
                                         minimumSize: const Size(0, 0),
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
                                       ),
                                       child: const Text(
                                         "Forgot Password?",
@@ -421,7 +442,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           ),
                                         )
                                       : Text(
-                                          isLogin ? "Sign In" : "Create Account",
+                                          isLogin
+                                              ? "Sign In"
+                                              : "Create Account",
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -434,7 +457,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const SizedBox(height: 20),
                               TextButton(
                                 onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (ctx) => SelectUserType()),
+                                  MaterialPageRoute(
+                                    builder: (ctx) => SelectUserType(),
+                                  ),
                                 ),
                                 child: const Text(
                                   "Switch Role / Testing Bypass",
@@ -450,9 +475,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 // Divider with text
                                 Row(
                                   children: [
-                                    Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
+                                    Expanded(
+                                      child: Divider(
+                                        color: Colors.grey[300],
+                                        thickness: 1,
+                                      ),
+                                    ),
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
                                       child: Text(
                                         "Or continue with",
                                         style: TextStyle(
@@ -463,7 +495,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         ),
                                       ),
                                     ),
-                                    Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
+                                    Expanded(
+                                      child: Divider(
+                                        color: Colors.grey[300],
+                                        thickness: 1,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 24),
@@ -541,23 +578,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         children: [
           Container(
             width: Utils.windowWidth(context),
-            height: isTablet ?  Utils.windowHeight(context) * 0.35 : double.infinity,
+            height: isTablet
+                ? Utils.windowHeight(context) * 0.35
+                : double.infinity,
             // color: AppColors.themeRed,
             padding: EdgeInsets.symmetric(
               horizontal: ScallingConfig.moderateScale(15),
-              vertical: ScallingConfig.moderateScale(isTablet ? 12: 80),
+              vertical: ScallingConfig.moderateScale(isTablet ? 12 : 80),
             ),
             child: Column(
-              mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isTablet
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: ScallingConfig.moderateScale(isTablet ? 5 : 30)),
+                SizedBox(
+                  height: ScallingConfig.moderateScale(isTablet ? 5 : 30),
+                ),
                 CustomText(
                   text: "Go Ahead & Set Up Your Account",
                   fontWeight: FontWeight.bold,
                   maxLines: 2,
-                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,                  // textAlign: TextAlign.center,
-                  width: isTablet ? Utils.windowWidth(context)  :Utils.windowWidth(context) * 0.6,
+                  textAlign: isTablet
+                      ? TextAlign.center
+                      : TextAlign.start, // textAlign: TextAlign.center,
+                  width: isTablet
+                      ? Utils.windowWidth(context)
+                      : Utils.windowWidth(context) * 0.6,
                   fontSize: 22,
                   color: AppColors.primaryColor,
                 ),
@@ -574,8 +621,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? "Sign In To Get The Best Doctor Consultation Experience"
                       : "Sign Up To Enjoy The Best Doctor Consultation Experience",
                   fontSize: 13,
-                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,
-                  width: isTablet ? Utils.windowWidth(context) :  Utils.windowHeight(context) * 0.4,
+                  textAlign: isTablet ? TextAlign.center : TextAlign.start,
+                  width: isTablet
+                      ? Utils.windowWidth(context)
+                      : Utils.windowHeight(context) * 0.4,
                   color: AppColors.themeBlack,
                 ),
                 SizedBox(height: 20),
@@ -585,10 +634,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              width: isTablet ? Utils.windowWidth(context) * 0.7 : double.infinity,
+              width: isTablet
+                  ? Utils.windowWidth(context) * 0.7
+                  : double.infinity,
               height: Utils.windowHeight(context) * 0.67,
               decoration: BoxDecoration(
-                color: isTablet ?  AppColors.bgColor.withAlpha(70) : AppColors.bgColor,
+                color: isTablet
+                    ? AppColors.bgColor.withAlpha(70)
+                    : AppColors.bgColor,
                 // color: AppColors.grayColor.withAlpha(60),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
@@ -597,14 +650,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.moderateScale(isTablet ? 50 :  15),
-                  vertical: ScallingConfig.moderateScale( 22),
+                  horizontal: ScallingConfig.moderateScale(isTablet ? 50 : 15),
+                  vertical: ScallingConfig.moderateScale(22),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: isTablet ? Utils.windowWidth(context) * 0.4 : double.infinity,
+                      width: isTablet
+                          ? Utils.windowWidth(context) * 0.4
+                          : double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(30),
@@ -775,7 +830,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           if (!isLogin) ...[
                             SizedBox(height: 5),
-                            CustomInputField( 
+                            CustomInputField(
                               controller: confirmPasswordController,
                               hintText: "Confirm Password",
                               leadingIcon: Icon(
@@ -815,14 +870,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       activeColor: AppColors.primary500,
                                       checkColor: Colors.white,
                                       side: BorderSide(
-                                        color: isTablet ?  AppColors.white:  AppColors.lightGrey200,
+                                        color: isTablet
+                                            ? AppColors.white
+                                            : AppColors.lightGrey200,
                                         width: 2,
                                       ),
                                     ),
                                     CustomText(
                                       text: "Remember me",
                                       fontSize: isTablet ? 12 : 15,
-                                      color: isTablet ?  AppColors.white:  AppColors.lightGrey200,
+                                      color: isTablet
+                                          ? AppColors.white
+                                          : AppColors.lightGrey200,
                                     ),
                                   ],
                                 ),
@@ -837,7 +896,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: Text(
                                     "Forgot Password",
                                     style: TextStyle(
-                                      color: isTablet ?  AppColors.white:  AppColors.primaryColor,
+                                      color: isTablet
+                                          ? AppColors.white
+                                          : AppColors.primaryColor,
                                     ),
                                   ),
                                 ),
@@ -846,7 +907,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(height: 32),
                             TextButton(
                               onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (ctx) => SelectUserType()),
+                                MaterialPageRoute(
+                                  builder: (ctx) => SelectUserType(),
+                                ),
                               ),
                               child: const Text(
                                 "Switch Role / Testing Bypass",
@@ -953,7 +1016,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       if (isLogin) {
         print("🔐 Starting login process...");
-        
+
         // Login
         final result = await _authService.login(
           email: usernameController.text.trim(),
@@ -965,44 +1028,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (result['success']) {
           print("✅ Login successful, token saved");
           print("🔍 Fetching user profile...");
-          
+
           // Get the token from the login result
           final token = result['data']['token'];
           print("🔑 Token from login: ${token.substring(0, 20)}...");
-          
+
           // Fetch user profile with the token directly (don't rely on storage yet)
           final profileResult = await _userService.getUserProfile(token: token);
-          
+
           print("📥 Profile result: ${profileResult['success']}");
-          
+
           if (profileResult['success'] && mounted) {
             print("✅ Profile fetched successfully");
-            
+
             // Store user data in provider
             final userData = profileResult['user'];
             print("📋 User data: $userData");
-            
+
             final user = app_user.User.fromJson(userData);
-            print("👤 User object created: ${user.name}, ${user.email}, ${user.role}");
-            
+            print(
+              "👤 User object created: ${user.name}, ${user.email}, ${user.role}",
+            );
+
             ref.read(authProvider.notifier).setUser(user);
             print("✅ User set in provider");
-            
-            ref.read(authProvider.notifier).setUserToken(result['data']['token']);
+
+            ref
+                .read(authProvider.notifier)
+                .setUserToken(result['data']['token']);
             print("✅ Token set in provider");
-            
+
             // Verify the role is set
             final currentRole = ref.read(authProvider).userRole;
             print("🔍 Current role in provider: '$currentRole'");
-            
-            print("✅ Logged in as: ${user.name} (${user.email}) - Role: ${user.role}");
-            
+
+            print(
+              "✅ Logged in as: ${user.name} (${user.email}) - Role: ${user.role}",
+            );
+
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (ctx) => const TabsScreen()),
             );
           } else {
             print("❌ Failed to fetch profile: ${profileResult['message']}");
-            _showError('Failed to load user profile: ${profileResult['message']}');
+            _showError(
+              'Failed to load user profile: ${profileResult['message']}',
+            );
           }
         } else {
           print("❌ Login failed: ${result['message']}");
@@ -1011,7 +1082,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         // Sign Up - Get role from provider
         final selectedRole = ref.read(authProvider).userRole;
-        
+
         if (selectedRole.isEmpty) {
           _showError('Please select your role first');
           setState(() => isLoading = false);
@@ -1032,13 +1103,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (result['success']) {
           // Fetch user profile after registration
           final profileResult = await _userService.getUserProfile();
-          
+
           if (profileResult['success'] && mounted) {
             final userData = profileResult['user'];
             final user = app_user.User.fromJson(userData);
             ref.read(authProvider.notifier).setUser(user);
-            ref.read(authProvider.notifier).setUserToken(result['data']['token']);
-            
+            ref
+                .read(authProvider.notifier)
+                .setUserToken(result['data']['token']);
+
             // Redirect based on user role
             if (user.role == 'Laboratory') {
               Navigator.of(context).pushReplacement(
@@ -1046,11 +1119,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               );
             } else if (user.role == 'Pharmacy') {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()),
+                MaterialPageRoute(
+                  builder: (ctx) => const PharmacyProfileSetup(),
+                ),
               );
             } else if (user.role == 'Student') {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (ctx) => const StudentProfileSetup()),
+                MaterialPageRoute(
+                  builder: (ctx) => const StudentProfileSetup(),
+                ),
               );
             } else {
               Navigator.of(context).pushReplacement(

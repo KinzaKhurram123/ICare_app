@@ -1,6 +1,6 @@
 class ApiConstants {
   // Update this with your backend URL
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
   
   // Auth endpoints
   static const String login = '/auth/login';
