@@ -291,6 +291,20 @@ class DoctorDetailScreen extends StatelessWidget {
                   child: IconButton(
                     icon: Icon(Icons.chat_bubble_outline, color: AppColors.primaryColor),
                     onPressed: () {
+                      if (doctor.user.id.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Unable to start chat: Doctor ID is missing'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      print('🚀 Opening chat with doctor:');
+                      print('   ID: ${doctor.user.id}');
+                      print('   Name: ${doctor.user.name}');
+                      
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -863,6 +877,20 @@ class DoctorDetailScreen extends StatelessWidget {
                     size: isDesktop ? 28 : 24,
                   ),
                   onPressed: () {
+                    if (doctor.user.id.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unable to start chat: Doctor ID is missing'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    print('🚀 Opening chat with doctor (desktop):');
+                    print('   ID: ${doctor.user.id}');
+                    print('   Name: ${doctor.user.name}');
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(

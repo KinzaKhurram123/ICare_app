@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../services/laboratory_service.dart';
 import '../widgets/back_button.dart';
-import 'chat.dart';
+import 'chat_screen.dart';
 
 class LabBookingDetails extends StatefulWidget {
   final Map<String, dynamic> booking;
@@ -202,7 +202,10 @@ class _LabBookingDetailsState extends State<LabBookingDetails> with SingleTicker
           IconButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (ctx) => ChatScreen(title: _booking['patient']?['name'] ?? 'Patient')),
+              MaterialPageRoute(builder: (ctx) => ChatScreen(
+                userId: _booking['patient']?['_id'] ?? _booking['patient']?['id'] ?? '',
+                userName: _booking['patient']?['name'] ?? 'Patient',
+              )),
             ),
             icon: const Icon(Icons.chat_bubble_outline_rounded, color: primaryColor),
           ),

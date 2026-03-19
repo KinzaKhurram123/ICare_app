@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/chat_screen.dart';
 import 'package:icare/services/notification_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +37,7 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
           'message': n['message'],
           'time': DateTime.parse(n['createdAt']),
           'read': n['read'],
+          'data': n['data'],
           'icon': _getIconForType(n['type']),
           'color': _getColorForType(n['type']),
         }));
@@ -214,7 +216,26 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
     final timeAgo = _getTimeAgo(time);
 
     return InkWell(
-      onTap: () => _markAsRead(notification['id']),
+      onTap: () async {
+        await _markAsRead(notification['id']);
+        // Navigate to chat if it's a message notification
+        if (notification['title'] == 'New Message' && notification['data'] != null) {
+          final data = notification['data'] as Map<String, dynamic>;
+          final senderId = data['senderId']?.toString() ?? '';
+          final senderName = data['senderName']?.toString() ?? 'User';
+          if (senderId.isNotEmpty && mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(
+                  userId: senderId,
+                  userName: senderName,
+                ),
+              ),
+            );
+          }
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),

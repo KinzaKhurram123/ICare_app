@@ -334,7 +334,10 @@ class AppointmentCard extends StatelessWidget {
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => const VideoCall()),
+                          MaterialPageRoute(builder: (ctx) => const VideoCall(
+                            channelName: 'call_appointment',
+                            remoteUserName: 'Emily Jordan',
+                          )),
                         );
                       },
                       child: Container(

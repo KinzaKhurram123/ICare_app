@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import '../services/chat_service.dart';
 import '../utils/theme.dart';
 import '../utils/shared_pref.dart';
+import 'video_call.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
@@ -31,7 +32,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   bool _isSending = false;
   bool _isTyping = false;
-  String? _currentUserId;
+  String _currentUserId = '';
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -40,9 +42,22 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initialize() async {
-    await _loadCurrentUser();
-    await _loadChatHistory();
-    _setupTypingListener();
+    try {
+      await _loadCurrentUser();
+      await _loadChatHistory();
+      _setupTypingListener();
+      // Poll for new messages every 5 seconds
+      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        _loadChatHistory(silent: true);
+      });
+    } catch (e) {
+      print('❌ Initialization error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -50,14 +65,14 @@ class _ChatScreenState extends State<ChatScreen> {
       final userData = await SharedPref().getUserData();
       if (mounted) {
         setState(() {
-          _currentUserId = userData?.id;
+          _currentUserId = userData?.id ?? '';
         });
       }
     } catch (e) {
       print('❌ Error loading current user: $e');
       if (mounted) {
         setState(() {
-          _currentUserId = null;
+          _currentUserId = '';
         });
       }
     }
@@ -73,24 +88,35 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Future<void> _loadChatHistory() async {
+  Future<void> _loadChatHistory({bool silent = false}) async {
     try {
-      print('🔍 Loading chat history for user: ${widget.userId}');
+      if (widget.userId.isEmpty) throw Exception('User ID is empty');
+
       final messages = await _chatService.getChatHistory(widget.userId);
-      print('✅ Received ${messages.length} messages');
-      
-      setState(() {
-        _messages = messages;
-        _isLoading = false;
-      });
-      _scrollToBottom();
-      await _chatService.markAsRead(widget.userId);
+
+      if (mounted) {
+        final prevCount = _messages.length;
+        setState(() {
+          _messages = messages;
+          if (!silent) _isLoading = false;
+        });
+        // Only scroll to bottom if new messages arrived
+        if (messages.length > prevCount) {
+          _scrollToBottom();
+        }
+        if (!silent) _isLoading = false;
+        _chatService.markAsRead(widget.userId).catchError((_) {});
+      }
     } catch (e) {
       print('❌ Error loading chat history: $e');
-      setState(() => _isLoading = false);
-      if (mounted) {
+      if (mounted && !silent) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load messages: $e')),
+          SnackBar(
+            content: Text('Failed to load messages: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
@@ -124,7 +150,10 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       
       setState(() {
-        _messages.add(result['data']);
+        final newMsg = result['data'];
+        if (newMsg != null) {
+          _messages.add(newMsg);
+        }
         _isSending = false;
       });
       _scrollToBottom();
@@ -144,6 +173,12 @@ class _ChatScreenState extends State<ChatScreen> {
     await _loadChatHistory();
   }
 
+  // Creates a consistent channel name from both user IDs (sorted so both sides join same channel)
+  String _buildChannelName() {
+    final ids = [_currentUserId, widget.userId]..sort();
+    return 'call_${ids[0]}_${ids[1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              radius: 20.r,
+              radius: 20,
               backgroundColor: AppColors.primaryColor.withOpacity(0.1),
               backgroundImage: widget.userImage != null
                   ? NetworkImage(widget.userImage!)
@@ -173,24 +208,24 @@ class _ChatScreenState extends State<ChatScreen> {
                     )
                   : null,
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.userName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.black,
-                      fontSize: 16.sp,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Online',
                     style: TextStyle(
                       color: Colors.green,
-                      fontSize: 12.sp,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -199,6 +234,32 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.black),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: _buildChannelName(),
+                  remoteUserName: widget.userName,
+                  isAudioOnly: false,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.call, color: Colors.black),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: _buildChannelName(),
+                  remoteUserName: widget.userName,
+                  isAudioOnly: true,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _refreshMessages,
@@ -221,25 +282,25 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: [
                             Icon(
                               Icons.chat_bubble_outline,
-                              size: 80.sp,
+                              size: 80,
                               color: Colors.grey[300],
                             ),
-                            SizedBox(height: 16.h),
+                            SizedBox(height: 16),
                             Text(
                               'No messages yet',
                               style: TextStyle(
                                 color: Colors.grey[600],
-                                fontSize: 18.sp,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            SizedBox(height: 8.h),
+                            SizedBox(height: 8),
                             Text(
                               'Start the conversation!',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 14.sp,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -250,7 +311,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         color: AppColors.primaryColor,
                         child: ListView.builder(
                           controller: _scrollController,
-                          padding: EdgeInsets.all(16.w),
+                          padding: const EdgeInsets.all(16),
                           itemCount: _messages.length,
                           itemBuilder: (context, index) {
                             final message = _messages[index];
@@ -305,17 +366,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 16.h),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
           Expanded(child: Divider(color: Colors.grey[300])),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               dateText,
               style: TextStyle(
                 color: Colors.grey[600],
-                fontSize: 12.sp,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -334,16 +395,16 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-        constraints: BoxConstraints(maxWidth: 280.w),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        constraints: const BoxConstraints(maxWidth: 280),
         decoration: BoxDecoration(
           color: isMe ? AppColors.primaryColor : Colors.grey[200],
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16.r),
-            topRight: Radius.circular(16.r),
-            bottomLeft: isMe ? Radius.circular(16.r) : Radius.zero,
-            bottomRight: isMe ? Radius.zero : Radius.circular(16.r),
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
           ),
           boxShadow: [
             BoxShadow(
@@ -360,11 +421,11 @@ class _ChatScreenState extends State<ChatScreen> {
               message['message'],
               style: TextStyle(
                 color: isMe ? Colors.white : Colors.black87,
-                fontSize: 15.sp,
+                fontSize: 15,
                 height: 1.4,
               ),
             ),
-            SizedBox(height: 4.h),
+            const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -372,14 +433,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   timeStr,
                   style: TextStyle(
                     color: isMe ? Colors.white70 : Colors.grey,
-                    fontSize: 11.sp,
+                    fontSize: 11,
                   ),
                 ),
                 if (isMe) ...[
-                  SizedBox(width: 4.w),
+                  const SizedBox(width: 4),
                   Icon(
                     isRead ? Icons.done_all : Icons.done,
-                    size: 14.sp,
+                    size: 14,
                     color: isRead ? Colors.blue[200] : Colors.white70,
                   ),
                 ],
@@ -393,7 +454,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageInput() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -409,10 +470,10 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: TextField(
                   controller: _messageController,
@@ -428,12 +489,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-            SizedBox(width: 8.w),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: _isSending ? null : _sendMessage,
               child: Container(
-                width: 48.w,
-                height: 48.w,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: _isSending ? Colors.grey : AppColors.primaryColor,
                   shape: BoxShape.circle,
@@ -447,13 +508,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: _isSending
                     ? Padding(
-                        padding: EdgeInsets.all(12.w),
+                        padding: const EdgeInsets.all(12),
                         child: const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
-                    : Icon(Icons.send, color: Colors.white, size: 22.sp),
+                    : const Icon(Icons.send, color: Colors.white, size: 22),
               ),
             ),
           ],
@@ -464,6 +525,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     _messageFocusNode.dispose();

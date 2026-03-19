@@ -4,7 +4,6 @@ import '../services/laboratory_service.dart';
 import '../widgets/back_button.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_booking_details.dart';
-import 'chat.dart';
 
 class LabBookingsManagement extends StatefulWidget {
   const LabBookingsManagement({super.key});

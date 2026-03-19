@@ -8,7 +8,7 @@ import 'package:icare/navigators/bottom_tabs.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/bookings.dart';
 import 'package:icare/screens/bookings_history.dart';
-import 'package:icare/screens/chatlist.dart';
+import 'package:icare/screens/chat_list_screen.dart';
 import 'package:icare/screens/home.dart';
 import 'package:icare/screens/my_cart.dart';
 import 'package:icare/screens/notifications.dart';
@@ -95,7 +95,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 1) {
         activePage = const MyCartScreen();
       } else if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       }
@@ -105,7 +105,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 1) {
         activePage = const MyCartScreen();
       } else if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       }
@@ -115,13 +115,13 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 1) {
         activePage = const DoctorAppointmentsScreen();
       } else if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       }
     } else if (role == "Instructor") {
       if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       } else {
@@ -133,7 +133,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 1) {
         activePage = BookingsScreen(tabs: true);
       } else if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       }
@@ -144,7 +144,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 1) {
         activePage = BookingsScreen(tabs: true);
       } else if (currentIndex == 2) {
-        activePage = ChatlistScreen();
+        activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       }

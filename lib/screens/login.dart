@@ -316,6 +316,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   if (val == null || val.isEmpty) {
                                     return "Please enter your password";
                                   }
+                                  if (!isLogin && val.length < 6) {
+                                    return "Password must be at least 6 characters";
+                                  }
                                   return null;
                                 },
                               ),
@@ -824,6 +827,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (val == null || val.isEmpty) {
                                 return "Please enter your password";
                               }
+                              if (!isLogin && val.length < 6) {
+                                return "Password must be at least 6 characters";
+                              }
                               return null;
                             },
                           ),
@@ -1101,17 +1107,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
 
         if (result['success']) {
-          // Fetch user profile after registration
-          final profileResult = await _userService.getUserProfile();
-
+          // Set token in provider first
+          final token = result['data']['token'];
+          ref.read(authProvider.notifier).setUserToken(token);
+          
+          // Fetch user profile after registration, passing token directly
+          final profileResult = await _userService.getUserProfile(token: token);
+          
           if (profileResult['success'] && mounted) {
             final userData = profileResult['user'];
             final user = app_user.User.fromJson(userData);
             ref.read(authProvider.notifier).setUser(user);
-            ref
-                .read(authProvider.notifier)
-                .setUserToken(result['data']['token']);
-
+            
             // Redirect based on user role
             if (user.role == 'Laboratory') {
               Navigator.of(context).pushReplacement(

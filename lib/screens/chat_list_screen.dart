@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import '../services/chat_service.dart';
 import '../utils/theme.dart';
@@ -16,26 +17,42 @@ class _ChatListScreenState extends State<ChatListScreen> {
   final ChatService _chatService = ChatService();
   List<dynamic> _conversations = [];
   bool _isLoading = true;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
+    // Auto-refresh every 10 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _loadConversations(silent: true);
+    });
   }
 
-  Future<void> _loadConversations() async {
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadConversations({bool silent = false}) async {
     try {
+      if (!silent) setState(() => _isLoading = true);
       final conversations = await _chatService.getConversations();
-      setState(() {
-        _conversations = conversations;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load conversations: $e')),
-        );
+        setState(() {
+          _conversations = conversations;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (!silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load conversations: $e')),
+          );
+        }
       }
     }
   }

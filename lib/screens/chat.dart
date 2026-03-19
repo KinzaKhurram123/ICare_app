@@ -78,14 +78,22 @@ class BasicState extends State<ChatScreen> {
         actions: [
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VideoCall()));
+              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VideoCall(
+                channelName: 'call_${widget.title ?? 'general'}',
+                remoteUserName: widget.title ?? 'User',
+                isAudioOnly: false,
+              )));
             },
             child: SvgWrapper(assetPath: ImagePaths.video),
           ),
           SizedBox(width: ScallingConfig.scale(10)),
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VideoCall()));
+              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => VideoCall(
+                channelName: 'call_${widget.title ?? 'general'}',
+                remoteUserName: widget.title ?? 'User',
+                isAudioOnly: true,
+              )));
             },
             child: SvgWrapper(assetPath: ImagePaths.audio),
           ),

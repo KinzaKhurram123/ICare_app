@@ -1,407 +1,439 @@
 import 'package:flutter/material.dart';
-import 'package:icare/utils/imagePaths.dart';
-import 'package:icare/utils/theme.dart';
-import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_text.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../services/agora_service.dart';
 
-class VideoCall extends StatelessWidget {
-  const VideoCall({super.key});
+class VideoCall extends StatefulWidget {
+  final String channelName;
+  final String remoteUserName;
+  final bool isAudioOnly;
+
+  const VideoCall({
+    super.key,
+    required this.channelName,
+    required this.remoteUserName,
+    this.isAudioOnly = false,
+  });
+
+  @override
+  State<VideoCall> createState() => _VideoCallState();
+}
+
+class _VideoCallState extends State<VideoCall> {
+  final AgoraService _agoraService = AgoraService();
+
+  RtcEngine? _engine;
+  bool _localUserJoined = false;
+  bool _remoteUserJoined = false;
+  int? _remoteUid;
+  bool _isMuted = false;
+  bool _isCameraOff = false;
+  bool _isSpeakerOn = true;
+  bool _isLoading = true;
+  String? _error;
+  String _appId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _initAgora();
+  }
+
+  Future<void> _initAgora() async {
+    if (kIsWeb) {
+      setState(() {
+        _error = 'Video calls are not supported on web.\nPlease use the mobile app.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // Request permissions
+    await [Permission.camera, Permission.microphone].request();
+
+    // Fetch token from backend
+    final tokenResult = await _agoraService.getToken(channelName: widget.channelName);
+    if (tokenResult['success'] != true) {
+      setState(() {
+        _error = 'Failed to get call token: ${tokenResult['message']}';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final token = tokenResult['data']['token'] as String;
+    _appId = tokenResult['data']['appId'] as String;
+    final uid = tokenResult['data']['uid'] as int;
+
+    // Init engine
+    _engine = createAgoraRtcEngine();
+    await _engine!.initialize(RtcEngineContext(appId: _appId));
+
+    _engine!.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          if (mounted) setState(() => _localUserJoined = true);
+        },
+        onUserJoined: (connection, remoteUid, elapsed) {
+          if (mounted) {
+            setState(() {
+              _remoteUid = remoteUid;
+              _remoteUserJoined = true;
+            });
+          }
+        },
+        onUserOffline: (connection, remoteUid, reason) {
+          if (mounted) {
+            setState(() {
+              _remoteUid = null;
+              _remoteUserJoined = false;
+            });
+          }
+        },
+        onError: (err, msg) {
+          if (mounted) setState(() => _error = 'Call error: $msg');
+        },
+      ),
+    );
+
+    if (!widget.isAudioOnly) {
+      await _engine!.enableVideo();
+      await _engine!.startPreview();
+    }
+
+    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+    await _engine!.joinChannel(
+      token: token,
+      channelId: widget.channelName,
+      uid: uid,
+      options: const ChannelMediaOptions(
+        autoSubscribeAudio: true,
+        autoSubscribeVideo: true,
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
+    );
+
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _endCall() async {
+    await _engine?.leaveChannel();
+    await _engine?.release();
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _toggleMute() async {
+    setState(() => _isMuted = !_isMuted);
+    await _engine?.muteLocalAudioStream(_isMuted);
+  }
+
+  Future<void> _toggleCamera() async {
+    setState(() => _isCameraOff = !_isCameraOff);
+    await _engine?.muteLocalVideoStream(_isCameraOff);
+  }
+
+  Future<void> _toggleSpeaker() async {
+    setState(() => _isSpeakerOn = !_isSpeakerOn);
+    await _engine?.setEnableSpeakerphone(_isSpeakerOn);
+  }
+
+  Future<void> _switchCamera() async {
+    await _engine?.switchCamera();
+  }
+
+  @override
+  void dispose() {
+    _engine?.leaveChannel();
+    _engine?.release();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDesktop = MediaQuery.of(context).size.width > 900;
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
-    if (isDesktop) {
-      return const _WebVideoCall();
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 24),
+              Text(
+                'Connecting to ${widget.remoteUserName}...',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          /// 👨‍⚕️ Main Doctor Image (Full Screen)
-          Positioned.fill(
-            child: Container(
-              color: AppColors.tertiaryColor,
-              child: Image.asset(
-                ImagePaths.user1, // replace with your main image
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
+          // Remote video (full screen)
+          _buildRemoteVideo(),
 
-          /// 🔙 Back Button (Top Left)
-          const Positioned(
-            top: 40,
-            child: CustomBackButton(color: Colors.white),
-          ),
+          // Local video (picture-in-picture, top right)
+          if (!widget.isAudioOnly) _buildLocalVideo(),
 
-          /// 👤 Remote User Thumbnail (Top Right)
-          Positioned(
-            top: 60,
-            right: 15,
-            child: Stack(
-              alignment: Alignment.topRight,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    ImagePaths.user5, // replace with your second image
-                    width: 120,
-                    height: 160,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    height: 24,
-                    width: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.mic_off, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Top bar
+          _buildTopBar(),
 
-          /// 🎛 Bottom Control Panel
-          Positioned(
-            bottom: 40,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                height: 80,
-                width: MediaQuery.of(context).size.width * 0.85,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildControlButton(Icons.volume_up_rounded, Colors.white, false),
-                    _buildControlButton(Icons.mic_off_rounded, Colors.white, false),
-                    _buildControlButton(Icons.call_end_rounded, Colors.white, true),
-                    _buildControlButton(Icons.videocam_off_rounded, Colors.white, false),
-                    _buildControlButton(Icons.grid_view_rounded, Colors.white, false),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Bottom controls
+          _buildControls(),
         ],
       ),
     );
   }
 
-  Widget _buildControlButton(IconData icon, Color color, bool isEnd) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        color: isEnd ? const Color(0xFFEF4444) : Colors.white.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Icon(icon, color: color, size: 26),
-      ),
-    );
-  }
-}
-
-class _WebVideoCall extends StatelessWidget {
-  const _WebVideoCall();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: Stack(
-        children: [
-          // Main Video Area
-          Row(
+  Widget _buildRemoteVideo() {
+    if (widget.isAudioOnly) {
+      return Container(
+        color: const Color(0xFF1E293B),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                flex: 3,
-                child: Container(
-                  margin: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(
-                          ImagePaths.user1,
-                          fit: BoxFit.cover,
-                        ),
-                        // Label
-                        Positioned(
-                          bottom: 24,
-                          left: 24,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.mic_rounded, color: Colors.white, size: 16),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Dr. Adam Smith",
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.white24,
+                child: Text(
+                  widget.remoteUserName[0].toUpperCase(),
+                  style: const TextStyle(fontSize: 48, color: Colors.white),
                 ),
               ),
-              // Sidebar for self view and chat toggles
-              Container(
-                width: 380,
-                margin: const EdgeInsets.fromLTRB(0, 20, 20, 20),
-                child: Column(
-                  children: [
-                    // Self View
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(28),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                ImagePaths.user5,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                bottom: 16,
-                                left: 16,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    "Aron Smith (You)",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Call Info / Transcription / Chat Area (Placeholder)
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const CustomText(
-                              text: "Session Details",
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              fontFamily: "Gilroy-Bold",
-                            ),
-                            const SizedBox(height: 24),
-                            _buildInfoItem(Icons.access_time_filled_rounded, "Remaining Time", "42:15"),
-                            const SizedBox(height: 20),
-                            _buildInfoItem(Icons.security_rounded, "Encryption", "End-to-End Secure"),
-                            const SizedBox(height: 20),
-                            _buildInfoItem(Icons.favorite_rounded, "Health Topic", "Cardiology Review"),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Text(
-                                    "Waiting for Dr. Smith to share diagnostic results...",
-                                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, height: 1.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 24),
+              Text(
+                widget.remoteUserName,
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _remoteUserJoined ? 'Connected' : 'Calling...',
+                style: TextStyle(
+                  color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
+        ),
+      );
+    }
 
-          // Top Header (Overlay)
-          Positioned(
-            top: 40,
-            left: 50,
-            right: 50,
-            child: Row(
-              children: [
-                const CustomBackButton(margin: EdgeInsets.zero, color: Colors.white),
-                const SizedBox(width: 24),
-                const Column(
+    if (_remoteUid != null) {
+      return AgoraVideoView(
+        controller: VideoViewController.remote(
+          rtcEngine: _engine!,
+          canvas: VideoCanvas(uid: _remoteUid),
+          connection: RtcConnection(channelId: widget.channelName),
+        ),
+      );
+    }
+
+    return Container(
+      color: const Color(0xFF1E293B),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 60,
+              backgroundColor: Colors.white24,
+              child: Text(
+                widget.remoteUserName[0].toUpperCase(),
+                style: const TextStyle(fontSize: 48, color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              widget.remoteUserName,
+              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text('Waiting for other person to join...', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocalVideo() {
+    if (!_localUserJoined) return const SizedBox.shrink();
+
+    return Positioned(
+      top: 80,
+      right: 16,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 110,
+          height: 150,
+          child: _isCameraOff
+              ? Container(
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.videocam_off, color: Colors.white, size: 32),
+                )
+              : AgoraVideoView(
+                  controller: VideoViewController(
+                    rtcEngine: _engine!,
+                    canvas: const VideoCanvas(uid: 0),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: _endCall,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Medical Consultation",
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, fontFamily: "Gilroy-Bold"),
+                      widget.remoteUserName,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                     ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.circle, color: Color(0xFFEF4444), size: 8),
-                        SizedBox(width: 8),
-                        Text(
-                          "REC 00:15:28",
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                      ],
+                    Text(
+                      _remoteUserJoined ? 'Connected' : 'Calling...',
+                      style: TextStyle(
+                        color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
+                        fontSize: 12,
+                      ),
                     ),
-                  ],
-                ),
-                const Spacer(),
-                _buildHeaderIcon(Icons.person_add_rounded),
-                const SizedBox(width: 12),
-                _buildHeaderIcon(Icons.settings_rounded),
-              ],
-            ),
-          ),
-
-          // Floating Controls (Overlay Bottom)
-          Positioned(
-            bottom: 50,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A).withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 40,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildWebControlBtn(Icons.mic_rounded, "Mute", false),
-                    const SizedBox(width: 24),
-                    _buildWebControlBtn(Icons.videocam_rounded, "Camera", false),
-                    const SizedBox(width: 24),
-                    _buildWebControlBtn(Icons.monitor_rounded, "Share", false),
-                    const SizedBox(width: 24),
-                    _buildWebControlBtn(Icons.chat_bubble_outline_rounded, "Chat", false),
-                    const SizedBox(width: 40),
-                    _buildWebControlBtn(Icons.call_end_rounded, "End Call", true),
                   ],
                 ),
               ),
+              if (!widget.isAudioOnly)
+                IconButton(
+                  icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+                  onPressed: _switchCamera,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControls() {
+    return Positioned(
+      bottom: 40,
+      left: 0,
+      right: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _controlBtn(
+            icon: _isMuted ? Icons.mic_off : Icons.mic,
+            label: _isMuted ? 'Unmute' : 'Mute',
+            onTap: _toggleMute,
+            active: _isMuted,
+          ),
+          if (!widget.isAudioOnly)
+            _controlBtn(
+              icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
+              label: _isCameraOff ? 'Cam Off' : 'Camera',
+              onTap: _toggleCamera,
+              active: _isCameraOff,
             ),
+          _controlBtn(
+            icon: Icons.call_end,
+            label: 'End',
+            onTap: _endCall,
+            isEnd: true,
+          ),
+          _controlBtn(
+            icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
+            label: 'Speaker',
+            onTap: _toggleSpeaker,
+            active: !_isSpeakerOn,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.primaryColor, size: 20),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderIcon(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        shape: BoxShape.circle,
+  Widget _controlBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool active = false,
+    bool isEnd = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: isEnd
+                  ? const Color(0xFFEF4444)
+                  : active
+                      ? Colors.white24
+                      : Colors.white12,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: active && !isEnd ? Colors.white54 : Colors.transparent,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        ],
       ),
-      child: Icon(icon, color: Colors.white, size: 20),
-    );
-  }
-
-  Widget _buildWebControlBtn(IconData icon, String label, bool isEnd) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: isEnd ? const Color(0xFFEF4444) : Colors.white.withOpacity(0.05),
-            shape: BoxShape.circle,
-            border: Border.all(color: isEnd ? Colors.transparent : Colors.white.withOpacity(0.1)),
-          ),
-          child: Icon(icon, color: Colors.white, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: isEnd ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
     );
   }
 }

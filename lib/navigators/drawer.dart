@@ -118,7 +118,7 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LabReportsScreen()));
         }),
         _drawerItem('My Appointment', Icons.calendar_month_rounded, () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const MyAppointmentsListScreen()));
         }),
         _drawerItem('Pharmacies', Icons.medication_rounded, () {
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()));

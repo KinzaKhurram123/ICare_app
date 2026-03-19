@@ -177,35 +177,39 @@ class LabWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomText(
-                    text: "Estimated Delivery",
-                    color: const Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFFF59E0B)),
-                      const SizedBox(width: 6),
-                      CustomText(
-                        text: lab.delivery,
-                        color: const Color(0xFF0F172A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ],
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomText(
+                      text: "Estimated Delivery",
+                      color: const Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFFF59E0B)),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: CustomText(
+                            text: lab.delivery,
+                            color: const Color(0xFF0F172A),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              
+              const SizedBox(width: 12),
               // STUNNING ACTION BUTTON
               SizedBox(
-                width: 180,
+                width: 160,
                 child: CustomButton(
                   label: actionText,
                   height: 48,
