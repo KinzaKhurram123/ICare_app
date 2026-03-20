@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "564788374793",
+    "project_id": "icare-5c82d",
+    "storage_bucket": "icare-5c82d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564788374793:android:4e30c04020dce01a0877d8",
+        "android_client_info": {
+          "package_name": "com.example.icare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "564788374793-ctggcd8ni9oq17gnbhvnednj74noqk9r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyGcCmJffRByCAzyiBQBzQeMUhLuMoNTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "564788374793-ctggcd8ni9oq17gnbhvnednj74noqk9r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,11 +6,16 @@ import 'package:icare/app.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:icare/services/fcm_service.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FcmService().init();
   runApp(
     ProviderScope(child: const MyApp())
-    );
+  );
 }
 // 
 class MyApp extends StatelessWidget {
