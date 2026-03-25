@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../utils/shared_pref.dart';
 import 'api_service.dart';
 import 'api_config.dart';
+import 'fcm_service.dart';
 
 class AuthService {
   final ApiService _apiService = ApiService();
@@ -54,6 +55,8 @@ class AuthService {
         final data = response.data;
         await _saveToken(data['token']);
         await _saveUserData(data);
+        // Send FCM token to backend after successful login
+        FcmService().getAndSaveToken();
         return {'success': true, 'data': data};
       }
       return {'success': false, 'message': 'Login failed'};
