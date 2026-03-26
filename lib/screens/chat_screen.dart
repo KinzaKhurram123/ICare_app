@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:intl/intl.dart';
 import '../services/chat_service.dart';
 import '../utils/theme.dart';
 import '../utils/shared_pref.dart';
-import 'video_call.dart';
+// Video call only available on mobile
+import 'video_call.dart' if (dart.library.html) 'chat_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
@@ -56,6 +58,13 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to initialize chat: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
@@ -234,32 +243,34 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.videocam, color: Colors.black),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VideoCall(
-                  channelName: _buildChannelName(),
-                  remoteUserName: widget.userName,
-                  isAudioOnly: false,
+          if (!kIsWeb) ...[
+            IconButton(
+              icon: const Icon(Icons.videocam, color: Colors.black),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: _buildChannelName(),
+                    remoteUserName: widget.userName,
+                    isAudioOnly: false,
+                  ),
                 ),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.call, color: Colors.black),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VideoCall(
-                  channelName: _buildChannelName(),
-                  remoteUserName: widget.userName,
-                  isAudioOnly: true,
+            IconButton(
+              icon: const Icon(Icons.call, color: Colors.black),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: _buildChannelName(),
+                    remoteUserName: widget.userName,
+                    isAudioOnly: true,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _refreshMessages,
