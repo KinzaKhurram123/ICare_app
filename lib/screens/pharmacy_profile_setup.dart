@@ -13,10 +13,10 @@ class PharmacyProfileSetup extends StatefulWidget {
 class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
   final _formKey = GlobalKey<FormState>();
   final PharmacyService _pharmacyService = PharmacyService();
-  
+
   bool _isLoading = true;
   bool _isSaving = false;
-  
+
   final _ownerNameController = TextEditingController();
   final _cnicController = TextEditingController();
   final _licenseNumberController = TextEditingController();
@@ -24,7 +24,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
   final _cityController = TextEditingController();
   final _openHoursFromController = TextEditingController();
   final _openHoursToController = TextEditingController();
-  
+
   bool _deliveryAvailable = false;
 
   @override
@@ -62,9 +62,9 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading profile: $e')));
       }
     }
   }
@@ -99,9 +99,9 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
       }
     } finally {
       setState(() => _isSaving = false);
@@ -129,91 +129,76 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSection(
-                      'Basic Information',
-                      Icons.info_outline,
-                      [
-                        _buildTextField(
-                          controller: _ownerNameController,
-                          label: 'Owner Name',
-                          icon: Icons.person,
-                          validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _cnicController,
-                          label: 'CNIC',
-                          icon: Icons.badge,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _licenseNumberController,
-                          label: 'License Number',
-                          icon: Icons.verified_user,
-                        ),
-                      ],
-                    ),
+                    _buildSection('Basic Information', Icons.info_outline, [
+                      _buildTextField(
+                        controller: _ownerNameController,
+                        label: 'Owner Name',
+                        icon: Icons.person,
+                        validator: (v) =>
+                            v?.isEmpty ?? true ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _cnicController,
+                        label: 'CNIC',
+                        icon: Icons.badge,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _licenseNumberController,
+                        label: 'License Number',
+                        icon: Icons.verified_user,
+                      ),
+                    ]),
                     const SizedBox(height: 24),
-                    _buildSection(
-                      'Location',
-                      Icons.location_on,
-                      [
-                        _buildTextField(
-                          controller: _addressController,
-                          label: 'Address',
-                          icon: Icons.home,
-                          maxLines: 2,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _cityController,
-                          label: 'City',
-                          icon: Icons.location_city,
-                        ),
-                      ],
-                    ),
+                    _buildSection('Location', Icons.location_on, [
+                      _buildTextField(
+                        controller: _addressController,
+                        label: 'Address',
+                        icon: Icons.home,
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _cityController,
+                        label: 'City',
+                        icon: Icons.location_city,
+                      ),
+                    ]),
                     const SizedBox(height: 24),
-                    _buildSection(
-                      'Operating Hours',
-                      Icons.access_time,
-                      [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _openHoursFromController,
-                                label: 'From (e.g., 09:00 AM)',
-                                icon: Icons.schedule,
-                              ),
+                    _buildSection('Operating Hours', Icons.access_time, [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _openHoursFromController,
+                              label: 'From (e.g., 09:00 AM)',
+                              icon: Icons.schedule,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _openHoursToController,
-                                label: 'To (e.g., 09:00 PM)',
-                                icon: Icons.schedule,
-                              ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _openHoursToController,
+                              label: 'To (e.g., 09:00 PM)',
+                              icon: Icons.schedule,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ]),
                     const SizedBox(height: 24),
-                    _buildSection(
-                      'Services',
-                      Icons.local_shipping,
-                      [
-                        SwitchListTile(
-                          title: const Text('Delivery Available'),
-                          subtitle: const Text('Offer home delivery service'),
-                          value: _deliveryAvailable,
-                          onChanged: (value) {
-                            setState(() => _deliveryAvailable = value);
-                          },
-                          activeColor: const Color(0xFF00897B),
-                        ),
-                      ],
-                    ),
+                    _buildSection('Services', Icons.local_shipping, [
+                      SwitchListTile(
+                        title: const Text('Delivery Available'),
+                        subtitle: const Text('Offer home delivery service'),
+                        value: _deliveryAvailable,
+                        onChanged: (value) {
+                          setState(() => _deliveryAvailable = value);
+                        },
+                        activeColor: const Color(0xFF00897B),
+                      ),
+                    ]),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -309,9 +294,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF00897B)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),

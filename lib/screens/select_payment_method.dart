@@ -21,7 +21,12 @@ class SelectPaymentMethod extends StatefulWidget {
   final String? labBookingId;
   final double? amount;
 
-  const SelectPaymentMethod({super.key, this.courseId, this.labBookingId, this.amount});
+  const SelectPaymentMethod({
+    super.key,
+    this.courseId,
+    this.labBookingId,
+    this.amount,
+  });
 
   @override
   State<SelectPaymentMethod> createState() => _SelectPaymentMethodState();
@@ -79,25 +84,36 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
 
       if (widget.courseId != null) {
         log("Attempting to buy course with ID: ${widget.courseId}");
-        
+
         // Validate courseId is not empty
         if (widget.courseId!.isEmpty) {
           throw Exception("Invalid course ID");
         }
-        
+
         await _courseService.buyCourse(widget.courseId!);
         if (mounted) {
-          _showSuccessDialog("Course Purchased!", "You have successfully enrolled in the course. You can now start learning.");
+          _showSuccessDialog(
+            "Course Purchased!",
+            "You have successfully enrolled in the course. You can now start learning.",
+          );
         }
       } else if (widget.labBookingId != null) {
         // Update booking status to 'confirmed' or similar if needed
-        await _labService.updateBooking(widget.labBookingId!, {'status': 'confirmed'});
+        await _labService.updateBooking(widget.labBookingId!, {
+          'status': 'confirmed',
+        });
         if (mounted) {
-          _showSuccessDialog("Booking Confirmed!", "Your laboratory appointment has been confirmed and paid. Please arrive on time.");
+          _showSuccessDialog(
+            "Booking Confirmed!",
+            "Your laboratory appointment has been confirmed and paid. Please arrive on time.",
+          );
         }
       } else {
         if (mounted) {
-          _showSuccessDialog("Payment Successful", "Your transaction was completed successfully.");
+          _showSuccessDialog(
+            "Payment Successful",
+            "Your transaction was completed successfully.",
+          );
         }
       }
     } on DioException catch (e) {
@@ -109,16 +125,17 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
             errorMessage = e.response!.data['message'];
           }
         }
-        
+
         // Special handling for common errors
         if (errorMessage.contains("Already purchased")) {
-          errorMessage = "You have already enrolled in this course. Check 'My Courses' to access it.";
+          errorMessage =
+              "You have already enrolled in this course. Check 'My Courses' to access it.";
         } else if (errorMessage.contains("Not authorized")) {
           errorMessage = "Please log in to purchase this course.";
         } else if (errorMessage.contains("Course not found")) {
           errorMessage = "This course is no longer available.";
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -169,7 +186,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Title
               Text(
                 title,
@@ -182,7 +199,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              
+
               // Message
               Text(
                 message,
@@ -194,7 +211,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // Action Button
               SizedBox(
                 width: double.infinity,
@@ -203,7 +220,9 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                     Navigator.pop(ctx); // Close dialog
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => const TabsScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const TabsScreen(),
+                      ),
                       (route) => false, // Remove all previous routes
                     );
                   },
@@ -255,51 +274,51 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
           color: AppColors.primary500,
         ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: ScallingConfig.scale(15),
-              vertical: ScallingConfig.verticalScale(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomText(
-                  text: "Choose Platform ",
-                  fontFamily: "Gilroy-Bold",
-                  fontSize: 14,
-                  color: AppColors.primary500,
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: paymentMethods.length,
-                    itemBuilder: (ctx, i) {
-                      final item = paymentMethods[i];
-                      return (PaymentMethodCard(
-                        onTap: () {
-                          // Select the card and then allow payment
-                          setState(() => _selectedMethod = item['type']);
-                        },
-                        expiry: item['expiry'],
-                        number: item['number'],
-                        type: item['type'],
-                        logo: item['logo'],
-                      ));
-                    },
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: ScallingConfig.scale(15),
+                vertical: ScallingConfig.verticalScale(10),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomText(
+                    text: "Choose Platform ",
+                    fontFamily: "Gilroy-Bold",
+                    fontSize: 14,
+                    color: AppColors.primary500,
                   ),
-                ),
-                const SizedBox(height: 20),
-                CustomButton(
-                  label: "Confirm & Pay Rs. ${widget.amount ?? 0}",
-                  borderRadius: 35,
-                  onPressed: _processPayment,
-                ),
-                const SizedBox(height: 20),
-              ],
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: paymentMethods.length,
+                      itemBuilder: (ctx, i) {
+                        final item = paymentMethods[i];
+                        return (PaymentMethodCard(
+                          onTap: () {
+                            // Select the card and then allow payment
+                            setState(() => _selectedMethod = item['type']);
+                          },
+                          expiry: item['expiry'],
+                          number: item['number'],
+                          type: item['type'],
+                          logo: item['logo'],
+                        ));
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  CustomButton(
+                    label: "Confirm & Pay Rs. ${widget.amount ?? 0}",
+                    borderRadius: 35,
+                    onPressed: _processPayment,
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
-          ),
     );
   }
 
@@ -319,155 +338,191 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
         ),
       ),
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Main Payment Content
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Select Payment Method",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "Choose how you'd like to pay for your requested services.",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
-                        // Payment Method List
-                        ...paymentMethods.asMap().entries.map((entry) {
-                          return _buildWebPaymentCard(context, entry.value);
-                        }).toList(),
-
-                        const SizedBox(height: 24),
-                        
-                        // Add new payment method
-                        InkWell(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (ctx) => const AddCard()),
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), style: BorderStyle.solid),
-                              borderRadius: BorderRadius.circular(16),
-                              color: AppColors.primaryColor.withOpacity(0.04),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryColor, size: 20),
-                                const SizedBox(width: 12),
-                                Text(
-                                  "Add New Payment Method",
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 48),
-
-                  // Sidebar Summary
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 30,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Main Payment Content
+                    Expanded(
+                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Order Summary",
+                            "Select Payment Method",
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 24,
                               fontWeight: FontWeight.w900,
                               color: Color(0xFF0F172A),
+                              letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          _buildSummaryItem("Service Price", "Rs. ${widget.amount ?? 0}"),
-                          _buildSummaryItem("Processing Fee", "Rs. 0.00"),
-                          const Divider(height: 32, color: Color(0xFFF1F5F9)),
-                          _buildSummaryItem("Total", "Rs. ${widget.amount ?? 0}", isTotal: true),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Choose how you'd like to pay for your requested services.",
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                           const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _processPayment,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryColor,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                elevation: 8,
-                                shadowColor: AppColors.primaryColor.withOpacity(0.4),
-                              ),
-                              child: const Text(
-                                "Confirm & Pay",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+
+                          // Payment Method List
+                          ...paymentMethods.asMap().entries.map((entry) {
+                            return _buildWebPaymentCard(context, entry.value);
+                          }).toList(),
+
+                          const SizedBox(height: 24),
+
+                          // Add new payment method
+                          InkWell(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => const AddCard(),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.lock_outline_rounded, size: 14, color: Color(0xFF94A3B8)),
-                                SizedBox(width: 6),
-                                Text(
-                                  "Secure 256-bit SSL encrypted",
-                                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.primaryColor.withOpacity(
+                                    0.3,
+                                  ),
+                                  style: BorderStyle.solid,
                                 ),
-                              ],
+                                borderRadius: BorderRadius.circular(16),
+                                color: AppColors.primaryColor.withOpacity(0.04),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_circle_outline_rounded,
+                                    color: AppColors.primaryColor,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Add New Payment Method",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(width: 48),
+
+                    // Sidebar Summary
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Order Summary",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildSummaryItem(
+                              "Service Price",
+                              "Rs. ${widget.amount ?? 0}",
+                            ),
+                            _buildSummaryItem("Processing Fee", "Rs. 0.00"),
+                            const Divider(height: 32, color: Color(0xFFF1F5F9)),
+                            _buildSummaryItem(
+                              "Total",
+                              "Rs. ${widget.amount ?? 0}",
+                              isTotal: true,
+                            ),
+                            const SizedBox(height: 32),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _processPayment,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: AppColors.primaryColor
+                                      .withOpacity(0.4),
+                                ),
+                                child: const Text(
+                                  "Confirm & Pay",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.lock_outline_rounded,
+                                    size: 14,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Secure 256-bit SSL encrypted",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
 
@@ -481,7 +536,12 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isSelected ? AppColors.primaryColor : const Color(0xFFF1F5F9), width: isSelected ? 2 : 1),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryColor
+                : const Color(0xFFF1F5F9),
+            width: isSelected ? 2 : 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -498,9 +558,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                 color: const Color(0xFFF8FAFB),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: SvgWrapper(
-                assetPath: item['logo'] ?? ImagePaths.visa,
-              ),
+              child: SvgWrapper(assetPath: item['logo'] ?? ImagePaths.visa),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -565,7 +623,9 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
-              color: isTotal ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+              color: isTotal
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
             ),
           ),
           Text(

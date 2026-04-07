@@ -88,13 +88,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 1300 : double.infinity),
+          constraints: BoxConstraints(
+            maxWidth: isDesktop ? 1300 : double.infinity,
+          ),
           child: Column(
             children: [
               if (isDesktop) ...[
                 // Desktop: Premium Welcome Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 30,
+                  ),
                   child: Row(
                     children: [
                       Column(
@@ -138,10 +143,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           trailingIcon: SvgWrapper(
                             assetPath: ImagePaths.filters,
                             onPress: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (ctx) => FiltersScreen()),
+                              MaterialPageRoute(
+                                builder: (ctx) => FiltersScreen(),
+                              ),
                             ),
                           ),
-                          leadingIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                          leadingIcon: const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 22,
+                          ),
                         ),
                       ),
                     ],
@@ -175,22 +186,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: 380,
                       child: PageView.builder(
                         controller: _pageController,
-                        onPageChanged: (index) => setState(() => _currentSlide = index),
+                        onPageChanged: (index) =>
+                            setState(() => _currentSlide = index),
                         itemCount: 3,
                         itemBuilder: (context, index) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 10,
+                            ),
                             child: Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(28),
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                                  colors: [
+                                    Color(0xFF0F172A),
+                                    Color(0xFF1E293B),
+                                  ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF0F172A).withOpacity(0.15),
+                                    color: const Color(
+                                      0xFF0F172A,
+                                    ).withOpacity(0.15),
                                     blurRadius: 30,
                                     offset: const Offset(0, 12),
                                   ),
@@ -212,7 +232,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
-                                            const Color(0xFF0F172A).withOpacity(0.6),
+                                            const Color(
+                                              0xFF0F172A,
+                                            ).withOpacity(0.6),
                                             Colors.transparent,
                                           ],
                                           begin: Alignment.centerLeft,
@@ -238,19 +260,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       bottom: 28,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(3, (index) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 600),
-                          curve: Curves.easeOutQuint,
-                          margin: const EdgeInsets.symmetric(horizontal: 5),
-                          height: 6,
-                          width: _currentSlide == index ? 28 : 6,
-                          decoration: BoxDecoration(
-                            color: _currentSlide == index 
-                              ? Colors.white 
-                              : Colors.white.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(10),
+                        children: List.generate(
+                          3,
+                          (index) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.easeOutQuint,
+                            margin: const EdgeInsets.symmetric(horizontal: 5),
+                            height: 6,
+                            width: _currentSlide == index ? 28 : 6,
+                            decoration: BoxDecoration(
+                              color: _currentSlide == index
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        )),
+                        ),
                       ),
                     ),
                   ],
@@ -280,9 +305,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
 
-              
               const SizedBox(height: 24),
-              
+
               // Appointments Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -296,7 +320,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.themeRed.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -312,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const DoctorConsultationCard(),
-              
+
               // Calendar and other elements
               const SizedBox(height: 10),
               EasyDateTimeLinePicker.itemBuilder(
@@ -320,40 +347,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 firstDate: DateTime(2024, 3, 18),
                 lastDate: DateTime(2030, 3, 18),
                 itemExtent: isDesktop ? 80 : ScallingConfig.scale(70),
-                itemBuilder: (context, date, isSelected, isDisabled, isToday, onTap) {
-                  return InkWell(
-                    onTap: onTap,
-                    child: Container(
-                      width: isDesktop ? 70 : ScallingConfig.scale(60),
-                      height: isDesktop ? 100 : ScallingConfig.scale(120),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.secondaryColor : AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FittedBox(
-                            child: CustomText(
-                              fontSize: 20,
-                              fontFamily: "Gilroy-SemiBold",
-                              text: date.day.toString(),
-                              color: isSelected ? AppColors.white : AppColors.darkGray400,
-                            ),
+                itemBuilder:
+                    (context, date, isSelected, isDisabled, isToday, onTap) {
+                      return InkWell(
+                        onTap: onTap,
+                        child: Container(
+                          width: isDesktop ? 70 : ScallingConfig.scale(60),
+                          height: isDesktop ? 100 : ScallingConfig.scale(120),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.secondaryColor
+                                : AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 2),
-                          CustomText(
-                            fontSize: 12,
-                            fontFamily: "Gilroy-SemiBold",
-                            text: DateFormat('EEE').format(date).toString(),
-                            color: isSelected ? AppColors.white : AppColors.darkGray400,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FittedBox(
+                                child: CustomText(
+                                  fontSize: 20,
+                                  fontFamily: "Gilroy-SemiBold",
+                                  text: date.day.toString(),
+                                  color: isSelected
+                                      ? AppColors.white
+                                      : AppColors.darkGray400,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              CustomText(
+                                fontSize: 12,
+                                fontFamily: "Gilroy-SemiBold",
+                                text: DateFormat('EEE').format(date).toString(),
+                                color: isSelected
+                                    ? AppColors.white
+                                    : AppColors.darkGray400,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                        ),
+                      );
+                    },
                 onDateChange: (date) {
                   setState(() {
                     _selectedDate = date;
@@ -364,7 +398,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
-                  width: isDesktop ? double.infinity : Utils.windowWidth(context) * 0.9,
+                  width: isDesktop
+                      ? double.infinity
+                      : Utils.windowWidth(context) * 0.9,
                   child: const AppointmentCard(),
                 ),
               ),
@@ -375,11 +411,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const UpcomingAppointments()),
+                      MaterialPageRoute(
+                        builder: (ctx) => const UpcomingAppointments(),
+                      ),
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(50),
                       gradient: LinearGradient(
@@ -439,7 +480,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1400),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 36,
+                  vertical: 28,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -452,7 +496,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CustomText(
-                              text: "Good ${TimeOfDay.now().hour < 12 ? 'Morning' : TimeOfDay.now().hour < 17 ? 'Afternoon' : 'Evening'},",
+                              text:
+                                  "Good ${TimeOfDay.now().hour < 12
+                                      ? 'Morning'
+                                      : TimeOfDay.now().hour < 17
+                                      ? 'Afternoon'
+                                      : 'Evening'},",
                               fontSize: 14,
                               color: const Color(0xFF64748B),
                               fontWeight: FontWeight.w500,
@@ -471,7 +520,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Spacer(),
                         // Date badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
@@ -485,10 +537,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF3B82F6)),
+                              const Icon(
+                                Icons.calendar_today_rounded,
+                                size: 16,
+                                color: Color(0xFF3B82F6),
+                              ),
                               const SizedBox(width: 8),
                               CustomText(
-                                text: DateFormat('EEEE, MMM d, yyyy').format(DateTime.now()),
+                                text: DateFormat(
+                                  'EEEE, MMM d, yyyy',
+                                ).format(DateTime.now()),
                                 fontSize: 13,
                                 color: const Color(0xFF475569),
                                 fontWeight: FontWeight.w600,
@@ -502,7 +560,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withOpacity(0.03),
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withOpacity(0.03),
                                 blurRadius: 20,
                                 offset: const Offset(0, 6),
                               ),
@@ -516,10 +576,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             trailingIcon: SvgWrapper(
                               assetPath: ImagePaths.filters,
                               onPress: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (ctx) => const LabFilters()),
+                                MaterialPageRoute(
+                                  builder: (ctx) => const LabFilters(),
+                                ),
                               ),
                             ),
-                            leadingIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+                            leadingIcon: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 20,
+                            ),
                           ),
                         ),
                       ],
@@ -539,10 +605,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             number: "120",
                             subtitle: "+12 from yesterday",
                             icon: Icons.science_rounded,
-                            gradientColors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                            gradientColors: [
+                              const Color(0xFF3B82F6),
+                              const Color(0xFF1D4ED8),
+                            ],
                             bgAccent: const Color(0xFFDBEAFE),
                             onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (ctx) => const ActiveOrdersScreen()),
+                              MaterialPageRoute(
+                                builder: (ctx) => const ActiveOrdersScreen(),
+                              ),
                             ),
                           ),
                         ),
@@ -554,10 +625,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             number: "32",
                             subtitle: "This month",
                             icon: Icons.check_circle_rounded,
-                            gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
+                            gradientColors: [
+                              const Color(0xFF10B981),
+                              const Color(0xFF059669),
+                            ],
                             bgAccent: const Color(0xFFD1FAE5),
                             onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (ctx) => const CompletedReportsScreen()),
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    const CompletedReportsScreen(),
+                              ),
                             ),
                           ),
                         ),
@@ -569,7 +646,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             number: "15",
                             subtitle: "3 urgent",
                             icon: Icons.pending_actions_rounded,
-                            gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+                            gradientColors: [
+                              const Color(0xFFF59E0B),
+                              const Color(0xFFD97706),
+                            ],
                             bgAccent: const Color(0xFFFEF3C7),
                             onTap: () {},
                           ),
@@ -582,7 +662,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             number: "\$4.2K",
                             subtitle: "+8% this week",
                             icon: Icons.trending_up_rounded,
-                            gradientColors: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+                            gradientColors: [
+                              const Color(0xFF8B5CF6),
+                              const Color(0xFF7C3AED),
+                            ],
                             bgAccent: const Color(0xFFEDE9FE),
                             onTap: () {},
                           ),
@@ -605,20 +688,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // ─── Laboratories Section ─────────────────
-                              _buildSectionHeader("Laboratories", "Browse All", () {}),
+                              _buildSectionHeader(
+                                "Laboratories",
+                                "Browse All",
+                                () {},
+                              ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Expanded(child: Laboratory(margin: EdgeInsets.zero)),
+                                  Expanded(
+                                    child: Laboratory(margin: EdgeInsets.zero),
+                                  ),
                                   const SizedBox(width: 18),
-                                  Expanded(child: Laboratory(margin: EdgeInsets.zero)),
+                                  Expanded(
+                                    child: Laboratory(margin: EdgeInsets.zero),
+                                  ),
                                 ],
                               ),
 
                               const SizedBox(height: 32),
 
                               // ─── New Test Requests ───────────────────
-                              _buildSectionHeader("New Test Requests", "View All", () {}),
+                              _buildSectionHeader(
+                                "New Test Requests",
+                                "View All",
+                                () {},
+                              ),
                               const SizedBox(height: 16),
                               // Premium Table-style requests
                               Container(
@@ -637,18 +732,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   children: [
                                     // Table header
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFF8FAFC),
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(20),
+                                            ),
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: Colors.grey.shade200,
+                                          ),
+                                        ),
                                       ),
-                                      child:  Row(
+                                      child: Row(
                                         children: [
-                                          Expanded(flex: 3, child: Text("Patient", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-                                          Expanded(flex: 2, child: Text("Test", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-                                          Expanded(flex: 2, child: Text("Date & Time", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
-                                          Expanded(flex: 1, child: Text("Status", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B), letterSpacing: 0.5))),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(
+                                              "Patient",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B),
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              "Test",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B),
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              "Date & Time",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B),
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Text(
+                                              "Status",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B),
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
                                           SizedBox(width: 80),
                                         ],
                                       ),
@@ -676,12 +825,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   gradient: const LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
-                                    colors: [Color(0xFF0B2D6E), Color(0xFF1565C0)],
+                                    colors: [
+                                      Color(0xFF0B2D6E),
+                                      Color(0xFF1565C0),
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF0B2D6E).withOpacity(0.25),
+                                      color: const Color(
+                                        0xFF0B2D6E,
+                                      ).withOpacity(0.25),
                                       blurRadius: 24,
                                       offset: const Offset(0, 10),
                                     ),
@@ -735,10 +889,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       label: "Start Video Call",
                                       color: const Color(0xFFF59E0B),
                                       onTap: () => Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (ctx) => const VideoCall(
-                                          channelName: 'call_quick',
-                                          remoteUserName: 'Doctor',
-                                        )),
+                                        MaterialPageRoute(
+                                          builder: (ctx) => const VideoCall(
+                                            channelName: 'call_quick',
+                                            remoteUserName: 'Doctor',
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -765,7 +921,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
                                           "Recent Activity",
@@ -777,10 +934,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 5,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFEFF6FF),
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: const Text(
                                             "Today",
@@ -862,7 +1024,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   CustomRecordCard(
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const ActiveOrdersScreen()),
+                        MaterialPageRoute(
+                          builder: (ctx) => const ActiveOrdersScreen(),
+                        ),
                       );
                     },
                     label: "Active Orders",
@@ -873,14 +1037,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   CustomRecordCard(
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const CompletedReportsScreen()),
+                        MaterialPageRoute(
+                          builder: (ctx) => const CompletedReportsScreen(),
+                        ),
                       );
                     },
                     color: AppColors.primaryColor,
                     label: "Completed Reports",
                     number: "32",
                     icon: SvgWrapper(assetPath: ImagePaths.lab_tech),
-                  )
+                  ),
                 ],
               ),
               SizedBox(height: ScallingConfig.scale(20)),
@@ -896,7 +1062,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const Laboratory(),
               SizedBox(height: ScallingConfig.scale(10)),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(25.0)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(25.0),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -957,15 +1125,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             TimeStampWidget(title: "Date", data: "01-AUG-2025"),
                             SizedBox(width: 10),
-                            TimeStampWidget(title: "Time", data: "07 PM - 08 PM"),
+                            TimeStampWidget(
+                              title: "Time",
+                              data: "07 PM - 08 PM",
+                            ),
                           ],
-                        )
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: Utils.windowHeight(context) * 0.1)
+              SizedBox(height: Utils.windowHeight(context) * 0.1),
             ],
           ),
         );
@@ -981,7 +1152,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   // Desktop: Premium Welcome Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 30,
+                    ),
                     child: Row(
                       children: [
                         Column(
@@ -996,7 +1170,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             CustomText(
-                              text: ref.watch(authProvider).user?.name ?? "User",
+                              text:
+                                  ref.watch(authProvider).user?.name ?? "User",
                               fontSize: 32,
                               color: const Color(0xFF0F172A),
                               fontWeight: FontWeight.w900,
@@ -1011,7 +1186,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withOpacity(0.03),
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withOpacity(0.03),
                                 blurRadius: 25,
                                 offset: const Offset(0, 8),
                               ),
@@ -1025,10 +1202,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             trailingIcon: SvgWrapper(
                               assetPath: ImagePaths.filters,
                               onPress: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (ctx) => const PatientFiltersScreen()),
+                                MaterialPageRoute(
+                                  builder: (ctx) =>
+                                      const PatientFiltersScreen(),
+                                ),
                               ),
                             ),
-                            leadingIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                            leadingIcon: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 22,
+                            ),
                           ),
                         ),
                       ],
@@ -1041,43 +1225,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Row(
                       children: [
-                         Expanded(
-                           flex: 2,
-                           child: Row(
-                             children: [
-                               CustomRecordCard(
-                                 width: 380,
-                                 onTap: () {
-                                   Navigator.of(context).push(
-                                     MaterialPageRoute(builder: (ctx) => const ActiveOrdersScreen()),
-                                   );
-                                 },
-                                 label: "Active Orders",
-                                 number: "120",
-                                 icon: SvgWrapper(assetPath: ImagePaths.lab_tech),
-                               ),
-                               const SizedBox(width: 15),
-                               CustomRecordCard(
-                                 width: 380,
-                                 onTap: () {
-                                   Navigator.of(context).push(
-                                     MaterialPageRoute(builder: (ctx) => const CompletedReportsScreen()),
-                                   );
-                                 },
-                                 color: AppColors.primaryColor,
-                                 label: "Completed Reports",
-                                 number: "32",
-                                 icon: SvgWrapper(assetPath: ImagePaths.lab_tech),
-                               )
-                             ],
-                           ),
-                         ),
+                        Expanded(
+                          flex: 2,
+                          child: Row(
+                            children: [
+                              CustomRecordCard(
+                                width: 380,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (ctx) =>
+                                          const ActiveOrdersScreen(),
+                                    ),
+                                  );
+                                },
+                                label: "Active Orders",
+                                number: "120",
+                                icon: SvgWrapper(
+                                  assetPath: ImagePaths.lab_tech,
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              CustomRecordCard(
+                                width: 380,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (ctx) =>
+                                          const CompletedReportsScreen(),
+                                    ),
+                                  );
+                                },
+                                color: AppColors.primaryColor,
+                                label: "Completed Reports",
+                                number: "32",
+                                icon: SvgWrapper(
+                                  assetPath: ImagePaths.lab_tech,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 32),
-                  
+
                   // Today's Appointments Section
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -1094,7 +1288,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(width: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.themeRed.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
@@ -1134,7 +1331,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           underline: true,
                           onTap: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                              MaterialPageRoute(
+                                builder: (ctx) => const DoctorsList(),
+                              ),
                             );
                           },
                           color: AppColors.primaryColor,
@@ -1144,7 +1343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Doctors Responsive Grid
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -1156,27 +1355,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           )
                         : _topDoctors.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(40),
-                                  child: CustomText(
-                                    text: 'No doctors available',
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : Wrap(
-                                spacing: 24,
-                                runSpacing: 24,
-                                children: _topDoctors.map((doctor) {
-                                  return DoctorProfileCard(
-                                    doctor: doctor,
-                                    width: 380,
-                                    padding: const EdgeInsets.all(20),
-                                  );
-                                }).toList(),
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(40),
+                              child: CustomText(
+                                text: 'No doctors available',
+                                fontSize: 16,
+                                color: Colors.grey,
                               ),
+                            ),
+                          )
+                        : Wrap(
+                            spacing: 24,
+                            runSpacing: 24,
+                            children: _topDoctors.map((doctor) {
+                              return DoctorProfileCard(
+                                doctor: doctor,
+                                width: 380,
+                                padding: const EdgeInsets.all(20),
+                              );
+                            }).toList(),
+                          ),
                   ),
                   const SizedBox(height: 60),
                 ],
@@ -1239,7 +1438,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey[400], size: 16),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.grey[400],
+                  size: 16,
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -1329,7 +1532,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       color: bgAccent,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.arrow_forward_rounded, color: gradientColors[0], size: 14),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: gradientColors[0],
+                      size: 14,
+                    ),
                   ),
                 ],
               ),
@@ -1375,7 +1582,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, String actionText, VoidCallback onTap) {
+  Widget _buildSectionHeader(
+    String title,
+    String actionText,
+    VoidCallback onTap,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1397,7 +1608,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primaryColor.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primaryColor.withOpacity(0.12)),
+                border: Border.all(
+                  color: AppColors.primaryColor.withOpacity(0.12),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1411,7 +1624,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primaryColor),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: AppColors.primaryColor,
+                  ),
                 ],
               ),
             ),
@@ -1466,7 +1683,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.4), size: 14),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withOpacity(0.4),
+                size: 14,
+              ),
             ],
           ),
         ),
@@ -1540,10 +1761,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   List<Widget> _buildTestRequestRows(BuildContext context) {
     final testData = [
-      {"name": "Alyana", "test": "Complete Blood Count", "date": "01-AUG-2025", "time": "07 PM", "status": "Pending", "statusColor": "amber"},
-      {"name": "Hamza Khan", "test": "Lipid Profile", "date": "01-AUG-2025", "time": "08 PM", "status": "In Progress", "statusColor": "blue"},
-      {"name": "Sara Ahmed", "test": "X-Ray Chest", "date": "02-AUG-2025", "time": "10 AM", "status": "Urgent", "statusColor": "red"},
-      {"name": "Ali Raza", "test": "Urine Analysis", "date": "02-AUG-2025", "time": "11 AM", "status": "Pending", "statusColor": "amber"},
+      {
+        "name": "Alyana",
+        "test": "Complete Blood Count",
+        "date": "01-AUG-2025",
+        "time": "07 PM",
+        "status": "Pending",
+        "statusColor": "amber",
+      },
+      {
+        "name": "Hamza Khan",
+        "test": "Lipid Profile",
+        "date": "01-AUG-2025",
+        "time": "08 PM",
+        "status": "In Progress",
+        "statusColor": "blue",
+      },
+      {
+        "name": "Sara Ahmed",
+        "test": "X-Ray Chest",
+        "date": "02-AUG-2025",
+        "time": "10 AM",
+        "status": "Urgent",
+        "statusColor": "red",
+      },
+      {
+        "name": "Ali Raza",
+        "test": "Urine Analysis",
+        "date": "02-AUG-2025",
+        "time": "11 AM",
+        "status": "Pending",
+        "statusColor": "amber",
+      },
     ];
 
     return testData.asMap().entries.map((entry) {
@@ -1567,8 +1816,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         decoration: BoxDecoration(
-          border: isLast ? null : Border(bottom: BorderSide(color: Colors.grey.shade100)),
-          borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(20)) : null,
+          border: isLast
+              ? null
+              : Border(bottom: BorderSide(color: Colors.grey.shade100)),
+          borderRadius: isLast
+              ? const BorderRadius.vertical(bottom: Radius.circular(20))
+              : null,
         ),
         child: Row(
           children: [
@@ -1580,7 +1833,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryColor.withOpacity(0.2), width: 2),
+                      border: Border.all(
+                        color: AppColors.primaryColor.withOpacity(0.2),
+                        width: 2,
+                      ),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(50),
@@ -1621,7 +1877,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               flex: 2,
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 13, color: Colors.grey[400]),
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 13,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     "${data['date']} · ${data['time']}",
@@ -1638,7 +1898,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               flex: 1,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(8),
@@ -1710,10 +1973,13 @@ class TimeStampWidget extends StatelessWidget {
           text: data,
           fontSize: 10,
           bgColor: AppColors.veryLightGrey,
-          padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10), vertical: ScallingConfig.scale(5)),
+          padding: EdgeInsets.symmetric(
+            horizontal: ScallingConfig.scale(10),
+            vertical: ScallingConfig.scale(5),
+          ),
           color: AppColors.darkGreyColor,
           borderradius: 10,
-        )
+        ),
       ],
     );
   }
@@ -1733,9 +1999,7 @@ class ProfileInfoWidget extends ConsumerWidget {
           Container(
             width: Utils.windowWidth(context) * 0.25,
             height: Utils.windowWidth(context) * 0.25,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             child: Image.asset(ImagePaths.user1, fit: BoxFit.cover),
           ),
           const SizedBox(width: 12),
@@ -1746,7 +2010,10 @@ class ProfileInfoWidget extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CustomText(text: ref.watch(authProvider).user?.name ?? "User", isSemiBold: true),
+                    CustomText(
+                      text: ref.watch(authProvider).user?.name ?? "User",
+                      isSemiBold: true,
+                    ),
                     const SizedBox(width: 50),
                     CustomText(
                       text: "View Profile",
@@ -1778,7 +2045,10 @@ class ProfileInfoWidget extends ConsumerWidget {
                   children: [
                     const SvgWrapper(assetPath: ImagePaths.scan),
                     SizedBox(width: Utils.windowWidth(context) * 0.025),
-                    const CustomText(text: "Booking ID: #DR452SA54", fontSize: 12),
+                    const CustomText(
+                      text: "Booking ID: #DR452SA54",
+                      fontSize: 12,
+                    ),
                   ],
                 ),
               ],
@@ -1836,7 +2106,9 @@ class DoctorConsultationCard extends StatelessWidget {
             ),
             SizedBox(height: Utils.windowHeight(context) * 0.017),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
+              padding: EdgeInsets.symmetric(
+                horizontal: ScallingConfig.scale(10),
+              ),
               child: Consumer(
                 builder: (context, ref, child) {
                   final userName = ref.watch(authProvider).user?.name ?? 'User';
@@ -1844,7 +2116,9 @@ class DoctorConsultationCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: ScallingConfig.scale(30),
-                        backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                        backgroundColor: AppColors.primaryColor.withOpacity(
+                          0.1,
+                        ),
                         child: Text(
                           userName.substring(0, 1).toUpperCase(),
                           style: TextStyle(
@@ -1880,12 +2154,14 @@ class DoctorConsultationCard extends StatelessWidget {
                         label: "Join",
                         labelSize: 14,
                         onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).push(MaterialPageRoute(builder: (ctx) => VideoCall(
-                            channelName: 'call_join',
-                            remoteUserName: 'Doctor',
-                          )));
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => VideoCall(
+                                channelName: 'call_join',
+                                remoteUserName: 'Doctor',
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ],
@@ -1946,11 +2222,16 @@ class DoctorConsultationCard extends StatelessWidget {
                 children: [
                   // Live Indicator Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.themeGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.themeGreen.withOpacity(0.2)),
+                      border: Border.all(
+                        color: AppColors.themeGreen.withOpacity(0.2),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1962,7 +2243,11 @@ class DoctorConsultationCard extends StatelessWidget {
                             color: AppColors.themeGreen,
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(color: AppColors.themeGreen, blurRadius: 4, spreadRadius: 1),
+                              BoxShadow(
+                                color: AppColors.themeGreen,
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
                             ],
                           ),
                         ),
@@ -1989,11 +2274,17 @@ class DoctorConsultationCard extends StatelessWidget {
                             padding: const EdgeInsets.all(5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.secondaryColor.withOpacity(0.2), width: 3),
+                              border: Border.all(
+                                color: AppColors.secondaryColor.withOpacity(
+                                  0.2,
+                                ),
+                                width: 3,
+                              ),
                             ),
                             child: CircleAvatar(
                               radius: 45,
-                              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                              backgroundColor: AppColors.primaryColor
+                                  .withOpacity(0.1),
                               child: Text(
                                 userName.substring(0, 1).toUpperCase(),
                                 style: TextStyle(
@@ -2026,7 +2317,13 @@ class DoctorConsultationCard extends StatelessWidget {
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    Icon(Icons.videocam_rounded, size: 20, color: AppColors.primaryColor.withOpacity(0.6)),
+                                    Icon(
+                                      Icons.videocam_rounded,
+                                      size: 20,
+                                      color: AppColors.primaryColor.withOpacity(
+                                        0.6,
+                                      ),
+                                    ),
                                     const SizedBox(width: 10),
                                     CustomText(
                                       text: "Starts in 20 min",
@@ -2059,13 +2356,19 @@ class DoctorConsultationCard extends StatelessWidget {
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
-                              trailingIcon: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                              trailingIcon: const Icon(
+                                Icons.bolt_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (ctx) => const VideoCall(
-                                    channelName: 'call_quick',
-                                    remoteUserName: 'Doctor',
-                                  )),
+                                  MaterialPageRoute(
+                                    builder: (ctx) => const VideoCall(
+                                      channelName: 'call_quick',
+                                      remoteUserName: 'Doctor',
+                                    ),
+                                  ),
                                 );
                               },
                             ),

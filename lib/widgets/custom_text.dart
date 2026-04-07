@@ -36,8 +36,8 @@ class CustomText extends StatelessWidget {
   final double? lineHeight;
 
   const CustomText({
-  super.key,
-   this.text,
+    super.key,
+    this.text,
     this.onTap,
     this.width,
     this.height,
@@ -71,25 +71,29 @@ class CustomText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    FontWeight resolvedWeight = fontWeight ??
+    FontWeight resolvedWeight =
+        fontWeight ??
         (isBold
             ? FontWeight.w700
             : isSemiBold
-                ? FontWeight.w600
-                : isMedium
-                    ? FontWeight.w500
-                    : isLight
-                        ? FontWeight.w300
-                        : FontWeight.w400);
+            ? FontWeight.w600
+            : isMedium
+            ? FontWeight.w500
+            : isLight
+            ? FontWeight.w300
+            : FontWeight.w400);
 
     final textWidget = Text(
       text ?? "",
       textAlign: textAlign,
       maxLines: maxLines,
       overflow: overflow,
-      style: style ??
+      style:
+          style ??
           TextStyle(
-            color: disabled ? AppColors.grayColor : color ?? AppColors.primary500,
+            color: disabled
+                ? AppColors.grayColor
+                : color ?? AppColors.primary500,
             fontSize: ScallingConfig.moderateScale(fontSize),
             fontWeight: resolvedWeight,
             fontFamily: fontFamily,
@@ -107,22 +111,20 @@ class CustomText extends StatelessWidget {
     return GestureDetector(
       onTap: disabled ? null : onTap,
       child: Container(
-
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(borderradius ?? 0),
-          border: borderColor !=null ?   Border.all(
-            color: borderColor ?? Colors.transparent,
-            width: borderWidth ?? 0
-          ) : null
-        ) ,
+          border: borderColor != null
+              ? Border.all(
+                  color: borderColor ?? Colors.transparent,
+                  width: borderWidth ?? 0,
+                )
+              : null,
+        ),
         margin: margin ?? EdgeInsets.zero,
         width: width,
         height: height,
-        child: Padding(
-          padding: padding ?? EdgeInsets.zero,
-          child: textWidget,
-        ),
+        child: Padding(padding: padding ?? EdgeInsets.zero, child: textWidget),
       ),
     );
   }

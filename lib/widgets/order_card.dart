@@ -8,10 +8,13 @@ import 'package:icare/widgets/custom_circle_icon_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class OrderCard extends StatelessWidget {
-  const OrderCard({super.key, required this.order, this.type  = OrderType.delivered});
+  const OrderCard({
+    super.key,
+    required this.order,
+    this.type = OrderType.delivered,
+  });
   final Map<String, dynamic> order;
   final OrderType type;
-
 
   @override
   Widget build(BuildContext context) {
@@ -29,33 +32,31 @@ class OrderCard extends StatelessWidget {
             color: Colors.black.withAlpha(12),
             blurRadius: 12,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CustomText(
                 text: order["labName"],
-            fontSize: 18,
-            fontFamily: "Gilroy-SemiBold",
-            color: AppColors.themeDarkGrey,
-            fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontFamily: "Gilroy-SemiBold",
+                color: AppColors.themeDarkGrey,
+                fontWeight: FontWeight.w600,
               ),
-              type == OrderType.delivered ? 
-              CustomCircleIconButton(
-                iconPath: ImagePaths.success,
-              )
-              : type == OrderType.cancelled ? 
-              CustomCircleIconButton(
-                iconPath: ImagePaths.failed,
-                size: 36,
-              ) : const SizedBox(),
-],
+              type == OrderType.delivered
+                  ? CustomCircleIconButton(iconPath: ImagePaths.success)
+                  : type == OrderType.cancelled
+                  ? CustomCircleIconButton(
+                      iconPath: ImagePaths.failed,
+                      size: 36,
+                    )
+                  : const SizedBox(),
+            ],
           ),
 
           const SizedBox(height: 10),
@@ -108,36 +109,43 @@ class OrderCard extends StatelessWidget {
             children: [
               CustomText(
                 text: "Status",
-             fontSize: 12,
-            fontFamily: "Gilroy-Medium",
-            color: AppColors.themeDarkGrey,
-            fontWeight: FontWeight.w400,
+                fontSize: 12,
+                fontFamily: "Gilroy-Medium",
+                color: AppColors.themeDarkGrey,
+                fontWeight: FontWeight.w400,
               ),
               CustomText(
-                text: type == OrderType.delivered ? "Delivered" : type == OrderType.cancelled ? "Cancelled" : "N/A",
+                text: type == OrderType.delivered
+                    ? "Delivered"
+                    : type == OrderType.cancelled
+                    ? "Cancelled"
+                    : "N/A",
                 fontSize: 13,
                 fontFamily: "Gilroy-SemiBold",
-                color: type == OrderType.delivered ? AppColors.themeGreen : type == OrderType.cancelled ? AppColors.themeRed : AppColors.themeDarkGrey, 
+                color: type == OrderType.delivered
+                    ? AppColors.themeGreen
+                    : type == OrderType.cancelled
+                    ? AppColors.themeRed
+                    : AppColors.themeDarkGrey,
 
                 fontWeight: FontWeight.w600,
               ),
             ],
           ),
-          if(type == OrderType.cancelled)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-          
-              CustomText(
-                text: "Cancelled from our side",
-                fontSize: 13,
-                color: AppColors.themeRed,
-                fontFamily: "Gilroy-Medium",
-                fontWeight: FontWeight.w400,
-              ),
-            ],
-          ),
-          if(type == OrderType.recent) ...[
+          if (type == OrderType.cancelled)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CustomText(
+                  text: "Cancelled from our side",
+                  fontSize: 13,
+                  color: AppColors.themeRed,
+                  fontFamily: "Gilroy-Medium",
+                  fontWeight: FontWeight.w400,
+                ),
+              ],
+            ),
+          if (type == OrderType.recent) ...[
             SizedBox(height: ScallingConfig.scale(20)),
             CustomText(
               text: "Manage Order",
@@ -146,46 +154,47 @@ class OrderCard extends StatelessWidget {
               textAlign: TextAlign.center,
               color: AppColors.themeRed,
 
-              onTap: (){
-                Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ManageOrders()));
+              onTap: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (ctx) => ManageOrders()));
               },
               fontFamily: "Gilroy-Medium",
               fontWeight: FontWeight.w400,
-            )],
+            ),
+          ],
         ],
       ),
     );
   }
-
-  
 }
 
 Widget _infoRow(String title, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: ScallingConfig.scale(5)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          CustomText(
-            text: title,
-            fontSize: 12,
-            fontFamily: "Gilroy-Medium",
-            color: AppColors.themeDarkGrey,
-            fontWeight: FontWeight.w400,
-          ),
-          Expanded(
-            child: CustomText(
-              text: value,
-              maxLines: 3,
-              textAlign: TextAlign.right,
+  return Padding(
+    padding: EdgeInsets.symmetric(vertical: ScallingConfig.scale(5)),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        CustomText(
+          text: title,
+          fontSize: 12,
+          fontFamily: "Gilroy-Medium",
+          color: AppColors.themeDarkGrey,
+          fontWeight: FontWeight.w400,
+        ),
+        Expanded(
+          child: CustomText(
+            text: value,
+            maxLines: 3,
+            textAlign: TextAlign.right,
             fontSize: 12,
 
             fontFamily: "Gilroy-SemiBold ",
             color: AppColors.themeDarkGrey,
             fontWeight: FontWeight.w600,
-            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}

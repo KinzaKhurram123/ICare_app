@@ -7,7 +7,10 @@ class StudentService {
   // Add/Update student details
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response = await _apiService.post('/students/add_student_details', data);
+      final response = await _apiService.post(
+        '/students/add_student_details',
+        data,
+      );
       return response.data;
     } catch (e) {
       print('Error updating student profile: $e');

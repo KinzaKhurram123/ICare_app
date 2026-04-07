@@ -65,7 +65,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   text: amount.isEmpty ? "Enter Amount" : amount,
                   fontSize: amount.isEmpty ? 18 : 24,
                   fontFamily: "Gilroy-Bold",
-                  color: amount.isEmpty ? AppColors.tertiaryColor : AppColors.primary500,
+                  color: amount.isEmpty
+                      ? AppColors.tertiaryColor
+                      : AppColors.primary500,
                 ),
               ),
             ),
@@ -112,10 +114,11 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   descriptionMaxLines: 2,
                   status: DialogStatus.success,
                   descriptionSize: 14,
-                  description: "You have Successfully bought full course, Enjoy!",
+                  description:
+                      "You have Successfully bought full course, Enjoy!",
                 );
               },
-            )
+            ),
           ],
         ),
       ),
@@ -155,7 +158,11 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.account_balance_wallet_outlined, size: 64, color: AppColors.primaryColor),
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 64,
+                color: AppColors.primaryColor,
+              ),
               const SizedBox(height: 24),
               const Text(
                 "Enter Payment Amount",
@@ -173,15 +180,20 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              
+
               // Animated style for amount display
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+                  border: Border.all(
+                    color: AppColors.primaryColor.withOpacity(0.2),
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -189,7 +201,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.w900,
-                      color: amount.isEmpty ? const Color(0xFF94A3B8) : AppColors.primaryColor,
+                      color: amount.isEmpty
+                          ? const Color(0xFF94A3B8)
+                          : AppColors.primaryColor,
                       fontFamily: "Gilroy-Bold",
                       letterSpacing: 2.0,
                     ),
@@ -198,14 +212,17 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               ),
 
               const SizedBox(height: 48),
-              
+
               // Custom styled numpad for web
               Wrap(
                 spacing: 24,
                 runSpacing: 24,
                 alignment: WrapAlignment.center,
                 children: [
-                  ...List.generate(9, (index) => _buildWebNumButton("${index + 1}")),
+                  ...List.generate(
+                    9,
+                    (index) => _buildWebNumButton("${index + 1}"),
+                  ),
                   _buildWebNumButton("0"),
                   _buildWebNumButton(".", isDot: true),
                   _buildWebNumButton("⌫", isBack: true),
@@ -213,7 +230,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               ),
 
               const SizedBox(height: 60),
-              
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -229,20 +246,27 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                       descriptionMaxLines: 2,
                       status: DialogStatus.success,
                       descriptionSize: 14,
-                      description: "Congratulations! You have unlocked the full course content. Start learning now!",
+                      description:
+                          "Congratulations! You have unlocked the full course content. Start learning now!",
                     );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 10,
                     shadowColor: AppColors.primaryColor.withOpacity(0.4),
                   ),
                   child: const Text(
                     "Pay Now",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -253,12 +277,17 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     );
   }
 
-  Widget _buildWebNumButton(String text, {bool isBack = false, bool isDot = false}) {
+  Widget _buildWebNumButton(
+    String text, {
+    bool isBack = false,
+    bool isDot = false,
+  }) {
     return InkWell(
       onTap: () {
         setState(() {
           if (isBack) {
-            if (amount.isNotEmpty) amount = amount.substring(0, amount.length - 1);
+            if (amount.isNotEmpty)
+              amount = amount.substring(0, amount.length - 1);
           } else {
             if (amount.length < 10) amount += text;
           }

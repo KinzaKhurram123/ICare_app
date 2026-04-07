@@ -41,10 +41,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (leading != null) leading! else const SizedBox.shrink(),
-                if (leading != null) const SizedBox(width: 8) else const SizedBox.shrink(),
+                if (leading != null)
+                  const SizedBox(width: 8)
+                else
+                  const SizedBox.shrink(),
                 Expanded(
                   child: Align(
-                    alignment: centerTitle ? Alignment.center : Alignment.centerLeft,
+                    alignment: centerTitle
+                        ? Alignment.center
+                        : Alignment.centerLeft,
                     child: title ?? const SizedBox.shrink(),
                   ),
                 ),

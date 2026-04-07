@@ -40,9 +40,9 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
       print('Error loading analytics: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading analytics: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading analytics: $e')));
       }
     }
   }
@@ -70,31 +70,33 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 40 : 20),
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildPeriodSelector(),
-                const SizedBox(height: 24),
-                _buildRevenueCards(isDesktop),
-                const SizedBox(height: 24),
-                _buildTopSellingProducts(),
-                const SizedBox(height: 24),
-                _buildOrdersBreakdown(),
-              ],
+              padding: EdgeInsets.all(isDesktop ? 40 : 20),
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1200 : double.infinity,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPeriodSelector(),
+                      const SizedBox(height: 24),
+                      _buildRevenueCards(isDesktop),
+                      const SizedBox(height: 24),
+                      _buildTopSellingProducts(),
+                      const SizedBox(height: 24),
+                      _buildOrdersBreakdown(),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
   Widget _buildPeriodSelector() {
     final periods = ['This Week', 'This Month', 'This Year'];
-    
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -122,7 +124,9 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryColor : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -148,24 +152,70 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
         if (isDesktop) {
           return Row(
             children: [
-              Expanded(child: _buildStatCard('Total Revenue', '\$${_stats['totalRevenue']}', Icons.attach_money_rounded, const Color(0xFF10B981), '+12.5%')),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Revenue',
+                  '\$${_stats['totalRevenue']}',
+                  Icons.attach_money_rounded,
+                  const Color(0xFF10B981),
+                  '+12.5%',
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Total Orders', '${_stats['totalOrders']}', Icons.shopping_bag_rounded, const Color(0xFF3B82F6), '+8.2%')),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Orders',
+                  '${_stats['totalOrders']}',
+                  Icons.shopping_bag_rounded,
+                  const Color(0xFF3B82F6),
+                  '+8.2%',
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Avg Order Value', '\$${_stats['averageOrderValue'].toStringAsFixed(2)}', Icons.trending_up_rounded, const Color(0xFF8B5CF6), '+5.1%')),
+              Expanded(
+                child: _buildStatCard(
+                  'Avg Order Value',
+                  '\$${_stats['averageOrderValue'].toStringAsFixed(2)}',
+                  Icons.trending_up_rounded,
+                  const Color(0xFF8B5CF6),
+                  '+5.1%',
+                ),
+              ),
             ],
           );
         }
-        
+
         return Column(
           children: [
-            _buildStatCard('Total Revenue', '\$${_stats['totalRevenue']}', Icons.attach_money_rounded, const Color(0xFF10B981), '+12.5%'),
+            _buildStatCard(
+              'Total Revenue',
+              '\$${_stats['totalRevenue']}',
+              Icons.attach_money_rounded,
+              const Color(0xFF10B981),
+              '+12.5%',
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildStatCard('Orders', '${_stats['totalOrders']}', Icons.shopping_bag_rounded, const Color(0xFF3B82F6), '+8.2%')),
+                Expanded(
+                  child: _buildStatCard(
+                    'Orders',
+                    '${_stats['totalOrders']}',
+                    Icons.shopping_bag_rounded,
+                    const Color(0xFF3B82F6),
+                    '+8.2%',
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Avg Value', '\$${_stats['averageOrderValue'].toStringAsFixed(0)}', Icons.trending_up_rounded, const Color(0xFF8B5CF6), '+5.1%')),
+                Expanded(
+                  child: _buildStatCard(
+                    'Avg Value',
+                    '\$${_stats['averageOrderValue'].toStringAsFixed(0)}',
+                    Icons.trending_up_rounded,
+                    const Color(0xFF8B5CF6),
+                    '+5.1%',
+                  ),
+                ),
               ],
             ),
           ],
@@ -174,7 +224,13 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, String change) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    String change,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -269,7 +325,9 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
             ),
           ),
           const SizedBox(height: 20),
-          ...(_stats['topSellingProducts'] as List).asMap().entries.map((entry) {
+          ...(_stats['topSellingProducts'] as List).asMap().entries.map((
+            entry,
+          ) {
             final index = entry.key;
             final product = entry.value;
             return Padding(
@@ -372,7 +430,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
   Widget _buildBreakdownItem(String label, int count, Color color) {
     final total = 156;
     final percentage = (count / total);
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -416,10 +474,14 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
 
   Color _getRankColor(int index) {
     switch (index) {
-      case 0: return const Color(0xFFF59E0B);
-      case 1: return const Color(0xFF94A3B8);
-      case 2: return const Color(0xFFCD7F32);
-      default: return const Color(0xFF64748B);
+      case 0:
+        return const Color(0xFFF59E0B);
+      case 1:
+        return const Color(0xFF94A3B8);
+      case 2:
+        return const Color(0xFFCD7F32);
+      default:
+        return const Color(0xFF64748B);
     }
   }
 }

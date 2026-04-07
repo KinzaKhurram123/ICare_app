@@ -11,11 +11,7 @@ class LabTest {
     this.isSelected = false,
   });
 
-   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'price': price,
-    };
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'name': name, 'price': price};
   }
 }

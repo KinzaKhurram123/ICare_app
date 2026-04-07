@@ -11,13 +11,14 @@ class LabProfileSetup extends StatefulWidget {
   State<LabProfileSetup> createState() => _LabProfileSetupState();
 }
 
-class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderStateMixin {
+class _LabProfileSetupState extends State<LabProfileSetup>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final LaboratoryService _labService = LaboratoryService();
-  
+
   bool _isLoading = true;
   bool _isSaving = false;
-  
+
   final _labNameController = TextEditingController();
   final _ownerNameController = TextEditingController();
   final _licenseNumberController = TextEditingController();
@@ -29,7 +30,7 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
   final _descriptionController = TextEditingController();
   final _workingHoursFromController = TextEditingController();
   final _workingHoursToController = TextEditingController();
-  
+
   bool _homeSampleAvailable = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -83,7 +84,8 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
         _cityController.text = profile['city'] ?? '';
         _titleController.text = profile['title'] ?? '';
         _descriptionController.text = profile['description'] ?? '';
-        _workingHoursFromController.text = profile['workingHours']?['from'] ?? '';
+        _workingHoursFromController.text =
+            profile['workingHours']?['from'] ?? '';
         _workingHoursToController.text = profile['workingHours']?['to'] ?? '';
         _homeSampleAvailable = profile['homeSampleAvailable'] ?? false;
         _isLoading = false;
@@ -180,7 +182,9 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
               padding: EdgeInsets.all(isDesktop ? 40 : 20),
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1000 : double.infinity,
+                  ),
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Form(
@@ -199,7 +203,9 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                                 label: 'Laboratory Name',
                                 icon: Icons.business_rounded,
                                 hint: 'e.g., City Medical Laboratory',
-                                validator: (v) => v?.isEmpty ?? true ? 'Laboratory name is required' : null,
+                                validator: (v) => v?.isEmpty ?? true
+                                    ? 'Laboratory name is required'
+                                    : null,
                               ),
                               const SizedBox(height: 16),
                               _buildTextField(
@@ -207,7 +213,9 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                                 label: 'Owner Name',
                                 icon: Icons.person_rounded,
                                 hint: 'e.g., Dr. Ahmed Khan',
-                                validator: (v) => v?.isEmpty ?? true ? 'Owner name is required' : null,
+                                validator: (v) => v?.isEmpty ?? true
+                                    ? 'Owner name is required'
+                                    : null,
                               ),
                               const SizedBox(height: 16),
                               _buildTextField(
@@ -277,7 +285,8 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                                 controller: _descriptionController,
                                 label: 'Description',
                                 icon: Icons.notes_rounded,
-                                hint: 'Tell patients about your laboratory, services, and expertise...',
+                                hint:
+                                    'Tell patients about your laboratory, services, and expertise...',
                                 maxLines: 4,
                               ),
                             ],
@@ -333,10 +342,7 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
           SizedBox(height: 16),
           Text(
             'Loading profile...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -488,15 +494,15 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
         ),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: const TextStyle(
-        fontSize: 15,
-        color: Color(0xFF0F172A),
-      ),
+      style: const TextStyle(fontSize: 15, color: Color(0xFF0F172A)),
     );
   }
 
@@ -528,7 +534,11 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.medical_services_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Text(
@@ -550,12 +560,12 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _homeSampleAvailable 
+                color: _homeSampleAvailable
                     ? primaryColor.withValues(alpha: 0.1)
                     : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _homeSampleAvailable 
+                  color: _homeSampleAvailable
                       ? primaryColor
                       : const Color(0xFFE2E8F0),
                   width: 2,
@@ -566,7 +576,7 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _homeSampleAvailable 
+                      color: _homeSampleAvailable
                           ? primaryColor
                           : const Color(0xFF64748B),
                       borderRadius: BorderRadius.circular(8),
@@ -595,7 +605,9 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                           'Offer sample collection at patient\'s home',
                           style: TextStyle(
                             fontSize: 13,
-                            color: const Color(0xFF64748B).withValues(alpha: 0.8),
+                            color: const Color(
+                              0xFF64748B,
+                            ).withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -605,11 +617,11 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: _homeSampleAvailable 
+                      color: _homeSampleAvailable
                           ? primaryColor
                           : Colors.transparent,
                       border: Border.all(
-                        color: _homeSampleAvailable 
+                        color: _homeSampleAvailable
                             ? primaryColor
                             : const Color(0xFF64748B),
                         width: 2,
@@ -638,9 +650,7 @@ class _LabProfileSetupState extends State<LabProfileSetup> with TickerProviderSt
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primaryColor, secondaryColor],
-        ),
+        gradient: const LinearGradient(colors: [primaryColor, secondaryColor]),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

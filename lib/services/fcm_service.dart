@@ -7,7 +7,6 @@ import '../services/api_service.dart';
 // Background message handler — must be top-level function
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // No Firebase.initializeApp() needed here — flutter firebase handles it
   print('📬 Background FCM message: ${message.messageId}');
 }
 
@@ -16,9 +15,11 @@ class FcmService {
   factory FcmService() => _instance;
   FcmService._internal();
 
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  FirebaseMessaging? _fcm;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  FirebaseMessaging get fcm => _fcm ??= FirebaseMessaging.instance;
 
   // Android notification channel
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
@@ -35,11 +36,7 @@ class FcmService {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     // Request permission (iOS + Android 13+)
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await fcm.requestPermission(alert: true, badge: true, sound: true);
 
     // Setup local notifications for foreground display
     await _setupLocalNotifications();
@@ -51,17 +48,18 @@ class FcmService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
     // Handle notification tap when app was terminated
-    final initialMessage = await _fcm.getInitialMessage();
+    final initialMessage = await fcm.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationTap(initialMessage);
     }
 
-    // Get and print FCM token (useful for testing)
+    // Get and print FCM token
     final token = await getToken();
     print('🔑 FCM Token: $token');
   }
 
   Future<void> _setupLocalNotifications() async {
+    if (kIsWeb) return;
     if (!Platform.isAndroid && !Platform.isIOS) return;
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -81,11 +79,12 @@ class FcmService {
     // Create the Android notification channel
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_channel);
 
     // Tell FCM to show heads-up notifications on Android
-    await _fcm.setForegroundNotificationPresentationOptions(
+    await fcm.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
@@ -118,12 +117,16 @@ class FcmService {
 
   void _handleNotificationTap(RemoteMessage message) {
     print('👆 Notification tapped: ${message.data}');
-    // Navigation can be added here based on message.data['type']
   }
 
   Future<String?> getToken() async {
     if (kIsWeb) return null;
-    return await _fcm.getToken();
+    try {
+      return await fcm.getToken();
+    } catch (e) {
+      print('⚠️ Could not get FCM token: $e');
+      return null;
+    }
   }
 
   // Call this after login to send token to your backend

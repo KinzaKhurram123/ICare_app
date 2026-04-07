@@ -23,12 +23,12 @@ class _WrtieReviewScreenState extends State<WrtieReviewScreen> {
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
         title: CustomText(
-        text:"Write A Review", 
-        fontFamily: "Gilroy-Bold", 
-        fontSize: 16.78,
-        color: AppColors.primary500,
-            letterSpacing: -0.31,
-            lineHeight: 1.0,
+          text: "Write A Review",
+          fontFamily: "Gilroy-Bold",
+          fontSize: 16.78,
+          color: AppColors.primary500,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
         ),
       ),
       body: SingleChildScrollView(
@@ -38,38 +38,39 @@ class _WrtieReviewScreenState extends State<WrtieReviewScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               RatingBar.builder(
-                           initialRating: 4,
-                           minRating: 1,
-                           itemSize: ScallingConfig.scale(40),
-                           direction: Axis.horizontal,
-                           allowHalfRating: true,
-                           itemCount: 5,
-                           
-                           itemPadding: EdgeInsets.symmetric(horizontal: 1),
-                           itemBuilder: (context, _) => Icon(
-                             Icons.star,
-                             size: ScallingConfig.scale(20),
-                             color: AppColors.themeDarkGrey,
-                           ),
-                           onRatingUpdate: (rating) {
-                            //  print(rating);
-                           },
-                        ),
-                        SizedBox(height: ScallingConfig.scale(20),),
-            CustomInputField(
-             hintText: "Type your bio here....",
-              width: Utils.windowWidth(context) * 0.85,
-          
-              height: Utils.windowHeight(context) * 0.15,
-              maxLines: 50,
-              borderRadius: 20,
-              borderColor: AppColors.grayColor.withAlpha(70),
-            ),
-            SizedBox(height: ScallingConfig.scale(20),),
-            CustomButton(label:"Submit",
-            width: Utils.windowWidth(context) * 0.9,
-            borderRadius: 35,
-            )
+                initialRating: 4,
+                minRating: 1,
+                itemSize: ScallingConfig.scale(40),
+                direction: Axis.horizontal,
+                allowHalfRating: true,
+                itemCount: 5,
+
+                itemPadding: EdgeInsets.symmetric(horizontal: 1),
+                itemBuilder: (context, _) => Icon(
+                  Icons.star,
+                  size: ScallingConfig.scale(20),
+                  color: AppColors.themeDarkGrey,
+                ),
+                onRatingUpdate: (rating) {
+                  //  print(rating);
+                },
+              ),
+              SizedBox(height: ScallingConfig.scale(20)),
+              CustomInputField(
+                hintText: "Type your bio here....",
+                width: Utils.windowWidth(context) * 0.85,
+
+                height: Utils.windowHeight(context) * 0.15,
+                maxLines: 50,
+                borderRadius: 20,
+                borderColor: AppColors.grayColor.withAlpha(70),
+              ),
+              SizedBox(height: ScallingConfig.scale(20)),
+              CustomButton(
+                label: "Submit",
+                width: Utils.windowWidth(context) * 0.9,
+                borderRadius: 35,
+              ),
             ],
           ),
         ),

@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/product_details.dart';
@@ -17,7 +15,7 @@ class SellerProducts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 900;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -31,19 +29,24 @@ class SellerProducts extends StatelessWidget {
           itemCount: 5,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: isDesktop 
-            ? const EdgeInsets.all(0) 
-            : const EdgeInsets.all(20),
+          padding: isDesktop
+              ? const EdgeInsets.all(0)
+              : const EdgeInsets.all(20),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: isDesktop ? 5 : 2,
-            mainAxisExtent: isDesktop ? 475 : Utils.windowHeight(context) * 0.27, // Increased to clear final overflow
+            mainAxisExtent: isDesktop
+                ? 475
+                : Utils.windowHeight(context) *
+                      0.27, // Increased to clear final overflow
             crossAxisSpacing: isDesktop ? 24 : 20,
             mainAxisSpacing: isDesktop ? 24 : 20,
           ),
           itemBuilder: (ctx, i) {
             return ProductCard(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProductDetailsScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (ctx) => ProductDetailsScreen()),
+                );
               },
               showAddToCart: true,
             );
@@ -87,7 +90,9 @@ class ProductCard extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
+              padding: EdgeInsets.symmetric(
+                horizontal: ScallingConfig.scale(10),
+              ),
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
                 color: AppColors.white,
@@ -142,7 +147,10 @@ class ProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const IconText(icon: ImagePaths.star_filled, text: "4.9 (2.75)"),
+                      const IconText(
+                        icon: ImagePaths.star_filled,
+                        text: "4.9 (2.75)",
+                      ),
                       CustomText(
                         text: "Rs. 2000",
                         fontFamily: "Gilroy-SemiBold",
@@ -212,7 +220,10 @@ class ProductCard extends StatelessWidget {
                   margin: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [const Color(0xFFF8FAFD), const Color(0xFFFFFFFF)],
+                      colors: [
+                        const Color(0xFFF8FAFD),
+                        const Color(0xFFFFFFFF),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -236,7 +247,10 @@ class ProductCard extends StatelessWidget {
                         top: 14,
                         left: 14,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF10B981).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
@@ -279,7 +293,11 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.star_rounded, size: 16, color: Colors.amber[600]),
+                          Icon(
+                            Icons.star_rounded,
+                            size: 16,
+                            color: Colors.amber[600],
+                          ),
                           const SizedBox(width: 4),
                           const CustomText(
                             text: "4.9 (+2.4k)",
@@ -301,7 +319,11 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(height: 4), // Reduced from 6
                       Row(
                         children: [
-                          const Icon(Icons.verified_rounded, size: 14, color: AppColors.primaryColor),
+                          const Icon(
+                            Icons.verified_rounded,
+                            size: 14,
+                            color: AppColors.primaryColor,
+                          ),
                           const SizedBox(width: 4),
                           CustomText(
                             text: "Premium Pharma",
@@ -345,20 +367,29 @@ class ProductCard extends StatelessWidget {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF0F172A), Color(0xFF334155)],
+                                      colors: [
+                                        Color(0xFF0F172A),
+                                        Color(0xFF334155),
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF0F172A).withOpacity(0.3),
+                                        color: const Color(
+                                          0xFF0F172A,
+                                        ).withOpacity(0.3),
                                         blurRadius: 12,
                                         offset: const Offset(0, 6),
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(Icons.add_shopping_cart_rounded, color: Colors.white, size: 20),
+                                  child: const Icon(
+                                    Icons.add_shopping_cart_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ),
@@ -393,7 +424,7 @@ class IconText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 900;
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -411,7 +442,7 @@ class IconText extends StatelessWidget {
           fontSize: isDesktop ? 12 : 12,
           lineHeight: 1.0,
           letterSpacing: -0.5,
-        )
+        ),
       ],
     );
   }

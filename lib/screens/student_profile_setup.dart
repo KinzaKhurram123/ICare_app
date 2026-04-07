@@ -10,13 +10,14 @@ class StudentProfileSetup extends StatefulWidget {
   State<StudentProfileSetup> createState() => _StudentProfileSetupState();
 }
 
-class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerProviderStateMixin {
+class _StudentProfileSetupState extends State<StudentProfileSetup>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final StudentService _studentService = StudentService();
-  
+
   bool _isLoading = true;
   bool _isSaving = false;
-  
+
   final _bioController = TextEditingController();
   final _qualificationController = TextEditingController();
   final _ageController = TextEditingController();
@@ -24,7 +25,7 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
   final _addressController = TextEditingController();
   final _educationLevelController = TextEditingController();
   final _preferencesController = TextEditingController();
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -71,7 +72,8 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
         _genderController.text = profile['gender'] ?? '';
         _addressController.text = profile['address'] ?? '';
         _educationLevelController.text = profile['educationLevel'] ?? '';
-        _preferencesController.text = (profile['preferences'] as List?)?.join(', ') ?? '';
+        _preferencesController.text =
+            (profile['preferences'] as List?)?.join(', ') ?? '';
         _isLoading = false;
       });
       _animationController.forward();
@@ -157,7 +159,9 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
               padding: EdgeInsets.all(isDesktop ? 40 : 20),
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1000 : double.infinity,
+                  ),
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Form(
@@ -242,7 +246,8 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
                                 controller: _preferencesController,
                                 label: 'Learning Preferences',
                                 icon: Icons.label_outline_rounded,
-                                hint: 'e.g. Psychology, Therapy, Health (comma separated)',
+                                hint:
+                                    'e.g. Psychology, Therapy, Health (comma separated)',
                               ),
                             ],
                           ),
@@ -411,7 +416,10 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
         ),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
       validator: validator,
       keyboardType: keyboardType,
@@ -425,9 +433,7 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primaryColor, secondaryColor],
-        ),
+        gradient: const LinearGradient(colors: [primaryColor, secondaryColor]),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -442,18 +448,27 @@ class _StudentProfileSetupState extends State<StudentProfileSetup> with TickerPr
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: _isSaving
             ? const SizedBox(
                 height: 24,
                 width: 24,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
               )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     'Save Profile Details',

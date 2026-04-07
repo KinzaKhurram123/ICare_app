@@ -278,11 +278,20 @@ class _WebWalletScreen extends StatelessWidget {
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 24,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.secondaryColor,
                           borderRadius: BorderRadius.circular(24),
-                          boxShadow: [BoxShadow(color: AppColors.secondaryColor.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.secondaryColor.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -291,16 +300,38 @@ class _WebWalletScreen extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text("Total Balance", style: TextStyle(color: Colors.white70, fontSize: 16, fontFamily: "Gilroy-Medium")),
+                                const Text(
+                                  "Total Balance",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                    fontFamily: "Gilroy-Medium",
+                                  ),
+                                ),
                                 Container(
                                   padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                                  child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.account_balance_wallet_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Text("\$30,000.00", style: TextStyle(color: Colors.white, fontSize: 40, fontFamily: "Gilroy-Bold", fontWeight: FontWeight.w700)),
+                            const Text(
+                              "\$30,000.00",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 40,
+                                fontFamily: "Gilroy-Bold",
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -311,8 +342,17 @@ class _WebWalletScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-                          boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 12)],
+                          border: Border.all(
+                            color: const Color(0xFFF1F4F9),
+                            width: 1.5,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              offset: Offset(0, 4),
+                              blurRadius: 12,
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,11 +360,31 @@ class _WebWalletScreen extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text("Payment Method", style: TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: "Gilroy-Bold")),
+                                const Text(
+                                  "Payment Method",
+                                  style: TextStyle(
+                                    color: Color(0xFF1E293B),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: "Gilroy-Bold",
+                                  ),
+                                ),
                                 TextButton(
                                   onPressed: () {},
-                                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                                  child: const Text("Change", style: TextStyle(color: AppColors.primaryColor, fontSize: 14, fontWeight: FontWeight.w600)),
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: const Text(
+                                    "Change",
+                                    style: TextStyle(
+                                      color: AppColors.primaryColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -334,23 +394,53 @@ class _WebWalletScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 44,
                                     height: 30,
-                                    decoration: BoxDecoration(color: const Color(0xFF1E3A8A), borderRadius: BorderRadius.circular(6)),
-                                    child: const Center(child: Text("VISA", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic))),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E3A8A),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "VISA",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 16),
                                   const Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text("Visa ending in 1892", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                                      Text(
+                                        "Visa ending in 1892",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
                                       SizedBox(height: 2),
-                                      Text("Expires 12/26", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF64748B))),
+                                      Text(
+                                        "Expires 12/26",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -367,20 +457,33 @@ class _WebWalletScreen extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                           ),
                           onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => TopUpScreen()));
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => TopUpScreen(),
+                              ),
+                            );
                           },
                           icon: const Icon(Icons.add_circle_outline_rounded),
-                          label: const Text("Top Up Wallet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: "Gilroy-SemiBold")),
+                          label: const Text(
+                            "Top Up Wallet",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: "Gilroy-SemiBold",
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 40),
 
                 // ── Right: Transaction History ──
@@ -390,8 +493,17 @@ class _WebWalletScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-                      boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 12)],
+                      border: Border.all(
+                        color: const Color(0xFFF1F4F9),
+                        width: 1.5,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          offset: Offset(0, 4),
+                          blurRadius: 12,
+                        ),
+                      ],
                     ),
                     padding: const EdgeInsets.all(32),
                     child: Column(
@@ -400,8 +512,19 @@ class _WebWalletScreen extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("Recent Transactions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold")),
-                            Icon(Icons.more_horiz_rounded, color: Color(0xFF64748B)),
+                            Text(
+                              "Recent Transactions",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                                fontFamily: "Gilroy-Bold",
+                              ),
+                            ),
+                            Icon(
+                              Icons.more_horiz_rounded,
+                              color: Color(0xFF64748B),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -409,7 +532,11 @@ class _WebWalletScreen extends StatelessWidget {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: 7,
-                          separatorBuilder: (context, index) => const Divider(color: Color(0xFFF1F5F9), height: 32, thickness: 1),
+                          separatorBuilder: (context, index) => const Divider(
+                            color: Color(0xFFF1F5F9),
+                            height: 32,
+                            thickness: 1,
+                          ),
                           itemBuilder: (context, index) {
                             return Row(
                               children: [
@@ -421,28 +548,43 @@ class _WebWalletScreen extends StatelessWidget {
                                     color: Color(0xFFE2E8F0),
                                   ),
                                   clipBehavior: Clip.antiAlias,
-                                  child: Image.asset(ImagePaths.user7, fit: BoxFit.cover),
+                                  child: Image.asset(
+                                    ImagePaths.user7,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "Lorem Ipsum",
-                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontFamily: "Gilroy-SemiBold"),
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1E293B),
+                                          fontFamily: "Gilroy-SemiBold",
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         "Today, 12:02 PM",
-                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey.shade500),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey.shade500,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    SvgWrapper(assetPath: ImagePaths.recievedAmount),
+                                    SvgWrapper(
+                                      assetPath: ImagePaths.recievedAmount,
+                                    ),
                                     const SizedBox(width: 8),
                                     const Text(
                                       "2,000",
@@ -463,7 +605,13 @@ class _WebWalletScreen extends StatelessWidget {
                         Center(
                           child: TextButton(
                             onPressed: () {},
-                            child: const Text("View All Transactions", style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w600)),
+                            child: const Text(
+                              "View All Transactions",
+                              style: TextStyle(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ],

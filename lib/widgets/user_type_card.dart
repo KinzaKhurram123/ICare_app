@@ -14,12 +14,14 @@ class UserTypeCard extends StatelessWidget {
     required this.onPressed,
     required this.image,
     this.isSelected = false,
+    this.benefits = const [],
   });
   final String title;
   final GestureTapCallback onPressed;
   final String description;
   final String image;
   final bool isSelected;
+  final List<String> benefits;
   @override
   Widget build(BuildContext context) {
     print("object === > ${Utils.windowWidth(context)}");
@@ -69,13 +71,48 @@ class UserTypeCard extends StatelessWidget {
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.center,
               children: [
-                CustomText(text: title, isBold: true),
+                CustomText(
+                  text: title,
+                  isBold: true,
+                  fontSize: isMobile ? 18 : 20,
+                ),
                 CustomText(
                   text: description,
                   width: isMobile ? Utils.windowWidth(context) * 0.4 : null,
                   maxLines: 4,
                   textAlign: isMobile ? TextAlign.start : TextAlign.center,
+                  fontSize: isMobile ? 13 : 14,
+                  color: Colors.grey[700],
                 ),
+                if (benefits.isNotEmpty) ...[
+                  SizedBox(height: isMobile ? 8 : 12),
+                  ...benefits
+                      .map(
+                        (benefit) => Padding(
+                          padding: EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: isMobile
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 16,
+                                color: AppColors.primaryColor,
+                              ),
+                              SizedBox(width: 6),
+                              CustomText(
+                                text: benefit,
+                                fontSize: isMobile ? 11 : 12,
+                                color: Colors.grey[600],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ],
               ],
             ),
             SizedBox(

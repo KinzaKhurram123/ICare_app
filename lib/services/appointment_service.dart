@@ -19,15 +19,13 @@ class AppointmentService {
       print('Time Slot: $timeSlot');
       print('Reason: $reason');
 
-      final response = await _apiService.post(
-        '/appointments/book_appointment',
-        {
-          'doctorId': doctorId,
-          'date': date.toIso8601String(),
-          'timeSlot': timeSlot,
-          'reason': reason,
-        },
-      );
+      final response = await _apiService
+          .post('/appointments/book_appointment', {
+            'doctorId': doctorId,
+            'date': date.toIso8601String(),
+            'timeSlot': timeSlot,
+            'reason': reason,
+          });
 
       print('✅ Appointment booked successfully');
       print('Response: ${response.data}');
@@ -37,24 +35,21 @@ class AppointmentService {
       return {
         'success': true,
         'message': data['message'] ?? 'Appointment booked successfully',
-        'appointment': data['appointment'] != null 
+        'appointment': data['appointment'] != null
             ? Appointment.fromJson(data['appointment'])
             : null,
       };
     } on DioException catch (e) {
       print('❌ Appointment booking error: ${e.message}');
       print('Response: ${e.response?.data}');
-      
+
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Failed to book appointment',
       };
     } catch (e) {
       print('❌ Unexpected error: $e');
-      return {
-        'success': false,
-        'message': 'An unexpected error occurred',
-      };
+      return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
 
@@ -92,10 +87,11 @@ class AppointmentService {
     } on DioException catch (e) {
       print('❌ Get appointments error: ${e.message}');
       print('Response data: ${e.response?.data}');
-      
+
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Failed to fetch appointments',
+        'message':
+            e.response?.data['message'] ?? 'Failed to fetch appointments',
         'appointments': <AppointmentDetail>[],
       };
     } catch (e) {
@@ -117,13 +113,10 @@ class AppointmentService {
       print('Appointment ID: $appointmentId');
       print('New Status: $status');
 
-      final response = await _apiService.put(
-        '/appointments/update_status',
-        {
-          'appointmentId': appointmentId,
-          'status': status,
-        },
-      );
+      final response = await _apiService.put('/appointments/update_status', {
+        'appointmentId': appointmentId,
+        'status': status,
+      });
 
       print('✅ Status updated successfully');
 
@@ -135,18 +128,14 @@ class AppointmentService {
       };
     } on DioException catch (e) {
       print('❌ Update status error: ${e.message}');
-      
+
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Failed to update status',
       };
     } catch (e) {
       print('❌ Unexpected error: $e');
-      return {
-        'success': false,
-        'message': 'An unexpected error occurred',
-      };
+      return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
 }
-

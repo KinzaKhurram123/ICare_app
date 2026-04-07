@@ -49,28 +49,28 @@ class Doctor {
       user: User.fromJson(json['user'] ?? {}),
       specialization: json['specialization'],
       consultationType: parseConsultationType(json['consultationType']),
-      languages: json['languages'] != null 
-          ? List<String>.from(json['languages']) 
+      languages: json['languages'] != null
+          ? List<String>.from(json['languages'])
           : [],
-      degrees: json['degrees'] != null 
-          ? List<String>.from(json['degrees']) 
+      degrees: json['degrees'] != null
+          ? List<String>.from(json['degrees'])
           : [],
       experience: json['experience'],
       licenseNumber: json['licenseNumber'],
       clinicName: json['clinicName'],
       clinicAddress: json['clinicAddress'],
-      availableDays: json['availableDays'] != null 
-          ? List<String>.from(json['availableDays']) 
+      availableDays: json['availableDays'] != null
+          ? List<String>.from(json['availableDays'])
           : [],
-      availableTime: json['availableTime'] != null 
-          ? AvailableTime.fromJson(json['availableTime']) 
+      availableTime: json['availableTime'] != null
+          ? AvailableTime.fromJson(json['availableTime'])
           : null,
       isApproved: json['isApproved'] ?? false,
-      ratings: json['ratings'] != null 
-          ? List<double>.from(json['ratings'].map((r) => r.toDouble())) 
+      ratings: json['ratings'] != null
+          ? List<double>.from(json['ratings'].map((r) => r.toDouble()))
           : [],
-      reviews: json['reviews'] != null 
-          ? List<String>.from(json['reviews']) 
+      reviews: json['reviews'] != null
+          ? List<String>.from(json['reviews'])
           : [],
     );
   }
@@ -87,22 +87,13 @@ class AvailableTime {
   final String start;
   final String end;
 
-  AvailableTime({
-    required this.start,
-    required this.end,
-  });
+  AvailableTime({required this.start, required this.end});
 
   factory AvailableTime.fromJson(Map<String, dynamic> json) {
-    return AvailableTime(
-      start: json['start'] ?? '',
-      end: json['end'] ?? '',
-    );
+    return AvailableTime(start: json['start'] ?? '', end: json['end'] ?? '');
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'start': start,
-      'end': end,
-    };
+    return {'start': start, 'end': end};
   }
 }

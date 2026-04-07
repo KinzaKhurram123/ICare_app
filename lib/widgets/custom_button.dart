@@ -64,32 +64,31 @@ class CustomButton extends StatelessWidget {
         height: height ?? Utils.windowHeight(context) * 0.07,
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: hasGradient || outlined && bgColor ==null ? null : (bgColor ?? AppColors.primaryColor),
+          color: hasGradient || outlined && bgColor == null
+              ? null
+              : (bgColor ?? AppColors.primaryColor),
           gradient: hasGradient
               ? gradient
               : (disabled
-                  ? LinearGradient(colors: [
-                      Colors.grey.shade400,
-                      Colors.grey.shade600,
-                    ])
-                  : (bgColor == null && !outlined
-                      ? const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF0B2D6E), Color(0xFF2255BB)],
-                        )
-                      : null)),
+                    ? LinearGradient(
+                        colors: [Colors.grey.shade400, Colors.grey.shade600],
+                      )
+                    : (bgColor == null && !outlined
+                          ? const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF0B2D6E), Color(0xFF2255BB)],
+                            )
+                          : null)),
           borderRadius: BorderRadius.circular(borderRadius),
           border: outlined
               ? Border.all(
-
                   color: borderColor ?? AppColors.primaryColor,
                   width: borderWidth,
                 )
               : null,
           boxShadow: outlined
-              ? [] 
-              
+              ? []
               : [
                   boxShadow ??
                       BoxShadow(
@@ -104,33 +103,34 @@ class CustomButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           children: [
             if (leadingIcon != null) ...[
-            leadingIcon!,
-              SizedBox(width: label == null ? 0: 8),
+              leadingIcon!,
+              SizedBox(width: label == null ? 0 : 8),
             ],
-            if(label !=null)
-             ...[Flexible(
-              child: 
-              // Text(
-              //   label,
-              //   overflow: TextOverflow.ellipsis,
-              //   textAlign: TextAlign.center,
-              //   style: TextStyle(
-              //     color: outlined ? (labelColor) : labelColor,
-              //     fontSize: labelSize,
-              //     fontWeight: labelWeight,
-              //   ),
-              // ),
-              CustomText(
-                width: labelWidth,
-                text: label,
-                color: labelColor,
-                fontWeight: labelWeight,
-                fontSize: labelSize,
-              )
-            ),],
+            if (label != null) ...[
+              Flexible(
+                child:
+                    // Text(
+                    //   label,
+                    //   overflow: TextOverflow.ellipsis,
+                    //   textAlign: TextAlign.center,
+                    //   style: TextStyle(
+                    //     color: outlined ? (labelColor) : labelColor,
+                    //     fontSize: labelSize,
+                    //     fontWeight: labelWeight,
+                    //   ),
+                    // ),
+                    CustomText(
+                      width: labelWidth,
+                      text: label,
+                      color: labelColor,
+                      fontWeight: labelWeight,
+                      fontSize: labelSize,
+                    ),
+              ),
+            ],
             if (trailingIcon != null) ...[
               const SizedBox(width: 8),
-                trailingIcon!
+              trailingIcon!,
             ],
           ],
         ),

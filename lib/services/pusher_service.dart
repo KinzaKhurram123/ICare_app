@@ -11,7 +11,7 @@ class PusherService {
   // Uncomment when pusher_channels_flutter is added
   // PusherChannelsFlutter? _pusher;
   final ChatService _chatService = ChatService();
-  
+
   // Callbacks for real-time events
   Function(Map<String, dynamic>)? onNewMessage;
   Function(String)? onTypingIndicator;
@@ -49,7 +49,11 @@ class PusherService {
     */
   }
 
-  dynamic onAuthorizer(String channelName, String socketId, dynamic options) async {
+  dynamic onAuthorizer(
+    String channelName,
+    String socketId,
+    dynamic options,
+  ) async {
     try {
       final authData = await _chatService.getPusherAuth(socketId, channelName);
       return authData;

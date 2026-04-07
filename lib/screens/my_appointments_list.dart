@@ -12,7 +12,8 @@ class MyAppointmentsListScreen extends StatefulWidget {
   const MyAppointmentsListScreen({super.key});
 
   @override
-  State<MyAppointmentsListScreen> createState() => _MyAppointmentsListScreenState();
+  State<MyAppointmentsListScreen> createState() =>
+      _MyAppointmentsListScreenState();
 }
 
 class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
@@ -28,9 +29,9 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
 
   Future<void> _loadAppointments() async {
     setState(() => _isLoading = true);
-    
+
     final result = await _appointmentService.getMyAppointmentsDetailed();
-    
+
     if (result['success']) {
       setState(() {
         _appointments = result['appointments'] as List<AppointmentDetail>;
@@ -39,9 +40,9 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
     } else {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'])),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result['message'])));
       }
     }
   }
@@ -99,298 +100,314 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _appointments.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.calendar_today_rounded,
-                          size: 64,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'No appointments yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Book an appointment with a doctor',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.calendar_today_rounded,
+                      size: 64,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadAppointments,
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(isDesktop ? 24 : 16),
-                    itemCount: _appointments.length,
-                    itemBuilder: (context, index) {
-                      final appointment = _appointments[index];
-                      final statusColor = _getStatusColor(appointment.status);
-                      final isPast = appointment.date.isBefore(DateTime.now());
-                      
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                  const SizedBox(height: 24),
+                  const Text(
+                    'No appointments yet',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Book an appointment with a doctor',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadAppointments,
+              child: ListView.builder(
+                padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                itemCount: _appointments.length,
+                itemBuilder: (context, index) {
+                  final appointment = _appointments[index];
+                  final statusColor = _getStatusColor(appointment.status);
+                  final isPast = appointment.date.isBefore(DateTime.now());
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => ProfileOrAppointmentViewScreen(
+                            appointment: appointment,
                           ),
-                          child: Column(
-                            children: [
-                            // Header with status
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    statusColor.withValues(alpha: 0.1),
-                                    statusColor.withValues(alpha: 0.05),
-                                  ],
-                                ),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(24),
-                                  topRight: Radius.circular(24),
-                                ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Header with status
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  statusColor.withValues(alpha: 0.1),
+                                  statusColor.withValues(alpha: 0.05),
+                                ],
                               ),
-                              child: Row(
-                                children: [
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(24),
+                                topRight: Radius.circular(24),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    _getStatusIcon(appointment.status),
+                                    color: statusColor,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        appointment.status.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: statusColor,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        DateFormat(
+                                          'EEEE, MMM dd, yyyy',
+                                        ).format(appointment.date),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isPast)
                                   Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: statusColor.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
                                     ),
-                                    child: Icon(
-                                      _getStatusIcon(appointment.status),
-                                      color: statusColor,
-                                      size: 24,
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF64748B,
+                                      ).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text(
+                                      'Past',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                              ],
+                            ),
+                          ),
+
+                          // Doctor Info
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: AppColors.primaryColor
+                                          .withValues(alpha: 0.1),
+                                      child: Text(
+                                        appointment.doctorName.isNotEmpty
+                                            ? appointment.doctorName
+                                                  .substring(0, 1)
+                                                  .toUpperCase()
+                                            : 'D',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            appointment.doctorName,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w900,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            appointment.doctorEmail,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 20),
+                                const Divider(),
+                                const SizedBox(height: 20),
+
+                                // Time Slot
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF8B5CF6,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.access_time_rounded,
+                                        size: 20,
+                                        color: Color(0xFF8B5CF6),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          appointment.status.toUpperCase(),
+                                        const Text(
+                                          'Time Slot',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: statusColor,
-                                            letterSpacing: 0.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF64748B),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Text(
-                                          DateFormat('EEEE, MMM dd, yyyy').format(appointment.date),
+                                          appointment.timeSlot,
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w900,
+                                            color: Color(0xFF8B5CF6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+
+                                // Reason
+                                if (appointment.reason != null &&
+                                    appointment.reason!.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: const [
+                                            Icon(
+                                              Icons.note_rounded,
+                                              size: 16,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Reason for Visit',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          appointment.reason!,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                             color: Color(0xFF0F172A),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  if (isPast)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF64748B).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        'Past',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ),
                                 ],
-                              ),
+                              ],
                             ),
-                            
-                            // Doctor Info
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 30,
-                                        backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                                        child: Text(
-                                          appointment.doctorName.isNotEmpty
-                                              ? appointment.doctorName.substring(0, 1).toUpperCase()
-                                              : 'D',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w900,
-                                            color: AppColors.primaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              appointment.doctorName,
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              appointment.doctorEmail,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0xFF64748B),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  
-                                  const SizedBox(height: 20),
-                                  const Divider(),
-                                  const SizedBox(height: 20),
-                                  
-                                  // Time Slot
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(
-                                          Icons.access_time_rounded,
-                                          size: 20,
-                                          color: Color(0xFF8B5CF6),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            'Time Slot',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF64748B),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            appointment.timeSlot,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w900,
-                                              color: Color(0xFF8B5CF6),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  
-                                  // Reason
-                                  if (appointment.reason != null && appointment.reason!.isNotEmpty) ...[
-                                    const SizedBox(height: 16),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF8FAFC),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: const [
-                                              Icon(
-                                                Icons.note_rounded,
-                                                size: 16,
-                                                color: Color(0xFF64748B),
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Reason for Visit',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Color(0xFF64748B),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            appointment.reason!,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Color(0xFF0F172A),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      );
-                    },
-                  ),
-                ),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

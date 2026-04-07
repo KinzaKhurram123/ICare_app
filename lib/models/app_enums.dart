@@ -1,23 +1,13 @@
 enum UserRole {
-  patient, 
+  patient,
   labTechnician,
   doctor,
   pharmacist,
   student,
   instructor,
-  unknown
+  unknown,
 }
 
+enum BookingStatus { upcoming, cancelled, completed }
 
-enum BookingStatus {
-  upcoming,
-  cancelled,
-  completed,
-}
-
-enum OrderType {
-  recent,
-  delivered,
-  cancelled,
-  inTransit,
-}
+enum OrderType { recent, delivered, cancelled, inTransit }

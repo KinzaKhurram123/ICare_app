@@ -4,6 +4,54 @@ class InstructorService {
   final ApiService _apiService = ApiService();
   String? _cachedInstructorId;
 
+  // Q&A Management
+  Future<List<dynamic>> getAllPendingQuestions() async {
+    try {
+      final response = await _apiService.get('/instructor/qa/pending');
+      return response.data['questions'] ?? [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> replyToQuestion(String questionId, String reply) async {
+    await _apiService.post('/instructor/qa/reply', {
+      'questionId': questionId,
+      'reply': reply,
+    });
+  }
+
+  // Earnings & Wallet
+  Future<Map<String, dynamic>> getEarningsSummary() async {
+    try {
+      final response = await _apiService.get('/instructor/earnings/summary');
+      return response.data['summary'] ?? {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  Future<List<dynamic>> getPayoutHistory() async {
+    try {
+      final response = await _apiService.get('/instructor/earnings/payouts');
+      return response.data['payouts'] ?? [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Detailed Analytics
+  Future<Map<String, dynamic>> getAssessmentAnalytics(String courseId) async {
+    try {
+      final response = await _apiService.get(
+        '/instructor/analytics/assessments/$courseId',
+      );
+      return response.data['analytics'] ?? {};
+    } catch (e) {
+      return {};
+    }
+  }
+
   // Get instructor profile for logged-in instructor
   Future<Map<String, dynamic>> getMyProfile() async {
     final response = await _apiService.get('/instructors/me');
@@ -14,7 +62,10 @@ class InstructorService {
 
   // Update/Create instructor profile
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
-    final response = await _apiService.post('/instructors/add_instructor_details', data);
+    final response = await _apiService.post(
+      '/instructors/add_instructor_details',
+      data,
+    );
     return response.data['instructor'] ?? response.data['existingProfile'];
   }
 
@@ -46,7 +97,9 @@ class InstructorService {
   Future<List<dynamic>> getMyCourses() async {
     try {
       final instructorId = await _getInstructorId();
-      final response = await _apiService.get('/instructors/courses?instructorId=$instructorId');
+      final response = await _apiService.get(
+        '/instructors/courses?instructorId=$instructorId',
+      );
       return response.data['courses'] as List;
     } catch (e) {
       print('Error getting my courses: $e');
@@ -55,15 +108,19 @@ class InstructorService {
   }
 
   // Get all public courses
-  Future<List<dynamic>> getAllCourses({String? visibility, String? search}) async {
+  Future<List<dynamic>> getAllCourses({
+    String? visibility,
+    String? search,
+  }) async {
     String url = '/instructors/courses';
     List<String> params = [];
-    
+
     if (visibility != null) params.add('visibility=$visibility');
-    if (search != null && search.isNotEmpty) params.add('q=${Uri.encodeComponent(search)}');
-    
+    if (search != null && search.isNotEmpty)
+      params.add('q=${Uri.encodeComponent(search)}');
+
     if (params.isNotEmpty) url += '?${params.join('&')}';
-    
+
     final response = await _apiService.get(url);
     return response.data['courses'] as List;
   }
@@ -81,7 +138,10 @@ class InstructorService {
   }
 
   // Update course
-  Future<Map<String, dynamic>> updateCourse(String id, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateCourse(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     final response = await _apiService.put('/instructors/courses/$id', data);
     return response.data['course'];
   }
@@ -89,6 +149,23 @@ class InstructorService {
   // Delete course
   Future<void> deleteCourse(String id) async {
     await _apiService.delete('/instructors/courses/$id');
+  }
+
+  // Assign course to doctor/student
+  Future<Map<String, dynamic>> assignCourse(
+    String courseId,
+    String targetUserId,
+  ) async {
+    try {
+      final response = await _apiService.post('/instructors/courses/assign', {
+        'courseId': courseId,
+        'targetUserId': targetUserId,
+      });
+      return response.data;
+    } catch (e) {
+      print('Error assigning course: $e');
+      rethrow;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -99,7 +176,9 @@ class InstructorService {
   Future<List<dynamic>> getMyPrecautions() async {
     try {
       final instructorId = await _getInstructorId();
-      final response = await _apiService.get('/instructors/precautions?instructorId=$instructorId');
+      final response = await _apiService.get(
+        '/instructors/precautions?instructorId=$instructorId',
+      );
       return response.data['precautions'] as List;
     } catch (e) {
       print('Error getting my precautions: $e');
@@ -111,7 +190,7 @@ class InstructorService {
   Future<List<dynamic>> getAllPrecautions({String? instructorId}) async {
     String url = '/instructors/precautions';
     if (instructorId != null) url += '?instructorId=$instructorId';
-    
+
     final response = await _apiService.get(url);
     return response.data['precautions'] as List;
   }
@@ -123,14 +202,22 @@ class InstructorService {
   }
 
   // Create precaution
-  Future<Map<String, dynamic>> createPrecaution(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> createPrecaution(
+    Map<String, dynamic> data,
+  ) async {
     final response = await _apiService.post('/instructors/precautions', data);
     return response.data['precaution'];
   }
 
   // Update precaution
-  Future<Map<String, dynamic>> updatePrecaution(String id, Map<String, dynamic> data) async {
-    final response = await _apiService.put('/instructors/precautions/$id', data);
+  Future<Map<String, dynamic>> updatePrecaution(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiService.put(
+      '/instructors/precautions/$id',
+      data,
+    );
     return response.data['precaution'];
   }
 
@@ -139,32 +226,26 @@ class InstructorService {
     await _apiService.delete('/instructors/precautions/$id');
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
   // STATISTICS
   // ═══════════════════════════════════════════════════════════════════════
 
   Future<Map<String, dynamic>> getStats() async {
     try {
-      final courses = await getMyCourses();
-      final precautions = await getMyPrecautions();
-      
-      // Calculate stats from courses
-      int totalCourses = courses.length;
-      int publicCourses = courses.where((c) => c['visibility'] == 'public').length;
-      
-      // Mock student count (would need enrollment data from backend)
-      int totalStudents = courses.fold<int>(0, (sum, _) => sum + 50); // Mock: 50 students per course
-      
-      return {
-        'totalCourses': totalCourses,
-        'publicCourses': publicCourses,
-        'totalStudents': totalStudents,
-        'totalPrecautions': precautions.length,
-        'avgRating': 4.7, // Mock value - would need reviews system
-        'revenue': 84000, // Mock value - would need payment system
-      };
+      final response = await _apiService.get('/instructors/stats');
+      return response.data['stats'] ?? {};
     } catch (e) {
       print('Error getting stats: $e');
+      rethrow;
+    }
+  }
+
+  // Get assigned learners (enrolled students)
+  Future<List<dynamic>> getAssignedLearners() async {
+    try {
+      final response = await _apiService.get('/instructors/assigned-learners');
+      return response.data['learners'] ?? [];
+    } catch (e) {
+      print('Error getting assigned learners: $e');
       rethrow;
     }
   }

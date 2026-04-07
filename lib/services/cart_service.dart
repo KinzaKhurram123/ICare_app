@@ -19,7 +19,10 @@ class CartService {
   }
 
   // Update item quantity in cart
-  Future<Map<String, dynamic>> updateItem(String medicineId, int quantity) async {
+  Future<Map<String, dynamic>> updateItem(
+    String medicineId,
+    int quantity,
+  ) async {
     final response = await _apiService.put('/cart/items', {
       'medicineId': medicineId,
       'quantity': quantity,

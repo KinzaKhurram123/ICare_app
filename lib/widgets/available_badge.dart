@@ -12,46 +12,45 @@ class AvailableBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
-     clipBehavior: Clip.none,
+      clipBehavior: Clip.none,
       children: [
-         Positioned(
-            left: ScallingConfig.scale(65),
-            bottom: ScallingConfig.scale(8),
-            child: Container(
-              padding: EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                
-                shape: BoxShape.circle,
-                color: AppColors.primaryColor
-              ),
-              child:Center(
-                child: SvgWrapper(assetPath: ImagePaths.pencil),
-              ),
-            ) 
-      ),
+        Positioned(
+          left: ScallingConfig.scale(65),
+          bottom: ScallingConfig.scale(8),
+          child: Container(
+            padding: EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryColor,
+            ),
+            child: Center(child: SvgWrapper(assetPath: ImagePaths.pencil)),
+          ),
+        ),
         Container(
           width: Utils.windowWidth(context) * 0.22,
-          padding: EdgeInsets.symmetric(vertical: 4,horizontal: 5),
+          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 5),
           decoration: BoxDecoration(
             color: AppColors.darkGreyColor.withAlpha(55),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.center,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             spacing: ScallingConfig.scale(5),
             children: [
-              Icon(Icons.circle,
-              size: ScallingConfig.scale(10),
-              color: Colors.green,),
+              Icon(
+                Icons.circle,
+                size: ScallingConfig.scale(10),
+                color: Colors.green,
+              ),
               CustomText(
-                    text: "Available",
-                  color: AppColors.primary500,
-                  fontSize: 12,
-                  fontFamily: "Gilroy-SemiBold",
-              )
+                text: "Available",
+                color: AppColors.primary500,
+                fontSize: 12,
+                fontFamily: "Gilroy-SemiBold",
+              ),
             ],
           ),
         ),
-         
       ],
     );
   }

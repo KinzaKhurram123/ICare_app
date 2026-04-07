@@ -9,7 +9,7 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
 class CancellationReason extends StatefulWidget {
-  const CancellationReason({super.key, this.fromBooking = false });
+  const CancellationReason({super.key, this.fromBooking = false});
   final bool fromBooking;
 
   @override
@@ -32,18 +32,19 @@ class _CancellationReasonState extends State<CancellationReason> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-             leading: CustomBackButton(),
+        leading: CustomBackButton(),
         title: CustomText(
           text: 'Cancellation Reason',
           fontFamily: "Gilroy-Bold",
           fontSize: 15,
           fontWeight: FontWeight.bold,
           color: AppColors.primary500,
-        ),),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            SizedBox(height: ScallingConfig.scale(10),),
+            SizedBox(height: ScallingConfig.scale(10)),
             CustomText(
               text: "Please select the reason for cancellations.",
               fontFamily: "Gilroy-Medium",
@@ -61,7 +62,10 @@ class _CancellationReasonState extends State<CancellationReason> {
               child: Column(
                 children: reasons.map((reason) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 6),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6.0,
+                      horizontal: 6,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -87,28 +91,32 @@ class _CancellationReasonState extends State<CancellationReason> {
             ),
 
             CustomInputField(
-            title: "Other",  
-            hintText: "Enter your reason",
-            hintStyle: TextStyle(
-              fontFamily: "Gilroy-Medium",
-              color: AppColors.grayColor.withAlpha(85)
+              title: "Other",
+              hintText: "Enter your reason",
+              hintStyle: TextStyle(
+                fontFamily: "Gilroy-Medium",
+                color: AppColors.grayColor.withAlpha(85),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              height: Utils.windowHeight(context) * 0.15,
+              width: Utils.windowWidth(context) * 0.9,
+              borderRadius: 20,
+              maxLines: 20,
+              borderColor: AppColors.grayColor.withAlpha(70),
             ),
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            height: Utils.windowHeight(context) * 0.15,
-            width: Utils.windowWidth(context) * 0.9,
-            borderRadius: 20,
-            maxLines: 20,
-            borderColor: AppColors.grayColor.withAlpha(70),
-            
+            SizedBox(height: ScallingConfig.scale(12)),
+            CustomButton(
+              label: "Cancel",
+              width: Utils.windowWidth(context) * 0.9,
+              borderRadius: ScallingConfig.moderateScale(30),
+              onPressed: () {
+                AppDialogs.showSuccessDialog(
+                  context,
+                  title: "Cancelled Order",
+                  description: "You’ve successfully cancelled order.",
+                );
+              },
             ),
-            SizedBox(height: ScallingConfig.scale(12),),
-            CustomButton(           
-              label:"Cancel", width: Utils.windowWidth(context) * 0.9,
-            borderRadius: ScallingConfig.moderateScale(30),
-            onPressed: (){
-              AppDialogs.showSuccessDialog(context, title: "Cancelled Order", description: "You’ve successfully cancelled order.");
-            },
-            )
           ],
         ),
       ),

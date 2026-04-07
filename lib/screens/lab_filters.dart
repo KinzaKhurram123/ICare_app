@@ -181,19 +181,29 @@ class _LabFiltersState extends State<LabFilters> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Filters Grid
                 Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: [
-                    _buildWebDropdown("Minimum Rating / Reviews", reviewOptions, _review, (val) {
-                      setState(() => _review = val);
-                    }),
-                    _buildWebDropdown("Sort Order", sortByOptions, _selectedSortByOption, (val) {
-                      setState(() => _selectedSortByOption = val);
-                    }),
-                    
+                    _buildWebDropdown(
+                      "Minimum Rating / Reviews",
+                      reviewOptions,
+                      _review,
+                      (val) {
+                        setState(() => _review = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Sort Order",
+                      sortByOptions,
+                      _selectedSortByOption,
+                      (val) {
+                        setState(() => _selectedSortByOption = val);
+                      },
+                    ),
+
                     // Toggle for web
                     SizedBox(
                       width: 328,
@@ -202,20 +212,35 @@ class _LabFiltersState extends State<LabFilters> {
                         children: [
                           const Text(
                             "Special Requirements",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFB),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text("Home Sample Available", style: TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                                const Text(
+                                  "Home Sample Available",
+                                  style: TextStyle(
+                                    color: Color(0xFF1E293B),
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 Switch(
                                   value: _isHomeSample,
                                   activeColor: AppColors.primaryColor,
@@ -231,22 +256,23 @@ class _LabFiltersState extends State<LabFilters> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
                 const Divider(height: 48, color: Color(0xFFF1F5F9)),
-                
+
                 const Text(
                   "Location Prefrences",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ChooseLocationButton(),
-                ),
+                SizedBox(width: double.infinity, child: ChooseLocationButton()),
 
                 const SizedBox(height: 56),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -261,12 +287,18 @@ class _LabFiltersState extends State<LabFilters> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text(
                           "Reset Filters",
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -279,13 +311,19 @@ class _LabFiltersState extends State<LabFilters> {
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Show Laboratories",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -299,7 +337,12 @@ class _LabFiltersState extends State<LabFilters> {
     );
   }
 
-  Widget _buildWebDropdown(String title, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildWebDropdown(
+    String title,
+    List<String> items,
+    String? selected,
+    Function(String?) onChanged,
+  ) {
     return SizedBox(
       width: 328,
       child: Column(
@@ -323,14 +366,26 @@ class _LabFiltersState extends State<LabFilters> {
             ),
             child: DropdownButton<String>(
               value: selected,
-              hint: const Text("Select option", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              hint: const Text(
+                "Select option",
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              ),
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+              ),
               items: items.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,

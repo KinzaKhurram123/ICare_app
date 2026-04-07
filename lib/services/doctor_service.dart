@@ -8,7 +8,7 @@ class DoctorService {
     try {
       print('🔍 Fetching doctors from API...');
       final response = await _apiService.get('/doctors/get_all_doctors');
-      
+
       print('📡 Response status: ${response.statusCode}');
       print('📡 Response data type: ${response.data.runtimeType}');
       print('📡 Response data: ${response.data}');
@@ -24,14 +24,11 @@ class DoctorService {
       print('❌ Response: ${e.response?.data}');
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     } catch (e) {
       print('❌ Unexpected error: $e');
-      return {
-        'success': false,
-        'message': 'Unexpected error: $e'
-      };
+      return {'success': false, 'message': 'Unexpected error: $e'};
     }
   }
 
@@ -56,7 +53,7 @@ class DoctorService {
       print('Degrees: $degrees');
       print('Available Days: $availableDays');
       print('Time: $startTime - $endTime');
-      
+
       final requestData = {
         'specialization': specialization,
         'degrees': degrees,
@@ -65,21 +62,21 @@ class DoctorService {
         'clinicName': clinicName,
         'clinicAddress': clinicAddress,
         'availableDays': availableDays,
-        'availableTime': {
-          'start': startTime,
-          'end': endTime,
-        },
+        'availableTime': {'start': startTime, 'end': endTime},
       };
-      
+
       if (consultationType != null && consultationType.isNotEmpty) {
         requestData['consultationType'] = consultationType;
       }
-      
+
       if (languages != null && languages.isNotEmpty) {
         requestData['languages'] = languages;
       }
-      
-      final response = await _apiService.post('/doctors/add_doctor_details', requestData);
+
+      final response = await _apiService.post(
+        '/doctors/add_doctor_details',
+        requestData,
+      );
 
       print('✅ Response status: ${response.statusCode}');
       print('Response data: ${response.data}');
@@ -92,7 +89,7 @@ class DoctorService {
       print('❌ Error updating profile: ${e.response?.data}');
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -116,7 +113,7 @@ class DoctorService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -132,7 +129,7 @@ class DoctorService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -146,12 +143,16 @@ class DoctorService {
     try {
       // Build query string
       final queryParams = <String>[];
-      if (specialization != null) queryParams.add('specialization=$specialization');
-      if (consultationType != null) queryParams.add('consultationType=$consultationType');
+      if (specialization != null)
+        queryParams.add('specialization=$specialization');
+      if (consultationType != null)
+        queryParams.add('consultationType=$consultationType');
       if (language != null) queryParams.add('language=$language');
       if (minRating != null) queryParams.add('minRating=$minRating');
-      
-      final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
+
+      final queryString = queryParams.isNotEmpty
+          ? '?${queryParams.join('&')}'
+          : '';
       final response = await _apiService.get('/doctors/filter$queryString');
 
       if (response.statusCode == 200) {
@@ -161,7 +162,7 @@ class DoctorService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -169,26 +170,28 @@ class DoctorService {
   Future<Map<String, dynamic>> updateAvailability({
     required List<String> availableDays,
     required Map<String, String> availableTime,
-    List<String>? unavailableDates,
+    required List<String> unavailableDates,
+    int? bufferTime,
+    bool? emergencySlots,
+    int? followUpDuration,
+    int? newPatientDuration,
+    int? emergencyDuration,
   }) async {
     try {
-      print('📋 Updating availability...');
-      final response = await _apiService.put('/doctors/availability', {
+      final response = await _apiService.post('/doctors/update_availability', {
         'availableDays': availableDays,
         'availableTime': availableTime,
-        if (unavailableDates != null) 'unavailableDates': unavailableDates,
+        'unavailableDates': unavailableDates,
+        'bufferTime': bufferTime,
+        'emergencySlots': emergencySlots,
+        'followUpDuration': followUpDuration,
+        'newPatientDuration': newPatientDuration,
+        'emergencyDuration': emergencyDuration,
       });
-
-      if (response.statusCode == 200) {
-        return {'success': true, 'message': 'Availability updated'};
-      }
-      return {'success': false, 'message': 'Failed to update availability'};
-    } on DioException catch (e) {
-      print('❌ Error updating availability: ${e.response?.data}');
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
-      };
+      return response.data;
+    } catch (e) {
+      print('Error updating availability: $e');
+      rethrow;
     }
   }
 
@@ -203,8 +206,46 @@ class DoctorService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
+    }
+  }
+
+  Future<Map<String, dynamic>> getStats() async {
+    try {
+      final response = await _apiService.get('/doctors/stats');
+      return response.data;
+    } catch (e) {
+      print('Error getting doctor stats: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getPatientHistory(String patientId) async {
+    try {
+      final response = await _apiService.get(
+        '/doctors/patients/$patientId/history',
+      );
+      return response.data;
+    } catch (e) {
+      print('Error getting patient history: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> assignHealthProgram(
+    String patientId,
+    String courseId,
+  ) async {
+    try {
+      final response = await _apiService.post(
+        '/doctors/patients/$patientId/assign-program',
+        {'courseId': courseId},
+      );
+      return response.data;
+    } catch (e) {
+      print('Error assigning program: $e');
+      rethrow;
     }
   }
 }

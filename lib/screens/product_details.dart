@@ -49,15 +49,12 @@ class ProductDetailsScreen extends StatelessWidget {
                   tag: 'product_image_capsule',
                   child: Container(
                     height: 500,
-                    child: Image.asset(
-                      ImagePaths.capsule,
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.asset(ImagePaths.capsule, fit: BoxFit.contain),
                   ),
                 ),
               ),
               const SizedBox(height: 60),
-              
+
               // Title & Price Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -85,7 +82,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Quantity
               CustomText(
                 text: "250gm",
@@ -94,7 +91,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 fontFamily: "Gilroy-Medium",
               ),
               const SizedBox(height: 32),
-              
+
               // Visit Link
               Row(
                 children: [
@@ -115,10 +112,11 @@ class ProductDetailsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 50),
-              
+
               // Description
               CustomText(
-                text: "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes. Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.",
+                text:
+                    "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes. Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.",
                 fontSize: 18,
                 color: AppColors.grayColor,
                 fontFamily: "Gilroy-SemiBold",
@@ -127,7 +125,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 overflow: TextOverflow.visible,
               ),
               const SizedBox(height: 50),
-              
+
               // Precautions Section
               CustomText(
                 text: "Precautions",
@@ -138,7 +136,8 @@ class ProductDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               CustomText(
-                text: "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy.",
+                text:
+                    "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy.",
                 fontSize: 18,
                 color: AppColors.grayColor,
                 fontFamily: "Gilroy-SemiBold",
@@ -147,7 +146,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 overflow: TextOverflow.visible,
               ),
               const SizedBox(height: 80),
-              
+
               // Action Button
               CustomButton(
                 label: "Checkout",
@@ -219,7 +218,8 @@ class ProductDetailsScreen extends StatelessWidget {
             color: AppColors.grayColor,
             fontSize: 10.59,
             fontFamily: "Gilroy-SemiBold",
-            text: "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes. Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.",
+            text:
+                "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes. Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.",
           ),
           SizedBox(height: ScallingConfig.scale(20)),
           CustomText(
@@ -237,7 +237,8 @@ class ProductDetailsScreen extends StatelessWidget {
             color: AppColors.grayColor,
             fontSize: 10.59,
             fontFamily: "Gilroy-SemiBold",
-            text: "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy.",
+            text:
+                "Our Pharmacy combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy.",
           ),
           SizedBox(height: ScallingConfig.scale(20)),
           CustomButton(

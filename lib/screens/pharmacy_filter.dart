@@ -94,7 +94,9 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
               CustomDropdown<String>(
                 title: "Category",
                 selectedItem: _selectedMedicineCategory,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: medicineCategoryList,
                 onChanged: (value) {
                   setState(() {
@@ -105,7 +107,9 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
               CustomDropdown<String>(
                 title: "Medicine Type",
                 selectedItem: _selectedMedicineType,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: medicineTypeList,
                 onChanged: (value) {
                   setState(() {
@@ -116,7 +120,9 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
               CustomDropdown<String>(
                 title: "Brand Manifacturer",
                 selectedItem: _selectedBrandManufacturer,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: brandManufacturerList,
                 onChanged: (value) {
                   setState(() {
@@ -124,12 +130,12 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                   });
                 },
               ),
-              ChooseLocationButton(
-                label: "Near By Store Availability",
-              ),
+              ChooseLocationButton(label: "Near By Store Availability"),
               CustomDropdown<String>(
                 title: "Delievery Option",
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 selectedItem: _selectedDeliveryOption,
                 items: deliveryOptionList,
                 onChanged: (value) {
@@ -141,7 +147,9 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
               CustomDropdown<String>(
                 title: "Reviews",
                 selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: reviewsList,
                 onChanged: (value) {
                   setState(() {
@@ -154,7 +162,7 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                 label: "Search",
                 borderRadius: 30,
                 width: Utils.windowWidth(context) * 0.9,
-              )
+              ),
             ],
           ),
         ),
@@ -215,45 +223,76 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Filters Grid
                 Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: [
-                    _buildWebDropdown("Medicine Category", medicineCategoryList, _selectedMedicineCategory, (val) {
-                      setState(() => _selectedMedicineCategory = val);
-                    }),
-                    _buildWebDropdown("Medicine Type", medicineTypeList, _selectedMedicineType, (val) {
-                      setState(() => _selectedMedicineType = val);
-                    }),
-                    _buildWebDropdown("Manufacturer", brandManufacturerList, _selectedBrandManufacturer, (val) {
-                      setState(() => _selectedBrandManufacturer = val);
-                    }),
-                    _buildWebDropdown("Delivery Method", deliveryOptionList, _selectedDeliveryOption, (val) {
-                      setState(() => _selectedDeliveryOption = val);
-                    }),
-                    _buildWebDropdown("Minimum Reviews", reviewsList, _selectedReviews, (val) {
-                      setState(() => _selectedReviews = val);
-                    }),
+                    _buildWebDropdown(
+                      "Medicine Category",
+                      medicineCategoryList,
+                      _selectedMedicineCategory,
+                      (val) {
+                        setState(() => _selectedMedicineCategory = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Medicine Type",
+                      medicineTypeList,
+                      _selectedMedicineType,
+                      (val) {
+                        setState(() => _selectedMedicineType = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Manufacturer",
+                      brandManufacturerList,
+                      _selectedBrandManufacturer,
+                      (val) {
+                        setState(() => _selectedBrandManufacturer = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Delivery Method",
+                      deliveryOptionList,
+                      _selectedDeliveryOption,
+                      (val) {
+                        setState(() => _selectedDeliveryOption = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Minimum Reviews",
+                      reviewsList,
+                      _selectedReviews,
+                      (val) {
+                        setState(() => _selectedReviews = val);
+                      },
+                    ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
                 const Divider(height: 48, color: Color(0xFFF1F5F9)),
-                
+
                 const Text(
                   "Location Prefrences",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ChooseLocationButton(label: "Near By Store Availability"),
+                  child: ChooseLocationButton(
+                    label: "Near By Store Availability",
+                  ),
                 ),
 
                 const SizedBox(height: 56),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -270,12 +309,18 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text(
                           "Reset All",
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -288,13 +333,19 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Find Pharmacies",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -308,7 +359,12 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
     );
   }
 
-  Widget _buildWebDropdown(String title, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildWebDropdown(
+    String title,
+    List<String> items,
+    String? selected,
+    Function(String?) onChanged,
+  ) {
     return SizedBox(
       width: 328,
       child: Column(
@@ -332,14 +388,26 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
             ),
             child: DropdownButton<String>(
               value: selected,
-              hint: const Text("Select option", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              hint: const Text(
+                "Select option",
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              ),
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+              ),
               items: items.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,

@@ -39,36 +39,30 @@ class MyCartScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
       ),
-      body: Column(children: [
-        CartList(),
-        SizedBox(height: ScallingConfig.scale(30)),
-        DiscountCodeField(),
-        SizedBox(height: ScallingConfig.scale(30)),
-        RowText(
-          leadingText: "Sub Total",
-          trailingText: "6000",
-        ),
-        SizedBox(height: ScallingConfig.scale(10)),
-        RowText(
-          leadingText: "Discount",
-          trailingText: "10%",
-        ),
-        SizedBox(height: ScallingConfig.scale(10)),
-        RowText(
-          leadingText: "Total",
-          trailingText: "5900",
-        ),
-        SizedBox(height: ScallingConfig.scale(30)),
-        CustomButton(
-          label: "Checkout",
-          width: Utils.windowWidth(context) * 0.9,
-          borderRadius: 70,
-          onPressed: () {
-            Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => SelectPaymentMethod()));
-          },
-        )
-      ]),
+      body: Column(
+        children: [
+          CartList(),
+          SizedBox(height: ScallingConfig.scale(30)),
+          DiscountCodeField(),
+          SizedBox(height: ScallingConfig.scale(30)),
+          RowText(leadingText: "Sub Total", trailingText: "6000"),
+          SizedBox(height: ScallingConfig.scale(10)),
+          RowText(leadingText: "Discount", trailingText: "10%"),
+          SizedBox(height: ScallingConfig.scale(10)),
+          RowText(leadingText: "Total", trailingText: "5900"),
+          SizedBox(height: ScallingConfig.scale(30)),
+          CustomButton(
+            label: "Checkout",
+            width: Utils.windowWidth(context) * 0.9,
+            borderRadius: 70,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => SelectPaymentMethod()),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -94,8 +88,11 @@ class MyCartScreen extends StatelessWidget {
                           color: AppColors.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.shopping_cart_outlined,
-                            color: AppColors.primaryColor, size: 28),
+                        child: const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: AppColors.primaryColor,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 20),
                       Column(
@@ -113,9 +110,10 @@ class MyCartScreen extends StatelessWidget {
                           Text(
                             "You have 3 items in your cart",
                             style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500),
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
@@ -128,32 +126,46 @@ class MyCartScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         Expanded(
-                            flex: 4,
-                            child: Text("PRODUCT",
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF94A3B8),
-                                    letterSpacing: 1))),
+                          flex: 4,
+                          child: Text(
+                            "PRODUCT",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF94A3B8),
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
                         Expanded(
-                            flex: 2,
-                            child: Center(
-                                child: Text("QUANTITY",
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF94A3B8),
-                                        letterSpacing: 1)))),
+                          flex: 2,
+                          child: Center(
+                            child: Text(
+                              "QUANTITY",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ),
                         Expanded(
-                            flex: 2,
-                            child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Text("PRICE",
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF94A3B8),
-                                        letterSpacing: 1)))),
+                          flex: 2,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              "PRICE",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ),
                         SizedBox(width: 60), // Space for delete icon
                       ],
                     ),
@@ -197,7 +209,10 @@ class MyCartScreen extends StatelessWidget {
                 const _WebSummaryRow(label: "Subtotal", value: "PKR 6,000"),
                 const _WebSummaryRow(label: "Shipping", value: "Free"),
                 const _WebSummaryRow(
-                    label: "Discount (10%)", value: "-PKR 600", isNegative: true),
+                  label: "Discount (10%)",
+                  value: "-PKR 600",
+                  isNegative: true,
+                ),
                 const SizedBox(height: 24),
                 const Divider(),
                 const SizedBox(height: 24),
@@ -226,9 +241,10 @@ class MyCartScreen extends StatelessWidget {
                 const Text(
                   "Promo Code",
                   style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF64748B)),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -257,14 +273,21 @@ class MyCartScreen extends StatelessWidget {
                           backgroundColor: const Color(0xFF1E293B),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text("Apply",
-                            style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Apply",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -275,20 +298,27 @@ class MyCartScreen extends StatelessWidget {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (ctx) => SelectPaymentMethod()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => SelectPaymentMethod(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 8,
                       shadowColor: AppColors.primaryColor.withOpacity(0.3),
                     ),
                     child: const Text(
                       "Checkout Now",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -368,7 +398,6 @@ class CartList extends StatelessWidget {
         itemCount: cartItems.length,
         itemBuilder: (context, index) {
           return (Dismissible(
-
             secondaryBackground: Container(
               padding: EdgeInsets.only(
                 left: ScallingConfig.scale(220),
@@ -382,7 +411,7 @@ class CartList extends StatelessWidget {
               child: SvgWrapper(
                 assetPath: ImagePaths.trash,
                 fit: BoxFit.scaleDown,
-                ),
+              ),
             ),
             background: Container(color: AppColors.themeRed),
             onDismissed: (direction) {
@@ -511,7 +540,6 @@ class CartActions extends StatelessWidget {
   }
 }
 
-
 class DiscountCodeField extends StatelessWidget {
   const DiscountCodeField({super.key});
 
@@ -531,14 +559,16 @@ class DiscountCodeField extends StatelessWidget {
           Expanded(
             child: Center(
               child: CustomInputField(
-                  height: ScallingConfig.scale(45),
-                  hintStyle: TextStyle(
-                      color: AppColors.primary500,
-                      fontFamily: "Gilroy-Medium",
-                      fontWeight: FontWeight.w400,
-                      fontSize: ScallingConfig.moderateScale(16.78)),
-                  bgColor: Colors.transparent,
-                  hintText: "Enter Discount Code"),
+                height: ScallingConfig.scale(45),
+                hintStyle: TextStyle(
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Medium",
+                  fontWeight: FontWeight.w400,
+                  fontSize: ScallingConfig.moderateScale(16.78),
+                ),
+                bgColor: Colors.transparent,
+                hintText: "Enter Discount Code",
+              ),
             ),
           ),
           CustomButton(
@@ -546,7 +576,7 @@ class DiscountCodeField extends StatelessWidget {
             width: Utils.windowWidth(context) * 0.3,
             height: ScallingConfig.scale(50),
             borderRadius: 50,
-          )
+          ),
         ],
       ),
     );
@@ -682,7 +712,9 @@ class _WebCartItemTile extends StatelessWidget {
                   child: Text(
                     "${item.quantity}",
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w800),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 _buildQuantityBtn(Icons.add, () {}),
@@ -708,8 +740,11 @@ class _WebCartItemTile extends StatelessWidget {
           const SizedBox(width: 20),
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.delete_outline_rounded,
-                color: Colors.red[300], size: 22),
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.red[300],
+              size: 22,
+            ),
           ),
         ],
       ),
@@ -737,8 +772,11 @@ class _WebSummaryRow extends StatelessWidget {
   final String value;
   final bool isNegative;
 
-  const _WebSummaryRow(
-      {required this.label, required this.value, this.isNegative = false});
+  const _WebSummaryRow({
+    required this.label,
+    required this.value,
+    this.isNegative = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -750,9 +788,10 @@ class _WebSummaryRow extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 14,
-                fontWeight: FontWeight.w500),
+              color: Color(0xFF64748B),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           Text(
             value,

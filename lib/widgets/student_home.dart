@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/instructor_filters.dart';
@@ -17,14 +19,14 @@ import 'package:icare/widgets/laboratory.dart';
 import 'package:icare/widgets/section_header.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
-class StudentHome extends StatefulWidget {
+class StudentHome extends ConsumerStatefulWidget {
   const StudentHome({super.key});
 
   @override
-  State<StudentHome> createState() => _StudentHomeState();
+  ConsumerState<StudentHome> createState() => _StudentHomeState();
 }
 
-class _StudentHomeState extends State<StudentHome> {
+class _StudentHomeState extends ConsumerState<StudentHome> {
   final CourseService _courseService = CourseService();
   final LaboratoryService _labService = LaboratoryService();
 
@@ -63,6 +65,8 @@ class _StudentHomeState extends State<StudentHome> {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 900;
+    final role = ref.read(authProvider).userRole?.toLowerCase();
+    final isPatient = role == 'patient';
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -82,7 +86,9 @@ class _StudentHomeState extends State<StudentHome> {
                   assetPath: ImagePaths.filters,
                   onPress: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => InstructorFiltersScreen()),
+                      MaterialPageRoute(
+                        builder: (ctx) => InstructorFiltersScreen(),
+                      ),
                     );
                   },
                 ),
@@ -90,10 +96,12 @@ class _StudentHomeState extends State<StudentHome> {
               ),
               SizedBox(height: ScallingConfig.scale(20)),
               SectionHeader(
-                title: "Courses",
+                title: isPatient ? "Health Programs" : "Courses",
                 width: Utils.windowWidth(context) * 0.9,
                 onActionTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const Courses()));
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
                 },
               ),
               CoursesList(
@@ -104,7 +112,9 @@ class _StudentHomeState extends State<StudentHome> {
                 title: "Laboratories",
                 width: Utils.windowWidth(context) * 0.9,
                 onActionTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LaboratoriesScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => LaboratoriesScreen()),
+                  );
                 },
               ),
               SizedBox(height: ScallingConfig.scale(20)),
@@ -163,9 +173,9 @@ class _StudentHomeState extends State<StudentHome> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "STUDENT PORTAL",
-                      style: TextStyle(
+                    Text(
+                      isPatient ? "PATIENT PORTAL" : "STUDENT PORTAL",
+                      style: const TextStyle(
                         color: Colors.white54,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -185,7 +195,9 @@ class _StudentHomeState extends State<StudentHome> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Explore your courses and nearby laboratories.",
+                      isPatient
+                          ? "Explore your health programs and care plans."
+                          : "Explore your courses and nearby laboratories.",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 15,
@@ -214,25 +226,43 @@ class _StudentHomeState extends State<StudentHome> {
                             child: Row(
                               children: [
                                 const SizedBox(width: 16),
-                                const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                                const Icon(
+                                  Icons.search_rounded,
+                                  color: Color(0xFF94A3B8),
+                                  size: 22,
+                                ),
                                 const SizedBox(width: 10),
-                                const Expanded(
+                                Expanded(
                                   child: TextField(
                                     decoration: InputDecoration(
-                                      hintText: "Search courses, labs...",
-                                      hintStyle: TextStyle(color: Color(0xFFADB5BD), fontSize: 14),
+                                      hintText: isPatient
+                                          ? "Search programs, labs..."
+                                          : "Search courses, labs...",
+                                      hintStyle: const TextStyle(
+                                        color: Color(0xFFADB5BD),
+                                        fontSize: 14,
+                                      ),
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                          ),
                                     ),
                                   ),
                                 ),
                                 GestureDetector(
                                   onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (ctx) => InstructorFiltersScreen()),
+                                    MaterialPageRoute(
+                                      builder: (ctx) =>
+                                          InstructorFiltersScreen(),
+                                    ),
                                   ),
                                   child: Container(
                                     margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 10,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.primaryColor,
                                       borderRadius: BorderRadius.circular(10),
@@ -240,7 +270,9 @@ class _StudentHomeState extends State<StudentHome> {
                                     child: const Text(
                                       "Filter",
                                       style: TextStyle(
-                                        color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
@@ -253,7 +285,9 @@ class _StudentHomeState extends State<StudentHome> {
                         // My Learning Button
                         GestureDetector(
                           onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (ctx) => const MyLearningScreen()),
+                            MaterialPageRoute(
+                              builder: (ctx) => const MyLearningScreen(),
+                            ),
                           ),
                           child: Container(
                             height: 52,
@@ -261,15 +295,24 @@ class _StudentHomeState extends State<StudentHome> {
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(Icons.school_rounded, color: Colors.white, size: 20),
-                                SizedBox(width: 10),
+                                const Icon(
+                                  Icons.school_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
                                 Text(
-                                  'My Learning',
-                                  style: TextStyle(
+                                  isPatient
+                                      ? 'My Health Journey'
+                                      : 'My Learning',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -297,33 +340,36 @@ class _StudentHomeState extends State<StudentHome> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionHeader(
-                  title: "Courses",
-                  subtitle: "Browse available courses",
+                  title: isPatient ? "Health Programs" : "Courses",
+                  subtitle: isPatient
+                      ? "Your assigned care plans"
+                      : "Browse available courses",
                   accentColor: AppColors.primaryColor,
-                  onViewAll: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const Courses()),
-                  ),
+                  onViewAll: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (ctx) => const Courses())),
                 ),
                 const SizedBox(height: 28),
 
                 // Premium course cards grid
-                _courses.isEmpty 
-                  ? const Center(child: Text("No courses available"))
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _courses.length > 4 ? 4 : _courses.length,
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 520,
-                        mainAxisExtent: 380,
-                        crossAxisSpacing: 28,
-                        mainAxisSpacing: 28,
+                _courses.isEmpty
+                    ? const Center(child: Text("No courses available"))
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _courses.length > 4 ? 4 : _courses.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 520,
+                              mainAxisExtent: 380,
+                              crossAxisSpacing: 28,
+                              mainAxisSpacing: 28,
+                            ),
+                        itemBuilder: (ctx, i) {
+                          final c = _courses[i];
+                          return _CoursePremiumCard(course: c);
+                        },
                       ),
-                      itemBuilder: (ctx, i) {
-                        final c = _courses[i];
-                        return _CoursePremiumCard(course: c);
-                      },
-                    ),
               ],
             ),
           ),
@@ -350,17 +396,19 @@ class _StudentHomeState extends State<StudentHome> {
 
                 // Premium lab cards row
                 _labs.isEmpty
-                ? const Center(child: Text("No laboratories found"))
-                : Wrap(
-                    spacing: 24,
-                    runSpacing: 24,
-                    children: _labs.take(3).map((lab) {
-                      return SizedBox(
-                        width: (Utils.windowWidth(context) - 112 - 48) / 3, // Roughly 1/3 of available width
-                        child: _LabPremiumCard(lab: lab),
-                      );
-                    }).toList(),
-                  ),
+                    ? const Center(child: Text("No laboratories found"))
+                    : Wrap(
+                        spacing: 24,
+                        runSpacing: 24,
+                        children: _labs.take(3).map((lab) {
+                          return SizedBox(
+                            width:
+                                (Utils.windowWidth(context) - 112 - 48) /
+                                3, // Roughly 1/3 of available width
+                            child: _LabPremiumCard(lab: lab),
+                          );
+                        }).toList(),
+                      ),
               ],
             ),
           ),
@@ -416,7 +464,10 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
           ],
         ),
         GestureDetector(
@@ -425,7 +476,9 @@ class _SectionHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: accentGradient ?? [accentColor, accentColor.withOpacity(0.8)],
+                colors:
+                    accentGradient ??
+                    [accentColor, accentColor.withOpacity(0.8)],
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
@@ -439,9 +492,20 @@ class _SectionHeader extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("View All", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                Text(
+                  "View All",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 SizedBox(width: 6),
-                Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 15,
+                ),
               ],
             ),
           ),
@@ -459,29 +523,79 @@ class _CoursePremiumCard extends StatelessWidget {
 
   static String _extractInstructorName(dynamic instructor) {
     if (instructor == null) return 'Instructor';
-    
+
     if (instructor is String) return instructor;
-    
+
     if (instructor is Map) {
       // Try to get name from nested user object
       final user = instructor['user'];
       if (user is Map && user['name'] is String) {
         return user['name'] as String;
       }
-      
+
       // Try to get name directly from instructor object
       if (instructor['name'] is String) {
         return instructor['name'] as String;
       }
     }
-    
+
     return 'Instructor';
+  }
+
+  Widget _buildImage(BuildContext context) {
+    String? rawPath = course['image'] ?? course['thumbnail'];
+    String imagePath = (rawPath != null && rawPath.toString().trim().isNotEmpty)
+        ? rawPath.toString().trim()
+        : ImagePaths.coursePremium;
+
+    final bool isNetwork = imagePath.startsWith('http');
+    final double height = 180;
+
+    // WEB FIX: Prevent trying to load "assets/" or empty paths as assets
+    final bool isValidAsset =
+        !isNetwork &&
+        imagePath.contains('assets/') &&
+        (imagePath.endsWith('.png') ||
+            imagePath.endsWith('.jpg') ||
+            imagePath.endsWith('.jpeg') ||
+            imagePath.endsWith('.svg'));
+
+    if (isNetwork) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(height),
+      );
+    } else if (isValidAsset) {
+      return Image.asset(
+        imagePath,
+        width: double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(height),
+      );
+    } else {
+      return _buildPlaceholder(height);
+    }
+  }
+
+  Widget _buildPlaceholder(double height) {
+    return Image.asset(
+      ImagePaths.coursePremium,
+      width: double.infinity,
+      height: height,
+      fit: BoxFit.cover,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ViewCourse(courseData: course))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (ctx) => ViewCourse(courseData: course)),
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -501,30 +615,25 @@ class _CoursePremiumCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: course['image'] is String 
-                    ? Image.asset(
-                        course['image'] as String,
-                        height: 180,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        height: 180,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.book, size: 50, color: Colors.grey),
-                      ),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  child: _buildImage(context),
                 ),
                 // Bottom gradient overlay on image
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
                       ),
                     ),
                   ),
@@ -534,14 +643,21 @@ class _CoursePremiumCard extends StatelessWidget {
                   top: 14,
                   left: 14,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       course['tag'] ?? 'Health',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -550,7 +666,10 @@ class _CoursePremiumCard extends StatelessWidget {
                   top: 14,
                   right: 14,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.55),
                       borderRadius: BorderRadius.circular(20),
@@ -558,11 +677,19 @@ class _CoursePremiumCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFF59E0B),
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           "${course['rating'] ?? 4.5}",
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -577,7 +704,11 @@ class _CoursePremiumCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    (course['title'] is String ? course['title'] : (course['name'] is String ? course['name'] : 'Untitled Course')),
+                    (course['title'] is String
+                        ? course['title']
+                        : (course['name'] is String
+                              ? course['name']
+                              : 'Untitled Course')),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -589,26 +720,49 @@ class _CoursePremiumCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    (course['caption'] is String ? course['caption'] : (course['desc'] is String ? course['desc'] : 'No description available')),
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+                    (course['caption'] is String
+                        ? course['caption']
+                        : (course['desc'] is String
+                              ? course['desc']
+                              : 'No description available')),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                      height: 1.4,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        size: 15,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         _extractInstructorName(course['instructor']),
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const Spacer(),
-                      const Icon(Icons.group_outlined, size: 15, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.group_outlined,
+                        size: 15,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         "${course['students'] ?? 0} students",
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ),
@@ -631,7 +785,9 @@ class _LabPremiumCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab))),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab))),
       child: Container(
         height: 280,
         decoration: BoxDecoration(
@@ -643,12 +799,12 @@ class _LabPremiumCard extends StatelessWidget {
               offset: const Offset(0, 10),
             ),
           ],
-          image: lab['image'] is String 
-            ? DecorationImage(
-                image: AssetImage(lab['image'] as String),
-                fit: BoxFit.cover,
-              )
-            : null,
+          image: lab['image'] is String
+              ? DecorationImage(
+                  image: AssetImage(lab['image'] as String),
+                  fit: BoxFit.cover,
+                )
+              : null,
           color: (lab['image'] is! String) ? Colors.blueGrey[100] : null,
         ),
         child: Stack(
@@ -673,7 +829,11 @@ class _LabPremiumCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ((lab['labName'] is String) ? (lab['labName'] as String) : ((lab['name'] is String) ? (lab['name'] as String) : 'Laboratory')),
+                    ((lab['labName'] is String)
+                        ? (lab['labName'] as String)
+                        : ((lab['name'] is String)
+                              ? (lab['name'] as String)
+                              : 'Laboratory')),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -683,16 +843,23 @@ class _LabPremiumCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: Colors.white70, size: 13),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.white70,
+                        size: 13,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           (lab['address'] is String)
                               ? (lab['address'] as String)
                               : ((lab['location'] is String)
-                                  ? (lab['location'] as String)
-                                  : 'Location not available'),
-                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    ? (lab['location'] as String)
+                                    : 'Location not available'),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -702,20 +869,44 @@ class _LabPremiumCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, color: Colors.white70, size: 13),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        color: Colors.white70,
+                        size: 13,
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        (lab['open'] is String ? lab['open'] : 'Open 9:00 AM - 9:00 PM'),
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        (lab['open'] is String
+                            ? lab['open']
+                            : 'Open 9:00 AM - 9:00 PM'),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.home_rounded, color: Colors.white70, size: 13),
+                      const Icon(
+                        Icons.home_rounded,
+                        color: Colors.white70,
+                        size: 13,
+                      ),
                       const SizedBox(width: 4),
-                      Text((lab['homeSample'] == true) ? 'Home Sample Available' : (lab['homeSample'] == false ? 'No Home Sample' : (lab['homeSample']?.toString() ?? 'Home Sample Available')), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text(
+                        (lab['homeSample'] == true)
+                            ? 'Home Sample Available'
+                            : (lab['homeSample'] == false
+                                  ? 'No Home Sample'
+                                  : (lab['homeSample']?.toString() ??
+                                        'Home Sample Available')),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -723,16 +914,26 @@ class _LabPremiumCard extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab)),
+                        MaterialPageRoute(
+                          builder: (ctx) => LabDetails(labData: lab),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.primaryColor,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text("Visit Lab", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                      child: const Text(
+                        "Visit Lab",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ],

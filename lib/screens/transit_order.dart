@@ -15,7 +15,7 @@ class TransitOrderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isWeb = MediaQuery.of(context).size.width > 900;
-    
+
     final List<Map<String, dynamic>> orders = [
       {
         "id": "ORD-1102",
@@ -62,7 +62,10 @@ class TransitOrderScreen extends StatelessWidget {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [const Color(0xFFF59E0B).withOpacity(0.05), Colors.white],
+                    colors: [
+                      const Color(0xFFF59E0B).withOpacity(0.05),
+                      Colors.white,
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -92,8 +95,7 @@ class TransitOrderScreen extends StatelessWidget {
                               color: const Color(0xFF0F172A),
                             ),
                           ),
-                          if (isWeb)
-                             _buildCalendarFilter(),
+                          if (isWeb) _buildCalendarFilter(),
                         ],
                       ),
                     ],
@@ -107,7 +109,10 @@ class TransitOrderScreen extends StatelessWidget {
           if (isWeb)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 60,
+                  vertical: 24,
+                ),
                 child: Row(
                   children: [
                     _buildFilterChip("On the Way", true),
@@ -126,25 +131,26 @@ class TransitOrderScreen extends StatelessWidget {
               horizontal: isWeb ? 60 : 20,
               vertical: isWeb ? 0 : 20,
             ),
-            sliver: isWeb 
-              ? SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 550,
-                    mainAxisExtent: 300,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
+            sliver: isWeb
+                ? SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 550,
+                          mainAxisExtent: 300,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                        ),
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _buildModernOrderCard(orders[i], isWeb),
+                      childCount: orders.length,
+                    ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _buildModernOrderCard(orders[i], isWeb),
+                      childCount: orders.length,
+                    ),
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _buildModernOrderCard(orders[i], isWeb),
-                    childCount: orders.length,
-                  ),
-                )
-              : SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _buildModernOrderCard(orders[i], isWeb),
-                    childCount: orders.length,
-                  ),
-                ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -164,9 +170,19 @@ class TransitOrderScreen extends StatelessWidget {
         children: const [
           Icon(Icons.map_rounded, size: 16, color: Color(0xFF64748B)),
           SizedBox(width: 8),
-          Text("Real-time Map", style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          Text(
+            "Real-time Map",
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF64748B)),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: Color(0xFF64748B),
+          ),
         ],
       ),
     );
@@ -184,7 +200,11 @@ class TransitOrderScreen extends StatelessWidget {
       child: const TextField(
         decoration: InputDecoration(
           hintText: "Search ID, Location...",
-          prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: Color(0xFF94A3B8),
+          ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 14),
         ),
@@ -198,7 +218,9 @@ class TransitOrderScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive ? const Color(0xFFF59E0B) : Colors.white,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: isActive ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isActive ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: CustomText(
         text: label,
@@ -241,7 +263,11 @@ class TransitOrderScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: Image.asset(order['products'][index]['image'], height: 32, width: 32),
+                    child: Image.asset(
+                      order['products'][index]['image'],
+                      height: 32,
+                      width: 32,
+                    ),
                   ),
                 ),
               ),
@@ -269,7 +295,10 @@ class TransitOrderScreen extends StatelessWidget {
               ),
               // Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF59E0B).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -286,7 +315,11 @@ class TransitOrderScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.location_on_rounded,
+                size: 14,
+                color: Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: CustomText(
@@ -325,14 +358,30 @@ class TransitOrderScreen extends StatelessWidget {
                 onPressed: () {},
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFFFFF7ED),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Row(
                   children: const [
-                    Text("Track Order", style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text(
+                      "Track Order",
+                      style: TextStyle(
+                        color: Color(0xFFF59E0B),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
                     SizedBox(width: 4),
-                    Icon(Icons.local_shipping_rounded, size: 12, color: Color(0xFFF59E0B)),
+                    Icon(
+                      Icons.local_shipping_rounded,
+                      size: 12,
+                      color: Color(0xFFF59E0B),
+                    ),
                   ],
                 ),
               ),

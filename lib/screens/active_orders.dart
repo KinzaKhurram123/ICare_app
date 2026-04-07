@@ -93,9 +93,16 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 56),
+                    child: const Icon(
+                      Icons.local_shipping_rounded,
+                      color: Colors.white,
+                      size: 56,
+                    ),
                   ),
                   const SizedBox(width: 40),
                   Expanded(
@@ -126,7 +133,10 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 25),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 25,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [AppColors.primaryColor, Color(0xFF2563EB)],
@@ -139,28 +149,32 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                           color: AppColors.primaryColor.withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
-                        )
+                        ),
                       ],
                     ),
                     child: Column(
                       children: const [
                         Text(
                           "Total Active",
-                          style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 8),
                         Text(
                           "120",
                           style: TextStyle(
-                            color: Colors.white, 
-                            fontSize: 40, 
-                            fontFamily: "Gilroy-Bold", 
-                            fontWeight: FontWeight.bold
+                            color: Colors.white,
+                            fontSize: 40,
+                            fontFamily: "Gilroy-Bold",
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -168,8 +182,8 @@ class _WebActiveOrdersScreen extends StatelessWidget {
             // Search and Filter Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(50, 40, 50, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1600),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -193,19 +207,27 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                             color: Colors.black.withOpacity(0.04),
                             blurRadius: 20,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 24),
+                          const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 24,
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: TextField(
                               decoration: const InputDecoration(
                                 hintText: "Search orders...",
-                                hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.w500),
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                               ),
@@ -218,7 +240,7 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Grid of Orders
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 0),
@@ -230,10 +252,8 @@ class _WebActiveOrdersScreen extends StatelessWidget {
                   alignment: WrapAlignment.start,
                   children: List.generate(
                     6,
-                    (index) => const SizedBox(
-                      width: 400,
-                      child: _WebOrderCard(),
-                    ),
+                    (index) =>
+                        const SizedBox(width: 400, child: _WebOrderCard()),
                   ),
                 ),
               ),
@@ -276,10 +296,17 @@ class _WebOrderCard extends StatelessWidget {
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.science_rounded, color: AppColors.primaryColor, size: 28),
+                child: const Icon(
+                  Icons.science_rounded,
+                  color: AppColors.primaryColor,
+                  size: 28,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(20),
@@ -293,7 +320,7 @@ class _WebOrderCard extends StatelessWidget {
                     fontFamily: "Gilroy-SemiBold",
                   ),
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -310,7 +337,12 @@ class _WebOrderCard extends StatelessWidget {
           const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1.5),
           const SizedBox(height: 24),
           _webInfoRow(Icons.person_outline_rounded, 'Patient', 'Sadia'),
-          _webInfoRow(Icons.location_on_outlined, 'Address', 'Shahrah-e-faisal near KFC, Street 1', maxLines: 2),
+          _webInfoRow(
+            Icons.location_on_outlined,
+            'Address',
+            'Shahrah-e-faisal near KFC, Street 1',
+            maxLines: 2,
+          ),
           _webInfoRow(Icons.cake_outlined, 'Age', '32'),
           _webInfoRow(Icons.calendar_today_outlined, 'Date', '21 June 2025'),
           _webInfoRow(Icons.access_time_rounded, 'Time', '12:00 PM'),
@@ -320,7 +352,12 @@ class _WebOrderCard extends StatelessWidget {
     );
   }
 
-  static Widget _webInfoRow(IconData icon, String label, String value, {int maxLines = 1}) {
+  static Widget _webInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -399,8 +436,8 @@ class CompletedReportCard extends StatelessWidget {
           _infoRow('Phone Number', '03098949375'),
 
           const SizedBox(height: 12),
-          // const Divider(),
 
+          // const Divider(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
@@ -417,7 +454,7 @@ class CompletedReportCard extends StatelessWidget {
                 fontFamily: "Gilroy-Bold",
                 fontWeight: FontWeight.w400,
                 color: AppColors.themeDarkGrey,
-              )
+              ),
             ],
           ),
         ],
@@ -445,7 +482,7 @@ class CompletedReportCard extends StatelessWidget {
             fontFamily: "Gilroy-SemiBold",
             fontWeight: FontWeight.w400,
             color: AppColors.themeDarkGrey,
-          )
+          ),
         ],
       ),
     );

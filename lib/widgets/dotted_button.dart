@@ -6,49 +6,48 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class DottedButton extends StatelessWidget {
-  const DottedButton({super.key, 
-  required this.onPressed,
-  required this.title, 
-  this.width,
-  this.color, this.titleSize});
- final String title;
- final double? width;
- final double? titleSize;
- final Color?  color;
- final Function() onPressed;
+  const DottedButton({
+    super.key,
+    required this.onPressed,
+    required this.title,
+    this.width,
+    this.color,
+    this.titleSize,
+  });
+  final String title;
+  final double? width;
+  final double? titleSize;
+  final Color? color;
+  final Function() onPressed;
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-  width: width ?? Utils.windowWidth(context) * 0.8,
-  child: DottedBorder(
-  
-  options: RoundedRectDottedBorderOptions(
+      width: width ?? Utils.windowWidth(context) * 0.8,
+      child: DottedBorder(
+        options: RoundedRectDottedBorderOptions(
+          radius: Radius.circular(30),
+          color: AppColors.grayColor.withAlpha(60),
 
-radius: Radius.circular(30),
-    color: AppColors.grayColor.withAlpha(60),
-    
-    dashPattern: [10, 5],
-              strokeWidth: 2,
-              // padding: EdgeInsets.all(16),
-  // strokeCap: StrokeCap.square
-  ),
+          dashPattern: [10, 5],
+          strokeWidth: 2,
+          // padding: EdgeInsets.all(16),
+          // strokeCap: StrokeCap.square
+        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
-          onTap:onPressed,
+          onTap: onPressed,
           child: Container(
             height: 50,
             width: double.infinity,
             alignment: Alignment.center,
             child: CustomText(
               text: title,
-              color: color ?? AppColors.grayColor ,
+              color: color ?? AppColors.grayColor,
               fontSize: titleSize ?? ScallingConfig.moderateScale(12),
-
-            )
+            ),
           ),
         ),
       ),
-);
-
+    );
   }
 }

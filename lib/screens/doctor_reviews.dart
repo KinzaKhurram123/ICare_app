@@ -26,7 +26,7 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
 
   Future<void> _loadReviews() async {
     setState(() => _isLoading = true);
-    
+
     final userId = ref.read(authProvider).user?.id;
     if (userId == null) {
       setState(() => _isLoading = false);
@@ -34,7 +34,7 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
     }
 
     final result = await _doctorService.getDoctorById(userId);
-    
+
     if (result['success'] && mounted) {
       final doctor = result['doctor'];
       setState(() {
@@ -49,7 +49,10 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
 
   double get _averageRating {
     if (_ratings.isEmpty) return 0.0;
-    final sum = _ratings.fold<double>(0, (prev, rating) => prev + double.parse(rating));
+    final sum = _ratings.fold<double>(
+      0,
+      (prev, rating) => prev + double.parse(rating),
+    );
     return sum / _ratings.length;
   }
 
@@ -85,23 +88,25 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 40 : 20),
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildOverviewCard(),
-                const SizedBox(height: 24),
-                _buildRatingDistribution(),
-                const SizedBox(height: 24),
-                _buildReviewsList(),
-              ],
+              padding: EdgeInsets.all(isDesktop ? 40 : 20),
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1000 : double.infinity,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildOverviewCard(),
+                      const SizedBox(height: 24),
+                      _buildRatingDistribution(),
+                      const SizedBox(height: 24),
+                      _buildReviewsList(),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -164,7 +169,9 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                 Row(
                   children: List.generate(5, (index) {
                     return Icon(
-                      index < _averageRating.round() ? Icons.star_rounded : Icons.star_outline_rounded,
+                      index < _averageRating.round()
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       color: Colors.white,
                       size: 24,
                     );
@@ -173,10 +180,7 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                 const SizedBox(height: 12),
                 Text(
                   'Based on ${_ratings.length} reviews',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.white70),
                 ),
               ],
             ),
@@ -187,7 +191,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.star_rounded, size: 64, color: Colors.white),
+            child: const Icon(
+              Icons.star_rounded,
+              size: 64,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
@@ -196,7 +204,7 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
 
   Widget _buildRatingDistribution() {
     final distribution = _ratingDistribution;
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -226,7 +234,7 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
             final stars = 5 - index;
             final count = distribution[stars] ?? 0;
             final percentage = _ratings.isEmpty ? 0.0 : count / _ratings.length;
-            
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
@@ -244,7 +252,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 16,
+                          color: Color(0xFFF59E0B),
+                        ),
                       ],
                     ),
                   ),
@@ -254,7 +266,9 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                       child: LinearProgressIndicator(
                         value: percentage,
                         backgroundColor: const Color(0xFFF1F5F9),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF59E0B)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFFF59E0B),
+                        ),
                         minHeight: 8,
                       ),
                     ),
@@ -292,7 +306,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey.shade300),
+              Icon(
+                Icons.rate_review_outlined,
+                size: 64,
+                color: Colors.grey.shade300,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'No reviews yet',
@@ -383,7 +401,9 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                       ),
                     ),
                     Text(
-                      DateFormat('MMM dd, yyyy').format(DateTime.now().subtract(Duration(days: index * 3))),
+                      DateFormat('MMM dd, yyyy').format(
+                        DateTime.now().subtract(Duration(days: index * 3)),
+                      ),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF64748B),
@@ -393,14 +413,21 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 14,
+                      color: Color(0xFFF59E0B),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       rating.toStringAsFixed(1),

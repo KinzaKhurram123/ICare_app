@@ -28,7 +28,8 @@ class ViewProfile extends ConsumerWidget {
     final String name = user?.name ?? "Aaron Smith";
     final String email = user?.email ?? "lisamarie@gmail.com";
     final String phone = user?.phoneNumber ?? "+1 234 567 8963";
-    final String bio = "Master advanced techniques and specialized knowledge through our comprehensive professional course, designed to equip you with the essential skills and practical expertise.";
+    final String bio =
+        "Master advanced techniques and specialized knowledge through our comprehensive professional course, designed to equip you with the essential skills and practical expertise.";
     final String dob = "December 25, 1990";
     final String gender = "Male";
     final String address = "199 Water Street 24TH, New York";
@@ -39,14 +40,14 @@ class ViewProfile extends ConsumerWidget {
     final label = role == "Patient"
         ? "Total Appointments"
         : role == "Laboratory"
-            ? "Active Orders"
-            : role == "pharmacist"
-                ? "Total Appointments"
-                : "Total Consultations";
+        ? "Active Orders"
+        : role == "pharmacist"
+        ? "Total Appointments"
+        : "Total Consultations";
 
     if (isDesktop) {
       return _WebViewProfile(
-        role: role, 
+        role: role,
         label: label,
         name: name,
         email: email,
@@ -79,9 +80,7 @@ class ViewProfile extends ConsumerWidget {
             onTap: () {
               if (role == "Student") {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => StudentProfileSetup(),
-                  ),
+                  MaterialPageRoute(builder: (ctx) => StudentProfileSetup()),
                 );
               } else {
                 Navigator.of(context).push(
@@ -208,16 +207,10 @@ class ViewProfile extends ConsumerWidget {
                 width: Utils.windowWidth(context) * 0.85,
               ),
               SizedBox(height: ScallingConfig.scale(10)),
-              infoRowTile(
-                iconPath: ImagePaths.calendar,
-                infoText: dob,
-              ),
+              infoRowTile(iconPath: ImagePaths.calendar, infoText: dob),
               infoRowTile(iconPath: ImagePaths.gender, infoText: gender),
 
-              infoRowTile(
-                iconPath: ImagePaths.marker2,
-                infoText: address,
-              ),
+              infoRowTile(iconPath: ImagePaths.marker2, infoText: address),
               if (role == "Student" && qualification.isNotEmpty)
                 infoRowTile(
                   iconPath: ImagePaths.certificate,
@@ -228,7 +221,10 @@ class ViewProfile extends ConsumerWidget {
                   iconPath: ImagePaths.certificate,
                   infoText: educationLevel,
                 ),
-              const infoRowTile(iconPath: ImagePaths.card, infoText: "5678 1234-A"),
+              const infoRowTile(
+                iconPath: ImagePaths.card,
+                infoText: "5678 1234-A",
+              ),
             ],
           ),
         ),
@@ -252,7 +248,7 @@ class _WebViewProfile extends StatelessWidget {
   final List<String> preferences;
 
   const _WebViewProfile({
-    required this.role, 
+    required this.role,
     required this.label,
     required this.name,
     required this.email,
@@ -307,7 +303,10 @@ class _WebViewProfile extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryColor.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(30),
@@ -342,14 +341,24 @@ class _WebViewProfile extends StatelessWidget {
                         );
                       }
                     },
-                    icon: const Icon(Icons.edit_rounded, size: 20, color: Colors.white),
+                    icon: const Icon(
+                      Icons.edit_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       "Edit Profile",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -370,29 +379,35 @@ class _WebViewProfile extends StatelessWidget {
                     children: [
                       // Stats Row
                       if (role != "instructor" && role != "student")
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildWebStatCard(
-                              label: label,
-                              value: "150",
-                              icon: role == "lab_technician" ? Icons.science_rounded : Icons.people_alt_rounded,
-                              color: const Color(0xFF3B82F6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildWebStatCard(
+                                label: label,
+                                value: "150",
+                                icon: role == "lab_technician"
+                                    ? Icons.science_rounded
+                                    : Icons.people_alt_rounded,
+                                color: const Color(0xFF3B82F6),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 32),
-                          Expanded(
-                            child: _buildWebStatCard(
-                              label: role == "lab_technician" ? "Completed Reports" : "Average Rating",
-                              value: role == "lab_technician" ? "32" : "4.9",
-                              icon: role == "lab_technician" ? Icons.check_circle_rounded : Icons.star_rounded,
-                              color: const Color(0xFF22C55E),
+                            const SizedBox(width: 32),
+                            Expanded(
+                              child: _buildWebStatCard(
+                                label: role == "lab_technician"
+                                    ? "Completed Reports"
+                                    : "Average Rating",
+                                value: role == "lab_technician" ? "32" : "4.9",
+                                icon: role == "lab_technician"
+                                    ? Icons.check_circle_rounded
+                                    : Icons.star_rounded,
+                                color: const Color(0xFF22C55E),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                       if (role != "instructor" && role != "student")
-                      const SizedBox(height: 60),
+                        const SizedBox(height: 60),
 
                       // Details Section
                       const Text(
@@ -422,8 +437,20 @@ class _WebViewProfile extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Expanded(child: _buildDetailItem("Email Address", email, Icons.email_outlined)),
-                                Expanded(child: _buildDetailItem("Phone Number", phone, Icons.phone_android_rounded)),
+                                Expanded(
+                                  child: _buildDetailItem(
+                                    "Email Address",
+                                    email,
+                                    Icons.email_outlined,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildDetailItem(
+                                    "Phone Number",
+                                    phone,
+                                    Icons.phone_android_rounded,
+                                  ),
+                                ),
                               ],
                             ),
                             const Padding(
@@ -432,8 +459,20 @@ class _WebViewProfile extends StatelessWidget {
                             ),
                             Row(
                               children: [
-                                Expanded(child: _buildDetailItem("Date of Birth", dob, Icons.calendar_today_outlined)),
-                                Expanded(child: _buildDetailItem("Gender", gender, Icons.person_outline_rounded)),
+                                Expanded(
+                                  child: _buildDetailItem(
+                                    "Date of Birth",
+                                    dob,
+                                    Icons.calendar_today_outlined,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildDetailItem(
+                                    "Gender",
+                                    gender,
+                                    Icons.person_outline_rounded,
+                                  ),
+                                ),
                               ],
                             ),
                             const Padding(
@@ -449,20 +488,34 @@ class _WebViewProfile extends StatelessWidget {
                               padding: EdgeInsets.symmetric(vertical: 32),
                               child: Divider(color: Color(0xFFF1F4F9)),
                             ),
-                            _buildDetailItem("Location / Office", address, Icons.location_on_outlined),
-                            if (role == "Student" && qualification.isNotEmpty) ...[
+                            _buildDetailItem(
+                              "Location / Office",
+                              address,
+                              Icons.location_on_outlined,
+                            ),
+                            if (role == "Student" &&
+                                qualification.isNotEmpty) ...[
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 32),
                                 child: Divider(color: Color(0xFFF1F4F9)),
                               ),
-                              _buildDetailItem("Qualification", qualification, Icons.school_outlined),
+                              _buildDetailItem(
+                                "Qualification",
+                                qualification,
+                                Icons.school_outlined,
+                              ),
                             ],
-                            if (role == "Student" && educationLevel.isNotEmpty) ...[
+                            if (role == "Student" &&
+                                educationLevel.isNotEmpty) ...[
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 32),
                                 child: Divider(color: Color(0xFFF1F4F9)),
                               ),
-                              _buildDetailItem("Education Level", educationLevel, Icons.history_edu_rounded),
+                              _buildDetailItem(
+                                "Education Level",
+                                educationLevel,
+                                Icons.history_edu_rounded,
+                              ),
                             ],
                           ],
                         ),
@@ -478,7 +531,12 @@ class _WebViewProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildWebStatCard({required String label, required String value, required IconData icon, required Color color}) {
+  Widget _buildWebStatCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -496,16 +554,33 @@ class _WebViewProfile extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Icon(icon, color: color, size: 32),
           ),
           const SizedBox(width: 24),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ],
@@ -521,7 +596,14 @@ class _WebViewProfile extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: AppColors.primaryColor),
             const SizedBox(width: 12),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -529,7 +611,12 @@ class _WebViewProfile extends StatelessWidget {
           padding: const EdgeInsets.only(left: 30),
           child: Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), height: 1.5),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E293B),
+              height: 1.5,
+            ),
           ),
         ),
       ],

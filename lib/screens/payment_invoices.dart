@@ -52,16 +52,22 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
     try {
       final profile = await _labService.getProfile();
       final bookings = await _labService.getBookings(profile['_id']);
-      
+
       setState(() {
         _invoices = bookings.map((b) {
-          final status = b['status'] == 'completed' ? 'Paid' : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
+          final status = b['status'] == 'completed'
+              ? 'Paid'
+              : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
           final dateStr = b['date'] ?? '';
           DateTime? dateObj = DateTime.tryParse(dateStr);
-          final formattedDate = dateObj != null ? DateFormat('dd MMM, yyyy').format(dateObj) : '—';
-          
+          final formattedDate = dateObj != null
+              ? DateFormat('dd MMM, yyyy').format(dateObj)
+              : '—';
+
           return {
-            "id": b['bookingNumber'] ?? "INV-${b['_id'].toString().substring(18)}",
+            "id":
+                b['bookingNumber'] ??
+                "INV-${b['_id'].toString().substring(18)}",
             "patient": b['patient']?['name'] ?? "Unknown Patient",
             "test": b['testName'] ?? "Laboratory Test",
             "amount": (b['price'] ?? 0).toDouble(),
@@ -89,19 +95,24 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
     return _invoices.where((i) => i["status"] == _selectedFilter).toList();
   }
 
-  double get _totalRevenue =>
-      _invoices.where((i) => i["status"] == "Paid").fold(0.0, (sum, i) => sum + (i["amount"] as double));
-  double get _totalPending =>
-      _invoices.where((i) => i["status"] == "Pending").fold(0.0, (sum, i) => sum + (i["amount"] as double));
-  double get _totalOverdue =>
-      _invoices.where((i) => i["status"] == "Overdue").fold(0.0, (sum, i) => sum + (i["amount"] as double));
+  double get _totalRevenue => _invoices
+      .where((i) => i["status"] == "Paid")
+      .fold(0.0, (sum, i) => sum + (i["amount"] as double));
+  double get _totalPending => _invoices
+      .where((i) => i["status"] == "Pending")
+      .fold(0.0, (sum, i) => sum + (i["amount"] as double));
+  double get _totalOverdue => _invoices
+      .where((i) => i["status"] == "Overdue")
+      .fold(0.0, (sum, i) => sum + (i["amount"] as double));
 
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
 
     return Scaffold(
-      backgroundColor: isDesktop ? const Color(0xFFF0F4F8) : const Color(0xFFF8FAFC),
+      backgroundColor: isDesktop
+          ? const Color(0xFFF0F4F8)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         leading: const CustomBackButton(),
         automaticallyImplyLeading: false,
@@ -129,7 +140,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -138,12 +152,14 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                 IconButton(
                   onPressed: _fetchInvoices,
                   icon: const Icon(Icons.refresh_rounded),
-                )
+                ),
               ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : isDesktop
+          ? _buildDesktopLayout()
+          : _buildMobileLayout(),
     );
   }
 
@@ -166,9 +182,13 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                     child: _buildSummaryCard(
                       title: "Total Revenue",
                       amount: "\$${_totalRevenue.toStringAsFixed(0)}",
-                      subtitle: "${_invoices.where((i) => i['status'] == 'Paid').length} invoices paid",
+                      subtitle:
+                          "${_invoices.where((i) => i['status'] == 'Paid').length} invoices paid",
                       icon: Icons.account_balance_wallet_rounded,
-                      gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)],
+                      gradientColors: [
+                        const Color(0xFF10B981),
+                        const Color(0xFF059669),
+                      ],
                       bgAccent: const Color(0xFFD1FAE5),
                     ),
                   ),
@@ -177,9 +197,13 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                     child: _buildSummaryCard(
                       title: "Pending",
                       amount: "\$${_totalPending.toStringAsFixed(0)}",
-                      subtitle: "${_invoices.where((i) => i['status'] == 'Pending').length} awaiting payment",
+                      subtitle:
+                          "${_invoices.where((i) => i['status'] == 'Pending').length} awaiting payment",
                       icon: Icons.schedule_rounded,
-                      gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+                      gradientColors: [
+                        const Color(0xFFF59E0B),
+                        const Color(0xFFD97706),
+                      ],
                       bgAccent: const Color(0xFFFEF3C7),
                     ),
                   ),
@@ -188,9 +212,13 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                     child: _buildSummaryCard(
                       title: "Overdue",
                       amount: "\$${_totalOverdue.toStringAsFixed(0)}",
-                      subtitle: "${_invoices.where((i) => i['status'] == 'Overdue').length} need attention",
+                      subtitle:
+                          "${_invoices.where((i) => i['status'] == 'Overdue').length} need attention",
                       icon: Icons.warning_rounded,
-                      gradientColors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+                      gradientColors: [
+                        const Color(0xFFEF4444),
+                        const Color(0xFFDC2626),
+                      ],
                       bgAccent: const Color(0xFFFEE2E2),
                     ),
                   ),
@@ -201,7 +229,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                       amount: "${_invoices.length}",
                       subtitle: "This month",
                       icon: Icons.receipt_long_rounded,
-                      gradientColors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                      gradientColors: [
+                        const Color(0xFF3B82F6),
+                        const Color(0xFF1D4ED8),
+                      ],
                       bgAccent: const Color(0xFFDBEAFE),
                     ),
                   ),
@@ -255,9 +286,18 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                               ),
                               tabs: [
                                 Tab(text: "All (${_invoices.length})"),
-                                Tab(text: "Paid (${_invoices.where((i) => i['status'] == 'Paid').length})"),
-                                Tab(text: "Pending (${_invoices.where((i) => i['status'] == 'Pending').length})"),
-                                Tab(text: "Overdue (${_invoices.where((i) => i['status'] == 'Overdue').length})"),
+                                Tab(
+                                  text:
+                                      "Paid (${_invoices.where((i) => i['status'] == 'Paid').length})",
+                                ),
+                                Tab(
+                                  text:
+                                      "Pending (${_invoices.where((i) => i['status'] == 'Pending').length})",
+                                ),
+                                Tab(
+                                  text:
+                                      "Overdue (${_invoices.where((i) => i['status'] == 'Overdue').length})",
+                                ),
                               ],
                             ),
                           ),
@@ -269,7 +309,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
 
                     // Table Header
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         border: Border(
@@ -279,13 +322,90 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                       ),
                       child: const Row(
                         children: [
-                          Expanded(flex: 2, child: Text("INVOICE ID", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 3, child: Text("PATIENT", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 3, child: Text("TEST", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 2, child: Text("DATE", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 2, child: Text("AMOUNT", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 2, child: Text("METHOD", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
-                          Expanded(flex: 1, child: Text("STATUS", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF94A3B8), letterSpacing: 0.8))),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              "INVOICE ID",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              "PATIENT",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              "TEST",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              "DATE",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              "AMOUNT",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              "METHOD",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              "STATUS",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
                           SizedBox(width: 60),
                         ],
                       ),
@@ -304,7 +424,11 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                         padding: const EdgeInsets.symmetric(vertical: 60),
                         child: Column(
                           children: [
-                            Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey[300]),
+                            Icon(
+                              Icons.receipt_long_rounded,
+                              size: 48,
+                              color: Colors.grey[300],
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               "No invoices found",
@@ -333,8 +457,12 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
       decoration: BoxDecoration(
-        border: isLast ? null : Border(bottom: BorderSide(color: Colors.grey.shade100)),
-        borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(20)) : null,
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: Colors.grey.shade100)),
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(20))
+            : null,
       ),
       child: Row(
         children: [
@@ -360,7 +488,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.primaryColor.withOpacity(0.1), AppColors.primaryColor.withOpacity(0.05)],
+                      colors: [
+                        AppColors.primaryColor.withOpacity(0.1),
+                        AppColors.primaryColor.withOpacity(0.05),
+                      ],
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -469,7 +600,11 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.visibility_rounded, size: 16, color: Color(0xFF64748B)),
+                  child: const Icon(
+                    Icons.visibility_rounded,
+                    size: 16,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ),
@@ -494,11 +629,23 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
           ),
           child: Row(
             children: [
-              _buildMiniStat("Revenue", "\$${_totalRevenue.toStringAsFixed(0)}", const Color(0xFF10B981)),
+              _buildMiniStat(
+                "Revenue",
+                "\$${_totalRevenue.toStringAsFixed(0)}",
+                const Color(0xFF10B981),
+              ),
               const SizedBox(width: 12),
-              _buildMiniStat("Pending", "\$${_totalPending.toStringAsFixed(0)}", const Color(0xFFF59E0B)),
+              _buildMiniStat(
+                "Pending",
+                "\$${_totalPending.toStringAsFixed(0)}",
+                const Color(0xFFF59E0B),
+              ),
               const SizedBox(width: 12),
-              _buildMiniStat("Overdue", "\$${_totalOverdue.toStringAsFixed(0)}", const Color(0xFFEF4444)),
+              _buildMiniStat(
+                "Overdue",
+                "\$${_totalOverdue.toStringAsFixed(0)}",
+                const Color(0xFFEF4444),
+              ),
             ],
           ),
         ),
@@ -536,17 +683,27 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey[300]),
+                      Icon(
+                        Icons.receipt_long_rounded,
+                        size: 48,
+                        color: Colors.grey[300],
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         "No invoices found",
-                        style: TextStyle(fontSize: 15, color: Colors.grey[400], fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[400],
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 )
               : ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(16)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(16),
+                  ),
                   itemCount: _filteredInvoices.length,
                   itemBuilder: (ctx, i) {
                     return _buildMobileInvoiceCard(_filteredInvoices[i]);
@@ -590,7 +747,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColors["bg"],
                   borderRadius: BorderRadius.circular(8),
@@ -617,7 +777,10 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                 height: 40,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primaryColor.withOpacity(0.12), AppColors.primaryColor.withOpacity(0.04)],
+                    colors: [
+                      AppColors.primaryColor.withOpacity(0.12),
+                      AppColors.primaryColor.withOpacity(0.04),
+                    ],
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -679,19 +842,35 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today_rounded, size: 13, color: Colors.grey[400]),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 13,
+                  color: Colors.grey[400],
+                ),
                 const SizedBox(width: 6),
                 Text(
                   inv["date"],
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 if (inv["method"] != "—") ...[
-                  Icon(Icons.payment_rounded, size: 13, color: Colors.grey[400]),
+                  Icon(
+                    Icons.payment_rounded,
+                    size: 13,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     inv["method"],
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ],
@@ -763,7 +942,11 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   color: bgAccent,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.trending_up_rounded, color: gradientColors[0], size: 14),
+                child: Icon(
+                  Icons.trending_up_rounded,
+                  color: gradientColors[0],
+                  size: 14,
+                ),
               ),
             ],
           ),

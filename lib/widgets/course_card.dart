@@ -8,8 +8,15 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
 class CourseCard extends StatelessWidget {
-  const CourseCard({super.key, this.image , this.title, this.desc, this.instructor, this.courseData});
-  
+  const CourseCard({
+    super.key,
+    this.image,
+    this.title,
+    this.desc,
+    this.instructor,
+    this.courseData,
+  });
+
   final String? image;
   final String? title;
   final String? desc;
@@ -20,15 +27,17 @@ class CourseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ViewCourse(courseData: courseData)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => ViewCourse(courseData: courseData),
+          ),
+        );
       },
       child: Container(
         width: Utils.windowWidth(context) * 0.4,
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
-          border: Border.all(
-            color: AppColors.lightGrey300
-          ),
+          border: Border.all(color: AppColors.lightGrey300),
           boxShadow: [
             BoxShadow(
               blurStyle: BlurStyle.inner,
@@ -44,13 +53,8 @@ class CourseCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image.asset(
-             image ?? ImagePaths.course1,
-              width: double.infinity,
-              height: Utils.windowHeight(context) * 0.15,
-              fit: BoxFit.cover,
-            ),
-            SizedBox(height: Utils.windowHeight(context) * 0.01 ,),
+            _buildImage(context),
+            SizedBox(height: Utils.windowHeight(context) * 0.01),
             CustomText(
               // textAlign: TextAlign.left,
               width: double.infinity,
@@ -65,7 +69,7 @@ class CourseCard extends StatelessWidget {
               maxLines: 3,
               fontSize: ScallingConfig.moderateScale(12),
             ),
-            SizedBox(height: Utils.windowHeight(context) * 0.01 ,),
+            SizedBox(height: Utils.windowHeight(context) * 0.01),
             Row(
               children: [
                 SizedBox(width: Utils.windowWidth(context) * 0.02),
@@ -78,6 +82,57 @@ class CourseCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImage(BuildContext context) {
+    String? rawPath = image ?? courseData?['image'] ?? courseData?['thumbnail'];
+    String imagePath = (rawPath != null && rawPath.trim().isNotEmpty)
+        ? rawPath.trim()
+        : ImagePaths.course1;
+
+    // Safety check: if the resolved path is still empty or whitespace, use placeholder
+    if (imagePath.isEmpty) imagePath = ImagePaths.course1;
+
+    final bool isNetwork = imagePath.startsWith('http');
+    final double height = Utils.windowHeight(context) * 0.15;
+
+    // WEB FIX: Prevent trying to load "assets/" or empty paths as assets
+    final bool isValidAsset =
+        !isNetwork &&
+        imagePath.contains('assets/') &&
+        (imagePath.endsWith('.png') ||
+            imagePath.endsWith('.jpg') ||
+            imagePath.endsWith('.jpeg') ||
+            imagePath.endsWith('.svg'));
+
+    if (isNetwork) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(height),
+      );
+    } else if (isValidAsset) {
+      return Image.asset(
+        imagePath,
+        width: double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(height),
+      );
+    } else {
+      return _buildPlaceholder(height);
+    }
+  }
+
+  Widget _buildPlaceholder(double height) {
+    return Image.asset(
+      ImagePaths.coursePremium,
+      width: double.infinity,
+      height: height,
+      fit: BoxFit.cover,
     );
   }
 }

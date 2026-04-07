@@ -95,22 +95,25 @@ class _VerifyCodeState extends State<VerifyCode> {
       ),
     );
   }
-@override
-void dispose() {
-  codeController.dispose();
-  super.dispose();
-}
+
+  @override
+  void dispose() {
+    codeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-   final isMobile = ResponsiveHelper.isMobile(context);
+    final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final isDesktop = ResponsiveHelper.isDesktop(context);
-   
+
     return Scaffold(
       appBar: null,
       backgroundColor: Colors.white,
-      body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(isTablet: isTablet),
+      body: isDesktop
+          ? _buildDesktopLayout()
+          : _buildMobileLayout(isTablet: isTablet),
     );
   }
 
@@ -130,10 +133,7 @@ void dispose() {
             flex: 5,
             child: SizedBox(
               height: screenHeight,
-              child: Image.asset(
-                "assets/images/splash.jpg",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
             ),
           ),
 
@@ -254,7 +254,9 @@ void dispose() {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: isLoading ? null : _handleResendOTP,
+                                    onPressed: isLoading
+                                        ? null
+                                        : _handleResendOTP,
                                     child: const Text(
                                       "Resend",
                                       style: TextStyle(
@@ -280,7 +282,9 @@ void dispose() {
                                     ),
                                     elevation: 0,
                                   ),
-                                  onPressed: isLoading ? null : _handleVerifyOTP,
+                                  onPressed: isLoading
+                                      ? null
+                                      : _handleVerifyOTP,
                                   child: isLoading
                                       ? const SizedBox(
                                           height: 20,
@@ -291,14 +295,14 @@ void dispose() {
                                           ),
                                         )
                                       : const Text(
-                                    "Confirm & Verify",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Gilroy-Bold",
-                                    ),
-                                  ),
+                                          "Confirm & Verify",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: "Gilroy-Bold",
+                                          ),
+                                        ),
                                 ),
                               ),
                             ],
@@ -317,7 +321,14 @@ void dispose() {
   }
 
   // Helper widgets for desktop layout
-  Widget _buildDecorativeCircle({double? top, double? left, double? right, double? bottom, required double size, required double opacity}) {
+  Widget _buildDecorativeCircle({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    required double size,
+    required double opacity,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -379,153 +390,169 @@ void dispose() {
   }
 
   Widget _buildMobileLayout({bool isTablet = false}) {
-    return
-      Stack(
-
-        children: [
-          Container(
-            width: Utils.windowWidth(context),
-            height: Utils.windowHeight(context),
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(ImagePaths.backgroundImage),
-                fit: BoxFit.cover,
-              ),
+    return Stack(
+      children: [
+        Container(
+          width: Utils.windowWidth(context),
+          height: Utils.windowHeight(context),
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(ImagePaths.backgroundImage),
+              fit: BoxFit.cover,
             ),
           ),
+        ),
 
-          
-          Container(
-            width: Utils.windowWidth(context),
+        Container(
+          width: Utils.windowWidth(context),
+          padding: EdgeInsets.symmetric(
+            horizontal: ScallingConfig.moderateScale(15),
+            vertical: ScallingConfig.moderateScale(isTablet ? 60 : 100),
+          ),
+          child: Column(
+            crossAxisAlignment: isTablet
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
+
+            children: [
+              SizedBox(height: ScallingConfig.moderateScale(30)),
+              CustomText(
+                text: "Verification Code",
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                color: AppColors.primaryColor,
+              ),
+              SizedBox(height: 3),
+              CustomText(
+                maxLines: 2,
+                textAlign: isTablet ? TextAlign.center : TextAlign.start,
+                text:
+                    "Forgot Password To Enjoy The Best Doctor Consultation Experience",
+                fontSize: 13,
+                width: Utils.windowHeight(context) * 0.4,
+                color: AppColors.themeBlack,
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: isTablet
+                ? Utils.windowHeight(context) * 0.6
+                : Utils.windowHeight(context) * 0.7,
+            width: isTablet
+                ? Utils.windowWidth(context) * 0.7
+                : double.infinity,
+            decoration: BoxDecoration(
+              color: isTablet
+                  ? AppColors.bgColor.withAlpha(70)
+                  : AppColors.bgColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40),
+                topRight: Radius.circular(40),
+              ),
+            ),
             padding: EdgeInsets.symmetric(
-              horizontal: ScallingConfig.moderateScale(15),
-              vertical: ScallingConfig.moderateScale(isTablet ? 60 : 100),
+              horizontal: isTablet
+                  ? ScallingConfig.scale(50)
+                  : ScallingConfig.scale(15),
+              vertical: 30,
             ),
-            child: Column(
-              crossAxisAlignment: isTablet ? CrossAxisAlignment.center : CrossAxisAlignment.start ,
-              
-              children: [
-                SizedBox(height: ScallingConfig.moderateScale(30)),
-                CustomText(
-                  text: "Verification Code",
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22,
-                  color: AppColors.primaryColor,
-                ),
-                SizedBox(height: 3),
-                CustomText(
-                  maxLines: 2,
-                  textAlign: isTablet ? TextAlign.center : TextAlign.start,
-                  text:
-                      "Forgot Password To Enjoy The Best Doctor Consultation Experience",
-                  fontSize: 13,
-                  width: Utils.windowHeight(context) * 0.4,
-                  color: AppColors.themeBlack,
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
-          ),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PinCodeTextField(
+                      appContext: context,
+                      length: 6,
+                      controller: codeController,
+                      animationType: AnimationType.fade,
 
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              height: isTablet ? Utils.windowHeight(context) * 0.6 : Utils.windowHeight(context) * 0.7,
-              width: isTablet ? Utils.windowWidth(context) * 0.7 : double.infinity,
-              decoration:  BoxDecoration(
-              color:  isTablet ?  AppColors.bgColor.withAlpha(70) : AppColors.bgColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(40),
-                  topRight: Radius.circular(40),
-                ),
-              ),
-              padding:  EdgeInsets.symmetric(horizontal: isTablet ? ScallingConfig.scale(50) : ScallingConfig.scale(15), vertical: 30),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      PinCodeTextField(
-                        appContext: context,
-                        length: 6,
-                        controller: codeController,
-                        animationType: AnimationType.fade,
+                      keyboardType: TextInputType.number,
+                      pinTheme: PinTheme(
+                        shape: PinCodeFieldShape.circle,
+                        borderRadius: BorderRadius.circular(50),
+                        fieldHeight: 60,
+                        fieldWidth: 60,
+                        inactiveColor: isTablet
+                            ? AppColors.white
+                            : Colors.grey.shade300,
+                        activeColor: Colors.blue,
 
-                        keyboardType: TextInputType.number,
-                        pinTheme: PinTheme(
-                          shape: PinCodeFieldShape.circle,
-                          borderRadius: BorderRadius.circular(50),
-                          fieldHeight: 60,
-                          fieldWidth: 60,
-                          inactiveColor: isTablet ? AppColors.white :  Colors.grey.shade300,
-                          activeColor: Colors.blue,
-                          
-                          selectedColor: Colors.blueAccent,
-                          activeFillColor: Colors.red,
+                        selectedColor: Colors.blueAccent,
+                        activeFillColor: Colors.red,
                         inactiveFillColor: Colors.white,
-                          selectedFillColor: Colors.white,
-
-                        ),
-                        cursorColor: Colors.blue,
-                        enableActiveFill: false,
-                        onChanged: (value) {},
+                        selectedFillColor: Colors.white,
                       ),
-                      Container(
-                        alignment: Alignment.topRight,
-                        child: TextButton(
-                          onPressed: isLoading ? null : _handleResendOTP,
-                          child:  Text(
-                            "Resend Code",
-                            style: TextStyle(
-                              color: isTablet ? AppColors.white : AppColors.themeBlack,
-                              fontWeight: FontWeight.w700,
-                            ),
+                      cursorColor: Colors.blue,
+                      enableActiveFill: false,
+                      onChanged: (value) {},
+                    ),
+                    Container(
+                      alignment: Alignment.topRight,
+                      child: TextButton(
+                        onPressed: isLoading ? null : _handleResendOTP,
+                        child: Text(
+                          "Resend Code",
+                          style: TextStyle(
+                            color: isTablet
+                                ? AppColors.white
+                                : AppColors.themeBlack,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
+                    ),
 
-                      const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          onPressed: isLoading ? null : _handleVerifyOTP,
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                            "Confirm",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 60,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
+                        onPressed: isLoading ? null : _handleVerifyOTP,
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Confirm",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
               ),
             ),
           ),
-      Positioned
-          (
-            top: ScallingConfig.scale(30),
-            left: ScallingConfig.scale(isTablet ? 10 : -10),
-            child: CustomBackButton()),
-        ],
-      );
+        ),
+        Positioned(
+          top: ScallingConfig.scale(30),
+          left: ScallingConfig.scale(isTablet ? 10 : -10),
+          child: CustomBackButton(),
+        ),
+      ],
+    );
   }
 }

@@ -10,10 +10,12 @@ class DoctorScheduleCalendar extends ConsumerStatefulWidget {
   const DoctorScheduleCalendar({super.key});
 
   @override
-  ConsumerState<DoctorScheduleCalendar> createState() => _DoctorScheduleCalendarState();
+  ConsumerState<DoctorScheduleCalendar> createState() =>
+      _DoctorScheduleCalendarState();
 }
 
-class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar> {
+class _DoctorScheduleCalendarState
+    extends ConsumerState<DoctorScheduleCalendar> {
   final AppointmentService _appointmentService = AppointmentService();
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
@@ -42,8 +44,8 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
   List<AppointmentDetail> _getAppointmentsForDate(DateTime date) {
     return _appointments.where((a) {
       return a.date.year == date.year &&
-             a.date.month == date.month &&
-             a.date.day == date.day;
+          a.date.month == date.month &&
+          a.date.day == date.day;
     }).toList();
   }
 
@@ -77,7 +79,9 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
               padding: EdgeInsets.all(isDesktop ? 40 : 20),
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1200 : double.infinity,
+                  ),
                   child: Column(
                     children: [
                       _buildCalendar(),
@@ -124,13 +128,14 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
         IconButton(
           onPressed: () {
             setState(() {
-              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
+              _focusedMonth = DateTime(
+                _focusedMonth.year,
+                _focusedMonth.month - 1,
+              );
             });
           },
           icon: const Icon(Icons.chevron_left_rounded),
-          style: IconButton.styleFrom(
-            backgroundColor: const Color(0xFFF1F5F9),
-          ),
+          style: IconButton.styleFrom(backgroundColor: const Color(0xFFF1F5F9)),
         ),
         Text(
           DateFormat('MMMM yyyy').format(_focusedMonth),
@@ -143,13 +148,14 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
         IconButton(
           onPressed: () {
             setState(() {
-              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
+              _focusedMonth = DateTime(
+                _focusedMonth.year,
+                _focusedMonth.month + 1,
+              );
             });
           },
           icon: const Icon(Icons.chevron_right_rounded),
-          style: IconButton.styleFrom(
-            backgroundColor: const Color(0xFFF1F5F9),
-          ),
+          style: IconButton.styleFrom(backgroundColor: const Color(0xFFF1F5F9)),
         ),
       ],
     );
@@ -159,24 +165,36 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: weekDays.map((day) => Expanded(
-        child: Center(
-          child: Text(
-            day,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF64748B),
+      children: weekDays
+          .map(
+            (day) => Expanded(
+              child: Center(
+                child: Text(
+                  day,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 
   Widget _buildCalendarGrid() {
-    final firstDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-    final lastDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
+    final firstDayOfMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month,
+      1,
+    );
+    final lastDayOfMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month + 1,
+      0,
+    );
     final daysInMonth = lastDayOfMonth.day;
     final startWeekday = firstDayOfMonth.weekday % 7;
 
@@ -191,14 +209,18 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
       final appointmentCount = _getAppointmentCountForDate(date);
-      final isSelected = _selectedDate.year == date.year &&
-                         _selectedDate.month == date.month &&
-                         _selectedDate.day == date.day;
-      final isToday = DateTime.now().year == date.year &&
-                      DateTime.now().month == date.month &&
-                      DateTime.now().day == date.day;
+      final isSelected =
+          _selectedDate.year == date.year &&
+          _selectedDate.month == date.month &&
+          _selectedDate.day == date.day;
+      final isToday =
+          DateTime.now().year == date.year &&
+          DateTime.now().month == date.month &&
+          DateTime.now().day == date.day;
 
-      dayWidgets.add(_buildDayCell(day, date, appointmentCount, isSelected, isToday));
+      dayWidgets.add(
+        _buildDayCell(day, date, appointmentCount, isSelected, isToday),
+      );
     }
 
     return GridView.count(
@@ -211,7 +233,13 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
     );
   }
 
-  Widget _buildDayCell(int day, DateTime date, int count, bool isSelected, bool isToday) {
+  Widget _buildDayCell(
+    int day,
+    DateTime date,
+    int count,
+    bool isSelected,
+    bool isToday,
+  ) {
     return InkWell(
       onTap: () {
         setState(() {
@@ -224,8 +252,8 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
           color: isSelected
               ? AppColors.primaryColor
               : isToday
-                  ? AppColors.primaryColor.withValues(alpha: 0.1)
-                  : null,
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : null,
           borderRadius: BorderRadius.circular(12),
           border: isToday && !isSelected
               ? Border.all(color: AppColors.primaryColor, width: 2)
@@ -247,9 +275,7 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white
-                      : AppColors.primaryColor,
+                  color: isSelected ? Colors.white : AppColors.primaryColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -302,7 +328,11 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.event_available_rounded, size: 48, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.event_available_rounded,
+                      size: 48,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'No appointments scheduled',
@@ -313,7 +343,9 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
               ),
             )
           else
-            ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
+            ...appointments.map(
+              (appointment) => _buildAppointmentCard(appointment),
+            ),
         ],
       ),
     );
@@ -368,7 +400,11 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.access_time_rounded, size: 14, color: statusColor),
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 14,
+                      color: statusColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       appointment.timeSlot,
@@ -413,11 +449,16 @@ class _DoctorScheduleCalendarState extends ConsumerState<DoctorScheduleCalendar>
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'confirmed': return const Color(0xFF10B981);
-      case 'pending': return const Color(0xFFF59E0B);
-      case 'cancelled': return const Color(0xFFEF4444);
-      case 'completed': return const Color(0xFF3B82F6);
-      default: return const Color(0xFF64748B);
+      case 'confirmed':
+        return const Color(0xFF10B981);
+      case 'pending':
+        return const Color(0xFFF59E0B);
+      case 'cancelled':
+        return const Color(0xFFEF4444);
+      case 'completed':
+        return const Color(0xFF3B82F6);
+      default:
+        return const Color(0xFF64748B);
     }
   }
 }

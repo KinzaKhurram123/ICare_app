@@ -29,9 +29,9 @@ class CustomTabButton extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onPressed,
-            icon: 
-            image!.contains(".png") ? Image.asset(image!, color: iconColor,) :
-            SvgWrapper(assetPath: image!, color: iconColor),
+            icon: image!.contains(".png")
+                ? Image.asset(image!, color: iconColor)
+                : SvgWrapper(assetPath: image!, color: iconColor),
           ),
           CustomText(text: title),
         ],

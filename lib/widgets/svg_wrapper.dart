@@ -33,8 +33,8 @@ class SvgWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget svgWidget = isNetworkImage
         ? GestureDetector(
-          onTap: onPress,
-          child: SvgPicture.network(
+            onTap: onPress,
+            child: SvgPicture.network(
               assetPath,
               width: width,
               height: height,
@@ -43,7 +43,7 @@ class SvgWrapper extends StatelessWidget {
                   : null,
               fit: fit,
               alignment: alignment,
-              
+
               semanticsLabel: semanticsLabel,
               placeholderBuilder: (context) =>
                   placeholder ??
@@ -58,10 +58,10 @@ class SvgWrapper extends StatelessWidget {
                     ),
                   ),
             ),
-        )
+          )
         : GestureDetector(
-          onTap: onPress,
-          child: SvgPicture.asset(
+            onTap: onPress,
+            child: SvgPicture.asset(
               assetPath,
               width: width,
               height: height,
@@ -72,7 +72,7 @@ class SvgWrapper extends StatelessWidget {
               alignment: alignment,
               semanticsLabel: semanticsLabel,
             ),
-        );
+          );
 
     return svgWidget;
   }

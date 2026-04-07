@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/doctor_service.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -16,9 +17,11 @@ class DoctorAnalytics extends ConsumerStatefulWidget {
 class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
   final AppointmentService _appointmentService = AppointmentService();
   final MedicalRecordService _medicalRecordService = MedicalRecordService();
-  
+  final DoctorService _doctorService = DoctorService();
+
   List<AppointmentDetail> _appointments = [];
   List<dynamic> _medicalRecords = [];
+  Map<String, dynamic> _stats = {};
   bool _isLoading = true;
   String _selectedPeriod = 'This Month';
 
@@ -30,25 +33,37 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
-    final appointmentsResult = await _appointmentService.getMyAppointmentsDetailed();
-    final recordsResult = await _medicalRecordService.getDoctorRecords();
-    
-    if (appointmentsResult['success']) {
-      _appointments = appointmentsResult['appointments'] as List<AppointmentDetail>;
+
+    try {
+      final appointmentsResult = await _appointmentService
+          .getMyAppointmentsDetailed();
+      final recordsResult = await _medicalRecordService.getDoctorRecords();
+      final statsResult = await _doctorService.getStats();
+
+      if (mounted) {
+        setState(() {
+          if (appointmentsResult['success']) {
+            _appointments =
+                appointmentsResult['appointments'] as List<AppointmentDetail>;
+          }
+          if (recordsResult['success']) {
+            _medicalRecords = recordsResult['records'] as List<dynamic>;
+          }
+          if (statsResult['success']) {
+            _stats = statsResult['stats'];
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
-    
-    if (recordsResult['success']) {
-      _medicalRecords = recordsResult['records'] as List<dynamic>;
-    }
-    
-    setState(() => _isLoading = false);
   }
 
-  Map<String, int> get _statistics {
+  Map<String, dynamic> get _statistics {
     final now = DateTime.now();
     DateTime startDate;
-    
+
     switch (_selectedPeriod) {
       case 'This Week':
         startDate = now.subtract(Duration(days: now.weekday - 1));
@@ -62,20 +77,33 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
       default:
         startDate = DateTime(now.year, now.month, 1);
     }
-    
-    final filteredAppointments = _appointments.where((a) => a.date.isAfter(startDate)).toList();
+
+    final filteredAppointments = _appointments
+        .where((a) => a.date.isAfter(startDate))
+        .toList();
     final filteredRecords = _medicalRecords.where((r) {
       final date = DateTime.parse(r['createdAt']);
       return date.isAfter(startDate);
     }).toList();
-    
+
     return {
       'total': filteredAppointments.length,
-      'completed': filteredAppointments.where((a) => a.status == 'completed').length,
-      'cancelled': filteredAppointments.where((a) => a.status == 'cancelled').length,
-      'pending': filteredAppointments.where((a) => a.status == 'pending').length,
+      'completed': filteredAppointments
+          .where((a) => a.status == 'completed')
+          .length,
+      'cancelled': filteredAppointments
+          .where((a) => a.status == 'cancelled')
+          .length,
+      'pending': filteredAppointments
+          .where((a) => a.status == 'pending')
+          .length,
       'records': filteredRecords.length,
-      'patients': filteredAppointments.map((a) => a.patient?.id).toSet().length,
+      'patients':
+          _stats['totalPatients'] ??
+          filteredAppointments.map((a) => a.patient?.id).toSet().length,
+      'revenue': _stats['revenue'] ?? 0,
+      'satisfaction': _stats['satisfaction'] ?? '0%',
+      'avgRating': _stats['avgRating'] ?? '0.0',
     };
   }
 
@@ -106,7 +134,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
               padding: EdgeInsets.all(isDesktop ? 40 : 20),
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1200 : double.infinity,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -117,6 +147,8 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
                       _buildPerformanceMetrics(stats),
                       const SizedBox(height: 24),
                       _buildAppointmentBreakdown(stats),
+                      const SizedBox(height: 24),
+                      _buildHealthProgramAnalytics(stats),
                     ],
                   ),
                 ),
@@ -127,7 +159,7 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
 
   Widget _buildPeriodSelector() {
     final periods = ['This Week', 'This Month', 'This Year'];
-    
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -155,7 +187,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryColor : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -175,38 +209,129 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     );
   }
 
-  Widget _buildOverviewCards(Map<String, int> stats, bool isDesktop) {
+  Widget _buildOverviewCards(Map<String, dynamic> stats, bool isDesktop) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (isDesktop) {
-          return Row(
+          return Column(
             children: [
-              Expanded(child: _buildStatCard('Total Appointments', stats['total']!, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Completed', stats['completed']!, Icons.check_circle_rounded, const Color(0xFF10B981))),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Medical Records', stats['records']!, Icons.folder_rounded, const Color(0xFF8B5CF6))),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Unique Patients', stats['patients']!, Icons.people_rounded, const Color(0xFFF59E0B))),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Total Appointments',
+                      stats['total']!,
+                      Icons.calendar_month_rounded,
+                      const Color(0xFF3B82F6),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Completed',
+                      stats['completed']!,
+                      Icons.check_circle_rounded,
+                      const Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Medical Records',
+                      stats['records']!,
+                      Icons.folder_rounded,
+                      const Color(0xFF8B5CF6),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Unique Patients',
+                      stats['patients']!,
+                      Icons.people_rounded,
+                      const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Total Revenue',
+                      'PKR ${stats['revenue']}',
+                      Icons.payments_rounded,
+                      const Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Patient Satisfaction',
+                      stats['satisfaction'],
+                      Icons.sentiment_very_satisfied_rounded,
+                      const Color(0xFF8B5CF6),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Avg. Rating',
+                      stats['avgRating'],
+                      Icons.star_rounded,
+                      const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              ),
             ],
           );
         }
-        
+
         return Column(
           children: [
             Row(
               children: [
-                Expanded(child: _buildStatCard('Total', stats['total']!, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Total',
+                    stats['total']!,
+                    Icons.calendar_month_rounded,
+                    const Color(0xFF3B82F6),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Completed', stats['completed']!, Icons.check_circle_rounded, const Color(0xFF10B981))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Completed',
+                    stats['completed']!,
+                    Icons.check_circle_rounded,
+                    const Color(0xFF10B981),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildStatCard('Records', stats['records']!, Icons.folder_rounded, const Color(0xFF8B5CF6))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Revenue',
+                    'PKR ${stats['revenue']}',
+                    Icons.payments_rounded,
+                    const Color(0xFF10B981),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Patients', stats['patients']!, Icons.people_rounded, const Color(0xFFF59E0B))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Rating',
+                    stats['avgRating'],
+                    Icons.star_rounded,
+                    const Color(0xFFF59E0B),
+                  ),
+                ),
               ],
             ),
           ],
@@ -215,7 +340,12 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     );
   }
 
-  Widget _buildStatCard(String label, int count, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    dynamic count,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -264,11 +394,22 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     );
   }
 
-  Widget _buildPerformanceMetrics(Map<String, int> stats) {
-    final total = stats['total']!;
-    final completionRate = total > 0 ? (stats['completed']! / total * 100).toStringAsFixed(1) : '0.0';
-    final cancellationRate = total > 0 ? (stats['cancelled']! / total * 100).toStringAsFixed(1) : '0.0';
-    
+  Widget _buildPerformanceMetrics(Map<String, dynamic> stats) {
+    final int total = stats['total'] ?? 0;
+    final int completed = stats['completed'] ?? 0;
+    final int cancelled = stats['cancelled'] ?? 0;
+    final int patients = stats['patients'] ?? 0;
+
+    final double completionValue = total > 0 ? (completed / total) * 100 : 0.0;
+    final double cancellationValue = total > 0
+        ? (cancelled / total) * 100
+        : 0.0;
+    final double avgPatientsValue = patients / 30;
+
+    final String completionRate = completionValue.toStringAsFixed(1);
+    final String cancellationRate = cancellationValue.toStringAsFixed(1);
+    final String avgPatients = avgPatientsValue.toStringAsFixed(1);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -294,11 +435,23 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildMetricRow('Completion Rate', completionRate, const Color(0xFF10B981)),
+          _buildMetricRow(
+            'Completion Rate',
+            completionRate,
+            const Color(0xFF10B981),
+          ),
           const SizedBox(height: 16),
-          _buildMetricRow('Cancellation Rate', cancellationRate, const Color(0xFFEF4444)),
+          _buildMetricRow(
+            'Cancellation Rate',
+            cancellationRate,
+            const Color(0xFFEF4444),
+          ),
           const SizedBox(height: 16),
-          _buildMetricRow('Average Patients/Day', (stats['patients']! / 30).toStringAsFixed(1), const Color(0xFF3B82F6)),
+          _buildMetricRow(
+            'Average Patients/Day',
+            avgPatients,
+            const Color(0xFF3B82F6),
+          ),
         ],
       ),
     );
@@ -335,7 +488,7 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     );
   }
 
-  Widget _buildAppointmentBreakdown(Map<String, int> stats) {
+  Widget _buildAppointmentBreakdown(Map<String, dynamic> stats) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -361,18 +514,30 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildBreakdownItem('Completed', stats['completed']!, const Color(0xFF10B981)),
-          _buildBreakdownItem('Pending', stats['pending']!, const Color(0xFFF59E0B)),
-          _buildBreakdownItem('Cancelled', stats['cancelled']!, const Color(0xFFEF4444)),
+          _buildBreakdownItem(
+            'Completed',
+            stats['completed'] as int,
+            const Color(0xFF10B981),
+          ),
+          _buildBreakdownItem(
+            'Pending',
+            stats['pending'] as int,
+            const Color(0xFFF59E0B),
+          ),
+          _buildBreakdownItem(
+            'Cancelled',
+            stats['cancelled'] as int,
+            const Color(0xFFEF4444),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBreakdownItem(String label, int count, Color color) {
-    final total = _statistics['total']!;
+    final total = _statistics['total'] as int;
     final percentage = total > 0 ? (count / total) : 0.0;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -407,6 +572,150 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
               backgroundColor: color.withValues(alpha: 0.1),
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthProgramAnalytics(Map<String, dynamic> stats) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Health Program Compliance',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSmallStat(
+                  'Assigned',
+                  '12',
+                  Icons.assignment_turned_in_rounded,
+                  const Color(0xFF6366F1),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSmallStat(
+                  'Avg. Progress',
+                  '65%',
+                  Icons.trending_up_rounded,
+                  const Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Top Active Programs',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildProgramMiniCard('Diabetes Management', 0.85, '8 Patients'),
+          _buildProgramMiniCard('Hypertension Control', 0.45, '4 Patients'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgramMiniCard(
+    String title,
+    double progress,
+    String patientCount,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              Text(
+                patientCount,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: const Color(0xFFF1F5F9),
+              color: AppColors.primaryColor,
             ),
           ),
         ],

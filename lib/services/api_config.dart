@@ -1,9 +1,15 @@
 class ApiConfig {
   // Production backend URL
-  static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
+  // static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
 
   // For local development (web/Chrome):
-  // static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://localhost:5000/api';
+
+  // For local development (Android emulator):
+  // static const String baseUrl = 'http://10.0.2.2:5000/api';
+
+  // For local development (physical device - use your computer's IP):
+  // static const String baseUrl = 'http://192.168.1.XXX:5000/api';
 
   static const String authEndpoint = '/auth';
   static const String usersEndpoint = '/users';
@@ -18,4 +24,6 @@ class ApiConfig {
   static const String forgetPassword = '$authEndpoint/forget_password';
   static const String checkOTP = '$authEndpoint/checkOTP';
   static const String resetPassword = '$authEndpoint/reset_password';
+  static const String verifyEmail = '$authEndpoint/verify-email';
+  static const String resendVerification = '$authEndpoint/resend-verification';
 }

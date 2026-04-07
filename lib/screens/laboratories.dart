@@ -56,9 +56,14 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
     }
     setState(() {
       _filteredLabs = _labs.where((lab) {
-        final name = (lab['labName'] ?? lab['name'] ?? "").toString().toLowerCase();
-        final address = (lab['address'] ?? lab['location'] ?? "").toString().toLowerCase();
-        return name.contains(query.toLowerCase()) || address.contains(query.toLowerCase());
+        final name = (lab['labName'] ?? lab['name'] ?? "")
+            .toString()
+            .toLowerCase();
+        final address = (lab['address'] ?? lab['location'] ?? "")
+            .toString()
+            .toLowerCase();
+        return name.contains(query.toLowerCase()) ||
+            address.contains(query.toLowerCase());
       }).toList();
     });
   }
@@ -86,16 +91,18 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
           leading: const CustomBackButton(),
           centerTitle: true,
         ),
-        body: _filteredLabs.isEmpty 
-          ? const Center(child: Text("No laboratories found"))
-          : ListView.builder(
-              itemCount: _filteredLabs.length,
-              padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(20)),
-              itemBuilder: (ctx, i) => Laboratory(
-                labData: _filteredLabs[i],
-                margin: EdgeInsets.only(top: ScallingConfig.scale(10)),
+        body: _filteredLabs.isEmpty
+            ? const Center(child: Text("No laboratories found"))
+            : ListView.builder(
+                itemCount: _filteredLabs.length,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(20),
+                ),
+                itemBuilder: (ctx, i) => Laboratory(
+                  labData: _filteredLabs[i],
+                  margin: EdgeInsets.only(top: ScallingConfig.scale(10)),
+                ),
               ),
-            ),
       );
     }
 
@@ -116,7 +123,10 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primaryColor.withOpacity(0.05), Colors.white],
+                    colors: [
+                      AppColors.primaryColor.withOpacity(0.05),
+                      Colors.white,
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -152,11 +162,23 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                           // Stats chips
                           Row(
                             children: [
-                              _buildStatChip(Icons.science_rounded, "${_labs.length} Labs", const Color(0xFF6366F1)),
+                              _buildStatChip(
+                                Icons.science_rounded,
+                                "${_labs.length} Labs",
+                                const Color(0xFF6366F1),
+                              ),
                               const SizedBox(width: 12),
-                              _buildStatChip(Icons.star_rounded, "4.7 Avg Rating", const Color(0xFFF59E0B)),
+                              _buildStatChip(
+                                Icons.star_rounded,
+                                "4.7 Avg Rating",
+                                const Color(0xFFF59E0B),
+                              ),
                               const SizedBox(width: 12),
-                              _buildStatChip(Icons.check_circle_rounded, "All Verified", const Color(0xFF10B981)),
+                              _buildStatChip(
+                                Icons.check_circle_rounded,
+                                "All Verified",
+                                const Color(0xFF10B981),
+                              ),
                             ],
                           ),
                         ],
@@ -190,17 +212,30 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: TextField(
                       controller: _searchController,
                       onChanged: _filterLabs,
                       decoration: const InputDecoration(
                         hintText: "Search laboratory...",
-                        prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          size: 20,
+                          color: Color(0xFF94A3B8),
+                        ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 14),
-                        hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -210,23 +245,31 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
           ),
 
           // Labs grid
-          _labs.isEmpty 
-          ? const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No laboratories found"))))
-          : SliverPadding(
-              padding: const EdgeInsets.fromLTRB(60, 0, 60, 60),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 480,
-                  mainAxisExtent: 340,
-                  crossAxisSpacing: 28,
-                  mainAxisSpacing: 28,
+          _labs.isEmpty
+              ? const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Text("No laboratories found"),
+                    ),
+                  ),
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(60, 0, 60, 60),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 480,
+                          mainAxisExtent: 340,
+                          crossAxisSpacing: 28,
+                          mainAxisSpacing: 28,
+                        ),
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _buildLabCard(context, _filteredLabs[i]),
+                      childCount: _filteredLabs.length,
+                    ),
+                  ),
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => _buildLabCard(context, _filteredLabs[i]),
-                  childCount: _filteredLabs.length,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -245,7 +288,14 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -257,9 +307,17 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
       decoration: BoxDecoration(
         color: isActive ? AppColors.primaryColor : Colors.white,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: isActive ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isActive ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+        ),
         boxShadow: isActive
-            ? [BoxShadow(color: AppColors.primaryColor.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 4))]
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
             : null,
       ),
       child: Text(
@@ -275,13 +333,19 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
 
   Widget _buildLabCard(BuildContext context, Map<String, dynamic> lab) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab))),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab))),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 24, offset: const Offset(0, 10)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Column(
@@ -291,48 +355,78 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: lab['image'] is String 
-                    ? (lab['image'].toString().startsWith('assets') 
-                        ? Image.asset(
-                            lab['image'] as String,
-                            height: 170,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            lab['image'] as String,
-                            height: 170,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  child: lab['image'] is String
+                      ? (lab['image'].toString().startsWith('assets')
+                            ? Image.asset(
+                                lab['image'] as String,
                                 height: 170,
                                 width: double.infinity,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.science_rounded, size: 50, color: Colors.grey),
-                              ),
-                          ))
-                    : Container(
-                        height: 170,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.science_rounded, size: 50, color: Colors.grey),
-                      ),
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                lab['image'] as String,
+                                height: 170,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      height: 170,
+                                      width: double.infinity,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.science_rounded,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              ))
+                      : Container(
+                          height: 170,
+                          width: double.infinity,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.science_rounded,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        ),
                 ),
                 // Tag badge
                 Positioned(
                   top: 16,
                   left: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: lab['tagColor'] != null ? (lab['tagColor'] as Color) : Colors.blue,
+                      color: lab['tagColor'] != null
+                          ? (lab['tagColor'] as Color)
+                          : Colors.blue,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: (lab['tagColor'] != null ? (lab['tagColor'] as Color) : Colors.blue).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              (lab['tagColor'] != null
+                                      ? (lab['tagColor'] as Color)
+                                      : Colors.blue)
+                                  .withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Text(
                       lab['tag'] ?? "Premier",
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -341,7 +435,10 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                   top: 16,
                   right: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.55),
                       borderRadius: BorderRadius.circular(20),
@@ -349,11 +446,19 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFF59E0B),
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           "${lab['rating'] ?? 4.5}",
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -368,20 +473,39 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ((lab['labName'] is String) ? (lab['labName'] as String) : ((lab['name'] is String) ? (lab['name'] as String) : 'Laboratory')),
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ((lab['labName'] is String)
+                        ? (lab['labName'] as String)
+                        : ((lab['name'] is String)
+                              ? (lab['name'] as String)
+                              : 'Laboratory')),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          (lab['address'] is String) ? (lab['address'] as String) : ((lab['location'] is String) ? (lab['location'] as String) : 'Location not available'),
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          (lab['address'] is String)
+                              ? (lab['address'] as String)
+                              : ((lab['location'] is String)
+                                    ? (lab['location'] as String)
+                                    : 'Location not available'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -391,16 +515,29 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        (lab['open'] is String ? lab['open'] : 'Open 9:00 AM - 9:00 PM'),
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        (lab['open'] is String
+                            ? lab['open']
+                            : 'Open 9:00 AM - 9:00 PM'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                       const Spacer(),
                       Text(
                         "${lab['tests'] ?? 0} Tests",
-                        style: TextStyle(fontSize: 12, color: AppColors.primaryColor, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
@@ -408,15 +545,27 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => LabDetails(labData: lab))),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => LabDetails(labData: lab),
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text("Visit Lab", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: const Text(
+                        "Visit Lab",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ),
                 ],

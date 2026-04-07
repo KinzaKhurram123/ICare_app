@@ -49,7 +49,11 @@ class ConfirmDetails extends StatelessWidget {
               label: "Confirm",
               borderRadius: 40,
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const EnterAmountScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const EnterAmountScreen(),
+                  ),
+                );
               },
             ),
           ],
@@ -119,7 +123,11 @@ class ConfirmDetails extends StatelessWidget {
                     const Center(
                       child: Column(
                         children: [
-                          Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 60),
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: Color(0xFF10B981),
+                            size: 60,
+                          ),
                           SizedBox(height: 16),
                           Text(
                             "Order Review",
@@ -132,7 +140,10 @@ class ConfirmDetails extends StatelessWidget {
                           SizedBox(height: 8),
                           Text(
                             "Please review your order details before confirming.",
-                            style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF64748B),
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -141,27 +152,44 @@ class ConfirmDetails extends StatelessWidget {
                     const SizedBox(height: 48),
                     _buildWebSummaryItem("Platform Fee", "\$100.00"),
                     _buildWebSummaryItem("Course Amount", "\$2,000.00"),
-                    _buildWebSummaryItem("Discount Offer", "5% Off", color: const Color(0xFF10B981)),
+                    _buildWebSummaryItem(
+                      "Discount Offer",
+                      "5% Off",
+                      color: const Color(0xFF10B981),
+                    ),
                     const Divider(height: 48, color: Color(0xFFF1F5F9)),
-                    _buildWebSummaryItem("Total Amount", "\$2,100.00", isTotal: true),
+                    _buildWebSummaryItem(
+                      "Total Amount",
+                      "\$2,100.00",
+                      isTotal: true,
+                    ),
                     const SizedBox(height: 48),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const EnterAmountScreen()));
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => const EnterAmountScreen(),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Confirm & Proceed",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
@@ -169,11 +197,19 @@ class ConfirmDetails extends StatelessWidget {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.shield_outlined, size: 16, color: Color(0xFF94A3B8)),
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 16,
+                          color: Color(0xFF94A3B8),
+                        ),
                         SizedBox(width: 8),
                         Text(
                           "Secured by iCare payment engine",
-                          style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -187,7 +223,12 @@ class ConfirmDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildWebSummaryItem(String label, String value, {bool isTotal = false, Color? color}) {
+  Widget _buildWebSummaryItem(
+    String label,
+    String value, {
+    bool isTotal = false,
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -198,7 +239,9 @@ class ConfirmDetails extends StatelessWidget {
             style: TextStyle(
               fontSize: isTotal ? 16 : 15,
               fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
-              color: isTotal ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+              color: isTotal
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
             ),
           ),
           Text(
@@ -206,7 +249,9 @@ class ConfirmDetails extends StatelessWidget {
             style: TextStyle(
               fontSize: isTotal ? 24 : 15,
               fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
-              color: color ?? (isTotal ? AppColors.primaryColor : const Color(0xFF0F172A)),
+              color:
+                  color ??
+                  (isTotal ? AppColors.primaryColor : const Color(0xFF0F172A)),
             ),
           ),
         ],

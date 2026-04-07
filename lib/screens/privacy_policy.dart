@@ -112,57 +112,63 @@ class _WebPrivacyPolicy extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(maxWidth: 1200),
               padding: const EdgeInsets.all(48),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-              boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Privacy Policy",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
-                    fontFamily: "Gilroy-Bold",
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    offset: Offset(0, 4),
+                    blurRadius: 20,
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Last updated: March 1, 2026",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF94A3B8),
-                    fontFamily: "Gilroy-Medium",
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Privacy Policy",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                      fontFamily: "Gilroy-Bold",
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
-                const SizedBox(height: 32),
-                _buildSection(
-                  "Introduction",
-                  "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                ),
-                _buildSection(
-                  "Information We Collect",
-                  "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
-                ),
-                _buildSection(
-                  "How We Use Your Information",
-                  "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
-                ),
-                _buildSection(
-                  "Data Security",
-                  "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Last updated: March 1, 2026",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF94A3B8),
+                      fontFamily: "Gilroy-Medium",
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
+                  const SizedBox(height: 32),
+                  _buildSection(
+                    "Introduction",
+                    "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
+                  ),
+                  _buildSection(
+                    "Information We Collect",
+                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
+                  ),
+                  _buildSection(
+                    "How We Use Your Information",
+                    "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
+                  ),
+                  _buildSection(
+                    "Data Security",
+                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

@@ -18,9 +18,7 @@ class AppointmentCard extends StatelessWidget {
     if (!isDesktop) {
       return Container(
         width: Utils.windowWidth(context) * 0.75,
-        margin: EdgeInsets.only(
-          top: ScallingConfig.verticalScale(12),
-        ),
+        margin: EdgeInsets.only(top: ScallingConfig.verticalScale(12)),
         padding: EdgeInsets.symmetric(
           horizontal: 12,
           vertical: ScallingConfig.verticalScale(12),
@@ -55,10 +53,7 @@ class AppointmentCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Image.asset(
-                    ImagePaths.user1,
-                    fit: BoxFit.cover,
-                  ),
+                  child: Image.asset(ImagePaths.user1, fit: BoxFit.cover),
                 ),
                 SizedBox(width: ScallingConfig.scale(12)),
                 Expanded(
@@ -75,9 +70,7 @@ class AppointmentCard extends StatelessWidget {
                       Row(
                         children: [
                           SvgWrapper(assetPath: ImagePaths.location),
-                          SizedBox(
-                            width: Utils.windowWidth(context) * 0.025,
-                          ),
+                          SizedBox(width: Utils.windowWidth(context) * 0.025),
                           CustomText(
                             text: "20 Cooper Square, USA",
                             fontSize: 12,
@@ -89,9 +82,7 @@ class AppointmentCard extends StatelessWidget {
                       Row(
                         children: [
                           SvgWrapper(assetPath: ImagePaths.scan),
-                          SizedBox(
-                            width: Utils.windowWidth(context) * 0.025,
-                          ),
+                          SizedBox(width: Utils.windowWidth(context) * 0.025),
                           CustomText(
                             text: "Booking ID: #DR452SA54",
                             fontSize: 12,
@@ -116,10 +107,7 @@ class AppointmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withOpacity(0.04),
@@ -153,7 +141,10 @@ class AppointmentCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0036BC).withOpacity(0.06),
                         borderRadius: BorderRadius.circular(20),
@@ -161,8 +152,11 @@ class AppointmentCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_today_rounded,
-                              size: 14, color: AppColors.primaryColor),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 14,
+                            color: AppColors.primaryColor,
+                          ),
                           const SizedBox(width: 6),
                           CustomText(
                             text: "Dec 05, 2023",
@@ -175,7 +169,10 @@ class AppointmentCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF14B1FF).withOpacity(0.08),
                         borderRadius: BorderRadius.circular(20),
@@ -183,8 +180,11 @@ class AppointmentCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.access_time_rounded,
-                              size: 14, color: AppColors.secondaryColor),
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 14,
+                            color: AppColors.secondaryColor,
+                          ),
                           const SizedBox(width: 6),
                           CustomText(
                             text: "10:00 AM",
@@ -198,7 +198,10 @@ class AppointmentCard extends StatelessWidget {
                     const Spacer(),
                     // Confirmed badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF2EC447).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -276,7 +279,9 @@ class AppointmentCard extends StatelessWidget {
                                   color: const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: SvgWrapper(assetPath: ImagePaths.location),
+                                child: SvgWrapper(
+                                  assetPath: ImagePaths.location,
+                                ),
                               ),
                               const SizedBox(width: 10),
                               CustomText(
@@ -334,10 +339,12 @@ class AppointmentCard extends StatelessWidget {
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => const VideoCall(
-                            channelName: 'call_appointment',
-                            remoteUserName: 'Emily Jordan',
-                          )),
+                          MaterialPageRoute(
+                            builder: (ctx) => const VideoCall(
+                              channelName: 'call_appointment',
+                              remoteUserName: 'Emily Jordan',
+                            ),
+                          ),
                         );
                       },
                       child: Container(

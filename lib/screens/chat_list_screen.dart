@@ -103,28 +103,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
       body: _isLoading
           ? Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryColor,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryColor),
             )
           : _conversations.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadConversations,
-                  color: AppColors.primaryColor,
-                  child: ListView.separated(
-                    itemCount: _conversations.length,
-                    separatorBuilder: (context, index) => Divider(
-                      height: 1,
-                      color: Colors.grey[200],
-                      indent: 80.w,
-                    ),
-                    itemBuilder: (context, index) {
-                      final conversation = _conversations[index];
-                      return _buildConversationTile(conversation);
-                    },
-                  ),
-                ),
+          ? _buildEmptyState()
+          : RefreshIndicator(
+              onRefresh: _loadConversations,
+              color: AppColors.primaryColor,
+              child: ListView.separated(
+                itemCount: _conversations.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: Colors.grey[200], indent: 80.w),
+                itemBuilder: (context, index) {
+                  final conversation = _conversations[index];
+                  return _buildConversationTile(conversation);
+                },
+              ),
+            ),
     );
   }
 
@@ -238,10 +233,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                constraints: BoxConstraints(
-                  minWidth: 20.w,
-                  minHeight: 20.w,
-                ),
+                constraints: BoxConstraints(minWidth: 20.w, minHeight: 20.w),
                 child: Center(
                   child: Text(
                     unreadCount > 9 ? '9+' : unreadCount.toString(),
@@ -306,7 +298,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: TextStyle(
                 fontSize: 14.sp,
                 color: unreadCount > 0 ? Colors.black87 : Colors.grey[600],
-                fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                fontWeight: unreadCount > 0
+                    ? FontWeight.w500
+                    : FontWeight.normal,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

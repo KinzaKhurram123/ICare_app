@@ -25,7 +25,7 @@ class FillLabForm extends StatefulWidget {
 
 class _FillLabFormState extends State<FillLabForm> {
   final _labService = LaboratoryService();
-  
+
   final _nameController = TextEditingController();
   final _patientNameController = TextEditingController();
   final _locationController = TextEditingController();
@@ -33,7 +33,7 @@ class _FillLabFormState extends State<FillLabForm> {
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+
   bool _homeSample = false;
   bool _isLoading = false;
 
@@ -60,7 +60,9 @@ class _FillLabFormState extends State<FillLabForm> {
   }
 
   Future<void> _bookNow() async {
-    if (_nameController.text.isEmpty || _phoneController.text.isEmpty || _patientNameController.text.isEmpty) {
+    if (_nameController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _patientNameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all required fields")),
       );
@@ -88,19 +90,26 @@ class _FillLabFormState extends State<FillLabForm> {
       };
 
       final booking = await _labService.createBooking(labId, bookingData);
-      
+
       if (mounted) {
-        Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => REceiptScreen(
-          bookingData: booking,
-          labName: widget.labData?['labName'] ?? widget.labData?['name'] ?? "Lab",
-        )));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => REceiptScreen(
+              bookingData: booking,
+              labName:
+                  widget.labData?['labName'] ??
+                  widget.labData?['name'] ??
+                  "Lab",
+            ),
+          ),
+        );
       }
     } catch (e) {
       log("Booking error: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.toString()}")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -119,9 +128,11 @@ class _FillLabFormState extends State<FillLabForm> {
               automaticallyImplyLeading: false,
               title: const CustomText(text: "Fill this form"),
             ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : (isDesktop ? _buildWebLayout(context) : _buildMobileLayout(context)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : (isDesktop
+                ? _buildWebLayout(context)
+                : _buildMobileLayout(context)),
     );
   }
 
@@ -137,8 +148,8 @@ class _FillLabFormState extends State<FillLabForm> {
             fontFamily: "Gilroy-Bold",
           ),
           SizedBox(height: ScallingConfig.scale(10)),
-          ... (widget.selectedTests ?? ["Complete Blood Count (CBC)"]).map((test) => 
-            Padding(
+          ...(widget.selectedTests ?? ["Complete Blood Count (CBC)"]).map(
+            (test) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: SizedBox(
                 width: Utils.windowWidth(context) * 0.9,
@@ -155,7 +166,7 @@ class _FillLabFormState extends State<FillLabForm> {
                   ],
                 ),
               ),
-            )
+            ),
           ),
           SizedBox(height: ScallingConfig.scale(15)),
           CustomText(
@@ -179,10 +190,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
               ),
               SizedBox(width: ScallingConfig.scale(20)),
@@ -197,10 +205,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
               ),
             ],
@@ -220,10 +225,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
               ),
               SizedBox(width: ScallingConfig.scale(20)),
@@ -238,10 +240,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -262,10 +261,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
               ),
               SizedBox(width: ScallingConfig.scale(20)),
@@ -280,10 +276,7 @@ class _FillLabFormState extends State<FillLabForm> {
                 ),
                 width: Utils.windowWidth(context) * 0.4,
                 borderType: const Border(
-                  bottom: BorderSide(
-                    color: AppColors.lightGrey10,
-                    width: 1.5,
-                  ),
+                  bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
                 ),
               ),
             ],
@@ -300,10 +293,7 @@ class _FillLabFormState extends State<FillLabForm> {
             ),
             width: Utils.windowWidth(context) * 0.9,
             borderType: const Border(
-              bottom: BorderSide(
-                color: AppColors.lightGrey10,
-                width: 1.5,
-              ),
+              bottom: BorderSide(color: AppColors.lightGrey10, width: 1.5),
             ),
             keyboardType: TextInputType.phone,
           ),
@@ -313,7 +303,7 @@ class _FillLabFormState extends State<FillLabForm> {
               children: [
                 SizedBox(width: Utils.windowWidth(context) * 0.05),
                 Checkbox(
-                  value: _homeSample, 
+                  value: _homeSample,
                   onChanged: (v) => setState(() => _homeSample = v ?? false),
                   activeColor: AppColors.primaryColor,
                 ),
@@ -327,7 +317,7 @@ class _FillLabFormState extends State<FillLabForm> {
             width: Utils.windowWidth(context) * 0.9,
             borderRadius: 35,
             onPressed: _bookNow,
-          )
+          ),
         ],
       ),
     );
@@ -360,7 +350,11 @@ class _FillLabFormState extends State<FillLabForm> {
                   children: [
                     Icon(Icons.security_rounded, color: Colors.green, size: 18),
                     SizedBox(width: 8),
-                    CustomText(text: "Secure Checkout", fontSize: 13, color: Colors.grey),
+                    CustomText(
+                      text: "Secure Checkout",
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
                   ],
                 ),
               ],
@@ -395,27 +389,29 @@ class _FillLabFormState extends State<FillLabForm> {
                         fontWeight: FontWeight.w900,
                       ),
                       const SizedBox(height: 20),
-                      ... (widget.selectedTests ?? ["Complete Blood Count (CBC)"]).map((test) => 
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            children: [
-                              Expanded(child: ScheduledTest(name: test)),
-                              const SizedBox(width: 20),
-                              CustomText(
-                                text: "Rs. 3000",
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryColor,
+                      ...(widget.selectedTests ??
+                              ["Complete Blood Count (CBC)"])
+                          .map(
+                            (test) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Expanded(child: ScheduledTest(name: test)),
+                                  const SizedBox(width: 20),
+                                  CustomText(
+                                    text: "Rs. 3000",
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        )
-                      ),
                       const SizedBox(height: 48),
                       const Divider(height: 1, color: Color(0xFFF1F5F9)),
                       const SizedBox(height: 48),
-                      
+
                       const CustomText(
                         text: "Add Details",
                         fontSize: 22,
@@ -423,52 +419,104 @@ class _FillLabFormState extends State<FillLabForm> {
                       ),
                       const SizedBox(height: 8),
                       const CustomText(
-                        text: "Please provide the information for the person who will be tested.",
+                        text:
+                            "Please provide the information for the person who will be tested.",
                         fontSize: 15,
                         color: Color(0xFF64748B),
                       ),
                       const SizedBox(height: 40),
                       Row(
                         children: [
-                          Expanded(child: _buildWebInputField("Your Name", "Enter your name", Icons.person_outline_rounded, _nameController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Your Name",
+                              "Enter your name",
+                              Icons.person_outline_rounded,
+                              _nameController,
+                            ),
+                          ),
                           const SizedBox(width: 24),
-                          Expanded(child: _buildWebInputField("Patient Name", "Enter patient name", Icons.people_outline_rounded, _patientNameController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Patient Name",
+                              "Enter patient name",
+                              Icons.people_outline_rounded,
+                              _patientNameController,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          Expanded(child: _buildWebInputField("Location", "Enter sample location", Icons.location_on_outlined, _locationController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Location",
+                              "Enter sample location",
+                              Icons.location_on_outlined,
+                              _locationController,
+                            ),
+                          ),
                           const SizedBox(width: 24),
-                          Expanded(child: _buildWebInputField("Age", "Enter patient age", Icons.calendar_today_rounded, _ageController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Age",
+                              "Enter patient age",
+                              Icons.calendar_today_rounded,
+                              _ageController,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          Expanded(child: _buildWebInputField("Date", "Select Date", Icons.calendar_month_rounded, _dateController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Date",
+                              "Select Date",
+                              Icons.calendar_month_rounded,
+                              _dateController,
+                            ),
+                          ),
                           const SizedBox(width: 24),
-                          Expanded(child: _buildWebInputField("Time", "Select Time", Icons.access_time_rounded, _timeController)),
+                          Expanded(
+                            child: _buildWebInputField(
+                              "Time",
+                              "Select Time",
+                              Icons.access_time_rounded,
+                              _timeController,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      _buildWebInputField("Phone Number", "Enter phone number", Icons.phone_outlined, _phoneController),
+                      _buildWebInputField(
+                        "Phone Number",
+                        "Enter phone number",
+                        Icons.phone_outlined,
+                        _phoneController,
+                      ),
                       const SizedBox(height: 40),
                       InkWell(
                         onTap: () => setState(() => _homeSample = !_homeSample),
                         child: Row(
                           children: [
                             Checkbox(
-                              value: _homeSample, 
-                              onChanged: (v) => setState(() => _homeSample = v ?? false),
+                              value: _homeSample,
+                              onChanged: (v) =>
+                                  setState(() => _homeSample = v ?? false),
                               activeColor: AppColors.primaryColor,
                             ),
-                            const CustomText(text: "Home Sample Available", fontSize: 15),
+                            const CustomText(
+                              text: "Home Sample Available",
+                              fontSize: 15,
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 60),
-                      
+
                       SizedBox(
                         width: double.infinity,
                         child: CustomButton(
@@ -489,7 +537,12 @@ class _FillLabFormState extends State<FillLabForm> {
     );
   }
 
-  Widget _buildWebInputField(String label, String hint, IconData icon, TextEditingController controller) {
+  Widget _buildWebInputField(
+    String label,
+    String hint,
+    IconData icon,
+    TextEditingController controller,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +566,10 @@ class _FillLabFormState extends State<FillLabForm> {
             decoration: InputDecoration(
               icon: Icon(icon, size: 20, color: const Color(0xFF94A3B8)),
               hintText: hint,
-              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 14,
+              ),
               border: InputBorder.none,
             ),
           ),

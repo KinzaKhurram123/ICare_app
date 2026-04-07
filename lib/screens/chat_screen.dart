@@ -5,8 +5,11 @@ import 'package:intl/intl.dart';
 import '../services/chat_service.dart';
 import '../utils/theme.dart';
 import '../utils/shared_pref.dart';
-// Video call only available on mobile
-import 'video_call.dart' if (dart.library.html) 'chat_screen.dart';
+import 'video_call.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
@@ -29,7 +32,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
-  
+
   List<dynamic> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
@@ -157,7 +160,7 @@ class _ChatScreenState extends State<ChatScreen> {
         receiverId: widget.userId,
         message: messageText,
       );
-      
+
       setState(() {
         final newMsg = result['data'];
         if (newMsg != null) {
@@ -169,13 +172,190 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       setState(() => _isSending = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
       }
       // Restore message text on failure
       _messageController.text = messageText;
     }
+  }
+
+  Future<void> _pickAndSendMessage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source);
+
+      if (image == null) return;
+
+      setState(() => _isSending = true);
+
+      // 1. Read bytes for web compatibility
+      final bytes = await image.readAsBytes();
+
+      // 2. Upload the file
+      final uploadResult = await _chatService.uploadFile(
+        filePath: kIsWeb ? null : image.path,
+        bytes: bytes,
+        fileName: image.name,
+      );
+
+      if (uploadResult['success'] == true) {
+        // 2. Send message with attachment
+        final result = await _chatService.sendMessage(
+          receiverId: widget.userId,
+          message: "[Image]",
+          attachments: [
+            {
+              'url': uploadResult['fileUrl'],
+              'name': uploadResult['fileName'],
+              'fileType': 'image',
+            },
+          ],
+        );
+
+        setState(() {
+          final newMsg = result['data'];
+          if (newMsg != null) {
+            _messages.add(newMsg);
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send image: $e')));
+      }
+    } finally {
+      setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _pickAndSendFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+      if (result == null || result.files.single.path == null) return;
+
+      setState(() => _isSending = true);
+
+      // 1. Read bytes for web compatibility
+      List<int> bytes;
+      if (kIsWeb) {
+        bytes = result.files.single.bytes!;
+      } else {
+        bytes = await File(result.files.single.path!).readAsBytes();
+      }
+
+      // 2. Upload the file
+      final uploadResult = await _chatService.uploadFile(
+        filePath: kIsWeb ? null : result.files.single.path,
+        bytes: bytes,
+        fileName: result.files.single.name,
+      );
+
+      if (uploadResult['success'] == true) {
+        // 2. Send message with attachment
+        final sendResult = await _chatService.sendMessage(
+          receiverId: widget.userId,
+          message: "[Document: ${result.files.single.name}]",
+          attachments: [
+            {
+              'url': uploadResult['fileUrl'],
+              'name': uploadResult['fileName'],
+              'fileType': 'document',
+            },
+          ],
+        );
+
+        setState(() {
+          final newMsg = sendResult['data'];
+          if (newMsg != null) {
+            _messages.add(newMsg);
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send file: $e')));
+      }
+    } finally {
+      setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _openAttachment(String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open file: $e')));
+      }
+    }
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.primaryColor,
+              ),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendMessage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primaryColor,
+              ),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendMessage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.insert_drive_file,
+                color: AppColors.primaryColor,
+              ),
+              title: const Text('Document'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendFile();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _refreshMessages() async {
@@ -232,10 +412,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const Text(
                     'Online',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.green, fontSize: 12),
                   ),
                 ],
               ),
@@ -287,70 +464,74 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   )
                 : _messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 80,
-                              color: Colors.grey[300],
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'No messages yet',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Start the conversation!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 80,
+                          color: Colors.grey[300],
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _refreshMessages,
-                        color: AppColors.primaryColor,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final message = _messages[index];
-                            final isMe = message['sender']['_id'] != widget.userId;
-                            
-                            // Show date separator if needed
-                            bool showDateSeparator = false;
-                            if (index == 0) {
-                              showDateSeparator = true;
-                            } else {
-                              final prevMessage = _messages[index - 1];
-                              final prevDate = DateTime.parse(prevMessage['createdAt']);
-                              final currentDate = DateTime.parse(message['createdAt']);
-                              showDateSeparator = !_isSameDay(prevDate, currentDate);
-                            }
+                        SizedBox(height: 16),
+                        Text(
+                          'No messages yet',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Start the conversation!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _refreshMessages,
+                    color: AppColors.primaryColor,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        final isMe = message['sender']['_id'] != widget.userId;
 
-                            return Column(
-                              children: [
-                                if (showDateSeparator)
-                                  _buildDateSeparator(
-                                    DateTime.parse(message['createdAt']),
-                                  ),
-                                _buildMessageBubble(message, isMe),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
+                        // Show date separator if needed
+                        bool showDateSeparator = false;
+                        if (index == 0) {
+                          showDateSeparator = true;
+                        } else {
+                          final prevMessage = _messages[index - 1];
+                          final prevDate = DateTime.parse(
+                            prevMessage['createdAt'],
+                          );
+                          final currentDate = DateTime.parse(
+                            message['createdAt'],
+                          );
+                          showDateSeparator = !_isSameDay(
+                            prevDate,
+                            currentDate,
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            if (showDateSeparator)
+                              _buildDateSeparator(
+                                DateTime.parse(message['createdAt']),
+                              ),
+                            _buildMessageBubble(message, isMe),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
           ),
           _buildMessageInput(),
         ],
@@ -428,6 +609,59 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (message['attachments'] != null &&
+                (message['attachments'] as List).isNotEmpty)
+              ...(message['attachments'] as List).map((att) {
+                if (att['fileType'] == 'image') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: InkWell(
+                      onTap: () => _openAttachment(att['url']),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          att['url'],
+                          width: 200,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image),
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: InkWell(
+                      onTap: () => _openAttachment(att['url']),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isMe ? Colors.white24 : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.insert_drive_file, size: 20),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                att['name'] ?? 'File',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isMe ? Colors.white : Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              }).toList(),
             Text(
               message['message'],
               style: TextStyle(
@@ -479,6 +713,28 @@ class _ChatScreenState extends State<ChatScreen> {
       child: SafeArea(
         child: Row(
           children: [
+            IconButton(
+              icon: const Icon(
+                Icons.add_circle_outline,
+                color: AppColors.primaryColor,
+                size: 28,
+              ),
+              onPressed: _showAttachmentOptions,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(
+                Icons.image_outlined,
+                color: AppColors.primaryColor,
+                size: 28,
+              ),
+              onPressed: () => _pickAndSendMessage(ImageSource.gallery),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

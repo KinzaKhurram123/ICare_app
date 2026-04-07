@@ -9,7 +9,8 @@ class LabAnalytics extends StatefulWidget {
   State<LabAnalytics> createState() => _LabAnalyticsState();
 }
 
-class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMixin {
+class _LabAnalyticsState extends State<LabAnalytics>
+    with TickerProviderStateMixin {
   final LaboratoryService _labService = LaboratoryService();
   bool _isLoading = true;
   Map<String, dynamic>? _analytics;
@@ -51,7 +52,7 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
 
       final now = DateTime.now();
       DateTime startDate;
-      
+
       switch (_selectedPeriod) {
         case 'This Week':
           startDate = now.subtract(Duration(days: now.weekday - 1));
@@ -81,21 +82,25 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
         ..sort((a, b) => b.value.compareTo(a.value));
 
       final revenue = filteredBookings.fold<double>(0, (sum, b) {
-        return sum + (b['price'] ?? 1000).toDouble();
+        return sum + (b['price'] ?? 0).toDouble();
       });
 
       setState(() {
         _analytics = {
           'totalBookings': filteredBookings.length,
           'allTimeBookings': bookings.length,
-          'completedBookings':
-              filteredBookings.where((b) => b['status'] == 'completed').length,
-          'pendingBookings':
-              filteredBookings.where((b) => b['status'] == 'pending').length,
-          'confirmedBookings':
-              filteredBookings.where((b) => b['status'] == 'confirmed').length,
-          'cancelledBookings':
-              filteredBookings.where((b) => b['status'] == 'cancelled').length,
+          'completedBookings': filteredBookings
+              .where((b) => b['status'] == 'completed')
+              .length,
+          'pendingBookings': filteredBookings
+              .where((b) => b['status'] == 'pending')
+              .length,
+          'confirmedBookings': filteredBookings
+              .where((b) => b['status'] == 'confirmed')
+              .length,
+          'cancelledBookings': filteredBookings
+              .where((b) => b['status'] == 'cancelled')
+              .length,
           'topTests': topTests.take(5),
           'revenue': revenue,
           'avgBookingsPerDay': filteredBookings.length / 30,
@@ -147,7 +152,9 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                 padding: EdgeInsets.all(isDesktop ? 40 : 20),
                 child: Center(
                   child: Container(
-                    constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
+                    constraints: BoxConstraints(
+                      maxWidth: isDesktop ? 1200 : double.infinity,
+                    ),
                     child: FadeTransition(
                       opacity: _fadeAnimation,
                       child: Column(
@@ -181,10 +188,7 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
           SizedBox(height: 16),
           Text(
             'Loading analytics...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -193,7 +197,7 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
 
   Widget _buildPeriodSelector() {
     final periods = ['This Week', 'This Month', 'This Year'];
-    
+
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
@@ -245,7 +249,7 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
   Widget _buildOverviewCards(bool isDesktop) {
     // Premium unified gradient
     final gradient = LinearGradient(colors: [primaryColor, secondaryColor]);
-    
+
     final cards = [
       {
         'title': 'Total Bookings',
@@ -257,13 +261,17 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
         'title': 'Completed',
         'value': _analytics?['completedBookings']?.toString() ?? '0',
         'icon': Icons.check_circle_rounded,
-        'gradient': const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+        'gradient': const LinearGradient(
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
+        ),
       },
       {
         'title': 'Pending',
         'value': _analytics?['pendingBookings']?.toString() ?? '0',
         'icon': Icons.schedule_rounded,
-        'gradient': const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+        'gradient': const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+        ),
       },
       {
         'title': 'Confirmed',
@@ -277,15 +285,19 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
       builder: (context, constraints) {
         if (isDesktop) {
           return Row(
-            children: cards.map((card) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: _buildStatCard(card),
-              ),
-            )).toList(),
+            children: cards
+                .map(
+                  (card) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: _buildStatCard(card),
+                    ),
+                  ),
+                )
+                .toList(),
           );
         }
-        
+
         return Column(
           children: [
             Row(
@@ -408,7 +420,10 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -506,8 +521,16 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
     );
   }
 
-  Widget _buildStatusRow(String label, int count, int total, Color color, IconData icon) {
-    final percentage = total > 0 ? (count / total * 100).toStringAsFixed(1) : '0.0';
+  Widget _buildStatusRow(
+    String label,
+    int count,
+    int total,
+    Color color,
+    IconData icon,
+  ) {
+    final percentage = total > 0
+        ? (count / total * 100).toStringAsFixed(1)
+        : '0.0';
     final progress = total > 0 ? count / total : 0.0;
 
     return Column(
@@ -596,7 +619,11 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                   color: primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.trending_up_rounded, color: primaryColor, size: 24),
+                child: const Icon(
+                  Icons.trending_up_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -616,7 +643,11 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    Icon(Icons.science_outlined, size: 48, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.science_outlined,
+                      size: 48,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'No test data available',
@@ -637,7 +668,9 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primaryColor.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: primaryColor.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -645,7 +678,9 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: index == 0 ? primaryColor : primaryColor.withOpacity(0.6),
+                        color: index == 0
+                            ? primaryColor
+                            : primaryColor.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
@@ -671,7 +706,10 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -694,4 +732,3 @@ class _LabAnalyticsState extends State<LabAnalytics> with TickerProviderStateMix
     );
   }
 }
-

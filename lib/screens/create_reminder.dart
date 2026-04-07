@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -12,6 +11,7 @@ import 'package:icare/widgets/custom_text_input.dart';
 import 'package:icare/widgets/dotted_button.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:intl/intl.dart';
+import 'package:icare/services/reminder_service.dart';
 
 class CreateReminder extends StatefulWidget {
   const CreateReminder({super.key, this.isEdit = false});
@@ -22,22 +22,82 @@ class CreateReminder extends StatefulWidget {
 }
 
 class _CreateReminderState extends State<CreateReminder> {
+  final ReminderService _reminderService = ReminderService();
+  final _emailController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _tabletController = TextEditingController();
+  final _instructionsController = TextEditingController();
+
   var _selectedTime = '';
   var _selectedDate = '';
   String? _selectedDisease;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _titleController.dispose();
+    _nameController.dispose();
+    _tabletController.dispose();
+    _instructionsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitReminder() async {
+    if (_titleController.text.isEmpty ||
+        _selectedTime.isEmpty ||
+        _selectedDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final data = {
+      "patientEmail": _emailController.text,
+      "patientName": _nameController.text,
+      "title": _titleController.text,
+      "disease": _selectedDisease,
+      "tablets": [_tabletController.text],
+      "instructions": _instructionsController.text,
+      "time": _selectedTime,
+      "date": _selectedDate,
+    };
+
+    final result = await _reminderService.createReminder(data);
+
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reminder created successfully')),
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to create reminder'),
+          ),
+        );
+      }
+    }
+  }
 
   var diseaseList = [
-  "Diabetes Mellitus",
-  "Hypertension",
-  "Asthma",
-  "Influenza (Flu)",
-  "COVID-19",
-  "Tuberculosis",
-  "Arthritis",
-  "Migraine",
-  "Depression",
-  "Malaria",
-];
+    "Diabetes Mellitus",
+    "Hypertension",
+    "Asthma",
+    "Influenza (Flu)",
+    "COVID-19",
+    "Tuberculosis",
+    "Arthritis",
+    "Migraine",
+    "Depression",
+    "Malaria",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -55,84 +115,93 @@ class _CreateReminderState extends State<CreateReminder> {
   Widget _buildMobileLayout() {
     return Scaffold(
       appBar: AppBar(
-                leading: CustomBackButton(),
+        leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text:"Create Reminder",
-          fontSize: 16.78, 
+        title: CustomText(
+          text: "Create Reminder",
+          fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
           fontWeight: FontWeight.w400,
           color: AppColors.primary500,
-        ),),
+        ),
+      ),
       body: SingleChildScrollView(
-        child: Column( 
+        child: Column(
           children: [
             CustomText(
-            textAlign: TextAlign.left,
-            width: Utils.windowWidth(context) * 0.9,  
-            text: "Reminder for Patient",
-            color: AppColors.themeDarkGrey,
-            fontSize: 16,
-            fontFamily: "Gilroy-Medium",
+              textAlign: TextAlign.left,
+              width: Utils.windowWidth(context) * 0.9,
+              text: "Reminder for Patient",
+              color: AppColors.themeDarkGrey,
+              fontSize: 16,
+              fontFamily: "Gilroy-Medium",
             ),
             CustomInputField(
-            hintText: "Patient Email",
-            hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-            borderRadius: 30,
-            borderColor: AppColors.grayColor.withAlpha(70),  
-            width: Utils.windowWidth(context) * 0.9,
-            ),
-            CustomInputField(
-            hintText: "Title",
-            hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-            borderRadius: 30,
-            borderColor: AppColors.grayColor.withAlpha(70),
-            width: Utils.windowWidth(context) * 0.9,
-            ),
-            CustomInputField(
-            hintText: "Patient Name",
-            hintStyle: TextStyle(
+              controller: _emailController,
+              hintText: "Patient Email",
+              hintStyle: TextStyle(
                 color: AppColors.grayColor.withAlpha(60),
                 fontFamily: "Gilroy-SemiBold",
                 fontSize: 12,
               ),
               borderRadius: 30,
               borderColor: AppColors.grayColor.withAlpha(70),
-            width: Utils.windowWidth(context) * 0.9,
+              width: Utils.windowWidth(context) * 0.9,
             ),
-            
-                CustomDropdown<String>( 
-                  title: "disease",
-                  showTitle: false,
-                  textColor: AppColors.grayColor.withAlpha(60),
-                selectedItem: _selectedDisease,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6) ),
-                items: diseaseList, 
-                onChanged: (value){
-                  setState(() {
+            CustomInputField(
+              controller: _titleController,
+              hintText: "Title",
+              hintStyle: TextStyle(
+                color: AppColors.grayColor.withAlpha(60),
+                fontFamily: "Gilroy-SemiBold",
+                fontSize: 12,
+              ),
+              borderRadius: 30,
+              borderColor: AppColors.grayColor.withAlpha(70),
+              width: Utils.windowWidth(context) * 0.9,
+            ),
+            CustomInputField(
+              controller: _nameController,
+              hintText: "Patient Name",
+              hintStyle: TextStyle(
+                color: AppColors.grayColor.withAlpha(60),
+                fontFamily: "Gilroy-SemiBold",
+                fontSize: 12,
+              ),
+              borderRadius: 30,
+              borderColor: AppColors.grayColor.withAlpha(70),
+              width: Utils.windowWidth(context) * 0.9,
+            ),
+
+            CustomDropdown<String>(
+              title: "disease",
+              showTitle: false,
+              textColor: AppColors.grayColor.withAlpha(60),
+              selectedItem: _selectedDisease,
+              margin: EdgeInsets.symmetric(
+                vertical: ScallingConfig.verticalScale(6),
+              ),
+              items: diseaseList,
+              onChanged: (value) {
+                setState(() {
                   _selectedDisease = value;
-                  });
-                }
-                ),
-CustomInputField(
-            hintText: "tablet Name",
-            hintStyle: TextStyle(
+                });
+              },
+            ),
+            CustomInputField(
+              controller: _tabletController,
+              hintText: "tablet Name",
+              hintStyle: TextStyle(
                 color: AppColors.grayColor.withAlpha(60),
                 fontFamily: "Gilroy-SemiBold",
                 fontSize: 12,
               ),
               borderRadius: 30,
               borderColor: AppColors.grayColor.withAlpha(70),
-            width: Utils.windowWidth(context) * 0.9,
+              width: Utils.windowWidth(context) * 0.9,
             ),
             CustomInputField(
+              controller: _instructionsController,
               width: Utils.windowWidth(context) * 0.9,
               hintText: "What Patient have to do...",
               hintStyle: TextStyle(
@@ -140,14 +209,17 @@ CustomInputField(
                 fontFamily: "Gilroy-SemiBold",
                 fontSize: 12,
               ),
-              padding: EdgeInsets.only(left: ScallingConfig.scale(25), top: ScallingConfig.scale(10)),
+              padding: EdgeInsets.only(
+                left: ScallingConfig.scale(25),
+                top: ScallingConfig.scale(10),
+              ),
               height: Utils.windowHeight(context) * 0.15,
-              maxLines: 50,
+              maxLines: 5,
               borderRadius: 25,
               borderColor: AppColors.grayColor.withAlpha(70),
             ),
 
-            SizedBox(height: ScallingConfig.scale(12),),
+            SizedBox(height: ScallingConfig.scale(12)),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -177,7 +249,7 @@ CustomInputField(
                   },
                   trailingIcon: SvgWrapper(assetPath: ImagePaths.clock),
                 ),
-                SizedBox(width: ScallingConfig.scale(10) ,),  
+                SizedBox(width: ScallingConfig.scale(10)),
                 CustomButton(
                   boxShadow: BoxShadow(offset: Offset(0, 0)),
                   borderRadius: 35,
@@ -208,14 +280,15 @@ CustomInputField(
                     child: SvgWrapper(assetPath: ImagePaths.calendar),
                   ),
                 ),
-  
               ],
             ),
-           SizedBox(height: ScallingConfig.scale(10),),
+            SizedBox(height: ScallingConfig.scale(10)),
             DottedButton(
               width: Utils.windowWidth(context) * 0.9,
-              title: "Uplaod Prescription", onPressed: () {}),
-                       SizedBox(height: ScallingConfig.scale(15),),
+              title: "Uplaod Prescription",
+              onPressed: () {},
+            ),
+            SizedBox(height: ScallingConfig.scale(15)),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -223,10 +296,10 @@ CustomInputField(
                   width: Utils.windowWidth(context) * 0.45,
                   borderRadius: 30,
                   labelSize: 15,
-                  label: widget.isEdit ? "Edit Reminder" : "Create Reminder",
-                  onPressed: () {
-                    Navigator.of(context).pop(2);
-                  },
+                  label: _isSubmitting
+                      ? "Processing..."
+                      : (widget.isEdit ? "Edit Reminder" : "Create Reminder"),
+                  onPressed: _isSubmitting ? null : _submitReminder,
                 ),
                 SizedBox(width: ScallingConfig.scale(10)),
                 CustomButton(
@@ -236,15 +309,13 @@ CustomInputField(
                   width: Utils.windowWidth(context) * 0.45,
                   label: "Reminder List",
                   outlined: true,
-                  onPressed: () {
-                  },
+                  onPressed: () {},
                 ),
               ],
             ),
-
           ],
         ),
-      ) ,
+      ),
     );
   }
 
@@ -290,7 +361,11 @@ CustomInputField(
                     child: const SizedBox(
                       width: 42,
                       height: 42,
-                      child: Icon(Icons.arrow_back_rounded, color: Color(0xFF0B2D6E), size: 20),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: Color(0xFF0B2D6E),
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -357,10 +432,16 @@ CustomInputField(
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryColor.withOpacity(0.08),
+                                    color: AppColors.primaryColor.withOpacity(
+                                      0.08,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.person_outline_rounded, color: AppColors.primaryColor, size: 22),
+                                  child: const Icon(
+                                    Icons.person_outline_rounded,
+                                    color: AppColors.primaryColor,
+                                    size: 22,
+                                  ),
                                 ),
                                 const SizedBox(width: 14),
                                 const Column(
@@ -394,11 +475,21 @@ CustomInputField(
                             Row(
                               children: [
                                 Expanded(
-                                  child: _webField("Patient Email", inputHintStyle, inputBorderColor, inputRadius),
+                                  child: _webField(
+                                    "Patient Email",
+                                    inputHintStyle,
+                                    inputBorderColor,
+                                    inputRadius,
+                                  ),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(
-                                  child: _webField("Title", inputHintStyle, inputBorderColor, inputRadius),
+                                  child: _webField(
+                                    "Title",
+                                    inputHintStyle,
+                                    inputBorderColor,
+                                    inputRadius,
+                                  ),
                                 ),
                               ],
                             ),
@@ -408,7 +499,12 @@ CustomInputField(
                             Row(
                               children: [
                                 Expanded(
-                                  child: _webField("Patient Name", inputHintStyle, inputBorderColor, inputRadius),
+                                  child: _webField(
+                                    "Patient Name",
+                                    inputHintStyle,
+                                    inputBorderColor,
+                                    inputRadius,
+                                  ),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(
@@ -431,7 +527,12 @@ CustomInputField(
                             const SizedBox(height: 20),
 
                             // Row 3: Tablet Name
-                            _webField("Tablet Name", inputHintStyle, inputBorderColor, inputRadius),
+                            _webField(
+                              "Tablet Name",
+                              inputHintStyle,
+                              inputBorderColor,
+                              inputRadius,
+                            ),
                             const SizedBox(height: 20),
 
                             // Separator
@@ -444,10 +545,16 @@ CustomInputField(
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF22C55E).withOpacity(0.08),
+                                    color: const Color(
+                                      0xFF22C55E,
+                                    ).withOpacity(0.08),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.description_outlined, color: Color(0xFF22C55E), size: 22),
+                                  child: const Icon(
+                                    Icons.description_outlined,
+                                    color: Color(0xFF22C55E),
+                                    size: 22,
+                                  ),
                                 ),
                                 const SizedBox(width: 14),
                                 const Column(
@@ -481,7 +588,10 @@ CustomInputField(
                             CustomInputField(
                               hintText: "What Patient have to do...",
                               hintStyle: inputHintStyle,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                               height: 140,
                               maxLines: 50,
                               borderRadius: inputRadius,
@@ -495,7 +605,9 @@ CustomInputField(
                               children: [
                                 Expanded(
                                   child: _webPickerButton(
-                                    label: _selectedTime.isNotEmpty ? _selectedTime : "Select Time",
+                                    label: _selectedTime.isNotEmpty
+                                        ? _selectedTime
+                                        : "Select Time",
                                     icon: Icons.access_time_rounded,
                                     onTap: () async {
                                       final time = await showTimePicker(
@@ -513,7 +625,9 @@ CustomInputField(
                                 const SizedBox(width: 20),
                                 Expanded(
                                   child: _webPickerButton(
-                                    label: _selectedDate.isNotEmpty ? _selectedDate : "Select Date",
+                                    label: _selectedDate.isNotEmpty
+                                        ? _selectedDate
+                                        : "Select Date",
                                     icon: Icons.calendar_today_rounded,
                                     onTap: () async {
                                       final date = await showDatePicker(
@@ -523,7 +637,9 @@ CustomInputField(
                                       );
                                       if (date != null) {
                                         setState(() {
-                                          _selectedDate = DateFormat("yyyy/MM/dd").format(date);
+                                          _selectedDate = DateFormat(
+                                            "yyyy/MM/dd",
+                                          ).format(date);
                                         });
                                       }
                                     },
@@ -555,7 +671,10 @@ CustomInputField(
                             child: OutlinedButton(
                               onPressed: () {},
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                                side: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                  width: 1.5,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -581,12 +700,16 @@ CustomInputField(
                                 Navigator.of(context).pop(2);
                               },
                               icon: Icon(
-                                widget.isEdit ? Icons.edit_rounded : Icons.add_rounded,
+                                widget.isEdit
+                                    ? Icons.edit_rounded
+                                    : Icons.add_rounded,
                                 size: 20,
                                 color: Colors.white,
                               ),
                               label: Text(
-                                widget.isEdit ? "Edit Reminder" : "Create Reminder",
+                                widget.isEdit
+                                    ? "Edit Reminder"
+                                    : "Create Reminder",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -616,7 +739,12 @@ CustomInputField(
     );
   }
 
-  Widget _webField(String hint, TextStyle hintStyle, Color borderColor, double radius) {
+  Widget _webField(
+    String hint,
+    TextStyle hintStyle,
+    Color borderColor,
+    double radius,
+  ) {
     return CustomInputField(
       hintText: hint,
       hintStyle: hintStyle,
@@ -653,14 +781,20 @@ CustomInputField(
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: label.startsWith("Select") ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+                    color: label.startsWith("Select")
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF1E293B),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     fontFamily: "Gilroy-SemiBold",
                   ),
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8), size: 20),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+                size: 20,
+              ),
             ],
           ),
         ),

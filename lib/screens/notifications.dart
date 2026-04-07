@@ -29,7 +29,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final result = await _notificationService.getNotifications();
     if (mounted) {
       setState(() {
-        _notifications = result['success'] ? (result['notifications'] ?? []) : [];
+        _notifications = result['success']
+            ? (result['notifications'] ?? [])
+            : [];
         _isLoading = false;
       });
     }
@@ -45,7 +47,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _loadNotifications();
   }
 
-  int get _unreadCount => _notifications.where((n) => n['read'] == false).length;
+  int get _unreadCount =>
+      _notifications.where((n) => n['read'] == false).length;
 
   @override
   Widget build(BuildContext context) {
@@ -58,14 +61,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: CustomBackButton(),
-        title: CustomText(text: "Notifications", fontSize: 18, fontFamily: "Gilroy-Bold"),
+        title: CustomText(
+          text: "Notifications",
+          fontSize: 18,
+          fontFamily: "Gilroy-Bold",
+        ),
         elevation: 0,
         backgroundColor: Colors.white,
         actions: [
           if (_unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: const Text('Mark all read', style: TextStyle(fontSize: 13)),
+              child: const Text(
+                'Mark all read',
+                style: TextStyle(fontSize: 13),
+              ),
             ),
         ],
       ),
@@ -82,11 +92,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
             width: double.infinity,
             padding: EdgeInsets.only(
               top: MediaQuery.of(context).padding.top + 16,
-              bottom: 24, left: 48, right: 48,
+              bottom: 24,
+              left: 48,
+              right: 48,
             ),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Center(
               child: ConstrainedBox(
@@ -97,8 +115,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 22,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 20),
@@ -106,24 +131,53 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CustomText(text: "Notifications", fontSize: 26, fontWeight: FontWeight.w900, color: const Color(0xFF0F172A), letterSpacing: -0.5),
+                          CustomText(
+                            text: "Notifications",
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF0F172A),
+                            letterSpacing: -0.5,
+                          ),
                           const SizedBox(height: 2),
-                          CustomText(text: "Stay updated with your latest activity", fontSize: 14, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                          CustomText(
+                            text: "Stay updated with your latest activity",
+                            fontSize: 14,
+                            color: const Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ],
                       ),
                     ),
                     if (_unreadCount > 0) ...[
-                      TextButton(onPressed: _markAllAsRead, child: const Text('Mark all read')),
+                      TextButton(
+                        onPressed: _markAllAsRead,
+                        child: const Text('Mark all read'),
+                      ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(color: AppColors.primaryColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.mark_email_unread_rounded, size: 16, color: AppColors.primaryColor),
+                            const Icon(
+                              Icons.mark_email_unread_rounded,
+                              size: 16,
+                              color: AppColors.primaryColor,
+                            ),
                             const SizedBox(width: 8),
-                            CustomText(text: "$_unreadCount Unread", fontSize: 14, color: AppColors.primaryColor, fontWeight: FontWeight.w700),
+                            CustomText(
+                              text: "$_unreadCount Unread",
+                              fontSize: 14,
+                              color: AppColors.primaryColor,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ],
                         ),
                       ),
@@ -156,9 +210,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.notifications_off_rounded, size: 64, color: Colors.grey.shade300),
+            Icon(
+              Icons.notifications_off_rounded,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 16),
-            CustomText(text: "No notifications yet", fontSize: 16, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            CustomText(
+              text: "No notifications yet",
+              fontSize: 16,
+              color: const Color(0xFF94A3B8),
+              fontWeight: FontWeight.w600,
+            ),
           ],
         ),
       );
@@ -167,13 +230,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: isDesktop ? 24 : 0, horizontal: isDesktop ? 20 : 0),
+        padding: EdgeInsets.symmetric(
+          vertical: isDesktop ? 24 : 0,
+          horizontal: isDesktop ? 20 : 0,
+        ),
         itemCount: _notifications.length,
         separatorBuilder: (_, __) => isDesktop
             ? const SizedBox(height: 12)
             : Padding(
-                padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(20)),
-                child: Divider(color: AppColors.grayColor.withOpacity(0.3), height: 1),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(20),
+                ),
+                child: Divider(
+                  color: AppColors.grayColor.withOpacity(0.3),
+                  height: 1,
+                ),
               ),
         itemBuilder: (context, index) {
           final notif = _notifications[index];
@@ -193,12 +264,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isUnread ? AppColors.primaryColor.withOpacity(0.3) : const Color(0xFFF1F5F9),
+                    color: isUnread
+                        ? AppColors.primaryColor.withOpacity(0.3)
+                        : const Color(0xFFF1F5F9),
                     width: isUnread ? 1.5 : 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: isUnread ? AppColors.primaryColor.withOpacity(0.04) : const Color(0xFF0F172A).withOpacity(0.02),
+                      color: isUnread
+                          ? AppColors.primaryColor.withOpacity(0.04)
+                          : const Color(0xFF0F172A).withOpacity(0.02),
                       blurRadius: isUnread ? 16 : 10,
                       offset: const Offset(0, 4),
                     ),
@@ -208,9 +283,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(color: _getIconColor(type).withOpacity(0.12), borderRadius: BorderRadius.circular(16)),
-                      child: Icon(_getIcon(type), color: _getIconColor(type), size: 24),
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: _getIconColor(type).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        _getIcon(type),
+                        color: _getIconColor(type),
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -220,18 +303,44 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              CustomText(text: title, color: const Color(0xFF0F172A), fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600, fontSize: 17),
-                              CustomText(text: time, fontSize: 13, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                              CustomText(
+                                text: title,
+                                color: const Color(0xFF0F172A),
+                                fontWeight: isUnread
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                fontSize: 17,
+                              ),
+                              CustomText(
+                                text: time,
+                                fontSize: 13,
+                                color: const Color(0xFF94A3B8),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          CustomText(text: message, fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.w500, lineHeight: 1.4),
+                          CustomText(
+                            text: message,
+                            fontSize: 14,
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                            lineHeight: 1.4,
+                          ),
                         ],
                       ),
                     ),
                     if (isUnread) ...[
                       const SizedBox(width: 16),
-                      Container(margin: const EdgeInsets.only(top: 6), width: 10, height: 10, decoration: const BoxDecoration(color: AppColors.primaryColor, shape: BoxShape.circle)),
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -243,15 +352,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
           return GestureDetector(
             onTap: () => isUnread ? _markAsRead(id) : null,
             child: Container(
-              color: isUnread ? AppColors.primaryColor.withOpacity(0.05) : Colors.transparent,
-              padding: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(16), horizontal: ScallingConfig.scale(16)),
+              color: isUnread
+                  ? AppColors.primaryColor.withOpacity(0.05)
+                  : Colors.transparent,
+              padding: EdgeInsets.symmetric(
+                vertical: ScallingConfig.verticalScale(16),
+                horizontal: ScallingConfig.scale(16),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 46, height: 46,
-                    decoration: BoxDecoration(color: _getIconColor(type).withOpacity(0.15), shape: BoxShape.circle),
-                    child: Icon(_getIcon(type), color: _getIconColor(type), size: 20),
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: _getIconColor(type).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getIcon(type),
+                      color: _getIconColor(type),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -261,14 +383,47 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: CustomText(text: title, color: isUnread ? const Color(0xFF0F172A) : AppColors.darkGreyColor, fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600, fontSize: 15, fontFamily: "Gilroy")),
-                            if (isUnread) Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primaryColor, shape: BoxShape.circle)),
+                            Expanded(
+                              child: CustomText(
+                                text: title,
+                                color: isUnread
+                                    ? const Color(0xFF0F172A)
+                                    : AppColors.darkGreyColor,
+                                fontWeight: isUnread
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                fontSize: 15,
+                                fontFamily: "Gilroy",
+                              ),
+                            ),
+                            if (isUnread)
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        CustomText(text: message, fontSize: 13, color: const Color(0xFF64748B), fontFamily: "Gilroy", fontWeight: FontWeight.w500, maxLines: 2),
+                        CustomText(
+                          text: message,
+                          fontSize: 13,
+                          color: const Color(0xFF64748B),
+                          fontFamily: "Gilroy",
+                          fontWeight: FontWeight.w500,
+                          maxLines: 2,
+                        ),
                         const SizedBox(height: 8),
-                        CustomText(text: time, fontSize: 11, color: const Color(0xFF94A3B8), fontFamily: "Gilroy", fontWeight: FontWeight.w600),
+                        CustomText(
+                          text: time,
+                          fontSize: 11,
+                          color: const Color(0xFF94A3B8),
+                          fontFamily: "Gilroy",
+                          fontWeight: FontWeight.w600,
+                        ),
                       ],
                     ),
                   ),
@@ -298,25 +453,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   IconData _getIcon(String type) {
     switch (type) {
-      case "appointment": return Icons.calendar_today_rounded;
-      case "payment": return Icons.account_balance_wallet_rounded;
-      case "reminder": return Icons.alarm_rounded;
-      case "lab": return Icons.biotech_rounded;
-      case "prescription": return Icons.medication_rounded;
-      case "message": return Icons.forum_rounded;
-      default: return Icons.notifications_rounded;
+      case "appointment":
+        return Icons.calendar_today_rounded;
+      case "payment":
+        return Icons.account_balance_wallet_rounded;
+      case "reminder":
+        return Icons.alarm_rounded;
+      case "lab":
+        return Icons.biotech_rounded;
+      case "prescription":
+        return Icons.medication_rounded;
+      case "message":
+        return Icons.forum_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
   Color _getIconColor(String type) {
     switch (type) {
-      case "appointment": return const Color(0xFF22C55E);
-      case "payment": return const Color(0xFF3B82F6);
-      case "reminder": return const Color(0xFFF59E0B);
-      case "lab": return const Color(0xFF8B5CF6);
-      case "prescription": return const Color(0xFFEF4444);
-      case "message": return const Color(0xFF14B1FF);
-      default: return AppColors.primaryColor;
+      case "appointment":
+        return const Color(0xFF22C55E);
+      case "payment":
+        return const Color(0xFF3B82F6);
+      case "reminder":
+        return const Color(0xFFF59E0B);
+      case "lab":
+        return const Color(0xFF8B5CF6);
+      case "prescription":
+        return const Color(0xFFEF4444);
+      case "message":
+        return const Color(0xFF14B1FF);
+      default:
+        return AppColors.primaryColor;
     }
   }
 }

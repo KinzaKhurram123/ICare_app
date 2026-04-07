@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 class LayoutWidget extends StatelessWidget {
-  const LayoutWidget({super.key, this.horizontal = false , this.vertical = true, this.mainAxisAlignment = MainAxisAlignment.center, 
-  this.children = const <Widget>[],
-  this.crossAxisAlignment = CrossAxisAlignment.center});
+  const LayoutWidget({
+    super.key,
+    this.horizontal = false,
+    this.vertical = true,
+    this.mainAxisAlignment = MainAxisAlignment.center,
+    this.children = const <Widget>[],
+    this.crossAxisAlignment = CrossAxisAlignment.center,
+  });
   final bool horizontal;
   final bool vertical;
   final List<Widget> children;
@@ -12,16 +17,18 @@ class LayoutWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if(horizontal) {
-     return Row(
+    if (horizontal) {
+      return Row(
         crossAxisAlignment: crossAxisAlignment,
         mainAxisAlignment: mainAxisAlignment,
-        children: children ,);
+        children: children,
+      );
     } else {
- return  Column(
-         crossAxisAlignment: crossAxisAlignment,
+      return Column(
+        crossAxisAlignment: crossAxisAlignment,
         mainAxisAlignment: mainAxisAlignment,
-        children: children,);
+        children: children,
+      );
     }
   }
 }

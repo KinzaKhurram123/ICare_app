@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/lab.dart';
 import 'package:icare/screens/book_lab.dart';
 import 'package:icare/screens/filters.dart';
@@ -8,11 +7,11 @@ import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 import 'package:icare/widgets/lab_widget.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
+import 'package:icare/services/laboratory_service.dart';
 
 class LabsListScreen extends StatefulWidget {
   const LabsListScreen({super.key});
@@ -22,12 +21,68 @@ class LabsListScreen extends StatefulWidget {
 }
 
 class _LabsListScreenState extends State<LabsListScreen> {
-
-
+  final LaboratoryService _labService = LaboratoryService();
+  final TextEditingController _searchController = TextEditingController();
+  List<Lab> _labs = [];
+  List<Lab> _filteredLabs = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchLabs();
+  }
+
+  Future<void> _fetchLabs() async {
+    try {
+      final labsData = await _labService.getAllLaboratories();
+      final List<Lab> loadedLabs = labsData.map((json) {
+        return Lab(
+          id: json['_id'] ?? '',
+          title: json['labName'] ?? json['name'] ?? 'Laboratory',
+          photo: json['image'] ?? ImagePaths.lab1,
+          delivery: json['homeSample'] == true
+              ? "Home Sample Available"
+              : "Walk-in Only",
+          address:
+              json['address'] ?? json['location'] ?? 'Location not available',
+          rating: (json['rating'] ?? 4.5).toString(),
+          tests:
+              (json['availableTests'] as List?)
+                  ?.map((t) => t['name'].toString())
+                  .toList() ??
+              [],
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _labs = loadedLabs;
+          _filteredLabs = loadedLabs;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching labs: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _filterLabs(String query) {
+    if (query.isEmpty) {
+      setState(() => _filteredLabs = _labs);
+      return;
+    }
+    setState(() {
+      _filteredLabs = _labs.where((lab) {
+        final title = lab.title?.toLowerCase() ?? "";
+        final address = lab.address?.toLowerCase() ?? "";
+        final searchQuery = query.toLowerCase();
+        return title.contains(searchQuery) || address.contains(searchQuery);
+      }).toList();
+    });
   }
 
   @override
@@ -44,146 +99,118 @@ class _LabsListScreenState extends State<LabsListScreen> {
         centerTitle: true,
         title: CustomText(
           text: "Book a Lab",
-          fontFamily: "Gilroy-Bold", 
+          fontFamily: "Gilroy-Bold",
           fontSize: 18,
           fontWeight: FontWeight.w900,
           color: const Color(0xFF0F172A),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Search Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 40 : 20,
-                  vertical: 24,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 1200 : double.infinity,
                 ),
-                color: Colors.white,
-                child: Center(
-                  child: CustomInputField(
-                    width: isDesktop ? 700 : double.infinity,
-                    hintText: "Search lab reports, tests, or clinics...", 
-                    trailingIcon: SvgWrapper(
-                      assetPath: ImagePaths.filters,
-                      onPress: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (ctx)=> const FiltersScreen()));
-                      },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Search Header
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 40 : 20,
+                        vertical: 24,
+                      ),
+                      color: Colors.white,
+                      child: Center(
+                        child: CustomInputField(
+                          width: isDesktop ? 700 : double.infinity,
+                          hintText: "Search laboratories or clinics...",
+                          controller: _searchController,
+                          onChanged: _filterLabs,
+                          trailingIcon: SvgWrapper(
+                            assetPath: ImagePaths.filters,
+                            onPress: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => const FiltersScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          leadingIcon: const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 22,
+                          ),
+                        ),
+                      ),
                     ),
-                    leadingIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
-                  ),
+
+                    Expanded(
+                      child: _filteredLabs.isEmpty
+                          ? _buildEmptyState()
+                          : LabsList(labs: _filteredLabs, tab: 'book'),
+                    ),
+                  ],
                 ),
               ),
+            ),
+    );
+  }
 
-              const Expanded(
-                child: LabsList(tab: 'book'),
-              ),
-            ],
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.science_outlined, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            "No laboratories found",
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
 class LabsList extends StatelessWidget {
+  final List<Lab> labs;
   final String tab;
-  const LabsList({super.key, this.tab = 'book'});
-   
+  const LabsList({super.key, required this.labs, this.tab = 'book'});
+
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
-
-    final List<Lab> labs = [
-      Lab(
-        id: "1",
-        title: "Green Lab",
-        photo: ImagePaths.lab1,
-        delivery: "Home Delivery: 25min",
-        address: "20 Cooper Square, USA",
-        rating: "4.9",
-        tests: [],
-      ),
-      Lab(
-        id: "2",
-        title: "City Diagnostics",
-        photo: ImagePaths.lab2,
-        delivery: "Home Delivery: 40min",
-        address: "42 Broadway, USA",
-        rating: "4.7",
-        tests: [],
-      ),
-      Lab(
-        id: "3",
-        title: "Sunrise Medical Lab",
-        photo: ImagePaths.lab1,
-        delivery: "Home Delivery: 30min",
-        address: "7 Park Avenue, USA",
-        rating: "4.8",
-        tests: [],
-      ),
-      Lab(
-        id: "4",
-        title: "HealthFirst Labs",
-        photo: ImagePaths.lab2,
-        delivery: "Home Delivery: 20min",
-        address: "15 Elm Street, USA",
-        rating: "4.6",
-        tests: [],
-      ),
-    ];
-
     final actionText = tab == 'book' ? 'Book a Lab' : 'View Reports';
 
-    if (isDesktop) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(40),
-        itemCount: labs.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisExtent: 340,
-          crossAxisSpacing: 30,
-          mainAxisSpacing: 30,
-        ),
-        itemBuilder: (ctx, i) {
-          return LabWidget(
-            lab: labs[i],
-            actionText: actionText,
-            onActionBtnPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (ctx) => tab == 'book'
-                      ? BookLabScreen(labId: labs[i].id, labTitle: labs[i].title)
-                      : LabReportsScreen(),
-                ),
-              );
-            },
-          );
-        },
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: ScallingConfig.scale(14),
-        vertical: 20,
-      ),
+    return GridView.builder(
+      padding: EdgeInsets.all(isDesktop ? 40 : 20),
       itemCount: labs.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isDesktop ? 2 : 1,
+        mainAxisExtent: isDesktop ? 340 : 340,
+        crossAxisSpacing: 30,
+        mainAxisSpacing: 20,
+      ),
       itemBuilder: (ctx, i) {
         return LabWidget(
           lab: labs[i],
           actionText: actionText,
           onActionBtnPressed: () {
             Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => tab == 'book'
-                  ? BookLabScreen(labId: labs[i].id, labTitle: labs[i].title)
-                  : LabReportsScreen(),
-            ),
+              MaterialPageRoute(
+                builder: (ctx) => tab == 'book'
+                    ? BookLabScreen(labId: labs[i].id, labTitle: labs[i].title)
+                    : const LabReportsScreen(),
+              ),
             );
           },
         );
@@ -191,5 +218,3 @@ class LabsList extends StatelessWidget {
     );
   }
 }
-
-

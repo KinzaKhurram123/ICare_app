@@ -9,7 +9,8 @@ class LabTestsManagement extends StatefulWidget {
   State<LabTestsManagement> createState() => _LabTestsManagementState();
 }
 
-class _LabTestsManagementState extends State<LabTestsManagement> with TickerProviderStateMixin {
+class _LabTestsManagementState extends State<LabTestsManagement>
+    with TickerProviderStateMixin {
   final LaboratoryService _labService = LaboratoryService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _tests = [];
@@ -47,7 +48,9 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
     try {
       final profile = await _labService.getProfile();
       setState(() {
-        _tests = List<Map<String, dynamic>>.from(profile['availableTests'] ?? []);
+        _tests = List<Map<String, dynamic>>.from(
+          profile['availableTests'] ?? [],
+        );
         _isLoading = false;
       });
       _animationController.forward();
@@ -95,7 +98,8 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
 
   Future<void> _deleteTest(int index) async {
     try {
-      final updatedTests = List<Map<String, dynamic>>.from(_tests)..removeAt(index);
+      final updatedTests = List<Map<String, dynamic>>.from(_tests)
+        ..removeAt(index);
       await _labService.updateProfile({'availableTests': updatedTests});
       setState(() => _tests = updatedTests);
       if (mounted) {
@@ -123,7 +127,7 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
   void _showAddTestDialog() {
     final nameController = TextEditingController();
     final priceController = TextEditingController();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,7 +163,10 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 24,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,18 +252,28 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                         decoration: InputDecoration(
                           hintText: 'e.g., Blood Sugar',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.medical_services_rounded, color: primaryColor),
+                          prefixIcon: const Icon(
+                            Icons.medical_services_rounded,
+                            color: primaryColor,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryColor,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -295,22 +312,34 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                       ),
                       child: TextField(
                         controller: priceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'e.g., 20.00',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.attach_money_rounded, color: primaryColor),
+                          prefixIcon: const Icon(
+                            Icons.attach_money_rounded,
+                            color: primaryColor,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryColor,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -331,7 +360,10 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              side: const BorderSide(color: Color(0xFFE2E8F0), width: 2),
+                              side: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                                width: 2,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -370,7 +402,8 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                                 final name = nameController.text.trim();
                                 final priceText = priceController.text.trim();
                                 if (name.isNotEmpty && priceText.isNotEmpty) {
-                                  final price = double.tryParse(priceText) ?? 0.0;
+                                  final price =
+                                      double.tryParse(priceText) ?? 0.0;
                                   _addTest(name, price);
                                   Navigator.pop(context);
                                 }
@@ -378,7 +411,9 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -386,7 +421,10 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.add_circle_outline_rounded, color: Colors.white),
+                                  Icon(
+                                    Icons.add_circle_outline_rounded,
+                                    color: Colors.white,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Add Test',
@@ -450,8 +488,8 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
             child: _isLoading
                 ? _buildLoadingState()
                 : _tests.isEmpty
-                    ? _buildEmptyState()
-                    : _buildTestsList(),
+                ? _buildEmptyState()
+                : _buildTestsList(),
           ),
         ],
       ),
@@ -501,7 +539,10 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                 ),
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -544,10 +585,7 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
           SizedBox(height: 16),
           Text(
             'Loading tests...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -584,10 +622,7 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
           const SizedBox(height: 8),
           const Text(
             'Start by adding the tests your laboratory offers',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -659,11 +694,7 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
-                child: Icon(
-                  testIcon,
-                  color: primaryColor,
-                  size: 28,
-                ),
+                child: Icon(testIcon, color: primaryColor, size: 28),
               ),
             ),
             const SizedBox(width: 16),
@@ -768,10 +799,7 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
               const SizedBox(height: 8),
               Text(
                 'Are you sure you want to remove "$testName"? This action cannot be undone.',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -805,7 +833,10 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
                       ),
                       child: const Text(
                         'Delete',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -822,11 +853,16 @@ class _LabTestsManagementState extends State<LabTestsManagement> with TickerProv
     final name = testName.toLowerCase();
     if (name.contains('blood')) return Icons.bloodtype_rounded;
     if (name.contains('urine')) return Icons.local_hospital_rounded;
-    if (name.contains('x-ray') || name.contains('xray')) return Icons.medical_services_rounded;
-    if (name.contains('mri') || name.contains('scan')) return Icons.scanner_rounded;
-    if (name.contains('covid') || name.contains('pcr')) return Icons.coronavirus_rounded;
-    if (name.contains('heart') || name.contains('ecg')) return Icons.favorite_rounded;
-    if (name.contains('liver') || name.contains('kidney')) return Icons.healing_rounded;
+    if (name.contains('x-ray') || name.contains('xray'))
+      return Icons.medical_services_rounded;
+    if (name.contains('mri') || name.contains('scan'))
+      return Icons.scanner_rounded;
+    if (name.contains('covid') || name.contains('pcr'))
+      return Icons.coronavirus_rounded;
+    if (name.contains('heart') || name.contains('ecg'))
+      return Icons.favorite_rounded;
+    if (name.contains('liver') || name.contains('kidney'))
+      return Icons.healing_rounded;
     return Icons.science_rounded;
   }
 }

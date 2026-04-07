@@ -19,7 +19,7 @@ class BookAppointmentScreen extends StatefulWidget {
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   final AppointmentService _appointmentService = AppointmentService();
   final TextEditingController _reasonController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   String? _selectedTimeSlot;
   bool _isBooking = false;
@@ -34,7 +34,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   DateTime _getNextAvailableDate() {
     DateTime date = DateTime.now();
     if (widget.doctor.availableDays.isEmpty) return date;
-    
+
     // Find next available day within 30 days
     for (int i = 0; i < 30; i++) {
       final checkDate = date.add(Duration(days: i));
@@ -48,7 +48,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   List<String> _getAvailableTimeSlots() {
     if (widget.doctor.availableTime != null) {
       final startTime = widget.doctor.availableTime!.start;
-      
+
       return [
         '$startTime',
         '${_incrementTime(startTime, 1)}',
@@ -56,7 +56,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         '${_incrementTime(startTime, 3)}',
       ];
     }
-    
+
     return [
       '09:00 AM',
       '10:00 AM',
@@ -76,29 +76,29 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         final timeParts = time.split(':');
         int hour = int.parse(timeParts[0]);
         final minute = timeParts.length > 1 ? timeParts[1] : '00';
-        
+
         hour += hours;
         if (hour >= 24) hour -= 24;
-        
+
         // Convert to 12-hour format with AM/PM
         final period = hour >= 12 ? 'PM' : 'AM';
         final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-        
+
         return '$displayHour:$minute $period';
       }
-      
+
       // Handle 12-hour format (e.g., "09:00 AM")
       final parts = time.split(' ');
       if (parts.length < 2) return time;
-      
+
       final timeParts = parts[0].split(':');
       int hour = int.parse(timeParts[0]);
       final minute = timeParts.length > 1 ? timeParts[1] : '00';
       final period = parts[1];
-      
+
       hour += hours;
       if (hour > 12) hour -= 12;
-      
+
       return '$hour:$minute $period';
     } catch (e) {
       print('Error parsing time: $time, error: $e');
@@ -108,7 +108,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
   bool _isDayAvailable(DateTime date) {
     if (widget.doctor.availableDays.isEmpty) return true;
-    
+
     final dayName = DateFormat('EEEE').format(date);
     return widget.doctor.availableDays.contains(dayName);
   }
@@ -130,7 +130,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       doctorId: widget.doctor.id,
       date: _selectedDate,
       timeSlot: _selectedTimeSlot!,
-      reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
+      reason: _reasonController.text.trim().isEmpty
+          ? null
+          : _reasonController.text.trim(),
     );
 
     setState(() => _isBooking = false);
@@ -149,7 +151,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       Navigator.of(context).pop(true);
@@ -165,7 +169,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -243,7 +249,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       backgroundColor: Colors.white,
                       child: Text(
                         widget.doctor.user.name.isNotEmpty
-                            ? widget.doctor.user.name.substring(0, 1).toUpperCase()
+                            ? widget.doctor.user.name
+                                  .substring(0, 1)
+                                  .toUpperCase()
                             : 'D',
                         style: TextStyle(
                           fontSize: 28,
@@ -268,13 +276,17 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            widget.doctor.specialization ?? 'General Practitioner',
+                            widget.doctor.specialization ??
+                                'General Practitioner',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -330,7 +342,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -363,8 +375,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           setState(() => _selectedDate = date);
                         }
                       },
-                      selectableDayPredicate: widget.doctor.availableDays.isEmpty 
-                          ? null 
+                      selectableDayPredicate:
+                          widget.doctor.availableDays.isEmpty
+                          ? null
                           : (DateTime date) => _isDayAvailable(date),
                     ),
                   ),
@@ -394,7 +407,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       runSpacing: 8,
                       children: widget.doctor.availableDays.map((day) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -404,7 +420,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             ),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppColors.primaryColor.withValues(alpha: 0.3),
+                              color: AppColors.primaryColor.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -452,7 +470,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -476,13 +494,18 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     borderRadius: BorderRadius.circular(16),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         gradient: isSelected
                             ? LinearGradient(
                                 colors: [
                                   const Color(0xFF8B5CF6),
-                                  const Color(0xFF8B5CF6).withValues(alpha: 0.8),
+                                  const Color(
+                                    0xFF8B5CF6,
+                                  ).withValues(alpha: 0.8),
                                 ],
                               )
                             : null,
@@ -497,7 +520,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                  color: const Color(
+                                    0xFF8B5CF6,
+                                  ).withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -510,7 +535,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           Icon(
                             Icons.schedule_rounded,
                             size: 18,
-                            color: isSelected ? Colors.white : const Color(0xFF8B5CF6),
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF8B5CF6),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -518,7 +545,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                             ),
                           ),
                         ],
@@ -557,7 +586,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF64748B).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -574,7 +606,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -596,7 +628,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   color: Color(0xFF0F172A),
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Describe your symptoms or reason for consultation...',
+                  hintText:
+                      'Describe your symptoms or reason for consultation...',
                   hintStyle: const TextStyle(
                     color: Color(0xFF94A3B8),
                     fontSize: 14,
@@ -646,7 +679,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                             width: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Row(

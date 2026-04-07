@@ -6,18 +6,30 @@ import 'package:icare/app.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:icare/services/fcm_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await EasyLocalization.ensureInitialized();
+
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+  }
   await FcmService().init();
   runApp(
-    ProviderScope(child: const MyApp())
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ur')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: ProviderScope(child: const MyApp()),
+    ),
   );
 }
-// 
+
+//
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -30,7 +42,10 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
-          title: 'Flutter Demo',
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          title: 'iCare Virtual Hospital',
           theme: AppTheme.mainTheme,
           debugShowCheckedModeBanner: false,
           navigatorObservers: [FlutterSmartDialog.observer],
@@ -40,7 +55,7 @@ class MyApp extends StatelessWidget {
               child: FlutterSmartDialog.init()(context, child),
               breakpoints: const [
                 Breakpoint(start: 0, end: 600, name: MOBILE),
-                Breakpoint(start: 600, end: 900, name: TABLET), 
+                Breakpoint(start: 600, end: 900, name: TABLET),
                 Breakpoint(start: 901, end: 1920, name: DESKTOP),
                 Breakpoint(start: 1921, end: double.infinity, name: '4K'),
               ],

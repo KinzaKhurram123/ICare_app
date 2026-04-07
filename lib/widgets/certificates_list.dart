@@ -49,7 +49,7 @@ class _CertificatesListState extends State<CertificatesList> {
     }
 
     if (_certificates.isEmpty) {
-      return const Center(child: Text("No certificates found"));
+      return const Center(child: Text("No completed programs found"));
     }
 
     return ConstrainedBox(
@@ -59,13 +59,13 @@ class _CertificatesListState extends State<CertificatesList> {
         padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: _certificates.length,
         itemBuilder: (ctx, i) {
-          final item = _certificates[i];
-          final course = item['course'] ?? {};
+          final item = _certificates[i] as Map<String, dynamic>;
           return CertifcateCard(
-            courseTitle: course['name'] ?? 'Untitled Certificate',
-            completedSections: item['completedUnits']?.toString() ?? '0',
-            totalSections: course['totalUnits']?.toString() ?? '0',
-            completionPercentage: '100', // Backend returns certificate only when 100% complete
+            certificateData: item,
+            courseTitle: item['title'] ?? 'Completed Program',
+            completedSections: '100', // Completed
+            totalSections: '100',
+            completionPercentage: '100',
           );
         },
       ),
@@ -76,12 +76,14 @@ class _CertificatesListState extends State<CertificatesList> {
 class CertifcateCard extends StatelessWidget {
   const CertifcateCard({
     super.key,
+    required this.certificateData,
     this.courseTitle,
     this.totalSections,
     this.completedSections,
     this.completionPercentage,
   });
 
+  final Map<String, dynamic> certificateData;
   final String? courseTitle;
   final String? totalSections;
   final String? completedSections;
@@ -128,21 +130,15 @@ class CertifcateCard extends StatelessWidget {
                   Row(
                     children: [
                       CustomText(
-                        text: '${completedSections ?? "0"} / ${totalSections ?? "0"} ',
-                        fontSize: 12,
-                        color: AppColors.grayColor,
-                        fontFamily: "Gilroy-SemiBold",
-                      ),
-                      CustomText(
                         text: '${completionPercentage ?? "100"}% Completed',
                         fontSize: 12,
                         color: AppColors.grayColor,
                         fontFamily: "Gilroy-SemiBold",
                       ),
                     ],
-                  )
+                  ),
                 ],
-              )
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -151,30 +147,38 @@ class CertifcateCard extends StatelessWidget {
             children: [
               const SizedBox(width: 5),
               CustomText(
-                text: "View Certificate",
+                text: "View Milestone",
                 underline: true,
                 fontSize: 12.99,
                 color: AppColors.primary500,
                 fontFamily: "Gilroy-Bold",
                 fontWeight: FontWeight.bold,
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const ViewCertificate()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) =>
+                          ViewCertificate(certificateData: certificateData),
+                    ),
+                  );
                 },
               ),
               const SizedBox(width: 10),
               CustomText(
-                text: "Download Certificate",
+                text: "Download PDF",
                 underline: true,
                 fontSize: 12.99,
                 color: AppColors.primary500,
                 fontFamily: "Gilroy-Bold",
                 fontWeight: FontWeight.bold,
                 onTap: () {
-                  // Download logic
+                  // Additional actual PDF download logic can go here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Downloading Certificate...')),
+                  );
                 },
               ),
             ],
-          )
+          ),
         ],
       ),
     );

@@ -13,7 +13,7 @@ import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreateProfile extends StatefulWidget {
-  const CreateProfile({super.key, this.isEdit=false});
+  const CreateProfile({super.key, this.isEdit = false});
   final bool isEdit;
 
   @override
@@ -368,7 +368,8 @@ class _WebCreateProfile extends StatelessWidget {
                               label: "Bio & Description",
                               controller: bioController,
                               icon: Icons.description_outlined,
-                              hint: "Tell us about your professional background...",
+                              hint:
+                                  "Tell us about your professional background...",
                               maxLines: 4,
                             ),
                             const SizedBox(height: 32),
@@ -396,7 +397,9 @@ class _WebCreateProfile extends StatelessWidget {
                                   }
                                 },
                                 child: Text(
-                                  isEdit ? "Update Changes" : "Create My Profile",
+                                  isEdit
+                                      ? "Update Changes"
+                                      : "Create My Profile",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
@@ -448,7 +451,10 @@ class _WebCreateProfile extends StatelessWidget {
             prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 20),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -459,7 +465,10 @@ class _WebCreateProfile extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.primaryColor,
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -469,10 +478,7 @@ class _WebCreateProfile extends StatelessWidget {
 }
 
 class ProfilePicker extends StatefulWidget {
-  const ProfilePicker({
-    super.key,
-    required this.onPickImage,
-  });
+  const ProfilePicker({super.key, required this.onPickImage});
 
   final void Function(File pickedImage) onPickImage;
 
@@ -483,7 +489,6 @@ class ProfilePicker extends StatefulWidget {
 class _ProfilePickerState extends State<ProfilePicker> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedImage = await _picker.pickImage(
@@ -547,10 +552,7 @@ class _ProfilePickerState extends State<ProfilePicker> {
           height: height,
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            border: Border.all(
-              width: 2,
-              color: AppColors.primaryColor,
-            ),
+            border: Border.all(width: 2, color: AppColors.primaryColor),
             borderRadius: BorderRadius.circular(35),
           ),
           child: ClipRRect(
@@ -567,13 +569,12 @@ class _ProfilePickerState extends State<ProfilePicker> {
                       height: double.infinity,
                     )
                   : Center(
-                          child: const Icon(
-                              Icons.person_outline,
-                              color: Colors.white,
-                              size: 45,
-                            ),
-                          ),
-                        
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: Colors.white,
+                        size: 45,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -599,7 +600,6 @@ class _ProfilePickerState extends State<ProfilePicker> {
   }
 }
 
-
 void _showSuccessModal(BuildContext ctx) {
   showDialog(
     context: ctx,
@@ -623,13 +623,13 @@ void _showSuccessModal(BuildContext ctx) {
               ),
               const SizedBox(height: 20),
               const Text(
-                "Successful", 
+                "Successful",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.black,
                 ),
-              ), 
+              ),
               const SizedBox(height: 8),
               const Text(
                 "You have complete your profile setup successfully.",
@@ -651,7 +651,7 @@ void _showSuccessModal(BuildContext ctx) {
                     Navigator.pop(ctx);
                   },
                   // onPressed: () {
-                    // Navigator.pop(context); // Close modal
+                  // Navigator.pop(context); // Close modal
                   //   Navigator.pop(context); // Go back to login screen
                   // },
                   child: const Text(

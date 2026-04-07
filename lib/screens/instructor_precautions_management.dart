@@ -8,10 +8,12 @@ class InstructorPrecautionsManagementScreen extends StatefulWidget {
   const InstructorPrecautionsManagementScreen({super.key});
 
   @override
-  State<InstructorPrecautionsManagementScreen> createState() => _InstructorPrecautionsManagementScreenState();
+  State<InstructorPrecautionsManagementScreen> createState() =>
+      _InstructorPrecautionsManagementScreenState();
 }
 
-class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecautionsManagementScreen> {
+class _InstructorPrecautionsManagementScreenState
+    extends State<InstructorPrecautionsManagementScreen> {
   final InstructorService _instructorService = InstructorService();
   List<dynamic> _precautions = [];
   bool _isLoading = true;
@@ -73,9 +75,9 @@ class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecau
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error deleting: $e')));
         }
       }
     }
@@ -91,13 +93,18 @@ class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecau
         elevation: 0,
         title: const Text(
           'Health Tips & Precautions',
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const InstructorCreatePrecautionScreen()),
+            MaterialPageRoute(
+              builder: (ctx) => const InstructorCreatePrecautionScreen(),
+            ),
           );
           _loadPrecautions();
         },
@@ -108,35 +115,43 @@ class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecau
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _precautions.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.health_and_safety_outlined, size: 80, color: Colors.grey[300]),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No health tips yet',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Share health tips with your students',
-                        style: TextStyle(color: Color(0xFF94A3B8)),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.health_and_safety_outlined,
+                    size: 80,
+                    color: Colors.grey[300],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadPrecautions,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _precautions.length,
-                    itemBuilder: (ctx, i) {
-                      final precaution = _precautions[i];
-                      return _buildPrecautionCard(precaution);
-                    },
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No health tips yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Share health tips with your students',
+                    style: TextStyle(color: Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadPrecautions,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: _precautions.length,
+                itemBuilder: (ctx, i) {
+                  final precaution = _precautions[i];
+                  return _buildPrecautionCard(precaution);
+                },
+              ),
+            ),
     );
   }
 
@@ -170,7 +185,11 @@ class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecau
                     color: const Color(0xFF10B981).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.health_and_safety_rounded, color: Color(0xFF10B981), size: 24),
+                  child: const Icon(
+                    Icons.health_and_safety_rounded,
+                    color: Color(0xFF10B981),
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -212,18 +231,23 @@ class _InstructorPrecautionsManagementScreenState extends State<InstructorPrecau
                   onPressed: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (ctx) => InstructorCreatePrecautionScreen(precaution: precaution),
+                        builder: (ctx) => InstructorCreatePrecautionScreen(
+                          precaution: precaution,
+                        ),
                       ),
                     );
                     _loadPrecautions();
                   },
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('Edit'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryColor,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () => _deletePrecaution(precaution['_id'], precaution['title']),
+                  onPressed: () =>
+                      _deletePrecaution(precaution['_id'], precaution['title']),
                   icon: const Icon(Icons.delete_outline, size: 18),
                   label: const Text('Delete'),
                   style: TextButton.styleFrom(foregroundColor: Colors.red),

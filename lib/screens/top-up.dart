@@ -47,7 +47,13 @@ class _TopUpScreenState extends State<TopUpScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-              boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  offset: Offset(0, 4),
+                  blurRadius: 20,
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -59,15 +65,31 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     color: const Color(0xFFEFF6FF),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.account_balance_wallet_rounded, size: 40, color: AppColors.primaryColor),
+                  child: Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 40,
+                    color: AppColors.primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 24),
-                const Text("Enter Top Up Amount", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold")),
+                const Text(
+                  "Enter Top Up Amount",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                    fontFamily: "Gilroy-Bold",
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text("How much would you like to add to your wallet?", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Color(0xFF64748B))),
-                
+                const Text(
+                  "How much would you like to add to your wallet?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                ),
+
                 const SizedBox(height: 32),
-                
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -80,20 +102,42 @@ class _TopUpScreenState extends State<TopUpScreen> {
                           // Amount Display / Input Area
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 24,
+                              horizontal: 24,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: amount.isNotEmpty ? AppColors.primaryColor : const Color(0xFFE2E8F0), width: 1.5),
+                              border: Border.all(
+                                color: amount.isNotEmpty
+                                    ? AppColors.primaryColor
+                                    : const Color(0xFFE2E8F0),
+                                width: 1.5,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("Amount (USD)", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                                const Text(
+                                  "Amount (USD)",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    const Text("\$ ", style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
+                                    const Text(
+                                      "\$ ",
+                                      style: TextStyle(
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
                                     Expanded(
                                       child: Text(
                                         amount.isEmpty ? "0.00" : amount,
@@ -101,7 +145,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                                           fontSize: 40,
                                           fontWeight: FontWeight.w700,
                                           fontFamily: "Gilroy-Bold",
-                                          color: amount.isEmpty ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B),
+                                          color: amount.isEmpty
+                                              ? const Color(0xFFCBD5E1)
+                                              : const Color(0xFF1E293B),
                                         ),
                                       ),
                                     ),
@@ -110,9 +156,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                               ],
                             ),
                           ),
-                          
+
                           const SizedBox(height: 24),
-                          
+
                           // Quick Select Buttons
                           Wrap(
                             spacing: 12,
@@ -128,7 +174,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(width: 48),
 
                     // Right side: Numpad
@@ -142,15 +188,25 @@ class _TopUpScreenState extends State<TopUpScreen> {
                             buttonHeight: 60,
                             gridSpacing: 16,
                             foregroundColor: Colors.white,
-                            backgroundColor: const Color(0xFFF1F5F9), // Light grey for buttons
+                            backgroundColor: const Color(
+                              0xFFF1F5F9,
+                            ), // Light grey for buttons
                             buttonBorderRadius: 16,
-                            textStyle: const TextStyle(fontSize: 24, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+                            textStyle: const TextStyle(
+                              fontSize: 24,
+                              color: Color(0xFF1E293B),
+                              fontWeight: FontWeight.w600,
+                            ),
                             removeBlankButton: true,
                             useBackspace: true,
                             onPressed: (str) {
                               setState(() {
                                 if (str == "BACKSPACE") {
-                                  if (amount.isNotEmpty) amount = amount.substring(0, amount.length - 1);
+                                  if (amount.isNotEmpty)
+                                    amount = amount.substring(
+                                      0,
+                                      amount.length - 1,
+                                    );
                                 } else {
                                   amount += str;
                                 }
@@ -172,7 +228,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: () {
@@ -183,15 +241,25 @@ class _TopUpScreenState extends State<TopUpScreen> {
                         okText: "Return to Wallet",
                         onOk: () {
                           Navigator.of(context).pop();
-                          Navigator.of(context).pop(); // pop twice to go back to wallet
+                          Navigator.of(
+                            context,
+                          ).pop(); // pop twice to go back to wallet
                         },
                         descriptionMaxLines: 2,
                         status: DialogStatus.success,
                         descriptionSize: 14,
-                        description: "You have successfully transferred \$$amount into your wallet account.",
+                        description:
+                            "You have successfully transferred \$$amount into your wallet account.",
                       );
                     },
-                    child: const Text("Confirm Transfer", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: "Gilroy-SemiBold")),
+                    child: const Text(
+                      "Confirm Transfer",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: "Gilroy-SemiBold",
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -213,7 +281,14 @@ class _TopUpScreenState extends State<TopUpScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
-        child: Text("+\$$val", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+        child: Text(
+          "+\$$val",
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF475569),
+          ),
+        ),
       ),
     );
   }

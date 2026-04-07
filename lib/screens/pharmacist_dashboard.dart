@@ -12,7 +12,8 @@ class PharmacistDashboard extends ConsumerStatefulWidget {
   const PharmacistDashboard({super.key});
 
   @override
-  ConsumerState<PharmacistDashboard> createState() => _PharmacistDashboardState();
+  ConsumerState<PharmacistDashboard> createState() =>
+      _PharmacistDashboardState();
 }
 
 class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
@@ -46,9 +47,9 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
       print('Error loading stats: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading dashboard: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading dashboard: $e')));
       }
     }
   }
@@ -155,32 +156,88 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
         if (isDesktop) {
           return Row(
             children: [
-              Expanded(child: _buildStatCard('Total Orders', _stats['totalOrders']!, Icons.shopping_bag_rounded, const Color(0xFF3B82F6))),
+              Expanded(
+                child: _buildStatCard(
+                  'Prescriptions',
+                  _stats['totalOrders']!,
+                  Icons.receipt_long_rounded,
+                  const Color(0xFF3B82F6),
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Pending', _stats['pendingOrders']!, Icons.pending_rounded, const Color(0xFFF59E0B))),
+              Expanded(
+                child: _buildStatCard(
+                  'Pending',
+                  _stats['pendingOrders']!,
+                  Icons.pending_actions_rounded,
+                  const Color(0xFFF59E0B),
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Products', _stats['totalProducts']!, Icons.medication_rounded, const Color(0xFF10B981))),
+              Expanded(
+                child: _buildStatCard(
+                  'Medications',
+                  _stats['totalProducts']!,
+                  Icons.medication_rounded,
+                  const Color(0xFF10B981),
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Low Stock', _stats['lowStock']!, Icons.warning_rounded, const Color(0xFFEF4444))),
+              Expanded(
+                child: _buildStatCard(
+                  'Low Stock',
+                  _stats['lowStock']!,
+                  Icons.warning_rounded,
+                  const Color(0xFFEF4444),
+                ),
+              ),
             ],
           );
         }
-        
+
         return Column(
           children: [
             Row(
               children: [
-                Expanded(child: _buildStatCard('Orders', _stats['totalOrders']!, Icons.shopping_bag_rounded, const Color(0xFF3B82F6))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Requests',
+                    _stats['totalOrders']!,
+                    Icons.receipt_long_rounded,
+                    const Color(0xFF3B82F6),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Pending', _stats['pendingOrders']!, Icons.pending_rounded, const Color(0xFFF59E0B))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Pending',
+                    _stats['pendingOrders']!,
+                    Icons.pending_actions_rounded,
+                    const Color(0xFFF59E0B),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildStatCard('Products', _stats['totalProducts']!, Icons.medication_rounded, const Color(0xFF10B981))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Medications',
+                    _stats['totalProducts']!,
+                    Icons.medication_liquid_rounded,
+                    const Color(0xFF10B981),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Low Stock', _stats['lowStock']!, Icons.warning_rounded, const Color(0xFFEF4444))),
+                Expanded(
+                  child: _buildStatCard(
+                    'Low Stock',
+                    _stats['lowStock']!,
+                    Icons.warning_rounded,
+                    const Color(0xFFEF4444),
+                  ),
+                ),
               ],
             ),
           ],
@@ -254,30 +311,57 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: isDesktop ? 4 : 2,
+          crossAxisCount: isDesktop ? 3 : 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 1.3,
           children: [
-            _buildActionCard('Manage Inventory', Icons.inventory_rounded, const Color(0xFF10B981), () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyInventory()));
-            }),
-            _buildActionCard('View Orders', Icons.shopping_cart_rounded, const Color(0xFF3B82F6), () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyOrders()));
-            }),
-            _buildActionCard('Analytics', Icons.analytics_rounded, const Color(0xFF8B5CF6), () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyAnalytics()));
-            }),
-            _buildActionCard('My Orders', Icons.list_alt_rounded, const Color(0xFFF59E0B), () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const MyOrdersScreen()));
-            }),
+            _buildActionCard(
+              'Dispense Queue',
+              Icons.move_to_inbox_rounded,
+              const Color(0xFF3B82F6),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (ctx) => const PharmacyOrders()),
+                );
+              },
+            ),
+            _buildActionCard(
+              'Medication Inventory',
+              Icons.inventory_2_rounded,
+              const Color(0xFF10B981),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const PharmacyInventory(),
+                  ),
+                );
+              },
+            ),
+            _buildActionCard(
+              'Fulfillment Analytics',
+              Icons.analytics_rounded,
+              const Color(0xFF8B5CF6),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const PharmacyAnalytics(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -344,11 +428,29 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
           ),
           child: Column(
             children: [
-              _buildActivityItem('New order received', 'Order #1234', Icons.shopping_bag_rounded, const Color(0xFF3B82F6), '5 min ago'),
+              _buildActivityItem(
+                'New prescription received',
+                'Prescription #1234',
+                Icons.receipt_rounded,
+                const Color(0xFF3B82F6),
+                '5 min ago',
+              ),
               const Divider(height: 24),
-              _buildActivityItem('Low stock alert', 'Paracetamol 500mg', Icons.warning_rounded, const Color(0xFFEF4444), '1 hour ago'),
+              _buildActivityItem(
+                'Low stock alert',
+                'Paracetamol 500mg',
+                Icons.warning_rounded,
+                const Color(0xFFEF4444),
+                '1 hour ago',
+              ),
               const Divider(height: 24),
-              _buildActivityItem('Order completed', 'Order #1230', Icons.check_circle_rounded, const Color(0xFF10B981), '2 hours ago'),
+              _buildActivityItem(
+                'Prescription fulfilled',
+                'Prescription #1230',
+                Icons.check_circle_rounded,
+                const Color(0xFF10B981),
+                '2 hours ago',
+              ),
             ],
           ),
         ),
@@ -356,7 +458,13 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
     );
   }
 
-  Widget _buildActivityItem(String title, String subtitle, IconData icon, Color color, String time) {
+  Widget _buildActivityItem(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    String time,
+  ) {
     return Row(
       children: [
         Container(
@@ -382,20 +490,14 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF64748B),
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
             ],
           ),
         ),
         Text(
           time,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF94A3B8),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
         ),
       ],
     );

@@ -17,24 +17,27 @@ class Walkthrough extends ConsumerStatefulWidget {
 }
 
 class _WalkthroughState extends ConsumerState<Walkthrough> {
-      final List<ContentConfig> listContentConfig = [
-        ContentConfig(
-          title: "More Comfortable Chat With the Doctor",
-          description: "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
-          pathImage: "assets/images/walkthrough1.png", 
-        ),
-        ContentConfig(
-          title: "More Comfortable Chat With the Doctor",
-          description: "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
-          pathImage: "assets/images/walkthrough2.png", 
-        ),
-        ContentConfig(
-          title: "More Comfortable Chat With the Doctor",
-          description: "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
-          pathImage: "assets/images/walkthrough3.png", 
-        ),
-      ];
- int currentIndex = 0;
+  final List<ContentConfig> listContentConfig = [
+    ContentConfig(
+      title: "More Comfortable Chat With the Doctor",
+      description:
+          "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
+      pathImage: "assets/images/walkthrough1.png",
+    ),
+    ContentConfig(
+      title: "More Comfortable Chat With the Doctor",
+      description:
+          "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
+      pathImage: "assets/images/walkthrough2.png",
+    ),
+    ContentConfig(
+      title: "More Comfortable Chat With the Doctor",
+      description:
+          "Book an appointment with doctor. Chat with doctor via appointment letter and get consultation.",
+      pathImage: "assets/images/walkthrough3.png",
+    ),
+  ];
+  int currentIndex = 0;
   late Function goToTab;
 
   void onDonePress() {
@@ -63,11 +66,8 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
         onTabChangeCompleted: (index) {
           setState(() => currentIndex = index);
         },
-        
-        navigationBarConfig: NavigationBarConfig(
-        navPosition: NavPosition.top,
 
-        ),
+        navigationBarConfig: NavigationBarConfig(navPosition: NavPosition.top),
         isShowDoneBtn: false,
         isShowNextBtn: false,
         isShowSkipBtn: false,
@@ -75,146 +75,161 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
         indicatorConfig: IndicatorConfig(isShowIndicator: false),
         listCustomTabs: listContentConfig.asMap().entries.map((entry) {
           final int index = entry.key;
-          final ContentConfig item = entry.value; 
+          final ContentConfig item = entry.value;
           return Stack(
-            children: 
-              [Container(
-                    width: Utils.windowWidth(context),
-                    height: Utils.windowHeight(context),
-                    decoration: BoxDecoration(
-                    image: DecorationImage(image: AssetImage("assets/images/bgImage.jpeg", ),
-                     fit: BoxFit.cover
-                    )
-                    ),
-                    child: 
-                     Align(
-  alignment: Alignment.bottomCenter,
-  child: ConstrainedBox(
-    constraints: BoxConstraints(
-      maxWidth: kIsWeb ? ScallingConfig.scale(300): double.infinity,
-    ),
-    child:
-                    Column(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-                 
-            
-              Flexible(
-               flex: kIsWeb ? 4 : 6,
-
-               child: 
-               Padding(padding: const EdgeInsets.symmetric(horizontal: 20), 
-                child: Image.asset(item.pathImage!,
-             
-                fit: BoxFit.cover,   
-                ),
-               ),
-              
-               ),
-
-                         Container(
-                clipBehavior: Clip.hardEdge,
-                padding: EdgeInsets.symmetric(
-                horizontal: ScallingConfig.moderateScale(20), 
-                vertical: ScallingConfig.moderateScale(25)
-                ),
+              Container(
+                width: Utils.windowWidth(context),
+                height: Utils.windowHeight(context),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(ScallingConfig.moderateScale(22.6)),
-                    topLeft: Radius.circular(ScallingConfig.moderateScale(22.6)))
+                  image: DecorationImage(
+                    image: AssetImage("assets/images/bgImage.jpeg"),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-            
-                child: 
-                SingleChildScrollView(
-                  child:
-                Column(
-                  spacing: 25,
-                  children: [
-                              
-            
-                    Text(item.title!,
-                    style:  TextStyle(
-                      fontSize: ScallingConfig.moderateScale(23.7),
-                      color:AppColors.primary500,
-            
-                    ) ,
-                    textAlign:  TextAlign.center),
-                    Text(item.description!,
-                    style: TextStyle(
-                      color: AppColors.grayColor,
-                      fontSize: ScallingConfig.moderateScale(12.5)
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: kIsWeb
+                          ? ScallingConfig.scale(300)
+                          : double.infinity,
                     ),
-                    ),
-                  
-              Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          listContentConfig.length,
-                          (dotIndex) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 10),
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            height: 8,
-                            width: currentIndex == dotIndex ? 20 : 8,
-                            decoration: BoxDecoration(
-                              color: currentIndex == dotIndex
-                                  ? Colors.red
-                                  : Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          flex: kIsWeb ? 4 : 6,
+
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Image.asset(
+                              item.pathImage!,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
-                      ),
-            
-                    CustomButton(label:  index != 2 ? "Next" : "Done", 
-                    onPressed: (){
-                  if(index != 2) {
-                   goToTab(currentIndex + 1);
-                  }else{
-                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx){
-                      return const SelectUserType();
-                    }));
-                  }
-                    },
-                    borderRadius: 40, 
-                    
-                    ),
-                    SizedBox(height: ScallingConfig.scale(20),),
-                  
-            
-                  ])),
-              )
-            ]
-                    ))),
-                  ),
-                  Positioned(
-                    top: Utils.windowHeight(context) * 0.09,
-                    right: Utils.windowWidth(context) * 0.08,
-                    child: CustomButton(
 
-                      width: ScallingConfig.scale(70),
-                      borderRadius: 20,
-                      gradient: LinearGradient(
-                        begin: AlignmentGeometry.topRight
-                        ,
-                        end: AlignmentGeometry.bottomLeft,
-                        colors: 
-                      
-                     [
-                       AppColors.white.withValues(alpha: 0.56),
-                       AppColors.white.withValues(alpha: 0.015),
-                     ]),
-                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SelectUserType()));
-                     },
-                     labelColor: AppColors.primaryColor,
-                      label: "Skip",
-                      labelSize: 14,
-                      ))
-            ]);
-          
-        }).toList() ,
-      )
+                        Container(
+                          clipBehavior: Clip.hardEdge,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ScallingConfig.moderateScale(20),
+                            vertical: ScallingConfig.moderateScale(25),
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(
+                                ScallingConfig.moderateScale(22.6),
+                              ),
+                              topLeft: Radius.circular(
+                                ScallingConfig.moderateScale(22.6),
+                              ),
+                            ),
+                          ),
+
+                          child: SingleChildScrollView(
+                            child: Column(
+                              spacing: 25,
+                              children: [
+                                Text(
+                                  item.title!,
+                                  style: TextStyle(
+                                    fontSize: ScallingConfig.moderateScale(
+                                      23.7,
+                                    ),
+                                    color: AppColors.primary500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  item.description!,
+                                  style: TextStyle(
+                                    color: AppColors.grayColor,
+                                    fontSize: ScallingConfig.moderateScale(
+                                      12.5,
+                                    ),
+                                  ),
+                                ),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    listContentConfig.length,
+                                    (dotIndex) => AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 10,
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                      ),
+                                      height: 8,
+                                      width: currentIndex == dotIndex ? 20 : 8,
+                                      decoration: BoxDecoration(
+                                        color: currentIndex == dotIndex
+                                            ? Colors.red
+                                            : Colors.grey.shade300,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                CustomButton(
+                                  label: index != 2 ? "Next" : "Done",
+                                  onPressed: () {
+                                    if (index != 2) {
+                                      goToTab(currentIndex + 1);
+                                    } else {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (ctx) {
+                                            return const LoginScreen();
+                                          },
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  borderRadius: 40,
+                                ),
+                                SizedBox(height: ScallingConfig.scale(20)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: Utils.windowHeight(context) * 0.09,
+                right: Utils.windowWidth(context) * 0.08,
+                child: CustomButton(
+                  width: ScallingConfig.scale(70),
+                  borderRadius: 20,
+                  gradient: LinearGradient(
+                    begin: AlignmentGeometry.topRight,
+                    end: AlignmentGeometry.bottomLeft,
+                    colors: [
+                      AppColors.white.withValues(alpha: 0.56),
+                      AppColors.white.withValues(alpha: 0.015),
+                    ],
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+                    );
+                  },
+                  labelColor: AppColors.primaryColor,
+                  label: "Skip",
+                  labelSize: 14,
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -276,15 +291,19 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                       padding: const EdgeInsets.all(80),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 400),
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: ScaleTransition(
-                              scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(
+                                    begin: 0.95,
+                                    end: 1.0,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
                         child: ConstrainedBox(
                           key: ValueKey<int>(currentIndex),
                           constraints: const BoxConstraints(
@@ -331,13 +350,18 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                   child: Container(
                     width: 520,
                     margin: const EdgeInsets.symmetric(vertical: 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 56),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 56,
+                      vertical: 56,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0036BC).withValues(alpha: 0.06),
+                          color: const Color(
+                            0xFF0036BC,
+                          ).withValues(alpha: 0.06),
                           blurRadius: 40,
                           offset: const Offset(0, 16),
                         ),
@@ -353,9 +377,14 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                       children: [
                         // iCare Logo badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withValues(alpha: 0.06),
+                            color: AppColors.primaryColor.withValues(
+                              alpha: 0.06,
+                            ),
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: const Text(
@@ -439,11 +468,16 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                                 child: OutlinedButton(
                                   onPressed: () {
                                     Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (ctx) => const SelectUserType()),
+                                      MaterialPageRoute(
+                                        builder: (ctx) => const LoginScreen(),
+                                      ),
                                     );
                                   },
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE2E8F0),
+                                      width: 1.5,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
@@ -468,13 +502,16 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                                 height: 54,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    if (currentIndex < listContentConfig.length - 1) {
+                                    if (currentIndex <
+                                        listContentConfig.length - 1) {
                                       setState(() {
                                         currentIndex++;
                                       });
                                     } else {
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (ctx) => const SelectUserType()),
+                                        MaterialPageRoute(
+                                          builder: (ctx) => const LoginScreen(),
+                                        ),
                                       );
                                     }
                                   },
@@ -486,7 +523,9 @@ class _WalkthroughState extends ConsumerState<Walkthrough> {
                                     color: Colors.white,
                                   ),
                                   label: Text(
-                                    currentIndex < listContentConfig.length - 1 ? "Next" : "Get Started",
+                                    currentIndex < listContentConfig.length - 1
+                                        ? "Next"
+                                        : "Get Started",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,

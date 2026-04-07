@@ -11,7 +11,8 @@ class PatientRecordsListScreen extends StatefulWidget {
   const PatientRecordsListScreen({super.key});
 
   @override
-  State<PatientRecordsListScreen> createState() => _PatientRecordsListScreenState();
+  State<PatientRecordsListScreen> createState() =>
+      _PatientRecordsListScreenState();
 }
 
 class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
@@ -28,17 +29,17 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
 
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
-    
+
     try {
       print('📋 Patient Records - Fetching records...');
       final result = await _service.getDoctorRecords();
-      
+
       print('📋 Patient Records - Result success: ${result['success']}');
-      
+
       if (result['success']) {
         final recordsList = result['records'] as List;
         print('📋 Patient Records - Found ${recordsList.length} records');
-        
+
         final parsedRecords = <MedicalRecord>[];
         for (var i = 0; i < recordsList.length; i++) {
           try {
@@ -50,12 +51,14 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
             print('❌ Error parsing record $i: $e');
           }
         }
-        
+
         setState(() {
           _records = parsedRecords;
           _isLoading = false;
         });
-        print('✅ Patient Records - Loaded ${_records.length} records into state');
+        print(
+          '✅ Patient Records - Loaded ${_records.length} records into state',
+        );
       } else {
         print('❌ Patient Records - Failed: ${result['message']}');
         setState(() => _isLoading = false);
@@ -69,8 +72,11 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
   List<MedicalRecord> get _filteredRecords {
     if (_searchQuery.isEmpty) return _records;
     return _records.where((r) {
-      return r.patient.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-             (r.diagnosis?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      return r.patient.name.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
+          (r.diagnosis?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
     }).toList();
   }
 
@@ -131,30 +137,37 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredList.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.folder_open_rounded, size: 64, color: Colors.grey.shade300),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No patient records found',
-                              style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.folder_open_rounded,
+                          size: 64,
+                          color: Colors.grey.shade300,
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadRecords,
-                        child: ListView.builder(
-                          padding: EdgeInsets.all(isDesktop ? 24 : 16),
-                          itemCount: filteredList.length,
-                          itemBuilder: (context, index) {
-                            final record = filteredList[index];
-                            return _buildRecordCard(record);
-                          },
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No patient records found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadRecords,
+                    child: ListView.builder(
+                      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final record = filteredList[index];
+                        return _buildRecordCard(record);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -235,7 +248,11 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF64748B)),
+                        const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 12,
+                          color: Color(0xFF64748B),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           DateFormat('MMM dd, yyyy').format(record.createdAt),
@@ -249,7 +266,11 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Color(0xFF64748B),
+              ),
             ],
           ),
         ),

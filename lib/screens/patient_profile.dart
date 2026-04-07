@@ -85,6 +85,56 @@ class PatientProfile extends StatelessWidget {
                   "Lorem ipsum dolor sit amet consectetur adipiscing elit suscipit commodo enim tellus et nascetur at leo accumsan, odio habitanLorem ipsum dolor...",
               fontFamily: "Gilroy-Regular",
             ),
+            SizedBox(height: ScallingConfig.scale(15)),
+            Container(
+              width: Utils.windowWidth(context) * 0.9,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.emergency_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        "Emergency Contact",
+                        style: TextStyle(
+                          color: Color(0xFF991B1B),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Name: Robert Jordan (Father)",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Text(
+                    "Phone: +1 987 654 3210",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(height: ScallingConfig.scale(20)),
             CustomText(
               width: Utils.windowWidth(context) * 0.9,
@@ -114,15 +164,13 @@ class PatientProfile extends StatelessWidget {
                 ],
               ),
             ),
-
             SizedBox(height: ScallingConfig.scale(10)),
             CustomText(
               width: Utils.windowWidth(context) * 0.9,
-              text: "Medical History & Medical Documents:",
+              text: "Recent Scans:",
               fontFamily: "Gilroy-Bold",
               fontSize: 16,
             ),
-
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: ScallingConfig.scale(10),

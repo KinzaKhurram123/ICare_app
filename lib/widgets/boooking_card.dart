@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:icare/models/app_enums.dart';
+import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/chat_screen.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:intl/intl.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -14,8 +18,13 @@ import 'package:icare/widgets/svg_wrapper.dart';
 // enum Status { upcoming, cancelled, completed }
 
 class BookingCard extends ConsumerWidget {
-  const BookingCard({super.key, this.status, this.showActions= true, this.onTap});
-  final BookingStatus? status;
+  const BookingCard({
+    super.key,
+    required this.appointment,
+    this.showActions = true,
+    this.onTap,
+  });
+  final AppointmentDetail appointment;
   final bool showActions;
   final VoidCallback? onTap;
   @override
@@ -52,7 +61,10 @@ class BookingCard extends ConsumerWidget {
       ],
     );
 
-    Widget action = status == BookingStatus.upcoming ?  Row(
+    Widget action =
+        (appointment.status.toLowerCase() == 'pending' ||
+            appointment.status.toLowerCase() == 'confirmed')
+        ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Expanded(
@@ -62,8 +74,13 @@ class BookingCard extends ConsumerWidget {
                   labelSize: 15,
                   label: "View",
                   onPressed: () {
-                    // TODO: Navigate to appointment detail with actual appointment data
-                    // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => ProfileOrAppointmentViewScreen(
+                          appointment: appointment,
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -77,32 +94,78 @@ class BookingCard extends ConsumerWidget {
                   label: "Cancel",
                   outlined: true,
                   onPressed: () {
-                    // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => DeclineAppointments()));
+                    // TODO: Implement cancel logic
                   },
                 ),
               ),
             ],
-          ) : status == BookingStatus.cancelled ? 
-          CustomButton(
+          )
+        : appointment.status.toLowerCase() == 'cancelled'
+        ? CustomButton(
             label: "View Appointment",
             height: Utils.windowHeight(context) * 0.055,
             borderRadius: 30,
             labelSize: 15,
             onPressed: () {
-              // TODO: Navigate to appointment detail with actual appointment data
-              // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment)));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (ctx) =>
+                      ProfileOrAppointmentViewScreen(appointment: appointment),
+                ),
+              );
             },
-            ) 
-          : CustomButton(
-            label: "View Chat",
-            height: Utils.windowHeight(context) * 0.055,
-            borderRadius: 30,
-            labelSize: 15,
-            ) ;
+          )
+        : Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  label: "Message",
+                  height: Utils.windowHeight(context) * 0.055,
+                  borderRadius: 30,
+                  labelSize: 15,
+                  outlined: true,
+                  onPressed: () {
+                    final targetUser = selectedRole == "Doctor"
+                        ? appointment.patient
+                        : appointment.doctor;
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => ChatScreen(
+                          userId: targetUser?.id ?? "",
+                          userName: selectedRole == "Doctor"
+                              ? appointment.patientName
+                              : appointment.doctorName,
+                          userImage: targetUser?.profilePicture,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CustomButton(
+                  label: "View Details",
+                  height: Utils.windowHeight(context) * 0.1,
+                  borderRadius: 30,
+                  labelSize: 15,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => ProfileOrAppointmentViewScreen(
+                          appointment: appointment,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
 
     return isDesktop
         ? _WebBookingCard(
-            status: status,
+            appointment: appointment,
             onTap: onTap,
             showActions: showActions,
             selectedRole: selectedRole,
@@ -134,12 +197,15 @@ class BookingCard extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CustomText(
-                        text: "Dec 05, 2023 - 10:00 AM",
+                        text:
+                            "${DateFormat('MMM dd, yyyy').format(appointment.date)} - ${appointment.timeSlot}",
                         color: AppColors.primary500,
                         fontSize: 12,
                         fontFamily: "Gilroy-SemiBold",
                       ),
-                      if (status == BookingStatus.upcoming) reminder,
+                      if (appointment.status.toLowerCase() == 'pending' ||
+                          appointment.status.toLowerCase() == 'confirmed')
+                        reminder,
                     ],
                   ),
                   SizedBox(height: ScallingConfig.scale(10)),
@@ -153,12 +219,13 @@ class BookingCard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Image.asset(
-                            selectedRole == "Patient"
-                                ? ImagePaths.walkthrough1
-                                : ImagePaths.user1,
-                            fit: selectedRole == "Patient"
-                                ? BoxFit.contain
-                                : BoxFit.cover),
+                          selectedRole == "Patient"
+                              ? ImagePaths.walkthrough1
+                              : ImagePaths.user1,
+                          fit: selectedRole == "Patient"
+                              ? BoxFit.contain
+                              : BoxFit.cover,
+                        ),
                       ),
                       SizedBox(width: ScallingConfig.scale(12)),
                       Expanded(
@@ -168,8 +235,8 @@ class BookingCard extends ConsumerWidget {
                             CustomText(
                               width: double.infinity,
                               text: selectedRole == "Patient"
-                                  ? "Dr Aron Smith"
-                                  : "Emily Jordan",
+                                  ? appointment.doctorName
+                                  : (appointment.patient?.name ?? "Patient"),
                               isSemiBold: true,
                               textAlign: TextAlign.start,
                             ),
@@ -178,7 +245,8 @@ class BookingCard extends ConsumerWidget {
                               children: [
                                 SvgWrapper(assetPath: ImagePaths.location),
                                 SizedBox(
-                                    width: Utils.windowWidth(context) * 0.025),
+                                  width: Utils.windowWidth(context) * 0.025,
+                                ),
                                 CustomText(
                                   text: "20 Cooper Square, USA",
                                   fontSize: 12,
@@ -191,9 +259,11 @@ class BookingCard extends ConsumerWidget {
                               children: [
                                 SvgWrapper(assetPath: ImagePaths.scan),
                                 SizedBox(
-                                    width: Utils.windowWidth(context) * 0.025),
+                                  width: Utils.windowWidth(context) * 0.025,
+                                ),
                                 CustomText(
-                                  text: "Booking ID: #DR452SA54",
+                                  text:
+                                      "Booking ID: #${appointment.id.substring(appointment.id.length - 8).toUpperCase()}",
                                   fontSize: 12,
                                   color: AppColors.darkGreyColor,
                                 ),
@@ -205,7 +275,7 @@ class BookingCard extends ConsumerWidget {
                     ],
                   ),
                   SizedBox(height: ScallingConfig.scale(20)),
-                  if (showActions) action
+                  if (showActions) action,
                 ],
               ),
             ),
@@ -214,13 +284,13 @@ class BookingCard extends ConsumerWidget {
 }
 
 class _WebBookingCard extends StatefulWidget {
-  final BookingStatus? status;
+  final AppointmentDetail appointment;
   final VoidCallback? onTap;
   final bool showActions;
   final String selectedRole;
 
   const _WebBookingCard({
-    required this.status,
+    required this.appointment,
     this.onTap,
     required this.showActions,
     required this.selectedRole,
@@ -236,17 +306,15 @@ class _WebBookingCardState extends State<_WebBookingCard> {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor = widget.status == BookingStatus.upcoming
+    Color statusColor =
+        widget.appointment.status.toLowerCase() == 'confirmed' ||
+            widget.appointment.status.toLowerCase() == 'pending'
         ? const Color(0xFF3B82F6)
-        : widget.status == BookingStatus.cancelled
-            ? const Color(0xFFEF4444)
-            : const Color(0xFF22C55E);
+        : widget.appointment.status.toLowerCase() == 'cancelled'
+        ? const Color(0xFFEF4444)
+        : const Color(0xFF22C55E);
 
-    String statusLabel = widget.status == BookingStatus.upcoming
-        ? "Upcoming"
-        : widget.status == BookingStatus.cancelled
-            ? "Cancelled"
-            : "Completed";
+    String statusLabel = widget.appointment.status.toUpperCase();
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -260,12 +328,16 @@ class _WebBookingCardState extends State<_WebBookingCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isHovered ? statusColor.withOpacity(0.3) : const Color(0xFFF1F4F9),
+              color: _isHovered
+                  ? statusColor.withOpacity(0.3)
+                  : const Color(0xFFF1F4F9),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: _isHovered ? const Color(0xFF000000).withOpacity(0.06) : const Color(0xFF000000).withOpacity(0.04),
+                color: _isHovered
+                    ? const Color(0xFF000000).withOpacity(0.06)
+                    : const Color(0xFF000000).withOpacity(0.04),
                 blurRadius: _isHovered ? 24 : 16,
                 offset: const Offset(0, 8),
               ),
@@ -279,29 +351,45 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF64748B)),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 14,
+                            color: Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 8),
-                          const Text(
-                            "Dec 05, 2023",
-                            style: TextStyle(
+                          Text(
+                            DateFormat(
+                              'MMM dd, yyyy',
+                            ).format(widget.appointment.date),
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFCBD5E1), shape: BoxShape.circle)),
+                          Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFCBD5E1),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                           const SizedBox(width: 8),
-                          const Text(
-                            "10:00 AM",
-                            style: TextStyle(
+                          Text(
+                            widget.appointment.timeSlot,
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E293B),
@@ -312,7 +400,10 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(30),
@@ -323,7 +414,10 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -341,8 +435,12 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                   ],
                 ),
               ),
-              
-              const Divider(height: 1, color: Color(0xFFF1F5F9), thickness: 1.5),
+
+              const Divider(
+                height: 1,
+                color: Color(0xFFF1F5F9),
+                thickness: 1.5,
+              ),
 
               // Main Content Info
               Padding(
@@ -357,8 +455,14 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         borderRadius: BorderRadius.circular(16),
                         color: const Color(0xFFF1F5F9),
                         image: DecorationImage(
-                          image: AssetImage(widget.selectedRole == "Patient" ? ImagePaths.walkthrough1 : ImagePaths.user1),
-                          fit: widget.selectedRole == "Patient" ? BoxFit.contain : BoxFit.cover,
+                          image: AssetImage(
+                            widget.selectedRole == "Patient"
+                                ? ImagePaths.walkthrough1
+                                : ImagePaths.user1,
+                          ),
+                          fit: widget.selectedRole == "Patient"
+                              ? BoxFit.contain
+                              : BoxFit.cover,
                         ),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
@@ -370,7 +474,9 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.selectedRole == "Patient" ? "Dr. Aron Smith" : "Emily Jordan",
+                            widget.selectedRole == "Doctor"
+                                ? widget.appointment.patientName
+                                : (widget.appointment.doctor?.name ?? "Doctor"),
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -381,12 +487,19 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF94A3B8)),
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 14,
+                                color: Color(0xFF94A3B8),
+                              ),
                               const SizedBox(width: 6),
                               const Expanded(
                                 child: Text(
                                   "20 Cooper Square, New York, USA",
-                                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -396,11 +509,18 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.qr_code_rounded, size: 14, color: Color(0xFF94A3B8)),
+                              const Icon(
+                                Icons.qr_code_rounded,
+                                size: 14,
+                                color: Color(0xFF94A3B8),
+                              ),
                               const SizedBox(width: 6),
-                              const Text(
-                                "ID: #DR452SA54",
-                                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                              Text(
+                                "ID: #${widget.appointment.id.substring(widget.appointment.id.length - 8).toUpperCase()}",
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
+                                ),
                               ),
                             ],
                           ),
@@ -410,9 +530,13 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                     const SizedBox(width: 24),
 
                     // Remind Me Toggle (Only for Upcoming)
-                    if (widget.status == BookingStatus.upcoming)
+                    if (widget.appointment.status.toLowerCase() == 'pending' ||
+                        widget.appointment.status.toLowerCase() == 'confirmed')
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
@@ -420,7 +544,14 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         ),
                         child: Row(
                           children: [
-                            const Text("Remind Me", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                            const Text(
+                              "Remind Me",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
                             const SizedBox(width: 12),
                             FlutterSwitch(
                               width: 38,
@@ -431,7 +562,8 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               padding: 3,
                               activeColor: AppColors.primaryColor,
                               inactiveColor: const Color(0xFFCBD5E1),
-                              onToggle: (val) => setState(() => _remindMe = val),
+                              onToggle: (val) =>
+                                  setState(() => _remindMe = val),
                             ),
                           ],
                         ),
@@ -446,12 +578,17 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                   padding: const EdgeInsets.all(24),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(20),
+                    ),
                   ),
                   child: Row(
                     children: [
                       const Spacer(),
-                      if (widget.status == BookingStatus.upcoming) ...[
+                      if (widget.appointment.status.toLowerCase() ==
+                              'pending' ||
+                          widget.appointment.status.toLowerCase() ==
+                              'confirmed') ...[
                         _buildWebButton(
                           "Cancel Appointment",
                           onPressed: () {},
@@ -459,24 +596,67 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         ),
                         const SizedBox(width: 12),
                         _buildWebButton(
-                          "View Full Profile",
+                          "View Full Details",
                           onPressed: () {
-                            // TODO: Navigate to appointment detail with actual appointment data
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    ProfileOrAppointmentViewScreen(
+                                      appointment: widget.appointment,
+                                    ),
+                              ),
+                            );
                           },
                         ),
-                      ] else if (widget.status == BookingStatus.cancelled) ...[
+                      ] else if (widget.appointment.status.toLowerCase() ==
+                          'cancelled') ...[
                         _buildWebButton(
-                          "View History",
+                          "View Details",
                           onPressed: () {
-                            // TODO: Navigate to appointment detail with actual appointment data
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    ProfileOrAppointmentViewScreen(
+                                      appointment: widget.appointment,
+                                    ),
+                              ),
+                            );
                           },
                         ),
                       ] else ...[
-                        _buildWebButton("Send Message", onPressed: () {}, icon: Icons.chat_bubble_rounded),
+                        _buildWebButton(
+                          "Send Message",
+                          onPressed: () {
+                            final targetUser = widget.selectedRole == "Doctor"
+                                ? widget.appointment.patient
+                                : widget.appointment.doctor;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => ChatScreen(
+                                  userId: targetUser?.id ?? "",
+                                  userName: widget.selectedRole == "Doctor"
+                                      ? widget.appointment.patientName
+                                      : widget.appointment.doctorName,
+                                  userImage: targetUser?.profilePicture,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: Icons.chat_bubble_rounded,
+                        ),
                         const SizedBox(width: 12),
                         _buildWebButton(
-                          "View Summary",
-                          onPressed: () {},
+                          "View Details",
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    ProfileOrAppointmentViewScreen(
+                                      appointment: widget.appointment,
+                                    ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ],
@@ -489,7 +669,12 @@ class _WebBookingCardState extends State<_WebBookingCard> {
     );
   }
 
-  Widget _buildWebButton(String label, {required VoidCallback onPressed, bool isOutlined = false, IconData? icon}) {
+  Widget _buildWebButton(
+    String label, {
+    required VoidCallback onPressed,
+    bool isOutlined = false,
+    IconData? icon,
+  }) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
@@ -499,14 +684,23 @@ class _WebBookingCardState extends State<_WebBookingCard> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: isOutlined ? const BorderSide(color: Color(0xFFE2E8F0), width: 1.5) : BorderSide.none,
+          side: isOutlined
+              ? const BorderSide(color: Color(0xFFE2E8F0), width: 1.5)
+              : BorderSide.none,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 16), const SizedBox(width: 8)],
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: "Gilroy-Bold")),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              fontFamily: "Gilroy-Bold",
+            ),
+          ),
         ],
       ),
     );

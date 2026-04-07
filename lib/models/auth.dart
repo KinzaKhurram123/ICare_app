@@ -7,7 +7,7 @@ class Auth {
   final bool isLoggedIn;
   final String userRole;
   final User? user;
-  
+
   Auth({
     this.token,
     this.fcmToken,

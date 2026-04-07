@@ -12,7 +12,11 @@ class REceiptScreen extends StatelessWidget {
   final Map<String, dynamic>? bookingData;
   final String labName;
 
-  const REceiptScreen({super.key, this.bookingData, this.labName = "Quantum Spar Lab"});
+  const REceiptScreen({
+    super.key,
+    this.bookingData,
+    this.labName = "Quantum Spar Lab",
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +64,11 @@ class REceiptScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Center(
-                      child: Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.green,
+                        size: 60,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Center(
@@ -75,23 +83,44 @@ class REceiptScreen extends StatelessWidget {
                     const Divider(),
                     const SizedBox(height: 16),
                     _buildRow("Lab Name", labName),
-                    _buildRow("Booking ID", bookingId.toString().substring(bookingId.toString().length > 8 ? bookingId.toString().length - 8 : 0)),
+                    _buildRow(
+                      "Booking ID",
+                      bookingId.toString().substring(
+                        bookingId.toString().length > 8
+                            ? bookingId.toString().length - 8
+                            : 0,
+                      ),
+                    ),
                     _buildRow("Date", date),
                     _buildRow("Time", time),
                     const SizedBox(height: 16),
-                    const CustomText(text: "Selected Tests:", fontWeight: FontWeight.bold, fontSize: 14),
+                    const CustomText(
+                      text: "Selected Tests:",
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                     const SizedBox(height: 8),
-                    ...tests.map((t) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: CustomText(text: "• $t", fontSize: 13, color: AppColors.grayColor),
-                    )),
+                    ...tests.map(
+                      (t) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: CustomText(
+                          text: "• $t",
+                          fontSize: 13,
+                          color: AppColors.grayColor,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     const Divider(),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const CustomText(text: "Total Amount", fontWeight: FontWeight.bold, fontSize: 16),
+                        const CustomText(
+                          text: "Total Amount",
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         CustomText(
                           text: "Rs. $totalPrice",
                           fontWeight: FontWeight.bold,
@@ -110,17 +139,23 @@ class REceiptScreen extends StatelessWidget {
                 borderRadius: 35,
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => SelectPaymentMethod(
-                      labBookingId: bookingId,
-                      amount: totalPrice.toDouble(),
-                    )),
+                    MaterialPageRoute(
+                      builder: (ctx) => SelectPaymentMethod(
+                        labBookingId: bookingId,
+                        amount: totalPrice.toDouble(),
+                      ),
+                    ),
                   );
                 },
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const CustomText(text: "Back to Home", color: AppColors.grayColor),
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
+                child: const CustomText(
+                  text: "Back to Home",
+                  color: AppColors.grayColor,
+                ),
               ),
               const SizedBox(height: 40),
             ],
