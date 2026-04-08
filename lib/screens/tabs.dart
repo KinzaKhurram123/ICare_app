@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/whatsapp_button.dart';
 import 'package:icare/screens/admin_dashboard.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -255,7 +256,12 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           ],
         ),
         drawer: CustomDrawer(),
-        body: activePage,
+        body: Stack(
+          children: [
+            activePage,
+            const WhatsAppFloatingButton(),
+          ],
+        ),
         bottomNavigationBar: BottomTabBar(
           tabs: buildTabs(
             role: role,
@@ -271,57 +277,62 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // ── Web: full dashboard layout ─────────────────────────────────────────
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
-      body: Row(
+      body: Stack(
         children: [
-          // ── Left Sidebar ────────────────────────────────────────────────
-          _WebSidebar(
-            currentIndex: currentIndex,
-            role: role,
-            onSelect: _selectPage,
-          ),
-          // ── Main content area ─────────────────────────────────────────
-          Expanded(
-            child: Column(
-              children: [
-                // Premium top navbar
-                _WebTopBar(role: role),
-                // Content fills remaining space.
-                // ClipRect prevents overflow zebra-stripe warnings from
-                // ScallingConfig scaling elements slightly too large on web.
-                Expanded(
-                  child: ClipRect(
-                    child: LayoutBuilder(
-                      builder: (outerCtx, constraints) {
-                        return MediaQuery(
-                          // Override size so Utils.windowWidth/Height return
-                          // the actual content-pane dimensions.
-                          data: MediaQuery.of(outerCtx).copyWith(
-                            size: Size(
-                              constraints.maxWidth,
-                              constraints.maxHeight,
-                            ),
-                            // Zero out view padding so content isn't pushed
-                            // up for a bottom-nav bar that doesn't exist on web.
-                            viewPadding: EdgeInsets.zero,
-                            viewInsets: EdgeInsets.zero,
-                          ),
-                          child: Builder(
-                            builder: (innerCtx) {
-                              // Re-init ScallingConfig with the constrained
-                              // content-pane width so scale() / moderateScale()
-                              // don't use the full browser viewport width.
-                              ScallingConfig().init(innerCtx);
-                              return activePage;
-                            },
-                          ),
-                        );
-                      },
+          Row(
+            children: [
+              // ── Left Sidebar ────────────────────────────────────────────────
+              _WebSidebar(
+                currentIndex: currentIndex,
+                role: role,
+                onSelect: _selectPage,
+              ),
+              // ── Main content area ─────────────────────────────────────────
+              Expanded(
+                child: Column(
+                  children: [
+                    // Premium top navbar
+                    _WebTopBar(role: role),
+                    // Content fills remaining space.
+                    // ClipRect prevents overflow zebra-stripe warnings from
+                    // ScallingConfig scaling elements slightly too large on web.
+                    Expanded(
+                      child: ClipRect(
+                        child: LayoutBuilder(
+                          builder: (outerCtx, constraints) {
+                            return MediaQuery(
+                              // Override size so Utils.windowWidth/Height return
+                              // the actual content-pane dimensions.
+                              data: MediaQuery.of(outerCtx).copyWith(
+                                size: Size(
+                                  constraints.maxWidth,
+                                  constraints.maxHeight,
+                                ),
+                                // Zero out view padding so content isn't pushed
+                                // up for a bottom-nav bar that doesn't exist on web.
+                                viewPadding: EdgeInsets.zero,
+                                viewInsets: EdgeInsets.zero,
+                              ),
+                              child: Builder(
+                                builder: (innerCtx) {
+                                  // Re-init ScallingConfig with the constrained
+                                  // content-pane width so scale() / moderateScale()
+                                  // don't use the full browser viewport width.
+                                  ScallingConfig().init(innerCtx);
+                                  return activePage;
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const WhatsAppFloatingButton(),
         ],
       ),
     );

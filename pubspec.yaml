@@ -95,6 +95,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/splash_web_bg.png
+    - assets/images/web_splash.jpeg
     - assets/translations/
     # - assets/images/bgImage.jpeg
     # - assets/images/splash.jpg

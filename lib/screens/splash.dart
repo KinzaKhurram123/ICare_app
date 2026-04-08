@@ -18,7 +18,7 @@ class SplashScreen extends StatelessWidget {
         children: [
           // Cinematic high-resolution web background with fallback
           Image.asset(
-            isWeb ? "assets/images/splash_web_bg.png" : "assets/images/splash.jpg",
+            isWeb ? "assets/images/web_splash.jpeg" : "assets/images/splash.jpg",
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
