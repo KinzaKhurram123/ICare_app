@@ -32,25 +32,31 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
       setState(() {
-        _products = medicines.map((m) => {
-          '_id': m['_id'],
-          'name': m['productName'] ?? 'Unknown',
-          'category': m['category'] ?? 'Other',
-          'stock': m['quantity'] ?? 0,
-          'price': (m['price'] ?? 0).toDouble(),
-          'expiryDate': m['expiry'] != null ? DateTime.parse(m['expiry']) : DateTime.now().add(const Duration(days: 365)),
-          'manufacturer': m['companyName'] ?? 'Unknown',
-          'lowStockThreshold': 30,
-        }).toList();
+        _products = medicines
+            .map(
+              (m) => {
+                '_id': m['_id'],
+                'name': m['productName'] ?? 'Unknown',
+                'category': m['category'] ?? 'Other',
+                'stock': m['quantity'] ?? 0,
+                'price': (m['price'] ?? 0).toDouble(),
+                'expiryDate': m['expiry'] != null
+                    ? DateTime.parse(m['expiry'])
+                    : DateTime.now().add(const Duration(days: 365)),
+                'manufacturer': m['companyName'] ?? 'Unknown',
+                'lowStockThreshold': 30,
+              },
+            )
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading products: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading products: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading products: $e')));
       }
     }
   }
@@ -151,28 +157,39 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: ['All', 'Pain Relief', 'Antibiotics', 'Allergy', 'Vitamins'].map((category) {
-                      final isSelected = _filterCategory == category;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(category),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              _filterCategory = category;
-                            });
-                            _loadProducts();
-                          },
-                          backgroundColor: Colors.white,
-                          selectedColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                          labelStyle: TextStyle(
-                            color: isSelected ? AppColors.primaryColor : const Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    children:
+                        [
+                          'All',
+                          'Pain Relief',
+                          'Antibiotics',
+                          'Allergy',
+                          'Vitamins',
+                        ].map((category) {
+                          final isSelected = _filterCategory == category;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _filterCategory = category;
+                                });
+                                _loadProducts();
+                              },
+                              backgroundColor: Colors.white,
+                              selectedColor: AppColors.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? AppColors.primaryColor
+                                    : const Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                   ),
                 ),
               ],
@@ -186,11 +203,18 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade300),
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
                         const SizedBox(height: 16),
                         const Text(
                           'No products found',
-                          style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -223,7 +247,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isLowStock ? const Color(0xFFEF4444).withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
+          color: isLowStock
+              ? const Color(0xFFEF4444).withValues(alpha: 0.3)
+              : const Color(0xFFE2E8F0),
         ),
         boxShadow: [
           BoxShadow(
@@ -244,7 +270,11 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                   color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.medication_rounded, color: Color(0xFF10B981), size: 24),
+                child: const Icon(
+                  Icons.medication_rounded,
+                  color: Color(0xFF10B981),
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -299,7 +329,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                 child: _buildInfoChip(
                   'Stock: $stock',
                   isLowStock ? Icons.warning_rounded : Icons.inventory_rounded,
-                  isLowStock ? const Color(0xFFEF4444) : const Color(0xFF3B82F6),
+                  isLowStock
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFF3B82F6),
                 ),
               ),
               const SizedBox(width: 8),
@@ -307,7 +339,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                 child: _buildInfoChip(
                   'Expires: ${DateFormat('MMM yyyy').format(expiryDate)}',
                   Icons.calendar_today_rounded,
-                  isExpiringSoon ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                  isExpiringSoon
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ],
@@ -315,10 +349,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
           const SizedBox(height: 12),
           Text(
             'Manufacturer: ${product['manufacturer']}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -378,7 +409,9 @@ class _AddProductDialogState extends State<_AddProductDialog> {
   }
 
   void _save() {
-    if (_nameController.text.isEmpty || _priceController.text.isEmpty || _stockController.text.isEmpty) {
+    if (_nameController.text.isEmpty ||
+        _priceController.text.isEmpty ||
+        _stockController.text.isEmpty) {
       return;
     }
 
@@ -430,7 +463,9 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                 labelText: 'Category',
                 border: OutlineInputBorder(),
               ),
-              items: ['Pain Relief', 'Antibiotics', 'Allergy', 'Vitamins'].map((category) {
+              items: ['Pain Relief', 'Antibiotics', 'Allergy', 'Vitamins'].map((
+                category,
+              ) {
                 return DropdownMenuItem(value: category, child: Text(category));
               }).toList(),
               onChanged: (value) {

@@ -13,7 +13,8 @@ class InstructorFiltersScreen extends StatefulWidget {
   const InstructorFiltersScreen({super.key});
 
   @override
-  State<InstructorFiltersScreen> createState() => _InstructorFiltersScreenState();
+  State<InstructorFiltersScreen> createState() =>
+      _InstructorFiltersScreenState();
 }
 
 class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
@@ -72,13 +73,7 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
     '4+ Stars',
     '5 Stars',
   ];
-  final List<String> labsList = [
-    'lab 1',
-    'lab 2',
-    'lab 3',
-    'lab 4',
-    'lab 5',
-  ];
+  final List<String> labsList = ['lab 1', 'lab 2', 'lab 3', 'lab 4', 'lab 5'];
 
   /// 🔹 Selected values (centralized)
   String? _selectedMedicineCategory;
@@ -118,7 +113,9 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
               CustomDropdown<String>(
                 title: "Category",
                 selectedItem: _selectedMedicineCategory,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: medicineCategoryList,
                 onChanged: (value) {
                   setState(() {
@@ -129,7 +126,9 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
               CustomDropdown<String>(
                 title: "Medicine Type",
                 selectedItem: _selectedMedicineType,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: medicineTypeList,
                 onChanged: (value) {
                   setState(() {
@@ -140,7 +139,9 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
               CustomDropdown<String>(
                 title: "Brand Manifacturer",
                 selectedItem: _selectedBrandManufacturer,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: brandManufacturerList,
                 onChanged: (value) {
                   setState(() {
@@ -148,12 +149,12 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
                   });
                 },
               ),
-              ChooseLocationButton(
-                label: "Near By Store Availability",
-              ),
+              ChooseLocationButton(label: "Near By Store Availability"),
               CustomDropdown<String>(
                 title: "Delievery Option",
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 selectedItem: _selectedDeliveryOption,
                 items: deliveryOptionList,
                 onChanged: (value) {
@@ -165,7 +166,9 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
               CustomDropdown<String>(
                 title: "Reviews",
                 selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: reviewsList,
                 onChanged: (value) {
                   setState(() {
@@ -176,7 +179,9 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
               CustomDropdown<String>(
                 title: "Near By Laboratory",
                 selectedItem: _selectedLab,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: labsList,
                 onChanged: (value) {
                   setState(() {
@@ -250,41 +255,75 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Filters Grid
                 Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: [
-                    _buildWebDropdown("Category", medicineCategoryList, _selectedMedicineCategory, (val) {
-                      setState(() => _selectedMedicineCategory = val);
-                    }),
-                    _buildWebDropdown("Medicine Type", medicineTypeList, _selectedMedicineType, (val) {
-                      setState(() => _selectedMedicineType = val);
-                    }),
-                    _buildWebDropdown("Brand Manufacturer", brandManufacturerList, _selectedBrandManufacturer, (val) {
-                      setState(() => _selectedBrandManufacturer = val);
-                    }),
-                    _buildWebDropdown("Delivery Option", deliveryOptionList, _selectedDeliveryOption, (val) {
-                      setState(() => _selectedDeliveryOption = val);
-                    }),
-                    _buildWebDropdown("Minimum Reviews", reviewsList, _selectedReviews, (val) {
-                      setState(() => _selectedReviews = val);
-                    }),
-                    _buildWebDropdown("Choose Laboratory", labsList, _selectedLab, (val) {
-                      setState(() => _selectedLab = val);
-                    }),
+                    _buildWebDropdown(
+                      "Category",
+                      medicineCategoryList,
+                      _selectedMedicineCategory,
+                      (val) {
+                        setState(() => _selectedMedicineCategory = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Medicine Type",
+                      medicineTypeList,
+                      _selectedMedicineType,
+                      (val) {
+                        setState(() => _selectedMedicineType = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Brand Manufacturer",
+                      brandManufacturerList,
+                      _selectedBrandManufacturer,
+                      (val) {
+                        setState(() => _selectedBrandManufacturer = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Delivery Option",
+                      deliveryOptionList,
+                      _selectedDeliveryOption,
+                      (val) {
+                        setState(() => _selectedDeliveryOption = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Minimum Reviews",
+                      reviewsList,
+                      _selectedReviews,
+                      (val) {
+                        setState(() => _selectedReviews = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Choose Laboratory",
+                      labsList,
+                      _selectedLab,
+                      (val) {
+                        setState(() => _selectedLab = val);
+                      },
+                    ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Separator for location
                 const Divider(height: 48, color: Color(0xFFF1F5F9)),
-                
+
                 const Text(
                   "Location Prefrences",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -295,7 +334,7 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
                 ),
 
                 const SizedBox(height: 56),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -313,12 +352,18 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text(
                           "Reset All",
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -331,13 +376,19 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Apply Filters",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -351,7 +402,12 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
     );
   }
 
-  Widget _buildWebDropdown(String title, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildWebDropdown(
+    String title,
+    List<String> items,
+    String? selected,
+    Function(String?) onChanged,
+  ) {
     return SizedBox(
       width: 328, // Fix width for grid-like layout in wrap
       child: Column(
@@ -375,14 +431,26 @@ class _InstructorFiltersScreenState extends State<InstructorFiltersScreen> {
             ),
             child: DropdownButton<String>(
               value: selected,
-              hint: const Text("Select option", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              hint: const Text(
+                "Select option",
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              ),
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+              ),
               items: items.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,

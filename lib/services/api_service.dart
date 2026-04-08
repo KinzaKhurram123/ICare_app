@@ -30,6 +30,7 @@ class ApiService {
         "🔑 ApiService: Using provided token: ${token.substring(0, 20)}...",
       );
     }
+
     if (token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $token';
       print("✅ ApiService: Authorization header set");

@@ -25,18 +25,20 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
 
   Future<void> _loadAppointments() async {
     setState(() => _isLoading = true);
-    
+
     final result = await _appointmentService.getMyAppointmentsDetailed();
-    
+
     print('📋 Bookings History - Load result: ${result['success']}');
-    
+
     if (result['success']) {
       final appointments = result['appointments'] as List<AppointmentDetail>;
       print('📋 Bookings History - Loaded ${appointments.length} appointments');
       for (var apt in appointments) {
-        print('   - ${apt.status}: ${apt.doctor?.name ?? "Unknown"} on ${apt.date}');
+        print(
+          '   - ${apt.status}: ${apt.doctor?.name ?? "Unknown"} on ${apt.date}',
+        );
       }
-      
+
       setState(() {
         _appointments = appointments;
         _isLoading = false;
@@ -48,11 +50,15 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   }
 
   int _getCountByStatus(String status) {
-    return _appointments.where((a) => a.status.toLowerCase() == status.toLowerCase()).length;
+    return _appointments
+        .where((a) => a.status.toLowerCase() == status.toLowerCase())
+        .length;
   }
 
   List<AppointmentDetail> _getAppointmentsByStatus(String status) {
-    return _appointments.where((a) => a.status.toLowerCase() == status.toLowerCase()).toList();
+    return _appointments
+        .where((a) => a.status.toLowerCase() == status.toLowerCase())
+        .toList();
   }
 
   List<AppointmentDetail> get _upcomingAppointments {
@@ -128,11 +134,23 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildStatChip('Total', _appointments.length, const Color(0xFF3B82F6)),
+                              _buildStatChip(
+                                'Total',
+                                _appointments.length,
+                                const Color(0xFF3B82F6),
+                              ),
                               const SizedBox(width: 12),
-                              _buildStatChip('Active', _getCountByStatus('confirmed'), const Color(0xFF10B981)),
+                              _buildStatChip(
+                                'Active',
+                                _getCountByStatus('confirmed'),
+                                const Color(0xFF10B981),
+                              ),
                               const SizedBox(width: 12),
-                              _buildStatChip('Done', _getCountByStatus('completed'), const Color(0xFF8B5CF6)),
+                              _buildStatChip(
+                                'Done',
+                                _getCountByStatus('completed'),
+                                const Color(0xFF8B5CF6),
+                              ),
                             ],
                           ),
                   ],
@@ -384,7 +402,11 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                             color: color,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 24),
+                          child: const Icon(
+                            Icons.calendar_month_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

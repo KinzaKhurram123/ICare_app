@@ -34,7 +34,10 @@ class OrderService {
   }
 
   // Cancel order
-  Future<Map<String, dynamic>> cancelOrder(String orderId, String reason) async {
+  Future<Map<String, dynamic>> cancelOrder(
+    String orderId,
+    String reason,
+  ) async {
     final response = await _apiService.put('/pharmacy/orders/$orderId/cancel', {
       'reason': reason,
     });

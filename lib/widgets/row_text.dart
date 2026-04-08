@@ -4,15 +4,16 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class RowText extends StatelessWidget {
-  const RowText({super.key, 
-  this.leadingText, 
-  this.trailingText,
-  this.leadingColor,
-  this.leadingFontFamily,
-  this.leadingFontSize=16,
-  this.trailingColor,
-  this.trailingFontFamily,
-  this.trailingFontSize=16
+  const RowText({
+    super.key,
+    this.leadingText,
+    this.trailingText,
+    this.leadingColor,
+    this.leadingFontFamily,
+    this.leadingFontSize = 16,
+    this.trailingColor,
+    this.trailingFontFamily,
+    this.trailingFontSize = 16,
   });
   final String? leadingText;
   final String? trailingText;

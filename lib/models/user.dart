@@ -25,8 +25,8 @@ class User {
       phoneNumber: json['phoneNumber'] ?? '',
       role: json['role'] ?? '',
       profilePicture: json['profilePicture'],
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : null,
     );
   }

@@ -21,412 +21,418 @@ class SelectUserType extends ConsumerStatefulWidget {
 
 class _SelectUserTypeState extends ConsumerState<SelectUserType> {
   final List<Map<String, dynamic>> userTypes = [
-  {
-    "id": 1,
-    "title": "I am a Patient",
-    "description": "The easy way to reach your Doctor face-to-face.",
-    "role": "patient",
-    "image":ImagePaths.userType1,
-  },
-  {
-    "id": 2,
-    "title": "I am a Doctor",
-    "description": "The easy way to reach your Patients face-to-face.",
-    "role": "doctor",
-    "image": ImagePaths.userType2,
-  },
-  {
-    "id": 4,
-    "title": "I am a Lab Technician",
-    "description": "The easy way to reach your Tests/Reports face-to-face.",
-    "role": "lab_technician",
-    "image":  ImagePaths.userType4,
-  },
-  {
-    "id": 3,
-    "title": "I am a Pharmacist",
-    "description": "The easy way to reach your Medicine face-to-face.",
-    "role": "pharmacist",
-    "image": ImagePaths.userType3,
-  },
     {
-    "id": 5,
-    "title": "I am an Instructor",
-    "description": "The easy way to manage and guide your students.",
-    "role": "instructor",
-    "image": ImagePaths.userType5,
-  },
-  {
-    "id": 6,
-    "title": "I am a Student",
-    "description": "The easy way to learn and connect with instructors.",
-    "role": "student",
-    "image": ImagePaths.userType6,
-  },
-];
+      "id": 1,
+      "title": "Patient",
+      "description":
+          "Consult doctors, access prescriptions & manage your health",
+      "role": "patient",
+      "image": ImagePaths.userType1,
+      "benefits": [
+        "24/7 Doctor Access",
+        "Digital Prescriptions",
+        "Health Records",
+      ],
+    },
+    {
+      "id": 2,
+      "title": "Doctor",
+      "description": "Manage patients, consultations & digital prescriptions",
+      "role": "doctor",
+      "image": ImagePaths.userType2,
+      "benefits": ["Patient Management", "Telemedicine", "Clinical Tools"],
+    },
+  ];
 
-int? selected_id;
+  int? selected_id;
 
-void onSelect(int id) {
-
-  setState(() {
-    selected_id= id;
-  });
-}
-
-@override
-  void dispose() {
+  void onSelect(int id) {
     setState(() {
-      selected_id = null;
+      selected_id = id;
     });
+  }
+
+  @override
+  void dispose() {
+    selected_id = null;
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        if (constraints.maxWidth < 600) {
+          return _buildMobileLayout(context);
+        } else if (constraints.maxWidth < 1200) {
+          return _buildDesktopLayout(context, true);
+        } else {
+          return _buildDesktopLayout(context, false);
+        }
+      },
+    );
+  }
 
-
-    
-   return LayoutBuilder(builder: (ctx, constraints) {
-      if(constraints.maxWidth < 600){
-   return _buildMobileLayout(context);
-      }
-      else if(constraints.maxWidth <1200) {
-        return _buildDesktopLayout(context, true);
-      }
-      else{
-        return _buildDesktopLayout(context, false);
-      }
-    });
-
-  
-}
-
-
-Widget _buildMobileLayout(BuildContext context){
-  return Container(
-        width: Utils.windowWidth(context),
-        height: Utils.windowHeight(context),
-        decoration: BoxDecoration(
-        image: DecorationImage(image: AssetImage("assets/images/bgImage.jpeg", ),
-         fit: BoxFit.cover
-        )
+  Widget _buildMobileLayout(BuildContext context) {
+    return Container(
+      width: Utils.windowWidth(context),
+      height: Utils.windowHeight(context),
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage("assets/images/bgImage.jpeg"),
+          fit: BoxFit.cover,
         ),
-        child: Padding(
-          padding:  EdgeInsets.only(top:ScallingConfig.verticalScale(20)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              SizedBox(height: ScallingConfig.scale(50),),
-              CustomText(text: "Select Type Of Your Account",
-              fontSize:25.27,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: ScallingConfig.verticalScale(20)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(height: ScallingConfig.scale(50)),
+            CustomText(
+              text: "Begin Your Healthcare Journey",
+              fontSize: 28,
               maxLines: 2,
               padding: EdgeInsets.only(left: ScallingConfig.moderateScale(12)),
               color: AppColors.themeBlue,
-              width: Utils.windowWidth(context) * 0.5 ,
+              width: Utils.windowWidth(context) * 0.7,
               fontWeight: FontWeight.w700,
               isBold: true,
+            ),
+            CustomText(
+              text: "Choose how you'll experience iCare Virtual Hospital",
+              padding: EdgeInsets.only(
+                top: ScallingConfig.verticalScale(8),
+                left: ScallingConfig.moderateScale(12),
               ),
-              CustomText(text: "Choose the type of your account, Note: Account type cannot be changed later",
-              padding: EdgeInsets.only(top: ScallingConfig.verticalScale(10), left: ScallingConfig.moderateScale(12)),
-
-              width: Utils.windowWidth(context) * 0.8 ,
+              width: Utils.windowWidth(context) * 0.8,
               textAlign: TextAlign.start,
-              fontSize: 12.60,
+              fontSize: 14,
               maxLines: 2,
+              color: Colors.grey[600],
               isSemiBold: true,
-                    ),
-              SizedBox(height: ScallingConfig.scale(20),),
-              Expanded(child: Stack(
+            ),
+            SizedBox(height: ScallingConfig.scale(20)),
+            Expanded(
+              child: Stack(
                 children: [
                   Container(
                     clipBehavior: Clip.hardEdge,
-                   width: Utils.windowWidth(context),
-                   padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)), 
+                    width: Utils.windowWidth(context),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ScallingConfig.scale(10),
+                    ),
                     decoration: BoxDecoration(
-
-                        color: AppColors.bgColor,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(40),
-                          topRight: Radius.circular(40),
-                        ),
-                        
+                      color: AppColors.bgColor,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(40),
+                        topRight: Radius.circular(40),
                       ),
-                      child: Center(
-                        child: ListView.builder(
-                          padding: EdgeInsets.only(bottom: ScallingConfig.verticalScale(60)),                          
-                          itemCount: userTypes.length,
-                          itemBuilder: (ctx,i) {
+                    ),
+                    child: Center(
+                      child: ListView.builder(
+                        padding: EdgeInsets.only(
+                          bottom: ScallingConfig.verticalScale(60),
+                        ),
+                        itemCount: userTypes.length,
+                        itemBuilder: (ctx, i) {
                           return UserTypeCard(
-                            image:userTypes[i]["image"],
+                            image: userTypes[i]["image"],
                             title: userTypes[i]["title"],
                             description: userTypes[i]["description"],
+                            benefits: userTypes[i]["benefits"] ?? [],
                             onPressed: () {
-  ref.read(authProvider.notifier).setUserRole(userTypes[i]["role"]);                              
+                              ref
+                                  .read(authProvider.notifier)
+                                  .setUserRole(userTypes[i]["role"]);
                               onSelect(userTypes[i]["id"]);
                             },
-                            isSelected: selected_id == userTypes[i]["id"]  ,
-                          ); 
-                        }
-                        ),
+                            isSelected: selected_id == userTypes[i]["id"],
+                          );
+                        },
                       ),
+                    ),
                   ),
-                  if(selected_id != null)
-                  Positioned(
-                    bottom: ScallingConfig.verticalScale(20),
-                    left: ScallingConfig.scale(20),
-                    child: CustomButton(
-                      width: Utils.windowWidth(context) * 0.9 ,
-                      label: "Continue", 
-                    borderRadius: ScallingConfig.moderateScale(30),
-                    onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LoginScreen()));
-                  },))
-                ],
-              ))         
-            ],
-          ),
-        ) 
-    );
-
-}
-Widget _buildDesktopLayout(BuildContext context, bool isTablet) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF4F6FB),
-    body: Row(
-      children: [
-        // ── Left Hero Panel ───────────────────────────────────────
-        Expanded(
-          flex: 4,
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF001E6C),
-                  Color(0xFF0036BC),
-                  Color(0xFF035BE5),
+                  if (selected_id != null)
+                    Positioned(
+                      bottom: ScallingConfig.verticalScale(20),
+                      left: ScallingConfig.scale(20),
+                      child: CustomButton(
+                        width: Utils.windowWidth(context) * 0.9,
+                        label: "Continue",
+                        borderRadius: ScallingConfig.moderateScale(30),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
-            child: Stack(
-              children: [
-                // Decorative circles
-                Positioned(
-                  top: -80,
-                  left: -80,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.04),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, bool isTablet) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6FB),
+      body: Row(
+        children: [
+          // ── Left Hero Panel ───────────────────────────────────────
+          Expanded(
+            flex: 4,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF001E6C),
+                    Color(0xFF0036BC),
+                    Color(0xFF035BE5),
+                  ],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -80,
+                    left: -80,
+                    child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.04),
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  bottom: -100,
-                  right: -50,
-                  child: Container(
-                    width: 350,
-                    height: 350,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.03),
+                  Positioned(
+                    bottom: -100,
+                    right: -50,
+                    child: Container(
+                      width: 350,
+                      height: 350,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.03),
+                      ),
                     ),
                   ),
-                ),
-                // Center content
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 50),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1.5,
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Image.asset(
+                              ImagePaths.logo,
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          child: Image.asset(
-                            ImagePaths.logo,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        const Text(
-                          "Choose Your Role",
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            fontFamily: "Gilroy-Bold",
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Select the account type that best\ndescribes your role in iCare",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.65),
-                            fontFamily: "Gilroy-Medium",
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.15),
+                          const SizedBox(height: 32),
+                          const Text(
+                            "Welcome to iCare",
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              fontFamily: "Gilroy-Bold",
+                              letterSpacing: 1,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          const SizedBox(height: 16),
+                          Text(
+                            "Your Complete Virtual Hospital Experience\nStart your healthcare journey today",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.75),
+                              fontFamily: "Gilroy-Medium",
+                              height: 1.6,
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+                          Column(
                             children: [
-                              Icon(Icons.info_outline_rounded, color: Colors.white.withOpacity(0.7), size: 18),
-                              const SizedBox(width: 10),
-                              Text(
-                                "Account type cannot be changed later",
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: "Gilroy-Medium",
-                                ),
+                              _buildTrustIndicator(
+                                Icons.shield_rounded,
+                                "HIPAA Compliant & Secure",
+                              ),
+                              const SizedBox(height: 12),
+                              _buildTrustIndicator(
+                                Icons.verified_user_rounded,
+                                "Licensed Healthcare Providers",
+                              ),
+                              const SizedBox(height: 12),
+                              _buildTrustIndicator(
+                                Icons.star_rounded,
+                                "Trusted by 10,000+ Patients",
                               ),
                             ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Right Panel: Role Cards ──────────────────────────────
+          Expanded(
+            flex: 6,
+            child: Container(
+              color: const Color(0xFFF8FAFD),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        itemCount: userTypes.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isTablet ? 2 : 3,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: isTablet ? 1.3 : 1.5,
+                        ),
+                        itemBuilder: (ctx, i) {
+                          return UserTypeCard(
+                            image: userTypes[i]["image"],
+                            title: userTypes[i]["title"],
+                            description: userTypes[i]["description"],
+                            benefits: userTypes[i]["benefits"] ?? [],
+                            isSelected: selected_id == userTypes[i]["id"],
+                            onPressed: () {
+                              ref
+                                  .read(authProvider.notifier)
+                                  .setUserRole(userTypes[i]["role"]);
+                              onSelect(userTypes[i]["id"]);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (selected_id != null)
+                          Text(
+                            "Role selected: ${userTypes.firstWhere((e) => e['id'] == selected_id)['role'].toString().replaceAll('_', ' ').toUpperCase()}",
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: "Gilroy-Medium",
+                            ),
+                          ),
+                        const Spacer(),
+                        SizedBox(
+                          height: 52,
+                          width: 200,
+                          child: ElevatedButton.icon(
+                            onPressed: selected_id == null
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const LoginScreen(),
+                                      ),
+                                    );
+                                  },
+                            icon: const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Continue",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                fontFamily: "Gilroy-Bold",
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              disabledBackgroundColor: const Color(0xFFCBD5E1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
 
-        // ── Right Panel: Role Cards ──────────────────────────────
-        Expanded(
-          flex: 6,
-          child: Container(
-            color: const Color(0xFFF8FAFD),
-            child: Column(
-              children: [
-                // Top spacing
-                const SizedBox(height: 40),
-                // Grid content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: GridView.builder(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      itemCount: userTypes.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: isTablet ? 2 : 3,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                        childAspectRatio: isTablet ? 1.3 : 1.5,
-                      ),
-                      itemBuilder: (ctx, i) {
-                        return UserTypeCard(
-                          image: userTypes[i]["image"],
-                          title: userTypes[i]["title"],
-                          description: userTypes[i]["description"],
-                          isSelected: selected_id == userTypes[i]["id"],
-                          onPressed: () {
-                            ref.read(authProvider.notifier).setUserRole(userTypes[i]["role"]);
-                            onSelect(userTypes[i]["id"]);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                // Bottom action bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (selected_id != null)
-                        Text(
-                          "Role selected: ${userTypes.firstWhere((e) => e['id'] == selected_id)['role'].toString().replaceAll('_', ' ').toUpperCase()}",
-                          style: const TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Gilroy-Medium",
-                          ),
-                        ),
-                      const Spacer(),
-                      SizedBox(
-                        height: 52,
-                        width: 200,
-                        child: ElevatedButton.icon(
-                          onPressed: selected_id == null
-                              ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                  );
-                                },
-                          icon: const Icon(Icons.arrow_forward_rounded, size: 20, color: Colors.white),
-                          label: const Text(
-                            "Continue",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              fontFamily: "Gilroy-Bold",
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            disabledBackgroundColor: const Color(0xFFCBD5E1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildTrustIndicator(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+        const SizedBox(width: 12),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            fontFamily: "Gilroy-Medium",
           ),
         ),
       ],
-    ),
-  );
-}
-
+    );
+  }
 }

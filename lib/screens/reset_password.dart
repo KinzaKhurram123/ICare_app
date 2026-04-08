@@ -19,7 +19,8 @@ class ResetPassword extends StatefulWidget {
 
 class _ResetPasswordState extends State<ResetPassword> {
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
   bool isLoading = false;
@@ -38,7 +39,10 @@ class _ResetPasswordState extends State<ResetPassword> {
 
       if (result['success']) {
         if (mounted) {
-          _showSuccessModal(context, isDesktop: ResponsiveHelper.isDesktop(context));
+          _showSuccessModal(
+            context,
+            isDesktop: ResponsiveHelper.isDesktop(context),
+          );
         }
       } else {
         _showError(result['message']);
@@ -64,19 +68,16 @@ class _ResetPasswordState extends State<ResetPassword> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-      final isMobile = ResponsiveHelper.isMobile(context);
+    final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final isDesktop = ResponsiveHelper.isDesktop(context);
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(isTablet: isTablet),
+      body: isDesktop
+          ? _buildDesktopLayout()
+          : _buildMobileLayout(isTablet: isTablet),
     );
   }
-
-
-
-
-
 
   Widget _buildDesktopLayout() {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -94,10 +95,7 @@ class _ResetPasswordState extends State<ResetPassword> {
             flex: 5,
             child: SizedBox(
               height: screenHeight,
-              child: Image.asset(
-                "assets/images/splash.jpg",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
             ),
           ),
 
@@ -234,7 +232,9 @@ class _ResetPasswordState extends State<ResetPassword> {
                                     ),
                                     elevation: 0,
                                   ),
-                                  onPressed: isLoading ? null : _handleResetPassword,
+                                  onPressed: isLoading
+                                      ? null
+                                      : _handleResetPassword,
                                   child: isLoading
                                       ? const SizedBox(
                                           height: 20,
@@ -245,14 +245,14 @@ class _ResetPasswordState extends State<ResetPassword> {
                                           ),
                                         )
                                       : const Text(
-                                    "Save Password",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Gilroy-Bold",
-                                    ),
-                                  ),
+                                          "Save Password",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: "Gilroy-Bold",
+                                          ),
+                                        ),
                                 ),
                               ),
                             ],
@@ -271,7 +271,14 @@ class _ResetPasswordState extends State<ResetPassword> {
   }
 
   // Helper widgets for desktop layout
-  Widget _buildDecorativeCircle({double? top, double? left, double? right, double? bottom, required double size, required double opacity}) {
+  Widget _buildDecorativeCircle({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    required double size,
+    required double opacity,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -332,7 +339,6 @@ class _ResetPasswordState extends State<ResetPassword> {
     );
   }
 
-
   Widget _buildMobileLayout({bool isTablet = false}) {
     return Container(
       width: Utils.windowWidth(context),
@@ -347,23 +353,33 @@ class _ResetPasswordState extends State<ResetPassword> {
         children: [
           Container(
             width: Utils.windowWidth(context),
-            height: isTablet ?  Utils.windowHeight(context) * 0.35 : double.infinity,
+            height: isTablet
+                ? Utils.windowHeight(context) * 0.35
+                : double.infinity,
             // color: AppColors.themeRed,
             padding: EdgeInsets.symmetric(
               horizontal: ScallingConfig.moderateScale(15),
-              vertical: ScallingConfig.moderateScale(isTablet ? 12: 80),
+              vertical: ScallingConfig.moderateScale(isTablet ? 12 : 80),
             ),
             child: Column(
-              mainAxisAlignment: isTablet ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isTablet
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: ScallingConfig.moderateScale(isTablet ? 5 : 30)),
+                SizedBox(
+                  height: ScallingConfig.moderateScale(isTablet ? 5 : 30),
+                ),
                 CustomText(
                   text: "Reset Password",
                   fontWeight: FontWeight.bold,
                   maxLines: 2,
-                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,                  // textAlign: TextAlign.center,
-                  width: isTablet ? Utils.windowWidth(context)  :Utils.windowWidth(context) * 0.6,
+                  textAlign: isTablet
+                      ? TextAlign.center
+                      : TextAlign.start, // textAlign: TextAlign.center,
+                  width: isTablet
+                      ? Utils.windowWidth(context)
+                      : Utils.windowWidth(context) * 0.6,
                   fontSize: 22,
                   color: AppColors.primaryColor,
                 ),
@@ -376,10 +392,13 @@ class _ResetPasswordState extends State<ResetPassword> {
                 SizedBox(height: 3),
                 CustomText(
                   maxLines: 2,
-                  text: "Forgot Password To Enjoy The Best Doctor Consultation Experience",
+                  text:
+                      "Forgot Password To Enjoy The Best Doctor Consultation Experience",
                   fontSize: 13,
-                  textAlign: isTablet ?  TextAlign.center: TextAlign.start,
-                  width: isTablet ? Utils.windowWidth(context) :  Utils.windowHeight(context) * 0.4,
+                  textAlign: isTablet ? TextAlign.center : TextAlign.start,
+                  width: isTablet
+                      ? Utils.windowWidth(context)
+                      : Utils.windowHeight(context) * 0.4,
                   color: AppColors.themeBlack,
                 ),
                 SizedBox(height: 20),
@@ -389,10 +408,14 @@ class _ResetPasswordState extends State<ResetPassword> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              width: isTablet ? Utils.windowWidth(context) * 0.7 : double.infinity,
+              width: isTablet
+                  ? Utils.windowWidth(context) * 0.7
+                  : double.infinity,
               height: Utils.windowHeight(context) * 0.67,
               decoration: BoxDecoration(
-                color: isTablet ?  AppColors.bgColor.withAlpha(70) : AppColors.bgColor,
+                color: isTablet
+                    ? AppColors.bgColor.withAlpha(70)
+                    : AppColors.bgColor,
                 // color: AppColors.grayColor.withAlpha(60),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
@@ -401,90 +424,94 @@ class _ResetPasswordState extends State<ResetPassword> {
               ),
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.moderateScale(isTablet ? 50 :  15),
-                  vertical: ScallingConfig.moderateScale( 22),
+                  horizontal: ScallingConfig.moderateScale(isTablet ? 50 : 15),
+                  vertical: ScallingConfig.moderateScale(22),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-
                     SizedBox(height: 25),
 
                     /// FORM FIELDS
-                   Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomInputField(
-                        hintText: "Password",
-                        leadingIcon: Icon(
-                          Icons.key,
-                          color: AppColors.primary500,
-                        ),
-                        isPassword: true,
-                        bgColor: AppColors.white,
-                        borderRadius: 30,
-                        borderColor: AppColors.veryLightGrey,
-                        borderWidth: 2,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return "Please enter your username";
-                          }
-                          return null;
-                        },
-                      ),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomInputField(
+                            hintText: "Password",
+                            leadingIcon: Icon(
+                              Icons.key,
+                              color: AppColors.primary500,
+                            ),
+                            isPassword: true,
+                            bgColor: AppColors.white,
+                            borderRadius: 30,
+                            borderColor: AppColors.veryLightGrey,
+                            borderWidth: 2,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) {
+                                return "Please enter your username";
+                              }
+                              return null;
+                            },
+                          ),
 
-                      CustomInputField(
-                        hintText: "Confirm Password",
-                        leadingIcon: Icon(
-                          Icons.key,
-                          color: AppColors.primary500,
-                        ),
-                        isPassword: true,
-                        bgColor: AppColors.white,
-                        borderRadius: 30,
-                        borderColor: AppColors.veryLightGrey,
-                        borderWidth: 2,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return "Please enter your username";
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 70),
+                          CustomInputField(
+                            hintText: "Confirm Password",
+                            leadingIcon: Icon(
+                              Icons.key,
+                              color: AppColors.primary500,
+                            ),
+                            isPassword: true,
+                            bgColor: AppColors.white,
+                            borderRadius: 30,
+                            borderColor: AppColors.veryLightGrey,
+                            borderWidth: 2,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) {
+                                return "Please enter your username";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 70),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : _handleResetPassword,
+                              child: isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Confirm",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                             ),
                           ),
-                          onPressed: isLoading ? null : _handleResetPassword,
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                            "Confirm",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
+                          const SizedBox(height: 10),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
+                    ),
                   ],
                 ),
               ),
@@ -495,7 +522,6 @@ class _ResetPasswordState extends State<ResetPassword> {
     );
   }
 
-
   void _showSuccessModal(BuildContext context, {bool isDesktop = false}) {
     showDialog(
       context: context,
@@ -505,9 +531,7 @@ class _ResetPasswordState extends State<ResetPassword> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isDesktop ? 420 : 340,
-            ),
+            constraints: BoxConstraints(maxWidth: isDesktop ? 420 : 340),
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -583,7 +607,9 @@ class _ResetPasswordState extends State<ResetPassword> {
                     ),
                     onPressed: () {
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (ctx) => const LoginScreen(),
+                        ),
                         (route) => false,
                       );
                     },
@@ -605,6 +631,4 @@ class _ResetPasswordState extends State<ResetPassword> {
       },
     );
   }
-
-
 }

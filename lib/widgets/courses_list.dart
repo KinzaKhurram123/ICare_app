@@ -35,22 +35,22 @@ class _CoursesListState extends State<CoursesList> {
 
   String _extractInstructorName(dynamic instructor) {
     if (instructor == null) return 'Instructor';
-    
+
     if (instructor is String) return instructor;
-    
+
     if (instructor is Map) {
       // Try to get name from nested user object
       final user = instructor['user'];
       if (user is Map && user['name'] is String) {
         return user['name'] as String;
       }
-      
+
       // Try to get name directly from instructor object
       if (instructor['name'] is String) {
         return instructor['name'] as String;
       }
     }
-    
+
     return 'Instructor';
   }
 
@@ -85,23 +85,29 @@ class _CoursesListState extends State<CoursesList> {
 
     final List<dynamic> filteredCourses = _courses.where((item) {
       if (widget.searchQuery.isEmpty) return true;
-      final Map<String, dynamic> courseData = widget.mypurchased 
-          ? (item['course'] as Map<String, dynamic>? ?? {}) 
+      final Map<String, dynamic> courseData = widget.mypurchased
+          ? (item['course'] as Map<String, dynamic>? ?? {})
           : (item as Map<String, dynamic>? ?? {});
-      
-      final title = (courseData["title"] ?? courseData["name"] ?? "").toString().toLowerCase();
-      final desc = (courseData["caption"] ?? courseData["desc"] ?? "").toString().toLowerCase();
+
+      final title = (courseData["title"] ?? courseData["name"] ?? "")
+          .toString()
+          .toLowerCase();
+      final desc = (courseData["caption"] ?? courseData["desc"] ?? "")
+          .toString()
+          .toLowerCase();
       final query = widget.searchQuery.toLowerCase();
-      
+
       return title.contains(query) || desc.contains(query);
     }).toList();
 
     if (filteredCourses.isEmpty) {
-      return const Center(child: Text("No courses found"));
+      return const Center(child: Text("No health programs found"));
     }
 
     final displayCount = widget.numOfCourses != null
-        ? (widget.numOfCourses! < filteredCourses.length ? widget.numOfCourses! : filteredCourses.length)
+        ? (widget.numOfCourses! < filteredCourses.length
+              ? widget.numOfCourses!
+              : filteredCourses.length)
         : filteredCourses.length;
 
     return ConstrainedBox(
@@ -121,18 +127,28 @@ class _CoursesListState extends State<CoursesList> {
         itemBuilder: (ctx, i) {
           final course = filteredCourses[i];
           // Handle both direct course objects and enrollment objects (which have a 'course' field)
-          final Map<String, dynamic> courseData = widget.mypurchased 
-              ? Map<String, dynamic>.from(course['course'] as Map? ?? {}) 
+          final Map<String, dynamic> courseData = widget.mypurchased
+              ? Map<String, dynamic>.from(course['course'] as Map? ?? {})
               : Map<String, dynamic>.from(course as Map? ?? {});
-          
+
           if (widget.mypurchased) {
             courseData['isPurchased'] = true;
           }
-          
+
           return CourseCard(
-            image: (courseData["image"] is String) ? (courseData["image"] as String) : ImagePaths.course1,
-            title: (courseData["title"] is String) ? (courseData["title"] as String) : ((courseData["name"] is String) ? (courseData["name"] as String) : 'Untitled Course'),
-            desc: (courseData["caption"] is String) ? (courseData["caption"] as String) : ((courseData["desc"] is String) ? (courseData["desc"] as String) : 'No description available'),
+            image: (courseData["image"] is String)
+                ? (courseData["image"] as String)
+                : ImagePaths.course1,
+            title: (courseData["title"] is String)
+                ? (courseData["title"] as String)
+                : ((courseData["name"] is String)
+                      ? (courseData["name"] as String)
+                      : 'Untitled Program'),
+            desc: (courseData["caption"] is String)
+                ? (courseData["caption"] as String)
+                : ((courseData["desc"] is String)
+                      ? (courseData["desc"] as String)
+                      : 'No description available'),
             instructor: _extractInstructorName(courseData["instructor"]),
             courseData: courseData,
           );

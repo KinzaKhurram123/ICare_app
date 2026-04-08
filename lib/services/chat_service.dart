@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'api_config.dart';
 import '../utils/shared_pref.dart';
 
 class ChatService {
   final Dio _dio = Dio();
   final SharedPref _sharedPref = SharedPref();
-  
+
   Future<String?> _getToken() async {
     return await _sharedPref.getToken();
   }
@@ -18,10 +19,10 @@ class ChatService {
     try {
       print('📤 Sending message to: $receiverId');
       print('📝 Message: $message');
-      
+
       final token = await _getToken();
       print('🔑 Token: ${token?.substring(0, 20)}...');
-      
+
       final response = await _dio.post(
         '${ApiConfig.baseUrl}/chat/send',
         data: {
@@ -29,15 +30,13 @@ class ChatService {
           'message': message,
           if (attachments != null) 'attachments': attachments,
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      
+
       print('✅ Message sent successfully');
       print('📡 Response status: ${response.statusCode}');
       print('📡 Response data: ${response.data}');
-      
+
       return response.data;
     } catch (e) {
       print('❌ Failed to send message: $e');
@@ -45,21 +44,54 @@ class ChatService {
     }
   }
 
+  Future<Map<String, dynamic>> uploadFile({
+    String? filePath,
+    List<int>? bytes,
+    required String fileName,
+  }) async {
+    try {
+      final token = await _getToken();
+
+      MultipartFile file;
+      if (kIsWeb) {
+        if (bytes == null) throw Exception('Bytes required for web upload');
+        file = MultipartFile.fromBytes(bytes, filename: fileName);
+      } else {
+        if (filePath == null)
+          throw Exception('File path required for mobile upload');
+        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      }
+
+      final formData = FormData.fromMap({'file': file});
+
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/chat/upload',
+        data: formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      return response.data;
+    } catch (e) {
+      print('❌ Failed to upload file: $e');
+      throw Exception('Failed to upload file: $e');
+    }
+  }
+
   Future<List<dynamic>> getChatHistory(String userId) async {
     try {
       print('🔍 Fetching chat history with user: $userId');
-      
+
       if (userId.isEmpty) {
         throw Exception('User ID cannot be empty');
       }
-      
+
       final token = await _getToken();
       if (token == null || token.isEmpty) {
         throw Exception('Authentication token not found. Please login again.');
       }
-      
+
       print('🔑 Token: ${token.substring(0, 20)}...');
-      
+
       final response = await _dio.get(
         '${ApiConfig.baseUrl}/chat/history/$userId',
         options: Options(
@@ -67,24 +99,26 @@ class ChatService {
           validateStatus: (status) => status! < 500,
         ),
       );
-      
+
       print('✅ Chat history response: ${response.statusCode}');
-      
+
       if (response.statusCode == 401) {
         throw Exception('Unauthorized. Please login again.');
       }
-      
+
       if (response.statusCode == 404) {
         print('ℹ️ No chat history found, returning empty list');
         return [];
       }
-      
+
       if (response.statusCode != 200) {
-        throw Exception('Server error: ${response.statusCode} - ${response.data}');
+        throw Exception(
+          'Server error: ${response.statusCode} - ${response.data}',
+        );
       }
-      
+
       print('📦 Response data: ${response.data}');
-      
+
       if (response.data != null && response.data['data'] != null) {
         return response.data['data'] ?? [];
       }
@@ -105,9 +139,7 @@ class ChatService {
       await _dio.put(
         '${ApiConfig.baseUrl}/chat/read',
         data: {'senderId': senderId},
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       print('✅ Messages marked as read');
     } catch (e) {
@@ -121,31 +153,24 @@ class ChatService {
       final token = await _getToken();
       await _dio.post(
         '${ApiConfig.baseUrl}/chat/typing',
-        data: {
-          'receiverId': receiverId,
-          'isTyping': isTyping,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        data: {'receiverId': receiverId, 'isTyping': isTyping},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     } catch (e) {
       // Silently fail for typing indicators
     }
   }
 
-  Future<Map<String, dynamic>> getPusherAuth(String socketId, String channelName) async {
+  Future<Map<String, dynamic>> getPusherAuth(
+    String socketId,
+    String channelName,
+  ) async {
     try {
       final token = await _getToken();
       final response = await _dio.post(
         '${ApiConfig.baseUrl}/chat/pusher/auth',
-        data: {
-          'socket_id': socketId,
-          'channel_name': channelName,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        data: {'socket_id': socketId, 'channel_name': channelName},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     } catch (e) {
@@ -158,9 +183,7 @@ class ChatService {
       final token = await _getToken();
       final response = await _dio.get(
         '${ApiConfig.baseUrl}/chat/conversations',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data['data'] ?? [];
     } catch (e) {

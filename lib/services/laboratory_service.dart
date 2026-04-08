@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'api_service.dart';
+import '../utils/error_handler.dart';
 
 class LaboratoryService {
   final ApiService _apiService = ApiService();
@@ -9,8 +10,8 @@ class LaboratoryService {
     try {
       final response = await _apiService.get('/laboratories/$labId');
       return response.data['laboratory'];
-    } catch (e) {
-      print('Error getting laboratory by id: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getLabById');
       rethrow;
     }
   }
@@ -18,10 +19,12 @@ class LaboratoryService {
   // Get all laboratories
   Future<List<dynamic>> getAllLaboratories() async {
     try {
-      final response = await _apiService.get('/laboratories/get_all_laboratories');
+      final response = await _apiService.get(
+        '/laboratories/get_all_laboratories',
+      );
       return response.data['laboratories'] ?? [];
-    } catch (e) {
-      print('Error getting all laboratories: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getAllLaboratories');
       rethrow;
     }
   }
@@ -31,19 +34,25 @@ class LaboratoryService {
     try {
       final response = await _apiService.get('/laboratories/profile');
       return response.data['laboratory'];
-    } catch (e) {
-      print('Error getting laboratory profile: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getProfile');
       rethrow;
     }
   }
 
   // Create laboratory booking
-  Future<Map<String, dynamic>> createBooking(String labId, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> createBooking(
+    String labId,
+    Map<String, dynamic> data,
+  ) async {
     try {
-      final response = await _apiService.post('/laboratories/$labId/bookings', data);
+      final response = await _apiService.post(
+        '/laboratories/$labId/bookings',
+        data,
+      );
       return response.data['booking'];
-    } catch (e) {
-      print('Error creating booking: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'createBooking');
       rethrow;
     }
   }
@@ -57,8 +66,8 @@ class LaboratoryService {
       }
       final response = await _apiService.get(url);
       return response.data['bookings'] ?? [];
-    } catch (e) {
-      print('Error getting bookings: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getBookings');
       rethrow;
     }
   }
@@ -68,54 +77,60 @@ class LaboratoryService {
     try {
       final response = await _apiService.get('/laboratories/bookings/my');
       return response.data['bookings'] ?? [];
-    } catch (e) {
-      print('Error getting my bookings: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getMyBookings');
       rethrow;
     }
   }
 
   // Update booking
   Future<Map<String, dynamic>> updateBooking(
-      String bookingId, Map<String, dynamic> data) async {
+    String bookingId,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _apiService.put(
         '/laboratories/bookings/$bookingId',
         data,
       );
       return response.data['booking'];
-    } catch (e) {
-      print('Error updating booking: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'updateBooking');
       rethrow;
     }
   }
 
   // Alias for backward compatibility
   Future<Map<String, dynamic>> updateBookingStatus(
-      String bookingId, String status) async {
+    String bookingId,
+    String status,
+  ) async {
     return updateBooking(bookingId, {'status': status});
   }
 
   // Get booking by ID
   Future<Map<String, dynamic>> getBookingById(String bookingId) async {
     try {
-      final response =
-          await _apiService.get('/laboratories/bookings/$bookingId');
+      final response = await _apiService.get(
+        '/laboratories/bookings/$bookingId',
+      );
       return response.data['booking'];
-    } catch (e) {
-      print('Error getting booking: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getBookingById');
       rethrow;
     }
   }
 
   // Update laboratory profile
-  Future<Map<String, dynamic>> updateProfile(
-      Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response =
-          await _apiService.post('/laboratories/add_laboratory_details', data);
+      final response = await _apiService.post(
+        '/laboratories/add_laboratory_details',
+        data,
+      );
       return response.data['laboratory'] ?? response.data['existingProfile'];
-    } catch (e) {
-      print('Error updating profile: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'updateProfile');
       rethrow;
     }
   }
@@ -125,14 +140,17 @@ class LaboratoryService {
     try {
       // Get all bookings
       final bookings = await getBookings(labId);
-      
+
       final totalBookings = bookings.length;
-      final pendingBookings =
-          bookings.where((b) => b['status'] == 'pending').length;
-      final completedBookings =
-          bookings.where((b) => b['status'] == 'completed').length;
+      final pendingBookings = bookings
+          .where((b) => b['status'] == 'pending')
+          .length;
+      final completedBookings = bookings
+          .where((b) => b['status'] == 'completed')
+          .length;
       final todayBookings = bookings.where((b) {
-        final bookingDate = DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
+        final bookingDate =
+            DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
         final today = DateTime.now();
         return bookingDate.year == today.year &&
             bookingDate.month == today.month &&
@@ -142,8 +160,12 @@ class LaboratoryService {
       // Sort by date to get recent activity
       final sortedBookings = List<dynamic>.from(bookings);
       sortedBookings.sort((a, b) {
-        final dateA = DateTime.tryParse(a['createdAt'] ?? a['date'] ?? '') ?? DateTime.now();
-        final dateB = DateTime.tryParse(b['createdAt'] ?? b['date'] ?? '') ?? DateTime.now();
+        final dateA =
+            DateTime.tryParse(a['createdAt'] ?? a['date'] ?? '') ??
+            DateTime.now();
+        final dateB =
+            DateTime.tryParse(b['createdAt'] ?? b['date'] ?? '') ??
+            DateTime.now();
         return dateB.compareTo(dateA); // descending
       });
 
@@ -156,14 +178,18 @@ class LaboratoryService {
         'todayBookings': todayBookings,
         'recentActivity': recentActivity,
       };
-    } catch (e) {
-      print('Error getting dashboard stats: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getDashboardStats');
       rethrow;
     }
   }
 
   // Upload test result report
-  Future<String> uploadReport(String bookingId, List<int> bytes, String fileName) async {
+  Future<String> uploadReport(
+    String bookingId,
+    List<int> bytes,
+    String fileName,
+  ) async {
     try {
       final formData = FormData.fromMap({
         'report': MultipartFile.fromBytes(bytes, filename: fileName),
@@ -173,11 +199,11 @@ class LaboratoryService {
         '/laboratories/bookings/$bookingId/upload-report',
         formData,
       );
-      
+
       // Assuming the backend returns the report URL
       return response.data['reportUrl'];
-    } catch (e) {
-      print('Error uploading report: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'uploadReport');
       rethrow;
     }
   }

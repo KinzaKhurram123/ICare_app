@@ -32,26 +32,28 @@ class _DoctorsListState extends State<DoctorsList> {
 
   Future<void> _loadDoctors() async {
     setState(() => _isLoading = true);
-    
+
     final result = await _doctorService.getAllDoctors();
-    
+
     print('📋 Doctors API Result: $result');
-    
+
     if (result['success']) {
       final doctorsList = (result['doctors'] as List)
           .map((json) => Doctor.fromJson(json))
           .toList();
-      
+
       print('✅ Loaded ${doctorsList.length} doctors');
       doctorsList.forEach((doc) {
         print('  - ${doc.user.name}: ${doc.specialization ?? "NO SPEC"}');
       });
-      
+
       final specs = doctorsList
-          .where((d) => d.specialization != null && d.specialization!.isNotEmpty)
+          .where(
+            (d) => d.specialization != null && d.specialization!.isNotEmpty,
+          )
           .map((d) => d.specialization!)
           .toSet();
-      
+
       setState(() {
         _doctors = doctorsList;
         _filteredDoctors = doctorsList;
@@ -63,23 +65,34 @@ class _DoctorsListState extends State<DoctorsList> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Failed to load doctors')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to load doctors'),
+          ),
         );
       }
     }
   }
 
   void _filterDoctors() {
-    print('🔍 Filtering doctors: query="$_searchQuery", spec=$_selectedSpecialization');
+    print(
+      '🔍 Filtering doctors: query="$_searchQuery", spec=$_selectedSpecialization',
+    );
     setState(() {
       _filteredDoctors = _doctors.where((doctor) {
-        final matchesSearch = _searchQuery.isEmpty ||
-            doctor.user.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            (doctor.specialization?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-        
-        final matchesSpecialization = _selectedSpecialization == null ||
+        final matchesSearch =
+            _searchQuery.isEmpty ||
+            doctor.user.name.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ) ||
+            (doctor.specialization?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false);
+
+        final matchesSpecialization =
+            _selectedSpecialization == null ||
             doctor.specialization == _selectedSpecialization;
-        
+
         return matchesSearch && matchesSpecialization;
       }).toList();
       print('✅ Filtered to ${_filteredDoctors.length} doctors');
@@ -135,7 +148,9 @@ class _DoctorsListState extends State<DoctorsList> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.primaryColor),
+                            borderSide: BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
                           ),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
@@ -159,19 +174,23 @@ class _DoctorsListState extends State<DoctorsList> {
                                 },
                               ),
                               const SizedBox(width: 8),
-                              ..._specializations.map((spec) => Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: FilterChip(
-                                      label: Text(spec),
-                                      selected: _selectedSpecialization == spec,
-                                      onSelected: (selected) {
-                                        setState(() {
-                                          _selectedSpecialization = selected ? spec : null;
-                                          _filterDoctors();
-                                        });
-                                      },
-                                    ),
-                                  )),
+                              ..._specializations.map(
+                                (spec) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilterChip(
+                                    label: Text(spec),
+                                    selected: _selectedSpecialization == spec,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        _selectedSpecialization = selected
+                                            ? spec
+                                            : null;
+                                        _filterDoctors();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -204,14 +223,17 @@ class _DoctorsListState extends State<DoctorsList> {
                                 horizontal: isDesktop ? 40 : 20,
                                 vertical: 24,
                               ),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                mainAxisExtent: isDesktop ? 340 : 280,
-                                crossAxisSpacing: 24,
-                                mainAxisSpacing: 24,
-                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    mainAxisExtent: isDesktop ? 340 : 280,
+                                    crossAxisSpacing: 24,
+                                    mainAxisSpacing: 24,
+                                  ),
                               itemBuilder: (ctx, i) {
-                                return DoctorProfileCard(doctor: _filteredDoctors[i]);
+                                return DoctorProfileCard(
+                                  doctor: _filteredDoctors[i],
+                                );
                               },
                             );
                           },
@@ -224,13 +246,8 @@ class _DoctorsListState extends State<DoctorsList> {
 }
 
 class DoctorProfileCard extends StatelessWidget {
-  const DoctorProfileCard({
-    super.key,
-    this.doctor,
-    this.width,
-    this.padding,
-  });
-  
+  const DoctorProfileCard({super.key, this.doctor, this.width, this.padding});
+
   final Doctor? doctor;
   final double? width;
   final EdgeInsets? padding;
@@ -238,22 +255,24 @@ class DoctorProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use dummy data if no doctor provided (for home screen preview)
-    final displayDoctor = doctor ?? Doctor(
-      id: 'dummy',
-      user: User(
-        id: 'dummy',
-        name: 'Dr. John Doe',
-        email: 'doctor@example.com',
-        phoneNumber: '0300000000',
-        role: 'Doctor',
-      ),
-      specialization: 'General Practitioner',
-      ratings: [4.5],
-    );
-    
+    final displayDoctor =
+        doctor ??
+        Doctor(
+          id: 'dummy',
+          user: User(
+            id: 'dummy',
+            name: 'Dr. John Doe',
+            email: 'doctor@example.com',
+            phoneNumber: '0300000000',
+            role: 'Doctor',
+          ),
+          specialization: 'General Practitioner',
+          ratings: [4.5],
+        );
+
     final averageRating = displayDoctor.averageRating;
     final reviewCount = displayDoctor.reviewCount;
-    
+
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -284,7 +303,7 @@ class DoctorProfileCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Interaction overlay
             Positioned.fill(
               child: Material(
@@ -294,7 +313,8 @@ class DoctorProfileCard extends StatelessWidget {
                     if (doctor != null) {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
+                          builder: (ctx) =>
+                              DoctorDetailScreen(doctor: displayDoctor),
                         ),
                       );
                     }
@@ -309,7 +329,7 @@ class DoctorProfileCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   // Avatar Ring
+                  // Avatar Ring
                   Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
@@ -323,8 +343,10 @@ class DoctorProfileCard extends StatelessWidget {
                       radius: 42,
                       backgroundColor: AppColors.primaryColor.withOpacity(0.1),
                       child: Text(
-                        displayDoctor.user.name.isNotEmpty 
-                            ? displayDoctor.user.name.substring(0, 1).toUpperCase()
+                        displayDoctor.user.name.isNotEmpty
+                            ? displayDoctor.user.name
+                                  .substring(0, 1)
+                                  .toUpperCase()
                             : 'D',
                         style: TextStyle(
                           fontSize: 32,
@@ -335,7 +357,7 @@ class DoctorProfileCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Text Info
                   CustomText(
                     text: displayDoctor.user.name,
@@ -347,7 +369,8 @@ class DoctorProfileCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   CustomText(
-                    text: displayDoctor.specialization ?? 'General Practitioner',
+                    text:
+                        displayDoctor.specialization ?? 'General Practitioner',
                     color: const Color(0xFF64748B),
                     fontFamily: "Gilroy-Medium",
                     fontSize: 12,
@@ -355,11 +378,14 @@ class DoctorProfileCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Rating Badge
                   if (averageRating > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF7ED),
                         borderRadius: BorderRadius.circular(12),
@@ -367,7 +393,11 @@ class DoctorProfileCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 16,
+                            color: Color(0xFFF59E0B),
+                          ),
                           const SizedBox(width: 4),
                           CustomText(
                             text: averageRating.toStringAsFixed(1),
@@ -387,7 +417,10 @@ class DoctorProfileCard extends StatelessWidget {
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
@@ -402,7 +435,7 @@ class DoctorProfileCard extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Favorite Button
             Positioned(
               top: 14,
@@ -420,7 +453,11 @@ class DoctorProfileCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.favorite_border_rounded, color: Color(0xFFEF4444), size: 18),
+                child: const Icon(
+                  Icons.favorite_border_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 18,
+                ),
               ),
             ),
           ],

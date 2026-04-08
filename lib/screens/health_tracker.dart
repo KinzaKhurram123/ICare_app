@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/screens/star_click_game.dart';
+import 'package:icare/services/gamification_service.dart';
+import 'package:icare/services/vital_service.dart';
+import 'package:icare/models/vital.dart';
 import 'package:intl/intl.dart';
 
 class HealthTracker extends StatefulWidget {
@@ -11,77 +15,120 @@ class HealthTracker extends StatefulWidget {
 }
 
 class _HealthTrackerState extends State<HealthTracker> {
-  // Mock data - in production, fetch from backend
-  final List<Map<String, dynamic>> _vitals = [
+  final GamificationService _gamificationService = GamificationService();
+  final VitalService _vitalService = VitalService();
+  int _points = 0;
+  List<dynamic> _badges = [];
+  List<Vital> _realVitals = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    setState(() => _isLoading = true);
+
+    // Concurrent data loading
+    final results = await Future.wait([
+      _gamificationService.getMyStats(),
+      _vitalService.getMyVitals(),
+    ]);
+
+    final gamificationResult = results[0];
+    final vitalsResult = results[1];
+
+    if (mounted) {
+      setState(() {
+        if (gamificationResult['success'] == true) {
+          _points = gamificationResult['points'] ?? 0;
+          _badges = gamificationResult['badges'] ?? [];
+        }
+
+        if (vitalsResult['success'] == true) {
+          _realVitals = (vitalsResult['vitals'] as List)
+              .map((v) => Vital.fromJson(v))
+              .toList();
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Fallback map for rendering cards even if no data
+  final List<Map<String, dynamic>> _vitalTypes = [
     {
       'type': 'Blood Pressure',
-      'value': '120/80',
       'unit': 'mmHg',
       'icon': Icons.favorite_rounded,
       'color': const Color(0xFFEF4444),
-      'status': 'Normal',
-      'lastUpdated': DateTime.now().subtract(const Duration(hours: 2)),
     },
     {
       'type': 'Heart Rate',
-      'value': '72',
       'unit': 'bpm',
       'icon': Icons.monitor_heart_rounded,
       'color': const Color(0xFFEC4899),
-      'status': 'Normal',
-      'lastUpdated': DateTime.now().subtract(const Duration(hours: 2)),
     },
     {
       'type': 'Blood Glucose',
-      'value': '95',
       'unit': 'mg/dL',
       'icon': Icons.water_drop_rounded,
       'color': const Color(0xFF8B5CF6),
-      'status': 'Normal',
-      'lastUpdated': DateTime.now().subtract(const Duration(days: 1)),
     },
     {
       'type': 'Weight',
-      'value': '70',
       'unit': 'kg',
       'icon': Icons.monitor_weight_rounded,
       'color': const Color(0xFF3B82F6),
-      'status': 'Healthy',
-      'lastUpdated': DateTime.now().subtract(const Duration(days: 2)),
     },
     {
       'type': 'Temperature',
-      'value': '36.6',
       'unit': '°C',
       'icon': Icons.thermostat_rounded,
       'color': const Color(0xFFF59E0B),
-      'status': 'Normal',
-      'lastUpdated': DateTime.now().subtract(const Duration(hours: 5)),
     },
     {
       'type': 'Oxygen Level',
-      'value': '98',
       'unit': '%',
       'icon': Icons.air_rounded,
       'color': const Color(0xFF10B981),
-      'status': 'Normal',
-      'lastUpdated': DateTime.now().subtract(const Duration(hours: 3)),
     },
   ];
 
-  void _addVitalReading(String type) {
+  void _addVitalReading(String type, String unit) {
     showDialog(
       context: context,
       builder: (context) => _AddVitalDialog(
         vitalType: type,
-        onSave: (value) {
-          // In production, save to backend
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$type reading saved: $value')),
+        onSave: (value) async {
+          final newVital = Vital(
+            type: type,
+            value: value,
+            unit: unit,
+            status: _determineStatus(type, value),
           );
+
+          final res = await _vitalService.addVital(newVital);
+          if (res['success']) {
+            _loadAllData();
+          }
         },
       ),
     );
+  }
+
+  String _determineStatus(String type, String value) {
+    // Simple logic for demonstration
+    try {
+      double val = double.parse(value.split('/')[0]); // Handle BP like 120/80
+      if (type == 'Temperature' && val > 37.5) return 'Elevated';
+      if (type == 'Heart Rate' && val > 100) return 'High';
+      return 'Normal';
+    } catch (e) {
+      return 'Normal';
+    }
   }
 
   @override
@@ -104,42 +151,65 @@ class _HealthTrackerState extends State<HealthTracker> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 40 : 20),
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHealthSummary(),
-                const SizedBox(height: 24),
-                const Text(
-                  'Vital Signs',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadAllData,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(isDesktop ? 40 : 20),
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: isDesktop ? 1200 : double.infinity,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHealthSummary(),
+                        const SizedBox(height: 24),
+                        _buildGamificationRow(isDesktop),
+                        const SizedBox(height: 32),
+                        const Text(
+                          'Vital Signs',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: isDesktop ? 3 : 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 1.1,
+                              ),
+                          itemCount: _vitalTypes.length,
+                          itemBuilder: (context, index) {
+                            final typeInfo = _vitalTypes[index];
+                            // Find most recent reading for this type
+                            final lastReading = _realVitals.firstWhere(
+                              (v) => v.type == typeInfo['type'],
+                              orElse: () => Vital(
+                                type: '',
+                                value: '--',
+                                unit: typeInfo['unit'],
+                                status: 'No Data',
+                              ),
+                            );
+                            return _buildVitalCard(typeInfo, lastReading);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isDesktop ? 3 : 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.1,
-                  ),
-                  itemCount: _vitals.length,
-                  itemBuilder: (context, index) => _buildVitalCard(_vitals[index]),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -167,7 +237,11 @@ class _HealthTrackerState extends State<HealthTracker> {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.favorite_rounded, size: 40, color: Colors.white),
+            child: const Icon(
+              Icons.favorite_rounded,
+              size: 40,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 20),
           const Expanded(
@@ -194,10 +268,7 @@ class _HealthTrackerState extends State<HealthTracker> {
                 SizedBox(height: 4),
                 Text(
                   'All vitals within normal range',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.white70),
                 ),
               ],
             ),
@@ -207,19 +278,22 @@ class _HealthTrackerState extends State<HealthTracker> {
     );
   }
 
-  Widget _buildVitalCard(Map<String, dynamic> vital) {
+  Widget _buildVitalCard(Map<String, dynamic> typeInfo, Vital lastReading) {
+    final Color color = typeInfo['color'];
+    final bool hasData = lastReading.type.isNotEmpty;
+
     return InkWell(
-      onTap: () => _addVitalReading(vital['type']),
+      onTap: () => _addVitalReading(typeInfo['type'], typeInfo['unit']),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: (vital['color'] as Color).withValues(alpha: 0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: (vital['color'] as Color).withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -234,23 +308,36 @@ class _HealthTrackerState extends State<HealthTracker> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (vital['color'] as Color).withValues(alpha: 0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(vital['icon'], color: vital['color'], size: 20),
+                  child: Icon(typeInfo['icon'], color: color, size: 20),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    color:
+                        (lastReading.status == 'Normal' ||
+                            lastReading.status == 'Healthy' ||
+                            lastReading.status == 'No Data')
+                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                        : const Color(0xFFEF4444).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    vital['status'],
-                    style: const TextStyle(
+                    lastReading.status,
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF10B981),
+                      color:
+                          (lastReading.status == 'Normal' ||
+                              lastReading.status == 'Healthy' ||
+                              lastReading.status == 'No Data')
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                     ),
                   ),
                 ),
@@ -258,7 +345,7 @@ class _HealthTrackerState extends State<HealthTracker> {
             ),
             const Spacer(),
             Text(
-              vital['type'],
+              typeInfo['type'],
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
@@ -270,7 +357,7 @@ class _HealthTrackerState extends State<HealthTracker> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  vital['value'],
+                  lastReading.value,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -281,7 +368,7 @@ class _HealthTrackerState extends State<HealthTracker> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    vital['unit'],
+                    typeInfo['unit'],
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF64748B),
@@ -293,14 +380,202 @@ class _HealthTrackerState extends State<HealthTracker> {
             ),
             const SizedBox(height: 8),
             Text(
-              DateFormat('MMM dd, HH:mm').format(vital['lastUpdated']),
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF94A3B8),
-              ),
+              hasData
+                  ? DateFormat('MMM dd, HH:mm').format(lastReading.createdAt!)
+                  : 'Never updated',
+              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGamificationRow(bool isDesktop) {
+    if (isDesktop) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _buildStreakCard()),
+          const SizedBox(width: 24),
+          Expanded(child: _buildBadgesCard()),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        _buildStreakCard(),
+        const SizedBox(height: 16),
+        _buildBadgesCard(),
+      ],
+    );
+  }
+
+  Widget _buildStreakCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDE68A),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.flash_on_rounded,
+              color: Color(0xFFD97706),
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '7 Day Streak!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const Text(
+                  'You updated your vitals 7 days in a row. Keep it up!',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => StarClickGame()),
+                    );
+                  },
+                  icon: const Icon(Icons.videogame_asset_rounded, size: 16),
+                  label: const Text(
+                    'Earn Daily Points',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD97706),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadgesCard() {
+    final List<Map<String, dynamic>> badges = [
+      {
+        'icon': Icons.workspace_premium_rounded,
+        'color': Color(0xFF3B82F6),
+        'label': 'Early Bird',
+      },
+      {
+        'icon': Icons.monitor_heart_rounded,
+        'color': Color(0xFFEF4444),
+        'label': 'Heart Hero',
+      },
+      {
+        'icon': Icons.water_drop_rounded,
+        'color': Color(0xFF10B981),
+        'label': 'Hydrated',
+      },
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Earned Badges',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _badges.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      'No badges earned yet. Keep active!',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _badges.map((badge) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF3B82F6,
+                                ).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.workspace_premium_rounded,
+                                color: Color(0xFF3B82F6),
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              badge['name'] ?? 'N/A',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+        ],
       ),
     );
   }

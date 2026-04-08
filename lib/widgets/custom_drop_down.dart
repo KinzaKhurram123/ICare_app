@@ -9,7 +9,7 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 class CustomDropdown<T> extends StatelessWidget {
   final String title;
   final bool showTitle;
-  final Color? textColor; 
+  final Color? textColor;
   final T? selectedItem;
   final List<T> items;
   final ValueChanged<T?> onChanged;
@@ -24,8 +24,8 @@ class CustomDropdown<T> extends StatelessWidget {
 
   const CustomDropdown({
     super.key,
-    this.title ="",
-    this.showTitle= true,
+    this.title = "",
+    this.showTitle = true,
     required this.items,
     required this.onChanged,
     this.textColor,
@@ -68,25 +68,28 @@ class CustomDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: margin ?? EdgeInsets.symmetric(horizontal: ScallingConfig.scale(1)),
+      padding:
+          margin ?? EdgeInsets.symmetric(horizontal: ScallingConfig.scale(1)),
       child: SizedBox(
         width: width ?? Utils.windowWidth(context) * 0.9,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if(showTitle)
-...[            CustomText(
-              text: title,
-              isBold: true,
-              fontSize: ScallingConfig.moderateScale(14.78),
-              color: AppColors.primary500,
-              fontWeight: FontWeight.w400,
-              fontFamily: "GIlroy-SemiBold",
-            ),
-            SizedBox(height: ScallingConfig.verticalScale(5))],
+            if (showTitle) ...[
+              CustomText(
+                text: title,
+                isBold: true,
+                fontSize: ScallingConfig.moderateScale(14.78),
+                color: AppColors.primary500,
+                fontWeight: FontWeight.w400,
+                fontFamily: "GIlroy-SemiBold",
+              ),
+              SizedBox(height: ScallingConfig.verticalScale(5)),
+            ],
             Container(
               // width: Utils.windowWidth(context) * 0.9,
-              padding: padding ??
+              padding:
+                  padding ??
                   EdgeInsets.symmetric(
                     horizontal: ScallingConfig.scale(10),
                     vertical: ScallingConfig.verticalScale(3),
@@ -97,32 +100,30 @@ class CustomDropdown<T> extends StatelessWidget {
                   width: 1.2,
                   color: borderColor ?? AppColors.lightGrey100,
                 ),
-                
+
                 borderRadius: borderRadius ?? BorderRadius.circular(30),
               ),
-              child:  DropdownButton<T>(
-                  isExpanded: true,
-                  
-                  value: selectedItem,
-                  icon: icon ??
-                      SvgWrapper(assetPath: ImagePaths.arrowDown),
-                  dropdownColor: AppColors.white,
-                  underline: Divider(color: AppColors.white,),
-                  style: const TextStyle(color: Colors.black),
-                  hint: CustomText(
-                    text: "Select $title",
-                    color: textColor == null ?  AppColors.primary500 : textColor,
-                  ),
-                  
-                  items: items.map((item) {
-                    final label = _getDisplayValue(item);
-                    return DropdownMenuItem<T>(
-                      value: item,
-                      child: CustomText(text: label),
-                    );
-                  }).toList(),
-                  onChanged: onChanged,
-                
+              child: DropdownButton<T>(
+                isExpanded: true,
+
+                value: selectedItem,
+                icon: icon ?? SvgWrapper(assetPath: ImagePaths.arrowDown),
+                dropdownColor: AppColors.white,
+                underline: Divider(color: AppColors.white),
+                style: const TextStyle(color: Colors.black),
+                hint: CustomText(
+                  text: "Select $title",
+                  color: textColor == null ? AppColors.primary500 : textColor,
+                ),
+
+                items: items.map((item) {
+                  final label = _getDisplayValue(item);
+                  return DropdownMenuItem<T>(
+                    value: item,
+                    child: CustomText(text: label),
+                  );
+                }).toList(),
+                onChanged: onChanged,
               ),
             ),
           ],

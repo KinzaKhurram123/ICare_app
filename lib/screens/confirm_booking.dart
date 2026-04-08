@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/models/lab_test.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -7,7 +8,7 @@ import 'package:intl/intl.dart';
 
 class ConfirmBookingScreen extends StatefulWidget {
   final Map<String, dynamic> bookingData;
-  final List<dynamic> selectedTests;
+  final List<LabTest> selectedTests;
 
   const ConfirmBookingScreen({
     super.key,
@@ -49,13 +50,16 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
       };
 
       await _labService.createBooking(labId, bookingDetails);
-      
+
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to book: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to book: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -71,7 +75,11 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 80),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green,
+              size: 80,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Booking Successful!',
@@ -97,7 +105,9 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: const Text('Go to Home'),
@@ -132,21 +142,47 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
             children: [
               _buildSectionHeader('Laboratory Information'),
               _buildDetailCard([
-                _buildInfoLine(Icons.business_rounded, 'Lab Name', widget.bookingData['labTitle'] ?? 'Green Lab'),
-                _buildInfoLine(Icons.location_on_rounded, 'Location', widget.bookingData['city'] ?? 'Default City'),
+                _buildInfoLine(
+                  Icons.business_rounded,
+                  'Lab Name',
+                  widget.bookingData['labTitle'] ?? 'Green Lab',
+                ),
+                _buildInfoLine(
+                  Icons.location_on_rounded,
+                  'Location',
+                  widget.bookingData['city'] ?? 'Default City',
+                ),
               ]),
               const SizedBox(height: 24),
 
               _buildSectionHeader('Schedule Details'),
               _buildDetailCard([
-                _buildInfoLine(Icons.calendar_today_rounded, 'Date', widget.bookingData['date'] ?? 'Jan 1, 2024'),
-                _buildInfoLine(Icons.access_time_rounded, 'Time', widget.bookingData['time'] ?? '10:00 AM'),
-                _buildInfoLine(Icons.home_rounded, 'Sample Type', widget.bookingData['homeSample'] ? 'Home Collection' : 'Walk-in'),
+                _buildInfoLine(
+                  Icons.calendar_today_rounded,
+                  'Date',
+                  widget.bookingData['date'] ?? 'Jan 1, 2024',
+                ),
+                _buildInfoLine(
+                  Icons.access_time_rounded,
+                  'Time',
+                  widget.bookingData['time'] ?? '10:00 AM',
+                ),
+                _buildInfoLine(
+                  Icons.home_rounded,
+                  'Sample Type',
+                  widget.bookingData['homeSample']
+                      ? 'Home Collection'
+                      : 'Walk-in',
+                ),
               ]),
               const SizedBox(height: 24),
 
               _buildSectionHeader('Selected Tests'),
-              _buildDetailCard(widget.selectedTests.map((t) => _buildTestLine(t.name, '\$${t.price}')).toList()),
+              _buildDetailCard(
+                widget.selectedTests
+                    .map((t) => _buildTestLine(t.name, '\$${t.price}'))
+                    .toList(),
+              ),
               const SizedBox(height: 24),
 
               _buildSectionHeader('Payment Summary'),
@@ -154,8 +190,21 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Amount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('\$$_totalPrice', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: primaryColor)),
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '\$$_totalPrice',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: primaryColor,
+                      ),
+                    ),
                   ],
                 ),
               ]),
@@ -169,11 +218,26 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Confirm & Pay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Confirm & Pay',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -188,7 +252,12 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 1.2),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF64748B),
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -228,7 +297,13 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-          Text(price, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D47A1))),
+          Text(
+            price,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0D47A1),
+            ),
+          ),
         ],
       ),
     );

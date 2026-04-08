@@ -5,20 +5,27 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-
 class CustomRecordCard extends StatelessWidget {
-  const CustomRecordCard({super.key, this.icon, this.label, this.number, this.color= AppColors.secondaryColor, this.onTap=null, this.width  });
-  
+  const CustomRecordCard({
+    super.key,
+    this.icon,
+    this.label,
+    this.number,
+    this.color = AppColors.secondaryColor,
+    this.onTap = null,
+    this.width,
+  });
+
   final String? label;
   final Widget? icon;
   final String? number;
   final Color color;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
   final double? width;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap:onTap,
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         width: width ?? Utils.windowWidth(context) * 0.43,
@@ -26,10 +33,7 @@ class CustomRecordCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              color,
-              color.withOpacity(0.85),
-            ],
+            colors: [color, color.withOpacity(0.85)],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [

@@ -24,23 +24,27 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
 
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
-    
+
     final result = await _notificationService.getNotifications();
-    
+
     if (result['success'] && mounted) {
       final notifications = result['notifications'] ?? [];
       setState(() {
-        _notifications = List<Map<String, dynamic>>.from(notifications.map((n) => {
-          'id': n['_id'],
-          'type': n['type'],
-          'title': n['title'],
-          'message': n['message'],
-          'time': DateTime.parse(n['createdAt']),
-          'read': n['read'],
-          'data': n['data'],
-          'icon': _getIconForType(n['type']),
-          'color': _getColorForType(n['type']),
-        }));
+        _notifications = List<Map<String, dynamic>>.from(
+          notifications.map(
+            (n) => {
+              'id': n['_id'],
+              'type': n['type'],
+              'title': n['title'],
+              'message': n['message'],
+              'time': DateTime.parse(n['createdAt']),
+              'read': n['read'],
+              'data': n['data'],
+              'icon': _getIconForType(n['type']),
+              'color': _getColorForType(n['type']),
+            },
+          ),
+        );
         _isLoading = false;
       });
     } else {
@@ -54,44 +58,64 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
 
   IconData _getIconForType(String type) {
     switch (type) {
-      case 'appointment': return Icons.calendar_month_rounded;
-      case 'cancellation': return Icons.cancel_rounded;
-      case 'reminder': return Icons.alarm_rounded;
-      case 'review': return Icons.star_rounded;
-      default: return Icons.notifications_rounded;
+      case 'appointment':
+        return Icons.calendar_month_rounded;
+      case 'cancellation':
+        return Icons.cancel_rounded;
+      case 'reminder':
+        return Icons.alarm_rounded;
+      case 'review':
+        return Icons.star_rounded;
+      case 'progress':
+        return Icons.trending_up_rounded;
+      case 'completion':
+        return Icons.task_alt_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
   Color _getColorForType(String type) {
     switch (type) {
-      case 'appointment': return const Color(0xFF3B82F6);
-      case 'cancellation': return const Color(0xFFEF4444);
-      case 'reminder': return const Color(0xFFF59E0B);
-      case 'review': return const Color(0xFF10B981);
-      default: return const Color(0xFF64748B);
+      case 'appointment':
+        return const Color(0xFF3B82F6);
+      case 'cancellation':
+        return const Color(0xFFEF4444);
+      case 'reminder':
+        return const Color(0xFFF59E0B);
+      case 'review':
+        return const Color(0xFF10B981);
+      case 'progress':
+        return const Color(0xFF8B5CF6);
+      case 'completion':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF64748B);
     }
   }
 
   Future<void> _markAsRead(String id) async {
-    final result = await _notificationService.markAsRead(id);
-    
-    if (result['success']) {
+    try {
+      await _notificationService.markAsRead(id);
       setState(() {
         final notification = _notifications.firstWhere((n) => n['id'] == id);
         notification['read'] = true;
       });
+    } catch (e) {
+      print('Error marking as read: $e');
     }
   }
 
   Future<void> _markAllAsRead() async {
-    final result = await _notificationService.markAllAsRead();
-    
-    if (result['success']) {
+    try {
+      await _notificationService.markAllAsRead();
       setState(() {
         for (var notification in _notifications) {
           notification['read'] = true;
         }
       });
+    } catch (e) {
+      print('Error marking all as read: $e');
     }
   }
 
@@ -126,86 +150,99 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 40 : 20),
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 800 : double.infinity),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (unreadCount > 0) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'You have $unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+              padding: EdgeInsets.all(isDesktop ? 40 : 20),
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 800 : double.infinity,
                   ),
-                  const SizedBox(height: 24),
-                ],
-                if (_notifications.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(48),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.notifications_off_rounded, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No notifications yet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (unreadCount > 0) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_active_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'You have $unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      if (_notifications.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(48),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.notifications_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'No notifications yet',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'You\'ll see notifications here when you have updates',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'You\'ll see notifications here when you have updates',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  ..._notifications.map((notification) => _buildNotificationCard(notification)),
-              ],
+                        )
+                      else
+                        ..._notifications.map(
+                          (notification) =>
+                              _buildNotificationCard(notification),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -219,7 +256,8 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
       onTap: () async {
         await _markAsRead(notification['id']);
         // Navigate to chat if it's a message notification
-        if (notification['title'] == 'New Message' && notification['data'] != null) {
+        if (notification['title'] == 'New Message' &&
+            notification['data'] != null) {
           final data = notification['data'] as Map<String, dynamic>;
           final senderId = data['senderId']?.toString() ?? '';
           final senderName = data['senderName']?.toString() ?? 'User';
@@ -227,10 +265,8 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ChatScreen(
-                  userId: senderId,
-                  userName: senderName,
-                ),
+                builder: (context) =>
+                    ChatScreen(userId: senderId, userName: senderName),
               ),
             );
           }
@@ -243,7 +279,9 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
           color: isRead ? Colors.white : color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isRead ? const Color(0xFFE2E8F0) : color.withValues(alpha: 0.2),
+            color: isRead
+                ? const Color(0xFFE2E8F0)
+                : color.withValues(alpha: 0.2),
             width: isRead ? 1 : 2,
           ),
           boxShadow: [
@@ -277,7 +315,9 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                           notification['title'],
                           style: TextStyle(
                             fontSize: 15,
-                            fontWeight: isRead ? FontWeight.w700 : FontWeight.w900,
+                            fontWeight: isRead
+                                ? FontWeight.w700
+                                : FontWeight.w900,
                             color: const Color(0xFF0F172A),
                           ),
                         ),
@@ -304,7 +344,11 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         timeAgo,

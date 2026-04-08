@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/instructor_assign_course_screen.dart';
 import 'package:icare/screens/instructor_courses_management.dart';
+import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
+import 'package:icare/screens/instructor_analytics.dart';
+import 'package:icare/screens/instructor_qa_center_screen.dart';
+import 'package:icare/screens/instructor_earnings_screen.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/instructor_sidebar.dart';
 
 class InstructorDashboardScreen extends StatefulWidget {
   const InstructorDashboardScreen({super.key});
 
   @override
-  State<InstructorDashboardScreen> createState() => _InstructorDashboardScreenState();
+  State<InstructorDashboardScreen> createState() =>
+      _InstructorDashboardScreenState();
 }
 
 class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
@@ -45,24 +52,35 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        leading: const CustomBackButton(),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Instructor Dashboard',
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800),
+          'Program Manager Dashboard',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+          ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline, color: Color(0xFF0F172A)),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const InstructorProfileSetupScreen()),
+                MaterialPageRoute(
+                  builder: (ctx) => const InstructorProfileSetupScreen(),
+                ),
               );
             },
           ),
         ],
       ),
+      drawer: const InstructorSidebar(currentRoute: 'dashboard'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -83,13 +101,13 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       childAspectRatio: 1.5,
                       children: [
                         _buildStatCard(
-                          'Total Courses',
+                          'Total Programs',
                           '${_stats['totalCourses'] ?? 0}',
                           Icons.menu_book_rounded,
                           const Color(0xFF6366F1),
                         ),
                         _buildStatCard(
-                          'Active Students',
+                          'Active Patients',
                           '${_stats['totalStudents'] ?? 0}',
                           Icons.group_rounded,
                           const Color(0xFF10B981),
@@ -108,44 +126,103 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Quick Actions
                     const Text(
                       'Quick Actions',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildActionCard(
-                      'Manage Courses',
-                      'Create, edit, and manage your courses',
-                      Icons.school_rounded,
+                      'Manage Health Programs',
+                      'Create, edit, and manage your health programs',
+                      Icons.health_and_safety_rounded,
                       const Color(0xFF6366F1),
                       () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => const InstructorCoursesManagementScreen()),
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                const InstructorCoursesManagementScreen(),
+                          ),
                         );
                       },
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
+                    _buildActionCard(
+                      'Assign Programs',
+                      'Assign professional development to doctors or patients',
+                      Icons.assignment_ind_rounded,
+                      const Color(0xFF8B5CF6),
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                const InstructorAssignCourseScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildActionCard(
+                      'Assigned Learners',
+                      'Monitor patient and doctor progress',
+                      Icons.group_rounded,
+                      const Color(0xFF3B82F6),
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const InstructorLearnersScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildActionCard(
+                      'Educational Analytics',
+                      'Track completions and learner engagement',
+                      Icons.analytics_rounded,
+                      const Color(0xFFF59E0B),
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const InstructorAnalytics(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
                     _buildActionCard(
                       'Health Tips & Precautions',
-                      'Share health tips with your students',
+                      'Share health tips with your patients',
                       Icons.tips_and_updates_rounded,
                       const Color(0xFF10B981),
                       () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => const InstructorPrecautionsManagementScreen()),
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                const InstructorPrecautionsManagementScreen(),
+                          ),
                         );
                       },
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     _buildActionCard(
                       'Profile Settings',
                       'Update your profile and availability',
@@ -153,7 +230,10 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       const Color(0xFF64748B),
                       () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => const InstructorProfileSetupScreen()),
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                const InstructorProfileSetupScreen(),
+                          ),
                         );
                       },
                     ),
@@ -164,7 +244,12 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -216,7 +301,13 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     );
   }
 
-  Widget _buildActionCard(String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -261,7 +352,11 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF94A3B8)),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Color(0xFF94A3B8),
+            ),
           ],
         ),
       ),

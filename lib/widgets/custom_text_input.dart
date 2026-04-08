@@ -12,7 +12,7 @@ class CustomInputField extends StatefulWidget {
   final Color? bgColor;
   final Color? borderColor;
   final double borderRadius;
-  final double borderWidth; 
+  final double borderWidth;
   final EdgeInsetsGeometry? padding;
   final TextEditingController? controller;
   final Function(String)? onChanged;
@@ -102,10 +102,12 @@ class _CustomInputFieldState extends State<CustomInputField> {
             decoration: BoxDecoration(
               color: widget.bgColor ?? AppColors.white,
               borderRadius: BorderRadius.circular(widget.borderRadius),
-              border: widget.borderType ?? Border.all(
-                color: widget.borderColor ?? Colors.transparent,
-                width: widget.borderWidth,
-              ),
+              border:
+                  widget.borderType ??
+                  Border.all(
+                    color: widget.borderColor ?? Colors.transparent,
+                    width: widget.borderWidth,
+                  ),
             ),
             child: Row(
               children: [
@@ -149,7 +151,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
                     ),
                   ),
                 ),
-                 if (widget.trailingIcon != null) ...[
+                if (widget.trailingIcon != null) ...[
                   widget.trailingIcon!,
                   const SizedBox(width: 10),
                 ],

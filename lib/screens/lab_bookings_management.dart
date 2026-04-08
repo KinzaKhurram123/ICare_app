@@ -4,21 +4,26 @@ import '../services/laboratory_service.dart';
 import '../widgets/back_button.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_booking_details.dart';
+import 'package:icare/utils/error_handler.dart';
+import 'package:icare/screens/upload_lab_report_screen.dart';
 
 class LabBookingsManagement extends StatefulWidget {
-  const LabBookingsManagement({super.key});
+  final String? initialFilter;
+  final String? title;
+  const LabBookingsManagement({super.key, this.initialFilter, this.title});
 
   @override
   State<LabBookingsManagement> createState() => _LabBookingsManagementState();
 }
 
-class _LabBookingsManagementState extends State<LabBookingsManagement> with TickerProviderStateMixin {
+class _LabBookingsManagementState extends State<LabBookingsManagement>
+    with TickerProviderStateMixin {
   final LaboratoryService _labService = LaboratoryService();
   Timer? _refreshTimer;
   bool _isLoading = true;
   List<dynamic> _bookings = [];
   String? _labId;
-  String _selectedFilter = 'all';
+  late String _selectedFilter;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -31,6 +36,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter ?? 'all';
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -86,7 +92,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
     try {
       final profile = await _labService.getProfile();
       _labId = profile['_id'];
-      if (_labId == null) throw 'Laboratory ID not found';
+      if (_labId == null) throw Exception('Laboratory ID not found');
 
       final bookings = await _labService.getBookings(
         _labId!,
@@ -101,11 +107,19 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
+        final errorMessage = ErrorHandler.getFriendlyMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading bookings: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            action: ErrorHandler.isRetryable(e)
+                ? SnackBarAction(
+                    label: ErrorHandler.getActionText(e),
+                    textColor: Colors.white,
+                    onPressed: _loadBookings,
+                  )
+                : null,
           ),
         );
       }
@@ -127,11 +141,19 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
       _loadBookings();
     } catch (e) {
       if (mounted) {
+        final errorMessage = ErrorHandler.getFriendlyMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            action: ErrorHandler.isRetryable(e)
+                ? SnackBarAction(
+                    label: ErrorHandler.getActionText(e),
+                    textColor: Colors.white,
+                    onPressed: () => _updateStatus(bookingId, newStatus),
+                  )
+                : null,
           ),
         );
       }
@@ -146,9 +168,9 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
         backgroundColor: Colors.white,
         elevation: 0,
         leading: const CustomBackButton(),
-        title: const Text(
-          'Bookings Management',
-          style: TextStyle(
+        title: Text(
+          widget.title ?? 'Bookings Management',
+          style: const TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
             fontWeight: FontWeight.w900,
@@ -162,10 +184,12 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
           _buildFilterSection(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: primaryColor))
+                ? const Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  )
                 : _bookings.isEmpty
-                    ? _buildEmptyState()
-                    : _buildBookingsList(),
+                ? _buildEmptyState()
+                : _buildBookingsList(),
           ),
         ],
       ),
@@ -199,12 +223,19 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
               children: [
                 const Text(
                   'Lab Bookings',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Manage and track all test bookings',
-                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
                 ),
               ],
             ),
@@ -223,8 +254,13 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
         scrollDirection: Axis.horizontal,
         children: [
           _buildFilterChip('All', 'all', Icons.list_rounded),
+          _buildFilterChip('Urgent', 'urgent', Icons.priority_high_rounded),
           _buildFilterChip('Pending', 'pending', Icons.schedule_rounded),
-          _buildFilterChip('Confirmed', 'confirmed', Icons.check_circle_outline_rounded),
+          _buildFilterChip(
+            'Confirmed',
+            'confirmed',
+            Icons.check_circle_outline_rounded,
+          ),
           _buildFilterChip('Completed', 'completed', Icons.done_all_rounded),
           _buildFilterChip('Cancelled', 'cancelled', Icons.cancel_outlined),
         ],
@@ -235,7 +271,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
   Widget _buildFilterChip(String label, String value, IconData icon) {
     final isSelected = _selectedFilter == value;
     final color = _getStatusColor(value);
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
@@ -251,7 +287,10 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: color.withOpacity(0.2))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: color.withOpacity(0.2)),
+        ),
       ),
     );
   }
@@ -263,22 +302,33 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
         children: [
           Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('No bookings found', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text(
+            'No bookings found',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBookingsList() {
+    // Filter bookings by urgency if urgent filter is selected
+    final filteredBookings = _selectedFilter == 'urgent'
+        ? _bookings.where((b) => b['urgency'] == 'Urgent').toList()
+        : _bookings;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: RefreshIndicator(
         onRefresh: _loadBookings,
-        child: ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: _bookings.length,
-          itemBuilder: (context, index) => _buildBookingCard(_bookings[index]),
-        ),
+        child: filteredBookings.isEmpty
+            ? _buildEmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: filteredBookings.length,
+                itemBuilder: (context, index) =>
+                    _buildBookingCard(filteredBookings[index]),
+              ),
       ),
     );
   }
@@ -289,12 +339,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
     final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
     final patient = booking['patient'];
     final testName = booking['testName'] ?? 'Test';
+    final isDoctorOrdered = booking['medicalRecord'] != null;
+    final doctorName = booking['doctor']?['name'];
+    final urgency = booking['urgency'] ?? 'Normal';
+    final isUrgent = urgency == 'Urgent';
+    final diagnosisNotes = booking['diagnosisNotes'];
+    final specialInstructions = booking['specialInstructions'];
 
     return InkWell(
       onTap: () async {
         await Navigator.push(
           context,
-          MaterialPageRoute(builder: (ctx) => LabBookingDetails(booking: booking)),
+          MaterialPageRoute(
+            builder: (ctx) => LabBookingDetails(booking: booking),
+          ),
         );
         _loadBookings();
       },
@@ -304,16 +362,101 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+          border: Border.all(
+            color: isUrgent
+                ? Colors.red.withOpacity(0.4)
+                : isDoctorOrdered
+                ? const Color(0xFF8B5CF6).withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            width: isUrgent || isDoctorOrdered ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Urgency and Doctor-ordered badges
+            Row(
+              children: [
+                if (isUrgent)
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.priority_high_rounded,
+                          size: 14,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'URGENT',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (isDoctorOrdered)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.medical_services_rounded,
+                          size: 14,
+                          color: Color(0xFF8B5CF6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Doctor Ordered${doctorName != null ? ' by Dr. $doctorName' : ''}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF8B5CF6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            if (isUrgent || isDoctorOrdered) const SizedBox(height: 12),
             Row(
               children: [
                 Container(
-                  width: 50, height: 50,
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Icon(_getTestIcon(testName), color: statusColor),
                 ),
                 const SizedBox(width: 16),
@@ -321,30 +464,184 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(testName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(patient?['name'] ?? 'Patient', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text(
+                        testName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        patient?['name'] ?? 'Patient',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
+            // Diagnosis notes
+            if (diagnosisNotes != null && diagnosisNotes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.note_alt_outlined,
+                          size: 14,
+                          color: Colors.blue.shade700,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Diagnosis Notes',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      diagnosisNotes,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Special instructions
+            if (specialInstructions != null &&
+                specialInstructions.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Colors.amber.shade700,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Special Instructions',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      specialInstructions,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Divider(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.grey),
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      size: 14,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(width: 8),
-                    Text(DateFormat('MMM dd, yyyy').format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(date),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
-                Text('PKR ${booking['price'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
+                if (status.toLowerCase() == 'pending')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'confirmed'),
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    label: const Text('Confirm'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                if (status.toLowerCase() == 'confirmed' ||
+                    status.toLowerCase() == 'completed')
+                  TextButton.icon(
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => UploadLabReportScreen(booking: booking),
+                        ),
+                      );
+                      _loadBookings();
+                    },
+                    icon: const Icon(Icons.upload_file_rounded, size: 18),
+                    label: const Text('Upload'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                Text(
+                  'PKR ${booking['price'] ?? 0}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
               ],
             ),
           ],
@@ -362,11 +659,18 @@ class _LabBookingsManagementState extends State<LabBookingsManagement> with Tick
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return Colors.orange;
-      case 'confirmed': return Colors.blue;
-      case 'completed': return Colors.green;
-      case 'cancelled': return Colors.red;
-      default: return Colors.grey;
+      case 'urgent':
+        return Colors.red;
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 }

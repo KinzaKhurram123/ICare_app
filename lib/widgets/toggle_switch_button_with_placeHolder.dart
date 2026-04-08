@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
@@ -6,16 +5,18 @@ import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class ToggleSwitchButtonWithPlaceholder extends StatelessWidget {
-  const ToggleSwitchButtonWithPlaceholder({super.key, 
-  this.title,
-  this.width,
-  this.value = false, this.onToggle});
+  const ToggleSwitchButtonWithPlaceholder({
+    super.key,
+    this.title,
+    this.width,
+    this.value = false,
+    this.onToggle,
+  });
 
   final Function(bool)? onToggle;
   final bool value;
   final String? title;
   final double? width;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +43,6 @@ class ToggleSwitchButtonWithPlaceholder extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
           ),
           child: Row(
-
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CustomText(

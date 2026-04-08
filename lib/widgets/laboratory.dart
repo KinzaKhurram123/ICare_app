@@ -17,9 +17,12 @@ class Laboratory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isWeb = kIsWeb && MediaQuery.of(context).size.width > 900;
-    
+
     final String name = labData?['name'] ?? "Quantum Spar Lab";
-    final String location = labData?['address'] ?? labData?['location'] ?? "4915 Muller Radial, 84904, USA";
+    final String location =
+        labData?['address'] ??
+        labData?['location'] ??
+        "4915 Muller Radial, 84904, USA";
     final String open = labData?['open'] ?? "Open at 9:00am";
     final String homeSample = labData?['homeSample'] ?? "Home Sample Available";
     final String image = labData?['image'] ?? ImagePaths.lab3;
@@ -31,10 +34,7 @@ class Laboratory extends StatelessWidget {
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: AssetImage(image) 
-        )
+        image: DecorationImage(fit: BoxFit.cover, image: AssetImage(image)),
       ),
       child: Stack(
         alignment: AlignmentGeometry.bottomCenter,
@@ -47,7 +47,7 @@ class Laboratory extends StatelessWidget {
               color: AppColors.white,
               borderRadius: BorderRadius.only(
                 topRight: Radius.circular(18),
-                topLeft: Radius.circular(18)
+                topLeft: Radius.circular(18),
               ),
             ),
             child: Row(
@@ -111,9 +111,9 @@ class Laboratory extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(width: ScallingConfig.scale(8)),
-                
+
                 Expanded(
                   flex: 2,
                   child: Column(
@@ -151,10 +151,12 @@ class Laboratory extends StatelessWidget {
                         labelSize: isWeb ? 11 : 12,
                         onPressed: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (ctx) => LabDetails(labData: labData))
+                            MaterialPageRoute(
+                              builder: (ctx) => LabDetails(labData: labData),
+                            ),
                           );
                         },
-                      )
+                      ),
                     ],
                   ),
                 ),

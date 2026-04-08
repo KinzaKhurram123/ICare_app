@@ -47,42 +47,49 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
               firstDate: DateTime(2024, 3, 18),
               lastDate: DateTime(2030, 3, 18),
               itemExtent: ScallingConfig.scale(70),
-              itemBuilder: (context, date, isSelected, isDisabled, isToday, onTap) {
-                print(_selectedDate);
-                return InkWell(
-                  onTap: () {
-                    onTap();
+              itemBuilder:
+                  (context, date, isSelected, isDisabled, isToday, onTap) {
+                    print(_selectedDate);
+                    return InkWell(
+                      onTap: () {
+                        onTap();
+                      },
+                      child: Container(
+                        width: ScallingConfig.scale(60),
+                        height: ScallingConfig.scale(40),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.secondaryColor
+                              : AppColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(height: ScallingConfig.scale(10)),
+                            CustomText(
+                              fontSize: 22,
+                              fontFamily: "Gilroy-SemiBold",
+                              text: date.day.toString(),
+                              color: isSelected
+                                  ? AppColors.white
+                                  : AppColors.darkGray400,
+                            ),
+                            SizedBox(height: ScallingConfig.scale(10)),
+                            CustomText(
+                              fontSize: 14,
+                              fontFamily: "Gilroy-SemiBold",
+                              text: DateFormat('EEE').format(date).toString(),
+                              color: isSelected
+                                  ? AppColors.white
+                                  : AppColors.darkGray400,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   },
-                  child: Container(
-                    width: ScallingConfig.scale(60),
-                    height: ScallingConfig.scale(40),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.secondaryColor : AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(height: ScallingConfig.scale(10)),
-                        CustomText(
-                          fontSize: 22,
-                          fontFamily: "Gilroy-SemiBold",
-                          text: date.day.toString(),
-                          color: isSelected ? AppColors.white : AppColors.darkGray400,
-                        ),
-                        SizedBox(height: ScallingConfig.scale(10)),
-                        CustomText(
-                          fontSize: 14,
-                          fontFamily: "Gilroy-SemiBold",
-                          text: DateFormat('EEE').format(date).toString(),
-                          color: isSelected ? AppColors.white : AppColors.darkGray400,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
               onDateChange: (date) {
                 print(date);
                 setState(() {
@@ -148,8 +155,11 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(Icons.arrow_back_rounded,
-                                color: Color(0xFF0F172A), size: 22),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Color(0xFF0F172A),
+                              size: 22,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -175,7 +185,10 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primaryColor.withOpacity(0.06),
                             borderRadius: BorderRadius.circular(20),
@@ -183,8 +196,11 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.event_note_rounded,
-                                  size: 16, color: AppColors.primaryColor),
+                              Icon(
+                                Icons.event_note_rounded,
+                                size: 16,
+                                color: AppColors.primaryColor,
+                              ),
                               const SizedBox(width: 6),
                               CustomText(
                                 text: "4 Appointments",
@@ -204,65 +220,78 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                       firstDate: DateTime(2024, 3, 18),
                       lastDate: DateTime(2030, 3, 18),
                       itemExtent: 80,
-                      itemBuilder: (context, date, isSelected, isDisabled, isToday, onTap) {
-                        return InkWell(
-                          onTap: onTap,
-                          borderRadius: BorderRadius.circular(16),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            width: 70,
-                            height: 90,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primaryColor
-                                  : isToday
+                      itemBuilder:
+                          (
+                            context,
+                            date,
+                            isSelected,
+                            isDisabled,
+                            isToday,
+                            onTap,
+                          ) {
+                            return InkWell(
+                              onTap: onTap,
+                              borderRadius: BorderRadius.circular(16),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: 70,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primaryColor
+                                      : isToday
                                       ? AppColors.primaryColor.withOpacity(0.06)
                                       : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(16),
-                              border: isToday && !isSelected
-                                  ? Border.all(
-                                      color: AppColors.primaryColor.withOpacity(0.2),
-                                      width: 1.5)
-                                  : null,
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.primaryColor.withOpacity(0.25),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: isToday && !isSelected
+                                      ? Border.all(
+                                          color: AppColors.primaryColor
+                                              .withOpacity(0.2),
+                                          width: 1.5,
+                                        )
+                                      : null,
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.primaryColor
+                                                .withOpacity(0.25),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      date.day.toString(),
+                                      style: TextStyle(
+                                        fontFamily: "Gilroy",
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A),
                                       ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  date.day.toString(),
-                                  style: TextStyle(
-                                    fontFamily: "Gilroy",
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: isSelected ? Colors.white : const Color(0xFF0F172A),
-                                  ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat('EEE').format(date),
+                                      style: TextStyle(
+                                        fontFamily: "Gilroy",
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: isSelected
+                                            ? Colors.white.withOpacity(0.7)
+                                            : const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('EEE').format(date),
-                                  style: TextStyle(
-                                    fontFamily: "Gilroy",
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: isSelected
-                                        ? Colors.white.withOpacity(0.7)
-                                        : const Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                              ),
+                            );
+                          },
                       onDateChange: (date) {
                         setState(() {
                           _selectedDate = date;
@@ -281,7 +310,10 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                 constraints: const BoxConstraints(maxWidth: 1100),
                 child: ListView.builder(
                   itemCount: 4,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 20,
+                  ),
                   itemBuilder: (ctx, i) {
                     return const AppointmentCard();
                   },

@@ -112,57 +112,63 @@ class _WebTermsAndConditions extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(maxWidth: 1200),
               padding: const EdgeInsets.all(48),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-              boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Terms & Conditions",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
-                    fontFamily: "Gilroy-Bold",
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    offset: Offset(0, 4),
+                    blurRadius: 20,
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Please read these terms carefully before using the ICare application.",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF64748B),
-                    fontFamily: "Gilroy-Medium",
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Terms & Conditions",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                      fontFamily: "Gilroy-Bold",
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
-                const SizedBox(height: 32),
-                _buildSection(
-                  "1. Acceptance of Terms",
-                  "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                ),
-                _buildSection(
-                  "2. User Obligations",
-                  "Inceptos phasellus magnis netus at primis sodales torquent cras, LAKE potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
-                ),
-                _buildSection(
-                  "3. Privacy Policy",
-                  "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
-                ),
-                _buildSection(
-                  "4. Limitation of Liability",
-                  "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Please read these terms carefully before using the ICare application.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                      fontFamily: "Gilroy-Medium",
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
+                  const SizedBox(height: 32),
+                  _buildSection(
+                    "1. Acceptance of Terms",
+                    "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
+                  ),
+                  _buildSection(
+                    "2. User Obligations",
+                    "Inceptos phasellus magnis netus at primis sodales torquent cras, LAKE potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
+                  ),
+                  _buildSection(
+                    "3. Privacy Policy",
+                    "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
+                  ),
+                  _buildSection(
+                    "4. Limitation of Liability",
+                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

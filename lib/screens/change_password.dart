@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -16,10 +15,9 @@ class ChangePassword extends StatefulWidget {
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
- final TextEditingController emailController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
- 
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.of(context).size.width > 600) {
@@ -29,81 +27,88 @@ class _ChangePasswordState extends State<ChangePassword> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
-        title: CustomText(text: "Change password", fontFamily: "Gilroy-Bold", fontSize: 16,),
+        title: CustomText(
+          text: "Change password",
+          fontFamily: "Gilroy-Bold",
+          fontSize: 16,
+        ),
       ),
       body: SingleChildScrollView(
-                child: Padding(
-                  padding:  EdgeInsets.symmetric(horizontal: ScallingConfig.scale(20), vertical: ScallingConfig.verticalScale(20)),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: ScallingConfig.scale(20),
+            vertical: ScallingConfig.verticalScale(20),
+          ),
 
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomInputField(
-                          maxLines: 1,
-                  
-                          hintText: "Password",
-                          leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
-                          isPassword: true,
-                          bgColor: AppColors.white,
-                          borderRadius: 30,
-                          borderColor: AppColors.veryLightGrey,
-                          borderWidth: 2,
-                          // validator: (val) {
-                          //   if (val == null || val.isEmpty) {
-                          //     return "Please enter your username";
-                          //   }
-                          //   return null;
-                          // },
-                        ), 
-                  
-                        CustomInputField(
-                          maxLines: 1,
-                          hintText: "Confirm Password",
-                          leadingIcon:SvgWrapper(assetPath: ImagePaths.key),
-                          isPassword: true,
-                          bgColor: AppColors.white,
-                          borderRadius: 30,
-                          borderColor: AppColors.veryLightGrey,
-                          borderWidth: 2,
-                          // validator: (val) {
-                          //   if (val == null || val.isEmpty) {
-                          //     return "Please enter your username";
-                          //   }
-                          //   return null;
-                          // },
-                        ),
-                        SizedBox(height: ScallingConfig.scale(10)),
-                  
-                        SizedBox(
-                          width: double.infinity,
-                          height: 60,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            onPressed: () {
-                              // if (_formKey.currentState!.validate()) {
-                              //   _showSuccessModal(context);
-                              // }
-                                _showSuccessModal(context);
-                            },
-                            child: Text(
-                              "Confirm",
-                              style: TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomInputField(
+                  maxLines: 1,
+
+                  hintText: "Password",
+                  leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                  isPassword: true,
+                  bgColor: AppColors.white,
+                  borderRadius: 30,
+                  borderColor: AppColors.veryLightGrey,
+                  borderWidth: 2,
+                  // validator: (val) {
+                  //   if (val == null || val.isEmpty) {
+                  //     return "Please enter your username";
+                  //   }
+                  //   return null;
+                  // },
+                ),
+
+                CustomInputField(
+                  maxLines: 1,
+                  hintText: "Confirm Password",
+                  leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                  isPassword: true,
+                  bgColor: AppColors.white,
+                  borderRadius: 30,
+                  borderColor: AppColors.veryLightGrey,
+                  borderWidth: 2,
+                  // validator: (val) {
+                  //   if (val == null || val.isEmpty) {
+                  //     return "Please enter your username";
+                  //   }
+                  //   return null;
+                  // },
+                ),
+                SizedBox(height: ScallingConfig.scale(10)),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      // if (_formKey.currentState!.validate()) {
+                      //   _showSuccessModal(context);
+                      // }
+                      _showSuccessModal(context);
+                    },
+                    child: Text(
+                      "Confirm",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -139,95 +144,140 @@ class _WebChangePassword extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(maxWidth: 500),
               padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-              boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.lock_reset_rounded, size: 40, color: AppColors.primaryColor),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text("Update your Password", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold")),
-                  const SizedBox(height: 8),
-                  const Text("Choose a strong password to keep your account safe and secure.", textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Color(0xFF64748B))),
-                  
-                  const SizedBox(height: 32),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("New Password", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                      const SizedBox(height: 8),
-                      CustomInputField(
-                        maxLines: 1,
-                        hintText: "Enter new password",
-                        leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
-                        isPassword: true,
-                        bgColor: const Color(0xFFF8FAFC),
-                        borderRadius: 12,
-                        borderColor: const Color(0xFFE2E8F0),
-                        borderWidth: 1.5,
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Confirm Password", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                      const SizedBox(height: 8),
-                      CustomInputField(
-                        maxLines: 1,
-                        hintText: "Confirm your password",
-                        leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
-                        isPassword: true,
-                        bgColor: const Color(0xFFF8FAFC),
-                        borderRadius: 12,
-                        borderColor: const Color(0xFFE2E8F0),
-                        borderWidth: 1.5,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        _showSuccessModal(context);
-                      },
-                      child: const Text("Confirm Changes", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: "Gilroy-SemiBold")),
-                    ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    offset: Offset(0, 4),
+                    blurRadius: 20,
                   ),
                 ],
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lock_reset_rounded,
+                        size: 40,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Update your Password",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                        fontFamily: "Gilroy-Bold",
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Choose a strong password to keep your account safe and secure.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "New Password",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CustomInputField(
+                          maxLines: 1,
+                          hintText: "Enter new password",
+                          leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                          isPassword: true,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 12,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Confirm Password",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CustomInputField(
+                          maxLines: 1,
+                          hintText: "Confirm your password",
+                          leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                          isPassword: true,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 12,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          _showSuccessModal(context);
+                        },
+                        child: const Text(
+                          "Confirm Changes",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: "Gilroy-SemiBold",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -240,7 +290,9 @@ void _showSuccessModal(BuildContext context) {
     builder: (BuildContext ctx) {
       bool isWeb = MediaQuery.of(context).size.width > 600;
       return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isWeb ? 24 : 20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isWeb ? 24 : 20),
+        ),
         child: Container(
           constraints: BoxConstraints(maxWidth: isWeb ? 400 : double.infinity),
           padding: EdgeInsets.all(isWeb ? 40 : 20),
@@ -254,7 +306,11 @@ void _showSuccessModal(BuildContext context) {
                   color: Color(0xFF10B981),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check_rounded, color: Colors.white, size: isWeb ? 48 : 40),
+                child: Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: isWeb ? 48 : 40,
+                ),
               ),
               const SizedBox(height: 24),
               Text(
@@ -270,7 +326,10 @@ void _showSuccessModal(BuildContext context) {
               Text(
                 "You've successfully changed your password",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: isWeb ? 15 : 13, color: const Color(0xFF64748B)),
+                style: TextStyle(
+                  fontSize: isWeb ? 15 : 13,
+                  color: const Color(0xFF64748B),
+                ),
               ),
               const SizedBox(height: 32),
               SizedBox(

@@ -8,20 +8,18 @@ import 'package:intl/intl.dart';
 class DeclineAppointmentScreen extends StatefulWidget {
   final AppointmentDetail appointment;
 
-  const DeclineAppointmentScreen({
-    super.key,
-    required this.appointment,
-  });
+  const DeclineAppointmentScreen({super.key, required this.appointment});
 
   @override
-  State<DeclineAppointmentScreen> createState() => _DeclineAppointmentScreenState();
+  State<DeclineAppointmentScreen> createState() =>
+      _DeclineAppointmentScreenState();
 }
 
 class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   final AppointmentService _appointmentService = AppointmentService();
-  
+
   String? _selectedReason;
   bool _isSubmitting = false;
 
@@ -141,9 +139,13 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF4444),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text(_isSubmitting ? 'Declining...' : 'Decline Appointment'),
+                  child: Text(
+                    _isSubmitting ? 'Declining...' : 'Decline Appointment',
+                  ),
                 ),
               ),
             ],
@@ -188,10 +190,7 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFEF4444),
-                          Color(0xFFF87171),
-                        ],
+                        colors: [Color(0xFFEF4444), Color(0xFFF87171)],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
@@ -266,17 +265,18 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 2.5,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 2.5,
+                        ),
                     itemCount: _declineReasons.length,
                     itemBuilder: (context, index) {
                       final reason = _declineReasons[index];
                       final isSelected = _selectedReason == reason['title'];
-                      
+
                       return InkWell(
                         onTap: () {
                           setState(() {
@@ -289,15 +289,16 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                             color: isSelected ? reason['color'] : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected 
-                                  ? reason['color'] 
+                              color: isSelected
+                                  ? reason['color']
                                   : const Color(0xFFE2E8F0),
                               width: 2,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: (reason['color'] as Color).withValues(alpha: 0.3),
+                                      color: (reason['color'] as Color)
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -308,7 +309,9 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                             children: [
                               Icon(
                                 reason['icon'],
-                                color: isSelected ? Colors.white : reason['color'],
+                                color: isSelected
+                                    ? Colors.white
+                                    : reason['color'],
                                 size: 24,
                               ),
                               const SizedBox(width: 12),
@@ -318,7 +321,9 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A),
                                   ),
                                 ),
                               ),
@@ -352,7 +357,8 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                       controller: _reasonController,
                       maxLines: 5,
                       decoration: const InputDecoration(
-                        hintText: 'Provide any additional information or context...',
+                        hintText:
+                            'Provide any additional information or context...',
                         hintStyle: TextStyle(color: Color(0xFF94A3B8)),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.all(20),
@@ -372,8 +378,13 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                           label: const Text('Go Back'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 20),
-                            side: const BorderSide(color: Color(0xFFE2E8F0), width: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -383,14 +394,23 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isSubmitting ? null : _declineAppointment,
                           icon: const Icon(Icons.cancel_rounded),
-                          label: Text(_isSubmitting ? 'Declining...' : 'Decline Appointment'),
+                          label: Text(
+                            _isSubmitting
+                                ? 'Declining...'
+                                : 'Decline Appointment',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFEF4444),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 20),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
-                            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
@@ -457,10 +477,16 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
           const Divider(height: 24),
           Row(
             children: [
-              const Icon(Icons.calendar_today, size: 16, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: Color(0xFF64748B),
+              ),
               const SizedBox(width: 8),
               Text(
-                DateFormat('EEEE, MMM dd, yyyy').format(widget.appointment.date),
+                DateFormat(
+                  'EEEE, MMM dd, yyyy',
+                ).format(widget.appointment.date),
                 style: const TextStyle(fontSize: 14),
               ),
             ],
@@ -543,17 +569,26 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 14, color: Color(0xFF3B82F6)),
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: Color(0xFF3B82F6),
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            DateFormat('MMM dd, yyyy').format(widget.appointment.date),
+                            DateFormat(
+                              'MMM dd, yyyy',
+                            ).format(widget.appointment.date),
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -565,14 +600,21 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
                     ),
                     const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.access_time, size: 14, color: Color(0xFF8B5CF6)),
+                          const Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Color(0xFF8B5CF6),
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             widget.appointment.timeSlot,
@@ -597,7 +639,7 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
 
   Widget _buildReasonTile(Map<String, dynamic> reason) {
     final isSelected = _selectedReason == reason['title'];
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -638,9 +680,9 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
 
   Future<void> _declineAppointment() async {
     if (_selectedReason == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a reason')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a reason')));
       return;
     }
 
@@ -661,7 +703,9 @@ class _DeclineAppointmentScreenState extends State<DeclineAppointmentScreen> {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Failed to decline appointment')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to decline appointment'),
+          ),
         );
       }
     }

@@ -6,20 +6,22 @@ import 'package:icare/widgets/custom_text_input.dart';
 
 class InstructorCreatePrecautionScreen extends StatefulWidget {
   final Map<String, dynamic>? precaution;
-  
+
   const InstructorCreatePrecautionScreen({super.key, this.precaution});
 
   @override
-  State<InstructorCreatePrecautionScreen> createState() => _InstructorCreatePrecautionScreenState();
+  State<InstructorCreatePrecautionScreen> createState() =>
+      _InstructorCreatePrecautionScreenState();
 }
 
-class _InstructorCreatePrecautionScreenState extends State<InstructorCreatePrecautionScreen> {
+class _InstructorCreatePrecautionScreenState
+    extends State<InstructorCreatePrecautionScreen> {
   final InstructorService _instructorService = InstructorService();
   final _formKey = GlobalKey<FormState>();
-  
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool get _isEditing => widget.precaution != null;
 
@@ -45,22 +47,29 @@ class _InstructorCreatePrecautionScreenState extends State<InstructorCreatePreca
       };
 
       if (_isEditing) {
-        await _instructorService.updatePrecaution(widget.precaution!['_id'], data);
+        await _instructorService.updatePrecaution(
+          widget.precaution!['_id'],
+          data,
+        );
       } else {
         await _instructorService.createPrecaution(data);
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Health tip ${_isEditing ? 'updated' : 'created'} successfully!')),
+          SnackBar(
+            content: Text(
+              'Health tip ${_isEditing ? 'updated' : 'created'} successfully!',
+            ),
+          ),
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -77,7 +86,10 @@ class _InstructorCreatePrecautionScreenState extends State<InstructorCreatePreca
         elevation: 0,
         title: Text(
           _isEditing ? 'Edit Health Tip' : 'Create Health Tip',
-          style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800),
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       body: Form(
@@ -100,13 +112,16 @@ class _InstructorCreatePrecautionScreenState extends State<InstructorCreatePreca
               const SizedBox(height: 16),
               CustomInputField(
                 controller: _bodyController,
-                hintText: 'Description\n\nProvide detailed information, tips, and recommendations...',
+                hintText:
+                    'Description\n\nProvide detailed information, tips, and recommendations...',
                 maxLines: 10,
                 validator: (val) => val?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 32),
               CustomButton(
-                label: _isLoading ? 'Saving...' : (_isEditing ? 'Update Health Tip' : 'Create Health Tip'),
+                label: _isLoading
+                    ? 'Saving...'
+                    : (_isEditing ? 'Update Health Tip' : 'Create Health Tip'),
                 onPressed: _isLoading ? null : _save,
               ),
             ],

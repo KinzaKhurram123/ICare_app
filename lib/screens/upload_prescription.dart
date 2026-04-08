@@ -33,8 +33,9 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
         _uploading = true;
       });
 
-      // Fake upload delay (replace with API)
-      await Future.delayed(const Duration(seconds: 2));
+      // TODO: Upload to backend API
+      // For now, just simulate upload completion
+      await Future.delayed(const Duration(milliseconds: 500));
 
       setState(() {
         _uploading = false;

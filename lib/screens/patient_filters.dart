@@ -24,7 +24,7 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
     "Orthopedic",
     "Pediatrician",
     "Psychiatrist",
-    "Dentist"
+    "Dentist",
   ];
   final List<String> reviewsList = [
     '1+ Stars',
@@ -89,13 +89,13 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
         child: Center(
           child: Column(
             children: [
-              ChooseLocationButton(
-                label: "Choose Location",
-              ),
+              ChooseLocationButton(label: "Choose Location"),
               CustomDropdown<String>(
                 title: "Doctor's Speciality",
                 selectedItem: _selectedSpeciality,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: specialityArray,
                 onChanged: (value) {
                   setState(() {
@@ -106,7 +106,9 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
               CustomDropdown<String>(
                 title: "Reviews",
                 selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: reviewsList,
                 onChanged: (value) {
                   setState(() {
@@ -117,7 +119,9 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
               CustomDropdown<String>(
                 title: "Sort By",
                 selectedItem: _selectedSortByOption,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: sortByOptions,
                 onChanged: (value) {
                   setState(() {
@@ -128,7 +132,9 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
               CustomDropdown<String>(
                 title: "Pharmcy Type (Optional)",
                 selectedItem: _selectedPharmacyType,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: pharmacyTypeList,
                 onChanged: (value) {
                   setState(() {
@@ -137,7 +143,9 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                 },
               ),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(5)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(5),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -171,7 +179,7 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                 label: "Search",
                 borderRadius: 30,
                 width: Utils.windowWidth(context) * 0.9,
-              )
+              ),
             ],
           ),
         ),
@@ -232,62 +240,96 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Filters Grid
                 Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: [
-                    _buildWebDropdown("Doctor's Speciality", specialityArray, _selectedSpeciality, (val) {
-                      setState(() => _selectedSpeciality = val);
-                    }),
-                    _buildWebDropdown("Minimum Rating", reviewsList, _selectedReviews, (val) {
-                      setState(() => _selectedReviews = val);
-                    }),
-                    _buildWebDropdown("Sort By", sortByOptions, _selectedSortByOption, (val) {
-                      setState(() => _selectedSortByOption = val);
-                    }),
-                    _buildWebDropdown("Pharmacy Type (Optional)", pharmacyTypeList, _selectedPharmacyType, (val) {
-                      setState(() => _selectedPharmacyType = val);
-                    }),
-                    
+                    _buildWebDropdown(
+                      "Doctor's Speciality",
+                      specialityArray,
+                      _selectedSpeciality,
+                      (val) {
+                        setState(() => _selectedSpeciality = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Minimum Rating",
+                      reviewsList,
+                      _selectedReviews,
+                      (val) {
+                        setState(() => _selectedReviews = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Sort By",
+                      sortByOptions,
+                      _selectedSortByOption,
+                      (val) {
+                        setState(() => _selectedSortByOption = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Pharmacy Type (Optional)",
+                      pharmacyTypeList,
+                      _selectedPharmacyType,
+                      (val) {
+                        setState(() => _selectedPharmacyType = val);
+                      },
+                    ),
+
                     // Toggle Area
                     SizedBox(
                       width: double.infinity,
                       child: Row(
                         children: [
                           Expanded(
-                            child: _buildWebToggle("Medicine Availability", _medicineAvailablity, (val) {
-                              setState(() => _medicineAvailablity = val);
-                            }),
+                            child: _buildWebToggle(
+                              "Medicine Availability",
+                              _medicineAvailablity,
+                              (val) {
+                                setState(() => _medicineAvailablity = val);
+                              },
+                            ),
                           ),
                           const SizedBox(width: 24),
                           Expanded(
-                            child: _buildWebToggle("Home Availability", _homeAvailablity, (val) {
-                              setState(() => _homeAvailablity = val);
-                            }),
+                            child: _buildWebToggle(
+                              "Home Availability",
+                              _homeAvailablity,
+                              (val) {
+                                setState(() => _homeAvailablity = val);
+                              },
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
                 const Divider(height: 48, color: Color(0xFFF1F5F9)),
-                
+
                 const Text(
                   "Location Prefrences",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ChooseLocationButton(label: "Set Your Current Location"),
+                  child: ChooseLocationButton(
+                    label: "Set Your Current Location",
+                  ),
                 ),
 
                 const SizedBox(height: 56),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -305,12 +347,18 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text(
                           "Reset All",
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -323,13 +371,19 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Search results",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -343,7 +397,12 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
     );
   }
 
-  Widget _buildWebDropdown(String title, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildWebDropdown(
+    String title,
+    List<String> items,
+    String? selected,
+    Function(String?) onChanged,
+  ) {
     return SizedBox(
       width: 328,
       child: Column(
@@ -367,14 +426,26 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
             ),
             child: DropdownButton<String>(
               value: selected,
-              hint: const Text("Select option", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              hint: const Text(
+                "Select option",
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              ),
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+              ),
               items: items.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,
@@ -391,7 +462,11 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
         ),
         const SizedBox(height: 10),
         Container(
@@ -404,7 +479,10 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Enabled", style: TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+              const Text(
+                "Enabled",
+                style: TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+              ),
               Switch(
                 value: value,
                 activeColor: AppColors.primaryColor,

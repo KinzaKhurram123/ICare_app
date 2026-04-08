@@ -22,10 +22,7 @@ class CompletedReportsScreen extends StatelessWidget {
         leading: const CustomBackButton(),
         title: const Text(
           'Completed Reports',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -86,9 +83,16 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 56),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 56,
+                    ),
                   ),
                   const SizedBox(width: 40),
                   Expanded(
@@ -119,7 +123,10 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 25),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 25,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -132,28 +139,32 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                           color: const Color(0xFF10B981).withOpacity(0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
-                        )
+                        ),
                       ],
                     ),
                     child: Column(
                       children: const [
                         Text(
                           "Total Completed",
-                          style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 8),
                         Text(
                           "32",
                           style: TextStyle(
-                            color: Colors.white, 
-                            fontSize: 40, 
-                            fontFamily: "Gilroy-Bold", 
-                            fontWeight: FontWeight.bold
+                            color: Colors.white,
+                            fontSize: 40,
+                            fontFamily: "Gilroy-Bold",
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -161,8 +172,8 @@ class _WebCompletedReportsScreen extends StatelessWidget {
             // Search and Filter Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(50, 40, 50, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1600),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -186,19 +197,27 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                             color: Colors.black.withOpacity(0.04),
                             blurRadius: 20,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 24),
+                          const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 24,
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: TextField(
                               decoration: const InputDecoration(
                                 hintText: "Search reports...",
-                                hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.w500),
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                               ),
@@ -211,7 +230,7 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Grid of Orders
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 0),
@@ -223,10 +242,8 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                   alignment: WrapAlignment.start,
                   children: List.generate(
                     6,
-                    (index) => const SizedBox(
-                      width: 400,
-                      child: _WebCompletedCard(),
-                    ),
+                    (index) =>
+                        const SizedBox(width: 400, child: _WebCompletedCard()),
                   ),
                 ),
               ),
@@ -269,10 +286,17 @@ class _WebCompletedCard extends StatelessWidget {
                   color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.verified_rounded, color: Color(0xFF16A34A), size: 28),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 28,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(20),
@@ -286,7 +310,7 @@ class _WebCompletedCard extends StatelessWidget {
                     fontFamily: "Gilroy-SemiBold",
                   ),
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -303,8 +327,17 @@ class _WebCompletedCard extends StatelessWidget {
           const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1.5),
           const SizedBox(height: 24),
           _webInfoRow(Icons.person_outline_rounded, 'Patient', 'Sadia'),
-          _webInfoRow(Icons.location_on_outlined, 'Address', 'Shahrah-e-faisal near KFC, Street 1', maxLines: 2),
-          _webInfoRow(Icons.account_balance_wallet_outlined, 'Amount', '₨ 6,000'),
+          _webInfoRow(
+            Icons.location_on_outlined,
+            'Address',
+            'Shahrah-e-faisal near KFC, Street 1',
+            maxLines: 2,
+          ),
+          _webInfoRow(
+            Icons.account_balance_wallet_outlined,
+            'Amount',
+            '₨ 6,000',
+          ),
           _webInfoRow(Icons.calendar_today_outlined, 'Date', '21 June 2025'),
           _webInfoRow(Icons.phone_outlined, 'Phone', '03098949375'),
         ],
@@ -312,7 +345,12 @@ class _WebCompletedCard extends StatelessWidget {
     );
   }
 
-  static Widget _webInfoRow(IconData icon, String label, String value, {int maxLines = 1}) {
+  static Widget _webInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -376,10 +414,7 @@ class CompletedReportCard extends StatelessWidget {
         children: [
           const Text(
             'Quantum Spar Lab',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
 
@@ -398,17 +433,11 @@ class CompletedReportCard extends StatelessWidget {
             children: const [
               Text(
                 'Amount',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
               Text(
                 '6000',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -427,10 +456,7 @@ class CompletedReportCard extends StatelessWidget {
             flex: 3,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
             ),
           ),
           Expanded(
@@ -438,10 +464,7 @@ class CompletedReportCard extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ],

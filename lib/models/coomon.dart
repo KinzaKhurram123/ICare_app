@@ -5,7 +5,6 @@ class CommonData {
   final List<Map<dynamic, dynamic>>? cartData;
   final bool profileCreated;
   final String? selectedReason;
-  
 
   const CommonData({
     this.userData,

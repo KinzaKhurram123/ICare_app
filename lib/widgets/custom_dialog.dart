@@ -81,7 +81,8 @@ class CustomDialog {
                         title,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: titleSize ?? ScallingConfig.moderateScale(24),
+                          fontSize:
+                              titleSize ?? ScallingConfig.moderateScale(24),
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF0F172A),
                           letterSpacing: -0.5,
@@ -93,7 +94,9 @@ class CustomDialog {
                         description,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: descriptionSize ?? ScallingConfig.moderateScale(15),
+                          fontSize:
+                              descriptionSize ??
+                              ScallingConfig.moderateScale(15),
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
                           height: 1.5,

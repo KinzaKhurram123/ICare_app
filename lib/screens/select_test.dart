@@ -1,17 +1,11 @@
-import 'dart:convert';
-import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/lab_test.dart';
 import 'package:icare/screens/confirm_booking.dart';
-import 'package:icare/utils/imagePaths.dart';
+import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
-import 'package:icare/widgets/svg_wrapper.dart';
-import 'package:icare/services/laboratory_service.dart';
 
 class SelectTest extends StatefulWidget {
   final Map<String, dynamic> bookingData;
@@ -23,9 +17,11 @@ class SelectTest extends StatefulWidget {
 
 class _SelectTestState extends State<SelectTest> {
   final LaboratoryService _labService = LaboratoryService();
-  bool _isLoading = true;
-  List<LabTest> _tests = [];
   final List<LabTest> _selectedTests = [];
+  List<LabTest> _allTests = [];
+  List<LabTest> _filteredTests = [];
+  bool _isLoading = true;
+  String _searchQuery = "";
 
   @override
   void initState() {
@@ -37,111 +33,282 @@ class _SelectTestState extends State<SelectTest> {
     try {
       final labId = widget.bookingData['labId'];
       if (labId == null) throw 'Lab ID is missing';
-      
+
       final lab = await _labService.getLabById(labId);
-      final List<dynamic> availableTests = lab['availableTests'] ?? [];
-      
-      setState(() {
-        _tests = availableTests.map((t) => LabTest(
-          id: t['_id'] ?? t['name'], 
-          name: t['name'], 
+      final List<dynamic> testsData = lab['availableTests'] ?? [];
+
+      final List<LabTest> loadedTests = testsData.map((t) {
+        return LabTest(
+          id: t['_id'] ?? t['name'] ?? DateTime.now().toString(),
+          name: t['name']?.toString() ?? 'Unnamed Test',
           price: (t['price'] ?? 0).toDouble(),
-        )).toList();
-        _isLoading = false;
-      });
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _allTests = loadedTests;
+          _filteredTests = loadedTests;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Error fetching tests: $e');
-      setState(() => _isLoading = false);
+      print('Error fetching lab tests: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _onSelect(LabTest item) {
+  void _onSearch(String query) {
     setState(() {
-      if (_selectedTests.any((e) => e.id == item.id)) {
-        _selectedTests.removeWhere((e) => e.id == item.id);
-      } else {
-        _selectedTests.add(item);
-      }
+      _searchQuery = query;
+      _filteredTests = _allTests
+          .where((t) => t.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     });
   }
 
+  double get _totalPrice =>
+      _selectedTests.fold(0, (sum, item) => sum + item.price);
+
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    log(jsonEncode(_selectedTests.map((e) => e).toList()));
-
     return Scaffold(
-      appBar: AppBar(
-        leading: CustomBackButton(),
-        automaticallyImplyLeading: false,
-        title: CustomText(
-          text: "Book A Lab",
-          fontSize: 16.78,
-          fontFamily: "Gilroy-Bold",
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.31,
-          lineHeight: 1.0,
-          color: AppColors.primary500,
-        ),
+      backgroundColor: const Color(0xFFF8FAFD),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(),
+              _buildSearchBar(),
+              _isLoading
+                  ? _buildLoadingState()
+                  : _allTests.isEmpty
+                  ? _buildEmptyState()
+                  : _buildTestsList(),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
+          ),
+          if (_selectedTests.isNotEmpty) _buildStickySummaryFooter(),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              SizedBox(height: ScallingConfig.scale(10)),
-              CustomText(
-                width: Utils.windowWidth(context) * 0.9,
-                text: "Select Test",
-                fontFamily: "Gilroy-SemiBold",
-                fontWeight: FontWeight.w400,
-                fontSize: 14.78,
-                color: AppColors.primary500,
-              ),
+    );
+  }
 
-              if (_tests.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 50),
-                  child: CustomText(
-                    text: "No tests available for this laboratory.",
-                    color: Colors.grey,
-                  ),
-                )
-              else
-                ..._tests.map(
-                  (labtest) => SelectableItem(
-                    selected: _selectedTests.any((e) => e.id == labtest.id),
-                    item: labtest,
-                    onSelect: () => _onSelect(labtest),
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 140,
+      pinned: true,
+      backgroundColor: AppColors.primaryColor,
+      leading: const CustomBackButton(),
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primaryColor, Color(0xFF1E40AF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Text(
+                  'STEP 2 OF 3',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
                   ),
                 ),
+                const SizedBox(height: 4),
+                CustomText(
+                  text: 'Select Lab Tests',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  fontFamily: 'Gilroy-Bold',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomButton(
-                labelSize: 16.89,
-                label: "Confirm Booking Summary",
-                onPressed: () {
-                  if (_selectedTests.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please select at least one test')),
-                    );
-                    return;
-                  }
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => ConfirmBookingScreen(
-                        bookingData: widget.bookingData,
-                        selectedTests: _selectedTests,
+  Widget _buildSearchBar() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: TextField(
+            onChanged: _onSearch,
+            decoration: const InputDecoration(
+              hintText: "Search for tests (e.g. CBC, Liver...)",
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: AppColors.primaryColor,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const SliverFillRemaining(
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SliverFillRemaining(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.biotech_rounded, size: 80, color: Colors.grey[200]),
+            const SizedBox(height: 20),
+            const Text(
+              "No tests available for this laboratory",
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Go Back and Select Another Lab"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestsList() {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((ctx, i) {
+          final test = _filteredTests[i];
+          final bool isSelected = _selectedTests.any((t) => t.id == test.id);
+          return _buildTestCard(test, isSelected);
+        }, childCount: _filteredTests.length),
+      ),
+    );
+  }
+
+  Widget _buildTestCard(LabTest test, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            if (isSelected) {
+              _selectedTests.removeWhere((t) => t.id == test.id);
+            } else {
+              _selectedTests.add(test);
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryColor.withOpacity(0.05)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryColor
+                  : const Color(0xFFE2E8F0),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : const Color(0xFFCBD5E1),
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : Colors.transparent,
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      test.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : const Color(0xFF0F172A),
                       ),
                     ),
-                  );
-                },
-                borderRadius: 30,
-                width: Utils.windowWidth(context) * 0.9,
+                    const SizedBox(height: 4),
+                    Text(
+                      "Rs. ${test.price.toInt()}",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primaryColor.withOpacity(0.7)
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -149,66 +316,82 @@ class _SelectTestState extends State<SelectTest> {
       ),
     );
   }
-}
 
-class SelectableItem extends StatelessWidget {
-  const SelectableItem({
-    super.key,
-    this.onSelect,
-    this.selected = false,
-    this.item,
-    this.selectedItems,
-  });
-  final bool selected;
-  final LabTest? item;
-  final List? selectedItems;
-  final VoidCallback? onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onSelect,
+  Widget _buildStickySummaryFooter() {
+    return Positioned(
+      bottom: 20,
+      left: 20,
+      right: 20,
       child: Container(
-        margin: EdgeInsets.only(top: ScallingConfig.verticalScale(12)),
-        padding: EdgeInsets.symmetric(
-          vertical: ScallingConfig.verticalScale(10),
-          horizontal: ScallingConfig.scale(15),
-        ),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.white,
-          border: Border.all(color: AppColors.lightGrey10),
-          borderRadius: BorderRadius.circular(25),
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
-        width: Utils.windowWidth(context) * 0.9,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            selected
-                ? SvgWrapper(
-                    assetPath: ImagePaths.success,
-                    width: ScallingConfig.scale(20),
-                    height: ScallingConfig.scale(20),
-                  )
-                : Icon(
-                    Icons.radio_button_unchecked,
-                    color: AppColors.darkGreyColor.withAlpha(70),
-                  ),
-            SizedBox(width: ScallingConfig.scale(10)),
             Expanded(
-              child: CustomText(
-                text: item?.name ?? "",
-                fontFamily: "Gilroy-Medium",
-                fontSize: 14.79,
-                color: AppColors.grayColor,
-                fontWeight: FontWeight.w400,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${_selectedTests.length} tests selected",
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    "Total: Rs. ${_totalPrice.toInt()}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
               ),
             ),
-            CustomText(
-              text: "\$${item?.price}",
-              fontFamily: "Gilroy-SemiBold",
-              fontSize: 14.79,
-              color: AppColors.primary500,
-              fontWeight: FontWeight.w400,
+            const SizedBox(width: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => ConfirmBookingScreen(
+                      bookingData: widget.bookingData,
+                      selectedTests: _selectedTests,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: const Row(
+                children: [
+                  Text("Review", style: TextStyle(fontWeight: FontWeight.w900)),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                ],
+              ),
             ),
           ],
         ),

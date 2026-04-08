@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/services/pharmacy_service.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:intl/intl.dart';
 
 class PharmacyOrders extends StatefulWidget {
@@ -11,7 +12,8 @@ class PharmacyOrders extends StatefulWidget {
   State<PharmacyOrders> createState() => _PharmacyOrdersState();
 }
 
-class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProviderStateMixin {
+class _PharmacyOrdersState extends State<PharmacyOrders>
+    with SingleTickerProviderStateMixin {
   final PharmacyService _pharmacyService = PharmacyService();
   late TabController _tabController;
   bool _isLoading = true;
@@ -44,15 +46,27 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
       final status = _getCurrentStatus();
       final orders = await _pharmacyService.getPharmacyOrders(status: status);
       setState(() {
-        _orders = orders.map((o) => {
-          '_id': o['_id'],
-          'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
-          'customerName': 'Customer', // Would need to populate user data
-          'items': (o['items'] as List?)?.length ?? 0,
-          'total': (o['totalAmount'] ?? 0).toDouble(),
-          'status': o['status'] ?? 'pending',
-          'date': o['createdAt'] != null ? DateTime.parse(o['createdAt']) : DateTime.now(),
-          'medicines': (o['items'] as List?)?.map((item) => item['productName'] ?? 'Unknown').toList() ?? [],
+        _orders = orders.map((o) {
+          final user = o['user'] as Map<String, dynamic>?;
+          return {
+            '_id': o['_id'],
+            'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
+            'customerName': user?['name'] ?? 'Guest Customer',
+            'customerPhone': user?['phoneNumber'] ?? 'N/A',
+            'items': (o['items'] as List?)?.length ?? 0,
+            'total': (o['totalAmount'] ?? 0).toDouble(),
+            'status': o['status'] ?? 'pending',
+            'date': o['createdAt'] != null
+                ? DateTime.parse(o['createdAt'])
+                : DateTime.now(),
+            'medicines':
+                (o['items'] as List?)
+                    ?.map((item) => item['productName'] ?? 'Unknown')
+                    .toList() ??
+                [],
+            'prescriptionText': o['prescriptionText'],
+            'medicalRecord': o['medicalRecord'],
+          };
         }).toList();
         _isLoading = false;
       });
@@ -60,20 +74,23 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
       print('Error loading orders: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading orders: $e')),
-        );
+        Utils.showErrorSnackBar(context, e);
       }
     }
   }
 
   String _getCurrentStatus() {
     switch (_tabController.index) {
-      case 0: return 'all';
-      case 1: return 'pending';
-      case 2: return 'processing';
-      case 3: return 'completed';
-      default: return 'all';
+      case 0:
+        return 'all';
+      case 1:
+        return 'pending';
+      case 2:
+        return 'processing';
+      case 3:
+        return 'completed';
+      default:
+        return 'all';
     }
   }
 
@@ -88,9 +105,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating order: $e')),
-        );
+        Utils.showErrorSnackBar(context, e);
       }
     }
   }
@@ -110,7 +125,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Orders',
+          'Dispense Requests',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -123,12 +138,15 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
           labelColor: AppColors.primaryColor,
           unselectedLabelColor: const Color(0xFF64748B),
           indicatorColor: AppColors.primaryColor,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
           tabs: const [
             Tab(text: 'All'),
-            Tab(text: 'Pending'),
+            Tab(text: 'Awaiting Fulfillment'),
             Tab(text: 'Processing'),
-            Tab(text: 'Completed'),
+            Tab(text: 'Dispensed'),
           ],
         ),
       ),
@@ -148,13 +166,17 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (orders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey.shade300),
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 16),
             const Text(
               'No orders found',
@@ -178,13 +200,22 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
     final status = order['status'] as String;
     final statusColor = _getStatusColor(status);
     final date = order['date'] as DateTime;
+    final isDoctorReferred = order['medicalRecord'] != null;
+    final hasPrescriptionText =
+        order['prescriptionText'] != null &&
+        order['prescriptionText'].toString().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: isDoctorReferred
+              ? const Color(0xFF10B981).withValues(alpha: 0.3)
+              : statusColor.withValues(alpha: 0.2),
+          width: isDoctorReferred ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -205,54 +236,98 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                 topRight: Radius.circular(16),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.shopping_bag_rounded, color: statusColor, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order['id'],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
+                // Doctor-referred badge
+                if (isDoctorReferred)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(
+                          Icons.medical_services_rounded,
+                          size: 14,
+                          color: Color(0xFF10B981),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order['customerName'],
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
+                        SizedBox(width: 6),
+                        Text(
+                          'Doctor Prescribed',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    status.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      ],
                     ),
                   ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.shopping_bag_rounded,
+                        color: statusColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order['id'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            order['customerName'],
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        status.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -262,6 +337,35 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Show prescription text if doctor-referred
+                if (hasPrescriptionText) ...[
+                  const Text(
+                    'Prescription:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Text(
+                      order['prescriptionText'],
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF0F172A),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 const Text(
                   'Items:',
                   style: TextStyle(
@@ -296,6 +400,60 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                     ),
                   );
                 }),
+                if (order['prescriptionText'] != null &&
+                    (order['prescriptionText'] as String).isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.description_rounded,
+                              color: Color(0xFF166534),
+                              size: 16,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'CLINICAL PRESCRIPTION',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF166534),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          order['prescriptionText'],
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF064E3B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (order['medicalRecord'] != null) ...[
+                          const Divider(height: 16, color: Color(0xFFBBF7D0)),
+                          Text(
+                            "Diagnosis: ${order['medicalRecord']['diagnosis'] ?? 'N/A'}",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF065F46),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -348,7 +506,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => _updateOrderStatus(order['_id'], 'cancelled'),
+                          onPressed: () =>
+                              _updateOrderStatus(order['_id'], 'cancelled'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFEF4444),
                             side: const BorderSide(color: Color(0xFFEF4444)),
@@ -359,7 +518,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _updateOrderStatus(order['_id'], 'confirmed'),
+                          onPressed: () =>
+                              _updateOrderStatus(order['_id'], 'confirmed'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
                           ),
@@ -371,7 +531,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                 ] else if (status == 'confirmed') ...[
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => _updateOrderStatus(order['_id'], 'preparing'),
+                    onPressed: () =>
+                        _updateOrderStatus(order['_id'], 'preparing'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                     ),
@@ -380,7 +541,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                 ] else if (status == 'preparing') ...[
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => _updateOrderStatus(order['_id'], 'out_for_delivery'),
+                    onPressed: () =>
+                        _updateOrderStatus(order['_id'], 'out_for_delivery'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8B5CF6),
                     ),
@@ -389,7 +551,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
                 ] else if (status == 'out_for_delivery') ...[
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => _updateOrderStatus(order['_id'], 'completed'),
+                    onPressed: () =>
+                        _updateOrderStatus(order['_id'], 'completed'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                     ),
@@ -406,11 +569,16 @@ class _PharmacyOrdersState extends State<PharmacyOrders> with SingleTickerProvid
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return const Color(0xFFF59E0B);
-      case 'processing': return const Color(0xFF3B82F6);
-      case 'completed': return const Color(0xFF10B981);
-      case 'cancelled': return const Color(0xFFEF4444);
-      default: return const Color(0xFF64748B);
+      case 'pending':
+        return const Color(0xFFF59E0B);
+      case 'processing':
+        return const Color(0xFF3B82F6);
+      case 'completed':
+        return const Color(0xFF10B981);
+      case 'cancelled':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF64748B);
     }
   }
 }

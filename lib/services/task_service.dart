@@ -16,12 +16,14 @@ class TaskService {
     }
   }
 
-  Future<Map<String, dynamic>> updateTaskStatus(String taskId, String status) async {
+  Future<Map<String, dynamic>> updateTaskStatus(
+    String taskId,
+    String status,
+  ) async {
     try {
-      final response = await _apiService.put(
-        '/tasks/$taskId/status',
-        {'status': status},
-      );
+      final response = await _apiService.put('/tasks/$taskId/status', {
+        'status': status,
+      });
       return response.data['task'];
     } catch (e) {
       print('Error updating task status: $e');

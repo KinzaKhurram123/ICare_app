@@ -15,11 +15,12 @@ class PatientHistoryView extends StatefulWidget {
   State<PatientHistoryView> createState() => _PatientHistoryViewState();
 }
 
-class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTickerProviderStateMixin {
+class _PatientHistoryViewState extends State<PatientHistoryView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final AppointmentService _appointmentService = AppointmentService();
   final MedicalRecordService _medicalRecordService = MedicalRecordService();
-  
+
   List<dynamic> _appointments = [];
   List<dynamic> _medicalRecords = [];
   bool _isLoading = true;
@@ -39,23 +40,24 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     // In real app, filter by patient ID
-    final appointmentsResult = await _appointmentService.getMyAppointmentsDetailed();
+    final appointmentsResult = await _appointmentService
+        .getMyAppointmentsDetailed();
     final recordsResult = await _medicalRecordService.getDoctorRecords();
-    
+
     if (appointmentsResult['success']) {
       _appointments = (appointmentsResult['appointments'] as List)
           .where((a) => a.patient?.id == widget.patient.id)
           .toList();
     }
-    
+
     if (recordsResult['success']) {
       _medicalRecords = (recordsResult['records'] as List)
           .where((r) => r['patient']?['_id'] == widget.patient.id)
           .toList();
     }
-    
+
     setState(() => _isLoading = false);
   }
 
@@ -107,7 +109,9 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
       padding: EdgeInsets.all(isDesktop ? 40 : 20),
       child: Center(
         child: Container(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+          constraints: BoxConstraints(
+            maxWidth: isDesktop ? 1000 : double.infinity,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -119,9 +123,14 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
               ),
               const SizedBox(height: 24),
               if (_appointments.isEmpty)
-                _buildEmptyState('No appointments found', Icons.event_busy_rounded)
+                _buildEmptyState(
+                  'No appointments found',
+                  Icons.event_busy_rounded,
+                )
               else
-                ..._appointments.map((appointment) => _buildAppointmentCard(appointment)),
+                ..._appointments.map(
+                  (appointment) => _buildAppointmentCard(appointment),
+                ),
             ],
           ),
         ),
@@ -134,7 +143,9 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
       padding: EdgeInsets.all(isDesktop ? 40 : 20),
       child: Center(
         child: Container(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : double.infinity),
+          constraints: BoxConstraints(
+            maxWidth: isDesktop ? 1000 : double.infinity,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -146,9 +157,14 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
               ),
               const SizedBox(height: 24),
               if (_medicalRecords.isEmpty)
-                _buildEmptyState('No medical records found', Icons.folder_off_rounded)
+                _buildEmptyState(
+                  'No medical records found',
+                  Icons.folder_off_rounded,
+                )
               else
-                ..._medicalRecords.map((record) => _buildMedicalRecordCard(record)),
+                ..._medicalRecords.map(
+                  (record) => _buildMedicalRecordCard(record),
+                ),
             ],
           ),
         ),
@@ -156,13 +172,16 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
     );
   }
 
-  Widget _buildSummaryCard(String label, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.8)],
-        ),
+        gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.8)]),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -246,7 +265,10 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: BorderRadius.circular(8),
@@ -276,7 +298,11 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
                 ),
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.medical_information_rounded, size: 14, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.medical_information_rounded,
+                size: 14,
+                color: Color(0xFF64748B),
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -324,7 +350,11 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
                   color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.medical_services_rounded, color: Color(0xFF10B981), size: 20),
+                child: const Icon(
+                  Icons.medical_services_rounded,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -351,14 +381,18 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
               ),
             ],
           ),
-          if (record['symptoms'] != null && (record['symptoms'] as List).isNotEmpty) ...[
+          if (record['symptoms'] != null &&
+              (record['symptoms'] as List).isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: (record['symptoms'] as List).take(3).map((symptom) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(6),
@@ -374,6 +408,73 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
                 );
               }).toList(),
             ),
+          ],
+          if (record['labReportUrls'] != null &&
+              (record['labReportUrls'] as List).isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 8),
+            const Text(
+              "Lab Reports",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...(record['labReportUrls'] as List).map((report) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: InkWell(
+                  onTap: () {
+                    // Logic to view the reportUrl (e.g. open in browser or PDF viewer)
+                    // ignore: avoid_print
+                    print("Opening Report URL: ${report['url']}");
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFFF8FAFC),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.picture_as_pdf_rounded,
+                              color: Colors.redAccent,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              report['testName'] ?? 'Lab Report',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Icon(
+                          Icons.download_rounded,
+                          color: AppColors.primaryColor,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ],
         ],
       ),
@@ -394,10 +495,7 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
             const SizedBox(height: 16),
             Text(
               message,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF64748B),
-              ),
+              style: const TextStyle(fontSize: 15, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -407,11 +505,16 @@ class _PatientHistoryViewState extends State<PatientHistoryView> with SingleTick
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'confirmed': return const Color(0xFF10B981);
-      case 'pending': return const Color(0xFFF59E0B);
-      case 'cancelled': return const Color(0xFFEF4444);
-      case 'completed': return const Color(0xFF3B82F6);
-      default: return const Color(0xFF64748B);
+      case 'confirmed':
+        return const Color(0xFF10B981);
+      case 'pending':
+        return const Color(0xFFF59E0B);
+      case 'cancelled':
+        return const Color(0xFFEF4444);
+      case 'completed':
+        return const Color(0xFF3B82F6);
+      default:
+        return const Color(0xFF64748B);
     }
   }
 }

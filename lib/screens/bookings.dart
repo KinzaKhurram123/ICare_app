@@ -1,19 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/booking_categories.dart';
+import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-class BookingsScreen extends StatelessWidget {
+class BookingsScreen extends ConsumerStatefulWidget {
   const BookingsScreen({super.key, this.tabs = false});
   final bool tabs;
 
   @override
+  ConsumerState<BookingsScreen> createState() => _BookingsScreenState();
+}
+
+class _BookingsScreenState extends ConsumerState<BookingsScreen> {
+  final AppointmentService _appointmentService = AppointmentService();
+  List<AppointmentDetail> _appointments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointments();
+  }
+
+  Future<void> _loadAppointments() async {
+    setState(() => _isLoading = true);
+    final result = await _appointmentService.getMyAppointmentsDetailed();
+    if (result['success']) {
+      setState(() {
+        _appointments = result['appointments'] as List<AppointmentDetail>;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  int _getCount(String status) {
+    if (status == 'Upcoming') {
+      return _appointments
+          .where(
+            (a) =>
+                a.status.toLowerCase() == 'pending' ||
+                a.status.toLowerCase() == 'confirmed',
+          )
+          .length;
+    }
+    return _appointments
+        .where((a) => a.status.toLowerCase() == status.toLowerCase())
+        .length;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final List<Map<String, dynamic>> bookingMenu = [
       {
@@ -23,10 +72,17 @@ class BookingsScreen extends StatelessWidget {
         "icon": Icons.play_circle_outline_rounded,
         "color": const Color(0xFF3B82F6),
         "bgColor": const Color(0xFF3B82F6).withOpacity(0.08),
-        "count": "3",
+        "count": _getCount('In Progress').toString(),
         "image": ImagePaths.inProgress,
         "onPressed": () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => BookingCategories()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 0,
+              ),
+            ),
+          );
         },
       },
       {
@@ -36,10 +92,17 @@ class BookingsScreen extends StatelessWidget {
         "icon": Icons.schedule_rounded,
         "color": const Color(0xFF14B1FF),
         "bgColor": const Color(0xFF14B1FF).withOpacity(0.08),
-        "count": "7",
+        "count": _getCount('Upcoming').toString(),
         "image": ImagePaths.upcoming,
         "onPressed": () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => BookingCategories()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 0,
+              ),
+            ),
+          );
         },
       },
       {
@@ -49,10 +112,17 @@ class BookingsScreen extends StatelessWidget {
         "icon": Icons.cancel_outlined,
         "color": const Color(0xFFEF4444),
         "bgColor": const Color(0xFFEF4444).withOpacity(0.08),
-        "count": "2",
+        "count": _getCount('Cancelled').toString(),
         "image": ImagePaths.cancelled,
         "onPressed": () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => BookingCategories()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 1,
+              ),
+            ),
+          );
         },
       },
       {
@@ -62,10 +132,17 @@ class BookingsScreen extends StatelessWidget {
         "icon": Icons.check_circle_outline_rounded,
         "color": const Color(0xFF22C55E),
         "bgColor": const Color(0xFF22C55E).withOpacity(0.08),
-        "count": "24",
+        "count": _getCount('Completed').toString(),
         "image": ImagePaths.completed,
         "onPressed": () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => BookingCategories()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 2,
+              ),
+            ),
+          );
         },
       },
       {
@@ -75,10 +152,17 @@ class BookingsScreen extends StatelessWidget {
         "icon": Icons.hourglass_empty_rounded,
         "color": const Color(0xFFF59E0B),
         "bgColor": const Color(0xFFF59E0B).withOpacity(0.08),
-        "count": "1",
+        "count": _getCount('Pending').toString(),
         "image": ImagePaths.pending,
         "onPressed": () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => BookingCategories()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 0,
+              ),
+            ),
+          );
         },
       },
     ];
@@ -102,18 +186,19 @@ class BookingsScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 SizedBox(height: ScallingConfig.scale(20)),
-                if (!tabs) ...[
+                if (!widget.tabs)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [CustomBackButton()],
                   ),
-                ],
                 SizedBox(height: ScallingConfig.scale(20)),
                 Center(
                   child: CustomText(
                     text: "Bookings Hsitory",
                     fontSize: 25.27,
-                    padding: EdgeInsets.only(left: ScallingConfig.moderateScale(12)),
+                    padding: EdgeInsets.only(
+                      left: ScallingConfig.moderateScale(12),
+                    ),
                     color: AppColors.themeBlue,
                     fontWeight: FontWeight.w700,
                     isBold: true,
@@ -121,7 +206,8 @@ class BookingsScreen extends StatelessWidget {
                 ),
                 Center(
                   child: CustomText(
-                    text: "Stay on top of your schedule with real-time updates on patient bookings.",
+                    text:
+                        "Stay on top of your schedule with real-time updates on patient bookings.",
                     padding: EdgeInsets.only(
                       top: ScallingConfig.verticalScale(10),
                       left: ScallingConfig.moderateScale(12),
@@ -215,7 +301,7 @@ class BookingsScreen extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 900),
                   child: Column(
                     children: [
-                      if (!tabs)
+                      if (!widget.tabs)
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Padding(
@@ -228,8 +314,11 @@ class BookingsScreen extends StatelessWidget {
                                   color: Colors.white.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Icon(Icons.arrow_back_rounded,
-                                    color: Colors.white, size: 22),
+                                child: const Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                             ),
                           ),
@@ -240,8 +329,11 @@ class BookingsScreen extends StatelessWidget {
                           color: Colors.white.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.calendar_month_rounded,
-                            color: Colors.white, size: 32),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       CustomText(
@@ -253,7 +345,8 @@ class BookingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       CustomText(
-                        text: "Stay on top of your schedule with real-time updates",
+                        text:
+                            "Stay on top of your schedule with real-time updates",
                         fontSize: 15,
                         color: Colors.white.withOpacity(0.6),
                         fontWeight: FontWeight.w400,
@@ -263,11 +356,23 @@ class BookingsScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildStatChip("37", "Total", Colors.white),
+                          _buildStatChip(
+                            _appointments.length.toString(),
+                            "Total",
+                            Colors.white,
+                          ),
                           const SizedBox(width: 12),
-                          _buildStatChip("3", "Active", const Color(0xFF3B82F6)),
+                          _buildStatChip(
+                            _getCount('In Progress').toString(),
+                            "Active",
+                            const Color(0xFF3B82F6),
+                          ),
                           const SizedBox(width: 12),
-                          _buildStatChip("24", "Done", const Color(0xFF22C55E)),
+                          _buildStatChip(
+                            _getCount('Completed').toString(),
+                            "Done",
+                            const Color(0xFF22C55E),
+                          ),
                         ],
                       ),
                     ],
@@ -281,7 +386,10 @@ class BookingsScreen extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 900),
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 24,
+                    ),
                     itemCount: bookingMenu.length,
                     itemBuilder: (ctx, i) {
                       final item = bookingMenu[i];
@@ -316,19 +424,25 @@ class BookingsScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value,
-              style: TextStyle(
-                  fontFamily: "Gilroy",
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: "Gilroy",
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(
-                  fontFamily: "Gilroy",
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: color.withOpacity(0.7))),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: "Gilroy",
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: color.withOpacity(0.7),
+            ),
+          ),
         ],
       ),
     );
@@ -337,8 +451,12 @@ class BookingsScreen extends StatelessWidget {
 
 // ─── Original mobile card ────────────────────────────────────────────────────
 class BookingCategoryCard extends StatelessWidget {
-  const BookingCategoryCard(
-      {super.key, this.title, this.image, this.onPressed});
+  const BookingCategoryCard({
+    super.key,
+    this.title,
+    this.image,
+    this.onPressed,
+  });
   final String? title;
   final Function()? onPressed;
   final String? image;
@@ -350,7 +468,9 @@ class BookingCategoryCard extends StatelessWidget {
       child: Container(
         margin: EdgeInsets.only(top: ScallingConfig.scale(5)),
         padding: EdgeInsets.only(
-            top: ScallingConfig.scale(10), left: ScallingConfig.scale(20)),
+          top: ScallingConfig.scale(10),
+          left: ScallingConfig.scale(20),
+        ),
         width: Utils.windowWidth(context) * 0.9,
         height: Utils.windowHeight(context) * 0.1,
         clipBehavior: Clip.hardEdge,
@@ -479,7 +599,10 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
               ),
               // Count badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: widget.bgColor,
                   borderRadius: BorderRadius.circular(20),

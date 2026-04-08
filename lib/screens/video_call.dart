@@ -34,16 +34,39 @@ class _VideoCallState extends State<VideoCall> {
   String? _error;
   String _appId = '';
 
+  // Requirement 40.13: In-Call Features
+  int _callDuration = 0;
+  late Stream<int> _timerStream;
+  bool _isScreenSharing = false;
+  int _networkQuality = 4; // 1-5 (5 = Excellent)
+
   @override
   void initState() {
     super.initState();
     _initAgora();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timerStream = Stream.periodic(const Duration(seconds: 1), (i) => i);
+    _timerStream.listen((duration) {
+      if (mounted && _remoteUserJoined) {
+        setState(() => _callDuration = duration);
+      }
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final mins = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   Future<void> _initAgora() async {
     if (kIsWeb) {
       setState(() {
-        _error = 'Video calls are not supported on web.\nPlease use the mobile app.';
+        _error =
+            'Video calls are not supported on web.\nPlease use the mobile app.';
         _isLoading = false;
       });
       return;
@@ -53,7 +76,9 @@ class _VideoCallState extends State<VideoCall> {
     await [Permission.camera, Permission.microphone].request();
 
     // Fetch token from backend
-    final tokenResult = await _agoraService.getToken(channelName: widget.channelName);
+    final tokenResult = await _agoraService.getToken(
+      channelName: widget.channelName,
+    );
     if (tokenResult['success'] != true) {
       setState(() {
         _error = 'Failed to get call token: ${tokenResult['message']}';
@@ -239,13 +264,19 @@ class _VideoCallState extends State<VideoCall> {
               const SizedBox(height: 24),
               Text(
                 widget.remoteUserName,
-                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 _remoteUserJoined ? 'Connected' : 'Calling...',
                 style: TextStyle(
-                  color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
+                  color: _remoteUserJoined
+                      ? Colors.greenAccent
+                      : Colors.white60,
                   fontSize: 14,
                 ),
               ),
@@ -282,10 +313,17 @@ class _VideoCallState extends State<VideoCall> {
             const SizedBox(height: 24),
             Text(
               widget.remoteUserName,
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text('Waiting for other person to join...', style: TextStyle(color: Colors.white60, fontSize: 14)),
+            const Text(
+              'Waiting for other person to join...',
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+            ),
           ],
         ),
       ),
@@ -306,7 +344,11 @@ class _VideoCallState extends State<VideoCall> {
           child: _isCameraOff
               ? Container(
                   color: Colors.grey[800],
-                  child: const Icon(Icons.videocam_off, color: Colors.white, size: 32),
+                  child: const Icon(
+                    Icons.videocam_off,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 )
               : AgoraVideoView(
                   controller: VideoViewController(
@@ -329,32 +371,89 @@ class _VideoCallState extends State<VideoCall> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: _endCall,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: _endCall,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       widget.remoteUserName,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      _remoteUserJoined ? 'Connected' : 'Calling...',
-                      style: TextStyle(
-                        color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
-                        fontSize: 12,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
                       ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _remoteUserJoined
+                                ? Colors.green
+                                : Colors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _remoteUserJoined
+                              ? _formatDuration(_callDuration)
+                              : 'Connecting...',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              // Network Quality Indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: List.generate(
+                    5,
+                    (index) => Container(
+                      margin: const EdgeInsets.only(left: 2),
+                      width: 3,
+                      height: (index + 1) * 3.0,
+                      decoration: BoxDecoration(
+                        color: index < _networkQuality
+                            ? Colors.greenAccent
+                            : Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               if (!widget.isAudioOnly)
                 IconButton(
-                  icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+                  icon: const Icon(
+                    Icons.flip_camera_ios_rounded,
+                    color: Colors.white,
+                  ),
                   onPressed: _switchCamera,
                 ),
             ],
@@ -369,35 +468,42 @@ class _VideoCallState extends State<VideoCall> {
       bottom: 40,
       left: 0,
       right: 0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _controlBtn(
-            icon: _isMuted ? Icons.mic_off : Icons.mic,
-            label: _isMuted ? 'Unmute' : 'Mute',
-            onTap: _toggleMute,
-            active: _isMuted,
-          ),
-          if (!widget.isAudioOnly)
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
             _controlBtn(
-              icon: _isCameraOff ? Icons.videocam_off : Icons.videocam,
-              label: _isCameraOff ? 'Cam Off' : 'Camera',
-              onTap: _toggleCamera,
-              active: _isCameraOff,
+              icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+              label: _isMuted ? 'Unmute' : 'Mute',
+              onTap: _toggleMute,
+              active: _isMuted,
             ),
-          _controlBtn(
-            icon: Icons.call_end,
-            label: 'End',
-            onTap: _endCall,
-            isEnd: true,
-          ),
-          _controlBtn(
-            icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
-            label: 'Speaker',
-            onTap: _toggleSpeaker,
-            active: !_isSpeakerOn,
-          ),
-        ],
+            if (!widget.isAudioOnly) ...[
+              _controlBtn(
+                icon: _isCameraOff
+                    ? Icons.videocam_off_rounded
+                    : Icons.videocam_rounded,
+                label: 'Camera',
+                onTap: _toggleCamera,
+                active: _isCameraOff,
+              ),
+              _controlBtn(
+                icon: Icons.present_to_all_rounded,
+                label: 'Share',
+                onTap: () =>
+                    setState(() => _isScreenSharing = !_isScreenSharing),
+                active: _isScreenSharing,
+              ),
+            ],
+            _controlBtn(
+              icon: Icons.call_end_rounded,
+              label: 'End',
+              onTap: _endCall,
+              isEnd: true,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -421,8 +527,8 @@ class _VideoCallState extends State<VideoCall> {
               color: isEnd
                   ? const Color(0xFFEF4444)
                   : active
-                      ? Colors.white24
-                      : Colors.white12,
+                  ? Colors.white24
+                  : Colors.white12,
               shape: BoxShape.circle,
               border: Border.all(
                 color: active && !isEnd ? Colors.white54 : Colors.transparent,
@@ -431,7 +537,10 @@ class _VideoCallState extends State<VideoCall> {
             child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
         ],
       ),
     );

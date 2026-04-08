@@ -5,9 +5,10 @@ import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/create_medical_record.dart';
 import 'package:icare/screens/decline_appointment_redesign.dart';
-import 'package:icare/screens/intake_notes_redesign.dart';
+import 'package:icare/screens/intake_notes_screen.dart';
 import 'package:icare/screens/patient_profile_view.dart';
-import 'package:icare/screens/soap_notes_redesign.dart';
+import 'package:icare/screens/soap_notes_screen.dart';
+import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -21,10 +22,7 @@ import 'package:intl/intl.dart';
 class ProfileOrAppointmentViewScreen extends ConsumerWidget {
   final AppointmentDetail appointment;
 
-  const ProfileOrAppointmentViewScreen({
-    super.key,
-    required this.appointment,
-  });
+  const ProfileOrAppointmentViewScreen({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,7 +37,9 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
     }
 
     // Get the other person's info based on role
-    final otherPerson = selectedRole == 'doctor' ? appointment.patient : appointment.doctor;
+    final otherPerson = selectedRole == 'Doctor'
+        ? appointment.patient
+        : appointment.doctor;
     final formattedDate = DateFormat('MMMM dd, yyyy').format(appointment.date);
 
     return Scaffold(
@@ -75,7 +75,7 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
               },
             ),
             DetailsInfoWidget(
-              title: selectedRole == 'doctor' ? "Patient Info" : "Doctor Info",
+              title: selectedRole == 'Doctor' ? "Patient Info" : "Doctor Info",
               data: {
                 "Name": otherPerson?.name ?? 'N/A',
                 "Email": otherPerson?.email ?? 'N/A',
@@ -114,7 +114,10 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                       isBold: true,
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => SoapNotesScreen(appointment: appointment)),
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                SoapNotesScreen(appointment: appointment),
+                          ),
                         );
                       },
                     ),
@@ -124,7 +127,10 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                       isBold: true,
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => IntakeNotesScreen(appointment: appointment)),
+                          MaterialPageRoute(
+                            builder: (ctx) =>
+                                IntakeNotesScreen(appointment: appointment),
+                          ),
                         );
                       },
                     ),
@@ -142,7 +148,8 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (ctx) => CreateMedicalRecordScreen(appointment: appointment),
+                        builder: (ctx) =>
+                            CreateMedicalRecordScreen(appointment: appointment),
                       ),
                     );
                   },
@@ -152,7 +159,9 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                     backgroundColor: const Color(0xFF3B82F6),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -166,10 +175,11 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                     borderRadius: 30,
                     label: "Accept",
                     onPressed: () async {
-                      final result = await AppointmentService().updateAppointmentStatus(
-                        appointmentId: appointment.id,
-                        status: 'confirmed',
-                      );
+                      final result = await AppointmentService()
+                          .updateAppointmentStatus(
+                            appointmentId: appointment.id,
+                            status: 'confirmed',
+                          );
                       if (result['success'] && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Appointment accepted')),
@@ -188,7 +198,9 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => DeclineAppointmentScreen(appointment: appointment),
+                          builder: (ctx) => DeclineAppointmentScreen(
+                            appointment: appointment,
+                          ),
                         ),
                       );
                     },
@@ -280,7 +292,11 @@ class ProfileInfoWidget extends StatelessWidget {
                 SizedBox(height: ScallingConfig.scale(10)),
                 Row(
                   children: [
-                    Icon(Icons.email_outlined, size: 16, color: AppColors.darkGreyColor),
+                    Icon(
+                      Icons.email_outlined,
+                      size: 16,
+                      color: AppColors.darkGreyColor,
+                    ),
                     SizedBox(width: Utils.windowWidth(context) * 0.025),
                     Expanded(
                       child: CustomText(
@@ -296,7 +312,8 @@ class ProfileInfoWidget extends StatelessWidget {
                     SvgWrapper(assetPath: ImagePaths.scan),
                     SizedBox(width: Utils.windowWidth(context) * 0.025),
                     CustomText(
-                      text: "Booking ID: #${appointmentId.substring(appointmentId.length - 8)}",
+                      text:
+                          "Booking ID: #${appointmentId.substring(appointmentId.length - 8)}",
                       fontSize: 12,
                     ),
                   ],
@@ -486,7 +503,6 @@ class Tests extends StatelessWidget {
   }
 }
 
-
 class _WebPatientProfileView extends StatelessWidget {
   final String selectedRole;
   final AppointmentDetail appointment;
@@ -498,7 +514,9 @@ class _WebPatientProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final otherPerson = selectedRole == 'doctor' ? appointment.patient : appointment.doctor;
+    final otherPerson = selectedRole == 'Doctor'
+        ? appointment.patient
+        : appointment.doctor;
     final profileName = otherPerson?.name ?? 'User';
     final formattedDate = DateFormat('MMMM dd, yyyy').format(appointment.date);
 
@@ -551,12 +569,19 @@ class _WebPatientProfileView extends StatelessWidget {
                           height: 200,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primaryColor, width: 3),
-                            color: AppColors.primaryColor.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: AppColors.primaryColor,
+                              width: 3,
+                            ),
+                            color: AppColors.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                           child: Center(
                             child: Text(
-                              profileName.isNotEmpty ? profileName[0].toUpperCase() : 'U',
+                              profileName.isNotEmpty
+                                  ? profileName[0].toUpperCase()
+                                  : 'U',
                               style: const TextStyle(
                                 fontSize: 80,
                                 fontWeight: FontWeight.bold,
@@ -576,17 +601,28 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildInfoRow(Icons.email_outlined, otherPerson?.email ?? 'N/A'),
+                        _buildInfoRow(
+                          Icons.email_outlined,
+                          otherPerson?.email ?? 'N/A',
+                        ),
                         const SizedBox(height: 8),
-                        _buildInfoRow(Icons.phone_outlined, otherPerson?.phoneNumber ?? 'N/A'),
+                        _buildInfoRow(
+                          Icons.phone_outlined,
+                          otherPerson?.phoneNumber ?? 'N/A',
+                        ),
                         const SizedBox(height: 8),
-                        _buildInfoRow(Icons.qr_code_rounded, "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}"),
+                        _buildInfoRow(
+                          Icons.qr_code_rounded,
+                          "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
+                        ),
                         const SizedBox(height: 32),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (ctx) => PatientProfileView(patient: appointment.patient!),
+                                builder: (ctx) => PatientProfileView(
+                                  patient: appointment.patient!,
+                                ),
                               ),
                             );
                           },
@@ -624,7 +660,9 @@ class _WebPatientProfileView extends StatelessWidget {
                       const SizedBox(height: 24),
                       // Patient/Doctor Info
                       _buildWebDetailsCard(
-                        selectedRole == 'doctor' ? "Patient Info" : "Doctor Info",
+                        selectedRole == 'Doctor'
+                            ? "Patient Info"
+                            : "Doctor Info",
                         Icons.person_outline_rounded,
                         const Color(0xFF3B82F6),
                         {
@@ -671,7 +709,8 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ],
                       ),
-                      if (selectedRole == "Patient" || selectedRole == "Doctor") ...[
+                      if (selectedRole == "Patient" ||
+                          selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
                         Row(
                           children: [
@@ -679,15 +718,26 @@ class _WebPatientProfileView extends StatelessWidget {
                               child: OutlinedButton.icon(
                                 onPressed: () {
                                   Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (ctx) => SoapNotesScreen(appointment: appointment)),
+                                    MaterialPageRoute(
+                                      builder: (ctx) => SoapNotesScreen(
+                                        appointment: appointment,
+                                      ),
+                                    ),
                                   );
                                 },
                                 icon: const Icon(Icons.note_outlined, size: 20),
                                 label: const Text("Soap Notes"),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 20),
-                                  side: const BorderSide(color: AppColors.primaryColor, width: 2),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  side: const BorderSide(
+                                    color: AppColors.primaryColor,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ),
@@ -696,15 +746,29 @@ class _WebPatientProfileView extends StatelessWidget {
                               child: OutlinedButton.icon(
                                 onPressed: () {
                                   Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (ctx) => IntakeNotesScreen(appointment: appointment)),
+                                    MaterialPageRoute(
+                                      builder: (ctx) => IntakeNotesScreen(
+                                        appointment: appointment,
+                                      ),
+                                    ),
                                   );
                                 },
-                                icon: const Icon(Icons.description_outlined, size: 20),
+                                icon: const Icon(
+                                  Icons.description_outlined,
+                                  size: 20,
+                                ),
                                 label: const Text("Intake Notes"),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 20),
-                                  side: const BorderSide(color: AppColors.primaryColor, width: 2),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  side: const BorderSide(
+                                    color: AppColors.primaryColor,
+                                    width: 2,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ),
@@ -719,19 +783,29 @@ class _WebPatientProfileView extends StatelessWidget {
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (ctx) => CreateMedicalRecordScreen(appointment: appointment),
+                                  builder: (ctx) => CreateMedicalRecordScreen(
+                                    appointment: appointment,
+                                  ),
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.medical_services_rounded, size: 22),
+                            icon: const Icon(
+                              Icons.medical_services_rounded,
+                              size: 22,
+                            ),
                             label: const Text("Create Medical Record"),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF3B82F6),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               elevation: 0,
-                              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -742,26 +816,41 @@ class _WebPatientProfileView extends StatelessWidget {
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
-                                    final result = await AppointmentService().updateAppointmentStatus(
-                                      appointmentId: appointment.id,
-                                      status: 'confirmed',
-                                    );
+                                    final result = await AppointmentService()
+                                        .updateAppointmentStatus(
+                                          appointmentId: appointment.id,
+                                          status: 'confirmed',
+                                        );
                                     if (result['success'] && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Appointment accepted')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Appointment accepted'),
+                                        ),
                                       );
                                       Navigator.of(context).pop(true);
                                     }
                                   },
-                                  icon: const Icon(Icons.check_circle_outline_rounded, size: 22),
+                                  icon: const Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 22,
+                                  ),
                                   label: const Text("Accept Appointment"),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF10B981),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 20),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                     elevation: 0,
-                                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -770,17 +859,35 @@ class _WebPatientProfileView extends StatelessWidget {
                                 child: OutlinedButton.icon(
                                   onPressed: () {
                                     Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (ctx) => DeclineAppointmentScreen(appointment: appointment)),
+                                      MaterialPageRoute(
+                                        builder: (ctx) =>
+                                            DeclineAppointmentScreen(
+                                              appointment: appointment,
+                                            ),
+                                      ),
                                     );
                                   },
-                                  icon: const Icon(Icons.cancel_outlined, size: 22),
+                                  icon: const Icon(
+                                    Icons.cancel_outlined,
+                                    size: 22,
+                                  ),
                                   label: const Text("Decline"),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFFEF4444),
-                                    padding: const EdgeInsets.symmetric(vertical: 20),
-                                    side: const BorderSide(color: Color(0xFFEF4444), width: 2),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    side: const BorderSide(
+                                      color: Color(0xFFEF4444),
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -807,10 +914,7 @@ class _WebPatientProfileView extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           text,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF64748B),
-          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
         ),
       ],
     );
@@ -862,29 +966,31 @@ class _WebPatientProfileView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          ...data.entries.map((entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      entry.key,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF64748B),
-                      ),
+          ...data.entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF64748B),
                     ),
-                    Text(
-                      entry.value,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
-                      ),
+                  ),
+                  Text(
+                    entry.value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -934,10 +1040,7 @@ class _WebPatientProfileView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF64748B),
-            ),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 12),
           Row(

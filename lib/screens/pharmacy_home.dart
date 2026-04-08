@@ -17,46 +17,44 @@ class PharmacyHome extends StatefulWidget {
 }
 
 class _PharmacyHomeState extends State<PharmacyHome> {
-  
   String selectedCategory = "";
   @override
   Widget build(BuildContext context) {
     return Column(
+      children: [
+        CustomInputField(
+          width: Utils.windowWidth(context) * 0.9,
 
-        children: [
-           CustomInputField(
-                width: Utils.windowWidth(context) * 0.9,
-        
-                hintText: "Search",
-                trailingIcon: SvgWrapper(
-                  assetPath: ImagePaths.filters,
-                  onPress: () {
-                    Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (ctx) => PharmacyFilterScreen()));
-                  },
-                ),
-                leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
-              ),
-        SizedBox(height: ScallingConfig.scale(20),),
-             PharmcyCategories(
-              selectedCategory: selectedCategory,
-              onCategorySelect: (value) {
-                setState(() {
-                  selectedCategory = value;
-                });
-                print("Selected Category: $value");
-              },
-              categories: [
-              {"id" :"1", "name" : "Pain", "icon": ImagePaths.pain},
-              {"id" :"2", "name" : "Vitamins", "icon": ImagePaths.vitamins},
-              {"id" :"3", "name" : "Skincare", "icon": ImagePaths.skin_care},
-              {"id" :"4", "name" : "Babycare", "icon": ImagePaths.baby_care},
-             ],),
-        SizedBox(height: ScallingConfig.scale(20),),
-             SellerProducts(),
-        ],
-      );
-   
+          hintText: "Search",
+          trailingIcon: SvgWrapper(
+            assetPath: ImagePaths.filters,
+            onPress: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => PharmacyFilterScreen()),
+              );
+            },
+          ),
+          leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
+        ),
+        SizedBox(height: ScallingConfig.scale(20)),
+        PharmcyCategories(
+          selectedCategory: selectedCategory,
+          onCategorySelect: (value) {
+            setState(() {
+              selectedCategory = value;
+            });
+            print("Selected Category: $value");
+          },
+          categories: [
+            {"id": "1", "name": "Pain", "icon": ImagePaths.pain},
+            {"id": "2", "name": "Vitamins", "icon": ImagePaths.vitamins},
+            {"id": "3", "name": "Skincare", "icon": ImagePaths.skin_care},
+            {"id": "4", "name": "Babycare", "icon": ImagePaths.baby_care},
+          ],
+        ),
+        SizedBox(height: ScallingConfig.scale(20)),
+        SellerProducts(),
+      ],
+    );
   }
 }

@@ -15,7 +15,7 @@ class PrescriptionTemplateService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -37,7 +37,7 @@ class PrescriptionTemplateService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -60,7 +60,7 @@ class PrescriptionTemplateService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -76,7 +76,7 @@ class PrescriptionTemplateService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }

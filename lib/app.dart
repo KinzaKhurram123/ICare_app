@@ -82,26 +82,32 @@ class _AppState extends ConsumerState<App> {
   Future<void> loadData() async {
     try {
       final userWalkthrough = await SharedPref().getUserWalkthrough();
-      ref.read(authProvider.notifier).setUserWalkthrough(userWalkthrough ?? false);
+      ref
+          .read(authProvider.notifier)
+          .setUserWalkthrough(userWalkthrough ?? false);
 
       print("$userWalkthrough ===========>");
-      
+
       final token = await SharedPref().getToken();
-      print("🔑 Loaded token from cache: ${token != null ? '${token.substring(0, 20)}...' : 'null'}");
-      
+      print(
+        "🔑 Loaded token from cache: ${token != null ? '${token.substring(0, 20)}...' : 'null'}",
+      );
+
       if (token != null && token.isNotEmpty) {
         ref.read(authProvider.notifier).setUserToken(token);
-        
+
         final userRole = await SharedPref().getUserRole();
         print("👤 Loaded role from cache: $userRole");
-        
+
         if (userRole != null) {
           ref.read(authProvider.notifier).setUserRole(userRole);
         }
 
         final userDataMap = await SharedPref().getUserData();
         if (userDataMap != null) {
-          print("📋 Loaded user data from cache: ${userDataMap.email} - ${userDataMap.role}");
+          print(
+            "📋 Loaded user data from cache: ${userDataMap.email} - ${userDataMap.role}",
+          );
           ref.read(authProvider.notifier).setUser(userDataMap);
         }
       } else {
@@ -122,7 +128,7 @@ class _AppState extends ConsumerState<App> {
     if (!mounted) return;
 
     final auth = ref.read(authProvider);
-    
+
     setState(() {
       if (auth.isLoggedIn && auth.token != null) {
         content = const TabsScreen();
@@ -132,12 +138,10 @@ class _AppState extends ConsumerState<App> {
         content = const Walkthrough();
       }
     });
-  }  
+  }
 
-  
   @override
   Widget build(BuildContext context) {
     return content;
   }
 }
-

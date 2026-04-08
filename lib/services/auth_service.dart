@@ -14,29 +14,36 @@ class AuthService {
     required String password,
     required String role,
     String? phoneNumber,
+    String? licenseNumber,
+    String? location,
+    String? organizationName,
+    String? credentials,
   }) async {
     try {
-      final response = await _apiService.post(
-        ApiConfig.register,
-        {
-          'name': name,
-          'email': email,
-          'password': password,
-          'role': role,
-          'phoneNumber': phoneNumber ?? '0000000000',
-        },
-      );
+      final response = await _apiService.post(ApiConfig.register, {
+        'name': name,
+        'email': email,
+        'password': password,
+        'role': role,
+        'phoneNumber': phoneNumber ?? '0000000000',
+        if (licenseNumber != null) 'licenseNumber': licenseNumber,
+        if (location != null) 'location': location,
+        if (organizationName != null) 'organizationName': organizationName,
+        if (credentials != null) 'credentials': credentials,
+      });
 
       if (response.statusCode == 201) {
         final data = response.data;
-        await _saveToken(data['token']);
+        if (data['token'] != null) {
+          await _saveToken(data['token']);
+        }
         return {'success': true, 'data': data};
       }
       return {'success': false, 'message': 'Registration failed'};
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -46,10 +53,10 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await _apiService.post(
-        ApiConfig.login,
-        {'email': email, 'password': password},
-      );
+      final response = await _apiService.post(ApiConfig.login, {
+        'email': email,
+        'password': password,
+      });
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -63,7 +70,7 @@ class AuthService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Network error'
+        'message': e.response?.data['message'] ?? 'Network error',
       };
     }
   }
@@ -86,14 +93,11 @@ class AuthService {
     await _sharedPref.remove('userRole');
   }
 
-  Future<Map<String, dynamic>> forgotPassword({
-    required String email,
-  }) async {
+  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
     try {
-      final response = await _apiService.post(
-        ApiConfig.forgetPassword,
-        {'email': email},
-      );
+      final response = await _apiService.post(ApiConfig.forgetPassword, {
+        'email': email,
+      });
 
       if (response.statusCode == 200) {
         return {
@@ -106,7 +110,7 @@ class AuthService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['error'] ?? 'Network error'
+        'message': e.response?.data['error'] ?? 'Network error',
       };
     }
   }
@@ -116,10 +120,10 @@ class AuthService {
     required String code,
   }) async {
     try {
-      final response = await _apiService.post(
-        ApiConfig.checkOTP,
-        {'email': email, 'code': code},
-      );
+      final response = await _apiService.post(ApiConfig.checkOTP, {
+        'email': email,
+        'code': code,
+      });
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'OTP verified successfully'};
@@ -128,7 +132,7 @@ class AuthService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['error'] ?? 'Network error'
+        'message': e.response?.data['error'] ?? 'Network error',
       };
     }
   }
@@ -139,14 +143,11 @@ class AuthService {
     required String confirmPassword,
   }) async {
     try {
-      final response = await _apiService.post(
-        ApiConfig.resetPassword,
-        {
-          'email': email,
-          'password': password,
-          'confirmpassword': confirmPassword,
-        },
-      );
+      final response = await _apiService.post(ApiConfig.resetPassword, {
+        'email': email,
+        'password': password,
+        'confirmpassword': confirmPassword,
+      });
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'Password reset successfully'};
@@ -155,7 +156,7 @@ class AuthService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['error'] ?? 'Network error'
+        'message': e.response?.data['error'] ?? 'Network error',
       };
     }
   }

@@ -10,7 +10,6 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
-
 class IntakeNotes extends StatefulWidget {
   const IntakeNotes({super.key});
 
@@ -19,42 +18,49 @@ class IntakeNotes extends StatefulWidget {
 }
 
 class _IntakeNotesState extends State<IntakeNotes> {
-   var _selectedTime = '';
+  var _selectedTime = '';
   var _selectedDate = '';
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-             leading: IconButton(onPressed: () {
-        Navigator.of(context).pop();
-      }, icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primaryColor,)),
-      
-        title: CustomText(text: "Intake Notes")),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primaryColor),
+        ),
+
+        title: CustomText(text: "Intake Notes"),
+      ),
       body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(height: ScallingConfig.scale(30),),
-            CustomText(text: "Create a Treatment Plan", 
-            fontFamily: "Gilroy-Medium",
-            fontSize: ScallingConfig.moderateScale(16),
-            color: AppColors.darkGreyColor,
+            SizedBox(height: ScallingConfig.scale(30)),
+            CustomText(
+              text: "Create a Treatment Plan",
+              fontFamily: "Gilroy-Medium",
+              fontSize: ScallingConfig.moderateScale(16),
+              color: AppColors.darkGreyColor,
             ),
-            
-            CustomInputField(hintText: 'Title',
-              width: Utils.windowWidth(context) * 0.85,
-            ),
-             SizedBox(height: ScallingConfig.scale(20),),
 
-            CustomInputField(hintText: 'Therapy',
+            CustomInputField(
+              hintText: 'Title',
               width: Utils.windowWidth(context) * 0.85,
             ),
- SizedBox(height: ScallingConfig.scale(20),),
+            SizedBox(height: ScallingConfig.scale(20)),
+
             CustomInputField(
-             hintText: "Enter your intake notes",
+              hintText: 'Therapy',
               width: Utils.windowWidth(context) * 0.85,
-          
+            ),
+            SizedBox(height: ScallingConfig.scale(20)),
+            CustomInputField(
+              hintText: "Enter your intake notes",
+              width: Utils.windowWidth(context) * 0.85,
+
               height: Utils.windowHeight(context) * 0.15,
               maxLines: 50,
               borderRadius: 20,
@@ -97,7 +103,7 @@ class _IntakeNotesState extends State<IntakeNotes> {
                     child: SvgWrapper(assetPath: ImagePaths.calendar),
                   ),
                 ),
-                SizedBox(width: ScallingConfig.scale(10) ,),
+                SizedBox(width: ScallingConfig.scale(10)),
                 CustomButton(
                   boxShadow: BoxShadow(offset: Offset(0, 0)),
                   labelWidth: Utils.windowWidth(context) * 0.35,
@@ -127,12 +133,12 @@ class _IntakeNotesState extends State<IntakeNotes> {
                 ),
               ],
             ),
-            SizedBox(height: ScallingConfig.scale(10) ,),
+            SizedBox(height: ScallingConfig.scale(10)),
             CustomButton(
               boxShadow: BoxShadow(offset: Offset(0, 0)),
               borderRadius: 35,
               outlined: true,
-               borderColor: AppColors.grayColor.withAlpha(50),
+              borderColor: AppColors.grayColor.withAlpha(50),
 
               width: Utils.windowWidth(context) * 0.9,
               bgColor: AppColors.veryLightGrey,
@@ -141,11 +147,12 @@ class _IntakeNotesState extends State<IntakeNotes> {
               labelColor: AppColors.grayColor,
               labelSize: 15,
             ),
-            SizedBox(height: ScallingConfig.scale(20),),
-            CustomButton(label:"Submit",
-            width: Utils.windowWidth(context) * 0.9,
-            borderRadius: 35,
-            )
+            SizedBox(height: ScallingConfig.scale(20)),
+            CustomButton(
+              label: "Submit",
+              width: Utils.windowWidth(context) * 0.9,
+              borderRadius: 35,
+            ),
           ],
         ),
       ),

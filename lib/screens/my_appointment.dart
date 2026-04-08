@@ -31,8 +31,11 @@ class MyAppointment extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.arrow_back_ios_new_rounded,
-                            size: 16, color: AppColors.primaryColor),
+                        const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 16,
+                          color: AppColors.primaryColor,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           "Back to Dashboard",
@@ -99,7 +102,8 @@ class MyAppointment extends StatelessWidget {
                                   const SizedBox(width: 24),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           mainAxisAlignment:
@@ -116,15 +120,16 @@ class MyAppointment extends StatelessWidget {
                                             TextButton.icon(
                                               onPressed: () {},
                                               icon: const Icon(
-                                                  Icons.visibility_outlined,
-                                                  size: 18),
+                                                Icons.visibility_outlined,
+                                                size: 18,
+                                              ),
                                               label: const Text("View Profile"),
                                               style: TextButton.styleFrom(
                                                 foregroundColor:
                                                     AppColors.primaryColor,
                                                 textStyle: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w700),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -132,31 +137,41 @@ class MyAppointment extends StatelessWidget {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Icon(Icons.location_on_rounded,
-                                                size: 16,
-                                                color: Color(0xFF94A3B8)),
+                                            const Icon(
+                                              Icons.location_on_rounded,
+                                              size: 16,
+                                              color: Color(0xFF94A3B8),
+                                            ),
                                             const SizedBox(width: 6),
-                                            const Text("20 Cooper Square, USA",
-                                                style: TextStyle(
-                                                    color: Color(0xFF64748B))),
+                                            const Text(
+                                              "20 Cooper Square, USA",
+                                              style: TextStyle(
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                         const SizedBox(height: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 6),
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: AppColors.primaryColor
                                                 .withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               const Icon(
-                                                  Icons.qr_code_scanner_rounded,
-                                                  size: 14,
-                                                  color: AppColors.primaryColor),
+                                                Icons.qr_code_scanner_rounded,
+                                                size: 14,
+                                                color: AppColors.primaryColor,
+                                              ),
                                               const SizedBox(width: 6),
                                               const Text(
                                                 "Booking ID: #DR452SA54",
@@ -181,11 +196,11 @@ class MyAppointment extends StatelessWidget {
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 24,
-                                mainAxisSpacing: 24,
-                                mainAxisExtent: 220,
-                              ),
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 24,
+                                    mainAxisSpacing: 24,
+                                    mainAxisExtent: 220,
+                                  ),
                               children: [
                                 _WebInfoCard(
                                   title: "Scheduled Appointment",
@@ -244,20 +259,25 @@ class MyAppointment extends StatelessWidget {
                               ),
                               const SizedBox(height: 20),
                               _WebPaymentRow(
-                                  label: "Consultation Fee",
-                                  value: "PKR 2,000"),
+                                label: "Consultation Fee",
+                                value: "PKR 2,000",
+                              ),
                               _WebPaymentRow(
-                                  label: "Service Charges", value: "PKR 100"),
+                                label: "Service Charges",
+                                value: "PKR 100",
+                              ),
                               _WebPaymentRow(
-                                  label: "App Deduction",
-                                  value: "-PKR 200",
-                                  isNegative: true),
+                                label: "App Deduction",
+                                value: "-PKR 200",
+                                isNegative: true,
+                              ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 16),
                                 child: Divider(height: 1),
                               ),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     "Total Balance",
@@ -286,17 +306,19 @@ class MyAppointment extends StatelessWidget {
                                     backgroundColor: AppColors.primaryColor,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 18),
+                                      vertical: 18,
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                     elevation: 0,
                                   ),
                                   child: const Text(
                                     "Proceed to Payment",
                                     style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -308,18 +330,22 @@ class MyAppointment extends StatelessWidget {
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.redAccent,
                                     side: const BorderSide(
-                                        color: Colors.redAccent, width: 1),
+                                      color: Colors.redAccent,
+                                      width: 1,
+                                    ),
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 18),
+                                      vertical: 18,
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
                                   child: const Text(
                                     "Cancel Appointment",
                                     style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -655,25 +681,31 @@ class _WebInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ...data.entries.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(e.key,
-                        style: const TextStyle(
-                            color: Color(0xFF94A3B8), fontSize: 13)),
-                    Text(
-                      e.value,
-                      style: const TextStyle(
-                        color: Color(0xFF334155),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+          ...data.entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    e.key,
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 13,
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                  Text(
+                    e.value,
+                    style: const TextStyle(
+                      color: Color(0xFF334155),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 
@@ -35,13 +33,14 @@ class Appointments extends StatelessWidget {
       },
     ];
     return Scaffold(
-      appBar: AppBar(title: CustomText(text: "My Appointments",),),
+      appBar: AppBar(title: CustomText(text: "My Appointments")),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomText(
             padding: EdgeInsets.only(left: ScallingConfig.scale(25)),
-            text: "Appointments"),
+            text: "Appointments",
+          ),
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.symmetric(
@@ -49,9 +48,7 @@ class Appointments extends StatelessWidget {
               ),
               itemCount: appointments.length,
               itemBuilder: (ctx, i) {
-                return (
-                  AppointmentCard()
-                );
+                return (AppointmentCard());
               },
             ),
           ),

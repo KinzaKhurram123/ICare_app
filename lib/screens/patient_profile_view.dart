@@ -3,14 +3,40 @@ import 'package:icare/models/user.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
+import 'package:icare/services/course_service.dart';
 
-class PatientProfileView extends StatelessWidget {
+class PatientProfileView extends StatefulWidget {
   final User patient;
 
-  const PatientProfileView({
-    super.key,
-    required this.patient,
-  });
+  const PatientProfileView({super.key, required this.patient});
+
+  @override
+  State<PatientProfileView> createState() => _PatientProfileViewState();
+}
+
+class _PatientProfileViewState extends State<PatientProfileView> {
+  final CourseService _courseService = CourseService();
+  List<dynamic> _enrolledCourses = [];
+  bool _loadingCourses = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEnrolledCourses();
+  }
+
+  Future<void> _loadEnrolledCourses() async {
+    setState(() => _loadingCourses = true);
+    try {
+      final courses = await _courseService.myPurchases();
+      setState(() {
+        _enrolledCourses = courses;
+        _loadingCourses = false;
+      });
+    } catch (e) {
+      setState(() => _loadingCourses = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +63,9 @@ class PatientProfileView extends StatelessWidget {
         padding: EdgeInsets.all(isDesktop ? 40 : 20),
         child: Center(
           child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 800 : double.infinity),
+            constraints: BoxConstraints(
+              maxWidth: isDesktop ? 800 : double.infinity,
+            ),
             child: Column(
               children: [
                 // Profile Header Card
@@ -78,7 +106,9 @@ class PatientProfileView extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            patient.name.isNotEmpty ? patient.name[0].toUpperCase() : 'P',
+                            widget.patient.name.isNotEmpty
+                                ? widget.patient.name[0].toUpperCase()
+                                : 'P',
                             style: const TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.w900,
@@ -89,7 +119,7 @@ class PatientProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        patient.name,
+                        widget.patient.name,
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
@@ -99,13 +129,16 @@ class PatientProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          patient.role.toUpperCase(),
+                          widget.patient.role.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -118,30 +151,91 @@ class PatientProfileView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Contact Information Card
                 _buildInfoCard(
                   'Contact Information',
                   Icons.contact_mail_rounded,
                   const Color(0xFF3B82F6),
                   [
-                    _buildInfoRow(Icons.email_outlined, 'Email', patient.email),
-                    _buildInfoRow(Icons.phone_outlined, 'Phone', patient.phoneNumber ?? 'Not provided'),
+                    _buildInfoRow(
+                      Icons.email_outlined,
+                      'Email',
+                      widget.patient.email,
+                    ),
+                    _buildInfoRow(
+                      Icons.phone_outlined,
+                      'Phone',
+                      widget.patient.phoneNumber ?? 'Not provided',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Account Information Card
                 _buildInfoCard(
                   'Account Information',
                   Icons.info_outline_rounded,
                   const Color(0xFF8B5CF6),
                   [
-                    _buildInfoRow(Icons.badge_outlined, 'Patient ID', patient.id.substring(patient.id.length - 8)),
-                    _buildInfoRow(Icons.calendar_today_rounded, 'Member Since', 
-                      patient.createdAt != null 
-                        ? DateFormat('MMM dd, yyyy').format(patient.createdAt!) 
-                        : 'N/A'),
+                    _buildInfoRow(
+                      Icons.badge_outlined,
+                      'Patient ID',
+                      widget.patient.id.substring(widget.patient.id.length - 8),
+                    ),
+                    _buildInfoRow(
+                      Icons.calendar_today_rounded,
+                      'Member Since',
+                      widget.patient.createdAt != null
+                          ? DateFormat(
+                              'MMM dd, yyyy',
+                            ).format(widget.patient.createdAt!)
+                          : 'N/A',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Health Program Progress (Requirement 14.11)
+                _buildInfoCard(
+                  'Care Plan Progress',
+                  Icons.auto_graph_rounded,
+                  const Color(0xFF10B981),
+                  [
+                    const Text(
+                      'Monitoring active health program adherence and module completion.',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_loadingCourses)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_enrolledCourses.isEmpty)
+                      const Text(
+                        'No active health programs',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      )
+                    else
+                      ..._enrolledCourses.take(3).map((course) {
+                        final title = course['course']?['title'] ?? 'Program';
+                        final totalModules =
+                            course['course']?['modules']?.length ?? 0;
+                        final completedModules =
+                            course['completedModules']?.length ?? 0;
+                        final progress = totalModules > 0
+                            ? completedModules / totalModules
+                            : 0.0;
+
+                        return Column(
+                          children: [
+                            _buildProgressRow(title, progress),
+                            if (course != _enrolledCourses.take(3).last)
+                              const SizedBox(height: 12),
+                          ],
+                        );
+                      }).toList(),
                   ],
                 ),
               ],
@@ -152,7 +246,46 @@ class PatientProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _buildProgressRow(String title, double progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            Text(
+              '${(progress * 100).toInt()}%',
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF10B981),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+            minHeight: 8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(

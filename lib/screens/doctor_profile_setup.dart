@@ -16,7 +16,8 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   bool _isLoading = false;
 
   // Controllers
-  final TextEditingController specializationController = TextEditingController();
+  final TextEditingController specializationController =
+      TextEditingController();
   final TextEditingController degreesController = TextEditingController();
   final TextEditingController experienceController = TextEditingController();
   final TextEditingController licenseController = TextEditingController();
@@ -71,7 +72,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
 
     if (availableDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one available day')),
+        const SnackBar(
+          content: Text('Please select at least one available day'),
+        ),
       );
       return;
     }
@@ -104,7 +107,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       _showSuccessModal();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'] ?? 'Failed to update profile')),
+        SnackBar(
+          content: Text(result['message'] ?? 'Failed to update profile'),
+        ),
       );
     }
   }
@@ -115,7 +120,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -502,7 +509,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                             ),
                             onPressed: _isLoading ? null : _submitProfile,
                             child: _isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     "Save Professional Profile",
                                     style: TextStyle(
@@ -573,7 +582,10 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
             prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 20),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -584,7 +596,10 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.primaryColor,
+                width: 2,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -626,10 +641,17 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-            prefixIcon: const Icon(Icons.access_time, color: AppColors.primaryColor, size: 20),
+            prefixIcon: const Icon(
+              Icons.access_time,
+              color: AppColors.primaryColor,
+              size: 20,
+            ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 18,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -640,7 +662,10 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.primaryColor,
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -672,7 +697,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+              color: isSelected
+                  ? AppColors.primaryColor
+                  : const Color(0xFFE2E8F0),
             ),
           ),
         );

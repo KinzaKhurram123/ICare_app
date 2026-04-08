@@ -15,15 +15,15 @@ import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:image_picker/image_picker.dart';
 
 class DoctorProfile extends StatelessWidget {
-  const DoctorProfile({super.key, this.fromViewProfile=false});
+  const DoctorProfile({super.key, this.fromViewProfile = false});
   final bool fromViewProfile;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: CustomText(
-          text: fromViewProfile  ? "Doctor's Profile" :  "Create Profile", 
-          fontSize: 16.78, 
+          text: fromViewProfile ? "Doctor's Profile" : "Create Profile",
+          fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
           fontWeight: FontWeight.w400,
           color: AppColors.primary500,
@@ -33,123 +33,131 @@ class DoctorProfile extends StatelessWidget {
         actions: [
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => CreateProfile(isEdit: true,)));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (ctx) => CreateProfile(isEdit: true),
+                ),
+              );
             },
-            child: 
-            fromViewProfile ? Icon(Icons.favorite, color: AppColors.darkGray400,) :
-            SvgWrapper(assetPath: ImagePaths.edit),
+            child: fromViewProfile
+                ? Icon(Icons.favorite, color: AppColors.darkGray400)
+                : SvgWrapper(assetPath: ImagePaths.edit),
           ),
-          SizedBox(width: ScallingConfig.scale(20),)
+          SizedBox(width: ScallingConfig.scale(20)),
         ],
       ),
       body: SingleChildScrollView(
         child: Center(
           child: Column(
             children: [
-              ProfilePicker(
-                onPickImage: (pickedImage) {
-                  
-                },
-              ),
-              SizedBox(height: ScallingConfig.scale(15),),
+              ProfilePicker(onPickImage: (pickedImage) {}),
+              SizedBox(height: ScallingConfig.scale(15)),
               CustomText(
-                text: "Aaron Smith", 
-                color: AppColors.primary500, 
+                text: "Aaron Smith",
+                color: AppColors.primary500,
                 fontFamily: "Gilroy-Bold",
                 fontWeight: FontWeight.w400,
                 fontSize: 16.78,
-                ),
-              SizedBox(height: ScallingConfig.scale(40),),
+              ),
+              SizedBox(height: ScallingConfig.scale(40)),
               CustomText(
-                text: "16 Years", 
-                color: AppColors.primary500, 
+                text: "16 Years",
+                color: AppColors.primary500,
                 fontFamily: "Gilroy-Bold",
                 fontWeight: FontWeight.w400,
                 fontSize: 34.78,
-                ),
+              ),
               CustomText(
-                text: "Experience", 
-                color: AppColors.primary500, 
+                text: "Experience",
+                color: AppColors.primary500,
                 fontFamily: "Gilroy-Regular",
                 // fontWeight: FontWeight.w400,
                 fontSize: 16.78,
-                ),
-                SizedBox(height: ScallingConfig.scale(10),),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                CustomRecordCard(
-                  color: AppColors.primaryColor,
-                  icon: SvgWrapper(assetPath: ImagePaths.profile2User),
-                  number: "150",
-                  label: fromViewProfile ?  "Patients" : "Total Consultations",
-                ),
-                SizedBox(width: ScallingConfig.scale(15),),
-                CustomRecordCard(
-                  onTap: (){
-                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => RatingAndReviews()));
-                  },
-                  icon: SvgWrapper(assetPath: ImagePaths.star),
-                  number: "4.9" ,
-                  label: "Ratings",
-                ),
-              ],
-                ),
-                
-                SizedBox(height: ScallingConfig.scale(10),),
-                SizedBox(
-                  width: Utils.windowWidth(context) * 0.9,
-                  child: ListTile(
-                  
-                    leading: SvgWrapper(assetPath: ImagePaths.sms),
-                    title: CustomText(
-                      text: "lisamarie@gmail.com", 
-                      color: AppColors.grayColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily:"Gilroy-SemiBold",
-                      ),
-                    ),
-                ),
-                  SizedBox(
-                    width: Utils.windowWidth(context) * 0.85,
-                    child: Divider(),
+              ),
+              SizedBox(height: ScallingConfig.scale(10)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CustomRecordCard(
+                    color: AppColors.primaryColor,
+                    icon: SvgWrapper(assetPath: ImagePaths.profile2User),
+                    number: "150",
+                    label: fromViewProfile ? "Patients" : "Total Consultations",
                   ),
-                SizedBox(height: ScallingConfig.scale(1),),
-                SizedBox(
-                  width: Utils.windowWidth(context) * 0.9,
-                  child: ListTile(
-                  
-                    leading: SvgWrapper(assetPath: ImagePaths.calll, color: AppColors.primaryColor,),
-                    title: CustomText(
-                      text: "+1 234 567 8963", 
-                      color: AppColors.grayColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily:"Gilroy-SemiBold",
-                      ),
-                    ),
-                ),
-                  SizedBox(
-                    width: Utils.windowWidth(context) * 0.85,
-                    child: Divider(),
+                  SizedBox(width: ScallingConfig.scale(15)),
+                  CustomRecordCard(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (ctx) => RatingAndReviews()),
+                      );
+                    },
+                    icon: SvgWrapper(assetPath: ImagePaths.star),
+                    number: "4.9",
+                    label: "Ratings",
                   ),
+                ],
+              ),
 
-                  SizedBox(height: ScallingConfig.scale(5),),
-                  CustomText(
-                    text:"Bio:", 
+              SizedBox(height: ScallingConfig.scale(10)),
+              SizedBox(
+                width: Utils.windowWidth(context) * 0.9,
+                child: ListTile(
+                  leading: SvgWrapper(assetPath: ImagePaths.sms),
+                  title: CustomText(
+                    text: "lisamarie@gmail.com",
+                    color: AppColors.grayColor,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary500,
-                    fontFamily: "Gilroy-Bold", width: Utils.windowWidth(context) * 0.85,),
-                  SizedBox(height: ScallingConfig.scale(5),),
-                  CustomText(
-                    text:"Lorem ipsum dolor sit amet consectetur adipiscing elit  nascetur at leo accumsan, odio habitanLorem ipsum dolor.", 
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
+                    fontFamily: "Gilroy-SemiBold",
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: Utils.windowWidth(context) * 0.85,
+                child: Divider(),
+              ),
+              SizedBox(height: ScallingConfig.scale(1)),
+              SizedBox(
+                width: Utils.windowWidth(context) * 0.9,
+                child: ListTile(
+                  leading: SvgWrapper(
+                    assetPath: ImagePaths.calll,
+                    color: AppColors.primaryColor,
+                  ),
+                  title: CustomText(
+                    text: "+1 234 567 8963",
                     color: AppColors.grayColor,
-                    maxLines: 3,
-                    fontFamily: "Gilroy-Medium", width: Utils.windowWidth(context) * 0.85,),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Gilroy-SemiBold",
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: Utils.windowWidth(context) * 0.85,
+                child: Divider(),
+              ),
+
+              SizedBox(height: ScallingConfig.scale(5)),
+              CustomText(
+                text: "Bio:",
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary500,
+                fontFamily: "Gilroy-Bold",
+                width: Utils.windowWidth(context) * 0.85,
+              ),
+              SizedBox(height: ScallingConfig.scale(5)),
+              CustomText(
+                text:
+                    "Lorem ipsum dolor sit amet consectetur adipiscing elit  nascetur at leo accumsan, odio habitanLorem ipsum dolor.",
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppColors.grayColor,
+                maxLines: 3,
+                fontFamily: "Gilroy-Medium",
+                width: Utils.windowWidth(context) * 0.85,
+              ),
             ],
           ),
         ),
@@ -158,13 +166,9 @@ class DoctorProfile extends StatelessWidget {
   }
 }
 
-
 // class ImagePicker extends StatefulWidget {
 //   const ImagePicker({super.key, required this.onPickImage});
 //    final void Function(File pickedImage) onPickImage;
-
-
- 
 
 //   @override
 //   State<ImagePicker> createState() => _ImagePickerState();
@@ -178,10 +182,7 @@ class DoctorProfile extends StatelessWidget {
 // }
 
 class ProfilePicker extends StatefulWidget {
-  const ProfilePicker({
-    super.key,
-    required this.onPickImage,
-  });
+  const ProfilePicker({super.key, required this.onPickImage});
 
   final void Function(File pickedImage) onPickImage;
 
@@ -192,7 +193,6 @@ class ProfilePicker extends StatefulWidget {
 class _ProfilePickerState extends State<ProfilePicker> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedImage = await _picker.pickImage(
@@ -252,10 +252,7 @@ class _ProfilePickerState extends State<ProfilePicker> {
           height: Utils.windowHeight(context) * 0.15,
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            border: Border.all(
-              width: 2,
-              color: AppColors.themeDarkGrey,
-            ),
+            border: Border.all(width: 2, color: AppColors.themeDarkGrey),
             borderRadius: BorderRadius.circular(35),
           ),
           child: ClipRRect(

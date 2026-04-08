@@ -110,7 +110,10 @@ class PrescriptionsScreen extends StatelessWidget {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primaryColor.withOpacity(0.05), Colors.white],
+                    colors: [
+                      AppColors.primaryColor.withOpacity(0.05),
+                      Colors.white,
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -194,7 +197,10 @@ class PrescriptionsScreen extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () {},
       icon: const Icon(Icons.add_rounded, size: 18),
-      label: const Text("Upload Prescription", style: TextStyle(fontWeight: FontWeight.w700)),
+      label: const Text(
+        "Upload Prescription",
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryColor,
         foregroundColor: Colors.white,
@@ -218,7 +224,11 @@ class PrescriptionsScreen extends StatelessWidget {
       child: const TextField(
         decoration: InputDecoration(
           hintText: "Search doctor or medicine...",
-          prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: Color(0xFF94A3B8),
+          ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 14),
         ),
@@ -232,7 +242,9 @@ class PrescriptionsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive ? AppColors.primaryColor : Colors.white,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: isActive ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isActive ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+        ),
       ),
       child: CustomText(
         text: label,
@@ -243,7 +255,10 @@ class PrescriptionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPrescriptionCard(BuildContext context, Map<String, dynamic> data) {
+  Widget _buildPrescriptionCard(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -289,7 +304,10 @@ class PrescriptionsScreen extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: (data['color'] as Color).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -317,13 +335,23 @@ class PrescriptionsScreen extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: (data['medicines'] as List<String>).map((med) => Chip(
-              label: Text(med, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
-              backgroundColor: const Color(0xFFF8FAFD),
-              side: BorderSide.none,
-              padding: EdgeInsets.zero,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            )).toList(),
+            children: (data['medicines'] as List<String>)
+                .map(
+                  (med) => Chip(
+                    label: Text(
+                      med,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFF8FAFD),
+                    side: BorderSide.none,
+                    padding: EdgeInsets.zero,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+                .toList(),
           ),
           const SizedBox(height: 20),
           // Footer
@@ -342,11 +370,16 @@ class PrescriptionsScreen extends StatelessWidget {
               TextButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.file_download_outlined, size: 16),
-                label: const Text("Download PDF", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                label: const Text(
+                  "Download PDF",
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryColor,
                   backgroundColor: AppColors.primaryColor.withOpacity(0.05),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ],

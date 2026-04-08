@@ -13,7 +13,7 @@ class OrderTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-List<Steps> basicSteps = [
+    List<Steps> basicSteps = [
       Steps(
         leading: SvgWrapper(assetPath: ImagePaths.success),
         title: 'Order APlaced',
@@ -41,7 +41,7 @@ List<Steps> basicSteps = [
     ];
 
     return Scaffold(
-            appBar: AppBar(
+      appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
         title: CustomText(
@@ -50,15 +50,15 @@ List<Steps> basicSteps = [
           fontSize: 16.78,
           fontWeight: FontWeight.bold,
           color: AppColors.primary500,
-              letterSpacing: -0.31,
-            lineHeight: 1.0,
+          letterSpacing: -0.31,
+          lineHeight: 1.0,
         ),
       ),
-      body:Padding(
+      body: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: ScallingConfig.scale(26),
           // vertical: ScallingConfig.scale(16),
-          ),
+        ),
         child: Column(
           spacing: ScallingConfig.scale(6),
           mainAxisAlignment: MainAxisAlignment.start,
@@ -66,7 +66,9 @@ List<Steps> basicSteps = [
           children: [
             SizedBox(height: ScallingConfig.scale(20)),
             Padding(
-              padding:EdgeInsets.symmetric(horizontal: ScallingConfig.scale(15)),
+              padding: EdgeInsets.symmetric(
+                horizontal: ScallingConfig.scale(15),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -74,19 +76,19 @@ List<Steps> basicSteps = [
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomText(text: "Estimated Time",
-                      fontFamily: "Gilroy-Regular",
-                      fontSize: 14.79,
-                      color: AppColors.primary500,
-                      fontWeight: FontWeight.w400,
-              
+                      CustomText(
+                        text: "Estimated Time",
+                        fontFamily: "Gilroy-Regular",
+                        fontSize: 14.79,
+                        color: AppColors.primary500,
+                        fontWeight: FontWeight.w400,
                       ),
-                      CustomText(text: "1 hour",
-                      fontFamily: "Gilroy-Bold",
-                      fontSize: 14.79,
-                      color: AppColors.primary500,
-                      fontWeight: FontWeight.bold,
-              
+                      CustomText(
+                        text: "1 hour",
+                        fontFamily: "Gilroy-Bold",
+                        fontSize: 14.79,
+                        color: AppColors.primary500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ],
                   ),
@@ -94,26 +96,26 @@ List<Steps> basicSteps = [
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomText(text: "Tracking ID",
-                       fontFamily: "Gilroy-Regular",
-                      fontSize: 14.79,
-                      color: AppColors.primary500,
-                      fontWeight: FontWeight.w400,
-              
+                      CustomText(
+                        text: "Tracking ID",
+                        fontFamily: "Gilroy-Regular",
+                        fontSize: 14.79,
+                        color: AppColors.primary500,
+                        fontWeight: FontWeight.w400,
                       ),
-                      CustomText(text: "28194",
-                       fontFamily: "Gilroy-Bold",
-                      fontSize: 14.79,
-                      color: AppColors.primary500,
-                      fontWeight: FontWeight.bold,
-              
+                      CustomText(
+                        text: "28194",
+                        fontFamily: "Gilroy-Bold",
+                        fontSize: 14.79,
+                        color: AppColors.primary500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-SizedBox(height: ScallingConfig.scale(10)),
+            SizedBox(height: ScallingConfig.scale(10)),
             SizedBox(
               height: Utils.windowHeight(context) * 0.37,
               child: FlutterSteps(
@@ -121,7 +123,7 @@ SizedBox(height: ScallingConfig.scale(10)),
                 titleFontSize: 12,
                 showStepLine: true,
                 crossAxisAlignment: CrossAxisAlignment.center,
-               
+
                 titleStyle: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -132,7 +134,7 @@ SizedBox(height: ScallingConfig.scale(10)),
                 leadingSizeFactor: ScallingConfig.scale(1.5),
                 hideInactiveLeading: true,
                 showSubtitle: true,
-        
+
                 activeStepLineColor: AppColors.themeGreen,
                 titleActiveColor: AppColors.primary500,
                 subtitleStyle: TextStyle(
@@ -141,13 +143,12 @@ SizedBox(height: ScallingConfig.scale(10)),
                   color: AppColors.primary500,
                 ),
                 direction: Axis.vertical,
-                inactiveColor:  AppColors.lightGrey10,
+                inactiveColor: AppColors.lightGrey10,
               ),
             ),
-          
           ],
         ),
-      ), 
+      ),
     );
   }
 }

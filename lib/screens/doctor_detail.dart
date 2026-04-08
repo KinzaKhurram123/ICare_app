@@ -36,7 +36,10 @@ class DoctorDetailScreen extends StatelessWidget {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.favorite_border_rounded, color: Color(0xFFEF4444)),
+              icon: const Icon(
+                Icons.favorite_border_rounded,
+                color: Color(0xFFEF4444),
+              ),
               onPressed: () {},
             ),
           ],
@@ -64,7 +67,9 @@ class DoctorDetailScreen extends StatelessWidget {
                   // Avatar
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.primaryColor.withValues(
+                      alpha: 0.1,
+                    ),
                     child: Text(
                       doctor.user.name.isNotEmpty
                           ? doctor.user.name.substring(0, 1).toUpperCase()
@@ -90,7 +95,10 @@ class DoctorDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   // Specialization
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -126,7 +134,9 @@ class DoctorDetailScreen extends StatelessWidget {
                   child: _buildStatCard(
                     icon: Icons.star_rounded,
                     label: 'Rating',
-                    value: averageRating > 0 ? averageRating.toStringAsFixed(1) : 'N/A',
+                    value: averageRating > 0
+                        ? averageRating.toStringAsFixed(1)
+                        : 'N/A',
                     color: const Color(0xFFF59E0B),
                   ),
                 ),
@@ -165,7 +175,9 @@ class DoctorDetailScreen extends StatelessWidget {
             ),
 
             // Qualifications
-            if (doctor.degrees.isNotEmpty || (doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)) ...[
+            if (doctor.degrees.isNotEmpty ||
+                (doctor.licenseNumber != null &&
+                    doctor.licenseNumber!.isNotEmpty)) ...[
               const SizedBox(height: 16),
               _buildInfoCard(
                 title: 'Qualifications',
@@ -178,10 +190,12 @@ class DoctorDetailScreen extends StatelessWidget {
                       label: 'Degrees',
                       value: doctor.degrees.join(', '),
                     ),
-                    if (doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)
+                    if (doctor.licenseNumber != null &&
+                        doctor.licenseNumber!.isNotEmpty)
                       const SizedBox(height: 12),
                   ],
-                  if (doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)
+                  if (doctor.licenseNumber != null &&
+                      doctor.licenseNumber!.isNotEmpty)
                     _buildInfoItem(
                       icon: Icons.badge_rounded,
                       label: 'License',
@@ -193,23 +207,27 @@ class DoctorDetailScreen extends StatelessWidget {
 
             // Clinic Information
             if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty ||
-                doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty) ...[
+                doctor.clinicAddress != null &&
+                    doctor.clinicAddress!.isNotEmpty) ...[
               const SizedBox(height: 16),
               _buildInfoCard(
                 title: 'Clinic Information',
                 icon: Icons.local_hospital_rounded,
                 iconColor: const Color(0xFFEF4444),
                 children: [
-                  if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty) ...[
+                  if (doctor.clinicName != null &&
+                      doctor.clinicName!.isNotEmpty) ...[
                     _buildInfoItem(
                       icon: Icons.business_rounded,
                       label: 'Clinic Name',
                       value: doctor.clinicName!,
                     ),
-                    if (doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty)
+                    if (doctor.clinicAddress != null &&
+                        doctor.clinicAddress!.isNotEmpty)
                       const SizedBox(height: 12),
                   ],
-                  if (doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty)
+                  if (doctor.clinicAddress != null &&
+                      doctor.clinicAddress!.isNotEmpty)
                     _buildInfoItem(
                       icon: Icons.location_on_rounded,
                       label: 'Address',
@@ -220,7 +238,8 @@ class DoctorDetailScreen extends StatelessWidget {
             ],
 
             // Availability
-            if (doctor.availableDays.isNotEmpty || doctor.availableTime != null) ...[
+            if (doctor.availableDays.isNotEmpty ||
+                doctor.availableTime != null) ...[
               const SizedBox(height: 16),
               _buildInfoCard(
                 title: 'Availability',
@@ -231,7 +250,11 @@ class DoctorDetailScreen extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.event_available_rounded, size: 20, color: const Color(0xFF06B6D4)),
+                        Icon(
+                          Icons.event_available_rounded,
+                          size: 20,
+                          color: const Color(0xFF06B6D4),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Wrap(
@@ -239,11 +262,20 @@ class DoctorDetailScreen extends StatelessWidget {
                             runSpacing: 8,
                             children: doctor.availableDays.map((day) {
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF06B6D4).withValues(alpha: 0.1),
+                                  color: const Color(
+                                    0xFF06B6D4,
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.3)),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF06B6D4,
+                                    ).withValues(alpha: 0.3),
+                                  ),
                                 ),
                                 child: Text(
                                   day,
@@ -259,13 +291,15 @@ class DoctorDetailScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (doctor.availableTime != null) const SizedBox(height: 12),
+                    if (doctor.availableTime != null)
+                      const SizedBox(height: 12),
                   ],
                   if (doctor.availableTime != null)
                     _buildInfoItem(
                       icon: Icons.access_time_rounded,
                       label: 'Working Hours',
-                      value: '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
+                      value:
+                          '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
                     ),
                 ],
               ),
@@ -289,22 +323,27 @@ class DoctorDetailScreen extends StatelessWidget {
                     border: Border.all(color: AppColors.primaryColor, width: 2),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.chat_bubble_outline, color: AppColors.primaryColor),
+                    icon: Icon(
+                      Icons.chat_bubble_outline,
+                      color: AppColors.primaryColor,
+                    ),
                     onPressed: () {
                       if (doctor.user.id.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Unable to start chat: Doctor ID is missing'),
+                            content: Text(
+                              'Unable to start chat: Doctor ID is missing',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
                         return;
                       }
-                      
+
                       print('🚀 Opening chat with doctor:');
                       print('   ID: ${doctor.user.id}');
                       print('   Name: ${doctor.user.name}');
-                      
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -325,7 +364,8 @@ class DoctorDetailScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => BookAppointmentScreen(doctor: doctor),
+                          builder: (ctx) =>
+                              BookAppointmentScreen(doctor: doctor),
                         ),
                       );
                     },
@@ -339,7 +379,11 @@ class DoctorDetailScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(Icons.calendar_today_rounded, color: Colors.white, size: 20),
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         SizedBox(width: 12),
                         Text(
                           'Book Appointment',
@@ -408,7 +452,10 @@ class DoctorDetailScreen extends StatelessWidget {
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.favorite_border_rounded, color: Color(0xFFEF4444)),
+                    icon: const Icon(
+                      Icons.favorite_border_rounded,
+                      color: Color(0xFFEF4444),
+                    ),
                     onPressed: () {},
                   ),
                 ),
@@ -487,7 +534,9 @@ class DoctorDetailScreen extends StatelessWidget {
                                 backgroundColor: const Color(0xFFF0F9FF),
                                 child: Text(
                                   doctor.user.name.isNotEmpty
-                                      ? doctor.user.name.substring(0, 1).toUpperCase()
+                                      ? doctor.user.name
+                                            .substring(0, 1)
+                                            .toUpperCase()
                                       : 'D',
                                   style: TextStyle(
                                     fontSize: isDesktop ? 56 : 48,
@@ -513,7 +562,10 @@ class DoctorDetailScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           // Specialization Badge
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
@@ -548,10 +600,12 @@ class DoctorDetailScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  
+
                   // Stats Cards
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 24 : 16,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -567,7 +621,9 @@ class DoctorDetailScreen extends StatelessWidget {
                           child: _buildGlassStatCard(
                             icon: Icons.star_rounded,
                             label: 'Rating',
-                            value: averageRating > 0 ? averageRating.toStringAsFixed(1) : 'N/A',
+                            value: averageRating > 0
+                                ? averageRating.toStringAsFixed(1)
+                                : 'N/A',
                             color: const Color(0xFFF59E0B),
                           ),
                         ),
@@ -588,7 +644,9 @@ class DoctorDetailScreen extends StatelessWidget {
 
                   // Contact Information Card
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 24 : 16,
+                    ),
                     child: _buildModernCard(
                       title: 'Contact Information',
                       icon: Icons.contact_phone_rounded,
@@ -614,10 +672,14 @@ class DoctorDetailScreen extends StatelessWidget {
                   ),
 
                   // Qualifications Card
-                  if (doctor.degrees.isNotEmpty || (doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)) ...[
+                  if (doctor.degrees.isNotEmpty ||
+                      (doctor.licenseNumber != null &&
+                          doctor.licenseNumber!.isNotEmpty)) ...[
                     const SizedBox(height: 16),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 24 : 16,
+                      ),
                       child: _buildModernCard(
                         title: 'Qualifications',
                         icon: Icons.school_rounded,
@@ -632,7 +694,9 @@ class DoctorDetailScreen extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                      color: const Color(
+                                        0xFF8B5CF6,
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -644,7 +708,8 @@ class DoctorDetailScreen extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Text(
                                           'Degrees',
@@ -658,22 +723,32 @@ class DoctorDetailScreen extends StatelessWidget {
                                         Wrap(
                                           spacing: 8,
                                           runSpacing: 8,
-                                          children: doctor.degrees.map((degree) {
+                                          children: doctor.degrees.map((
+                                            degree,
+                                          ) {
                                             return Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   colors: [
-                                                    const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                                                    const Color(0xFF8B5CF6).withValues(alpha: 0.05),
+                                                    const Color(
+                                                      0xFF8B5CF6,
+                                                    ).withValues(alpha: 0.1),
+                                                    const Color(
+                                                      0xFF8B5CF6,
+                                                    ).withValues(alpha: 0.05),
                                                   ],
                                                 ),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                                 border: Border.all(
-                                                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                                  color: const Color(
+                                                    0xFF8B5CF6,
+                                                  ).withValues(alpha: 0.2),
                                                 ),
                                               ),
                                               child: Text(
@@ -693,9 +768,12 @@ class DoctorDetailScreen extends StatelessWidget {
                                 ],
                               ),
                             ],
-                            if (doctor.degrees.isNotEmpty && doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)
+                            if (doctor.degrees.isNotEmpty &&
+                                doctor.licenseNumber != null &&
+                                doctor.licenseNumber!.isNotEmpty)
                               const SizedBox(height: 16),
-                            if (doctor.licenseNumber != null && doctor.licenseNumber!.isNotEmpty)
+                            if (doctor.licenseNumber != null &&
+                                doctor.licenseNumber!.isNotEmpty)
                               _buildContactItem(
                                 icon: Icons.badge_rounded,
                                 label: 'License Number',
@@ -709,28 +787,35 @@ class DoctorDetailScreen extends StatelessWidget {
                   ],
 
                   // Clinic Information Card
-                  if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty ||
-                      doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty) ...[
+                  if (doctor.clinicName != null &&
+                          doctor.clinicName!.isNotEmpty ||
+                      doctor.clinicAddress != null &&
+                          doctor.clinicAddress!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 24 : 16,
+                      ),
                       child: _buildModernCard(
                         title: 'Clinic Information',
                         icon: Icons.local_hospital_rounded,
                         iconColor: const Color(0xFFEF4444),
                         child: Column(
                           children: [
-                            if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty) ...[
+                            if (doctor.clinicName != null &&
+                                doctor.clinicName!.isNotEmpty) ...[
                               _buildContactItem(
                                 icon: Icons.business_rounded,
                                 label: 'Clinic Name',
                                 value: doctor.clinicName!,
                                 color: const Color(0xFFEF4444),
                               ),
-                              if (doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty)
+                              if (doctor.clinicAddress != null &&
+                                  doctor.clinicAddress!.isNotEmpty)
                                 const SizedBox(height: 16),
                             ],
-                            if (doctor.clinicAddress != null && doctor.clinicAddress!.isNotEmpty)
+                            if (doctor.clinicAddress != null &&
+                                doctor.clinicAddress!.isNotEmpty)
                               _buildContactItem(
                                 icon: Icons.location_on_rounded,
                                 label: 'Address',
@@ -744,10 +829,13 @@ class DoctorDetailScreen extends StatelessWidget {
                   ],
 
                   // Availability Card
-                  if (doctor.availableDays.isNotEmpty || doctor.availableTime != null) ...[
+                  if (doctor.availableDays.isNotEmpty ||
+                      doctor.availableTime != null) ...[
                     const SizedBox(height: 16),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 24 : 16,
+                      ),
                       child: _buildModernCard(
                         title: 'Availability',
                         icon: Icons.calendar_month_rounded,
@@ -762,7 +850,9 @@ class DoctorDetailScreen extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF06B6D4).withValues(alpha: 0.1),
+                                      color: const Color(
+                                        0xFF06B6D4,
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -774,7 +864,8 @@ class DoctorDetailScreen extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Text(
                                           'Available Days',
@@ -788,23 +879,31 @@ class DoctorDetailScreen extends StatelessWidget {
                                         Wrap(
                                           spacing: 8,
                                           runSpacing: 8,
-                                          children: doctor.availableDays.map((day) {
+                                          children: doctor.availableDays.map((
+                                            day,
+                                          ) {
                                             return Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 14,
-                                                vertical: 8,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 8,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   colors: [
                                                     const Color(0xFF06B6D4),
-                                                    const Color(0xFF06B6D4).withValues(alpha: 0.8),
+                                                    const Color(
+                                                      0xFF06B6D4,
+                                                    ).withValues(alpha: 0.8),
                                                   ],
                                                 ),
-                                                borderRadius: BorderRadius.circular(10),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
+                                                    color: const Color(
+                                                      0xFF06B6D4,
+                                                    ).withValues(alpha: 0.3),
                                                     blurRadius: 8,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -827,13 +926,15 @@ class DoctorDetailScreen extends StatelessWidget {
                                 ],
                               ),
                             ],
-                            if (doctor.availableDays.isNotEmpty && doctor.availableTime != null)
+                            if (doctor.availableDays.isNotEmpty &&
+                                doctor.availableTime != null)
                               const SizedBox(height: 16),
                             if (doctor.availableTime != null)
                               _buildContactItem(
                                 icon: Icons.access_time_rounded,
                                 label: 'Working Hours',
-                                value: '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
+                                value:
+                                    '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
                                 color: const Color(0xFF06B6D4),
                               ),
                           ],
@@ -880,17 +981,19 @@ class DoctorDetailScreen extends StatelessWidget {
                     if (doctor.user.id.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Unable to start chat: Doctor ID is missing'),
+                          content: Text(
+                            'Unable to start chat: Doctor ID is missing',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
                       return;
                     }
-                    
+
                     print('🚀 Opening chat with doctor (desktop):');
                     print('   ID: ${doctor.user.id}');
                     print('   Name: ${doctor.user.name}');
-                    
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -930,7 +1033,8 @@ class DoctorDetailScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (ctx) => BookAppointmentScreen(doctor: doctor),
+                            builder: (ctx) =>
+                                BookAppointmentScreen(doctor: doctor),
                           ),
                         );
                       },

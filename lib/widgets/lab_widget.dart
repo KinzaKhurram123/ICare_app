@@ -11,7 +11,12 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
 class LabWidget extends StatelessWidget {
-  const LabWidget({super.key, required this.lab, this.actionText='', this.onActionBtnPressed});
+  const LabWidget({
+    super.key,
+    required this.lab,
+    this.actionText = '',
+    this.onActionBtnPressed,
+  });
   final Lab lab;
   final String actionText;
   final VoidCallback? onActionBtnPressed;
@@ -46,7 +51,7 @@ class LabWidget extends StatelessWidget {
               // Lab Image with premium border and creative badge
               Stack(
                 children: [
-                   Container(
+                  Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
@@ -59,12 +64,26 @@ class LabWidget extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: Image.asset(
-                        lab.photo!,
-                        fit: BoxFit.cover,
-                        width: 85,
-                        height: 85,
-                      ),
+                      child: lab.photo!.startsWith('http')
+                          ? Image.network(
+                              lab.photo!,
+                              fit: BoxFit.cover,
+                              width: 85,
+                              height: 85,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Image.asset(
+                                    ImagePaths.lab1,
+                                    fit: BoxFit.cover,
+                                    width: 85,
+                                    height: 85,
+                                  ),
+                            )
+                          : Image.asset(
+                              lab.photo!,
+                              fit: BoxFit.cover,
+                              width: 85,
+                              height: 85,
+                            ),
                     ),
                   ),
                   Positioned(
@@ -82,14 +101,18 @@ class LabWidget extends StatelessWidget {
                           color: Color(0xFF10B981),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 10),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          color: Colors.white,
+                          size: 10,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(width: 20),
-              
+
               // Laboratory Info
               Expanded(
                 child: Column(
@@ -109,14 +132,19 @@ class LabWidget extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFFBEB),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: const Color(0xFFFEF3C7)),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFD97706).withOpacity(0.08),
+                                color: const Color(
+                                  0xFFD97706,
+                                ).withOpacity(0.08),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -124,7 +152,11 @@ class LabWidget extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded, size: 16, color: Color(0xFFD97706)),
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: Color(0xFFD97706),
+                              ),
                               const SizedBox(width: 6),
                               CustomText(
                                 text: lab.rating,
@@ -141,7 +173,11 @@ class LabWidget extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF94A3B8)),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 15,
+                          color: Color(0xFF94A3B8),
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: CustomText(
@@ -154,13 +190,19 @@ class LabWidget extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Quick Status Tags
                     Row(
                       children: [
-                        _buildStatusTag("Verified Clinic", const Color(0xFF6366F1)),
+                        _buildStatusTag(
+                          "Verified Clinic",
+                          const Color(0xFF6366F1),
+                        ),
                         const SizedBox(width: 8),
-                        _buildStatusTag("Digital Results", const Color(0xFF0EA5E9)),
+                        _buildStatusTag(
+                          "Digital Results",
+                          const Color(0xFF0EA5E9),
+                        ),
                       ],
                     ),
                   ],
@@ -191,7 +233,11 @@ class LabWidget extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFFF59E0B)),
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 14,
+                          color: Color(0xFFF59E0B),
+                        ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: CustomText(
@@ -219,9 +265,15 @@ class LabWidget extends StatelessWidget {
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0F172A), Color(0xFF334155)],
                   ),
-                  onPressed: onActionBtnPressed ?? () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const BookLabScreen()));
-                  },
+                  onPressed:
+                      onActionBtnPressed ??
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const BookLabScreen(),
+                          ),
+                        );
+                      },
                 ),
               ),
             ],

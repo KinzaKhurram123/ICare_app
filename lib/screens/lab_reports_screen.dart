@@ -42,9 +42,9 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     try {
       // Read role via the correct SharedPref utility (key = 'userRole')
       final role = (await SharedPref().getUserRole())?.toLowerCase();
-      
+
       List<dynamic> bookings = [];
-      
+
       // Patients and students see their own bookings.
       // Lab/lab_technician roles see their lab's bookings.
       if (role == 'patient' || role == 'student') {
@@ -58,7 +58,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         // Fallback for other roles — try personal bookings
         bookings = await _labService.getMyBookings();
       }
-      
+
       setState(() {
         _completedBookings = List<dynamic>.from(bookings);
         _isLoading = false;
@@ -72,8 +72,12 @@ class _LabReportsScreenState extends State<LabReportsScreen>
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 700;
-    final completed = _completedBookings.where((b) => b['status'] == 'completed').toList();
-    final pending = _completedBookings.where((b) => b['status'] != 'completed' && b['status'] != 'cancelled').toList();
+    final completed = _completedBookings
+        .where((b) => b['status'] == 'completed')
+        .toList();
+    final pending = _completedBookings
+        .where((b) => b['status'] != 'completed' && b['status'] != 'cancelled')
+        .toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -133,12 +137,22 @@ class _LabReportsScreenState extends State<LabReportsScreen>
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isDesktop ? 900 : double.infinity),
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 900 : double.infinity,
+                ),
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildReportList(completed, showResults: true, isDesktop: isDesktop),
-                    _buildReportList(pending, showResults: false, isDesktop: isDesktop),
+                    _buildReportList(
+                      completed,
+                      showResults: true,
+                      isDesktop: isDesktop,
+                    ),
+                    _buildReportList(
+                      pending,
+                      showResults: false,
+                      isDesktop: isDesktop,
+                    ),
                   ],
                 ),
               ),
@@ -146,7 +160,11 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     );
   }
 
-  Widget _buildReportList(List<dynamic> bookings, {required bool showResults, required bool isDesktop}) {
+  Widget _buildReportList(
+    List<dynamic> bookings, {
+    required bool showResults,
+    required bool isDesktop,
+  }) {
     if (bookings.isEmpty) {
       return Center(
         child: Column(
@@ -159,7 +177,9 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                showResults ? Icons.receipt_long_rounded : Icons.hourglass_empty_rounded,
+                showResults
+                    ? Icons.receipt_long_rounded
+                    : Icons.hourglass_empty_rounded,
                 size: 48,
                 color: primaryColor.withOpacity(0.5),
               ),
@@ -188,7 +208,8 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     return ListView.builder(
       padding: EdgeInsets.all(isDesktop ? 28 : 16),
       itemCount: bookings.length,
-      itemBuilder: (ctx, i) => _buildReportCard(bookings[i], showResults: showResults),
+      itemBuilder: (ctx, i) =>
+          _buildReportCard(bookings[i], showResults: showResults),
     );
   }
 
@@ -197,11 +218,14 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     final patientName = booking['contactName'] ?? 'Patient';
     final dateStr = booking['date'] ?? '';
     DateTime? dateObj = DateTime.tryParse(dateStr);
-    final formattedDate = dateObj != null ? DateFormat('dd MMM yyyy').format(dateObj) : '—';
+    final formattedDate = dateObj != null
+        ? DateFormat('dd MMM yyyy').format(dateObj)
+        : '—';
     final status = booking['status'] ?? 'pending';
     final resultNotes = booking['resultNotes'] ?? '';
     final reportUrl = booking['reportUrl'] ?? '';
     final bookingNumber = booking['bookingNumber'] ?? '#—';
+    final bool isAbnormal = booking['isAbnormal'] ?? false;
 
     Color statusColor;
     Color statusBg;
@@ -250,11 +274,16 @@ class _LabReportsScreenState extends State<LabReportsScreen>
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [primaryColor.withOpacity(0.04), secondaryColor.withOpacity(0.02)],
+                colors: [
+                  primaryColor.withOpacity(0.04),
+                  secondaryColor.withOpacity(0.02),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: Row(
               children: [
@@ -271,26 +300,59 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.biotech_rounded, color: primaryColor, size: 24),
+                  child: const Icon(
+                    Icons.biotech_rounded,
+                    color: primaryColor,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        testName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.2,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            testName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          if (isAbnormal) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'ABNORMAL',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.person_rounded, size: 13, color: Color(0xFF94A3B8)),
+                          const Icon(
+                            Icons.person_rounded,
+                            size: 13,
+                            color: Color(0xFF94A3B8),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             patientName,
@@ -301,7 +363,11 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             formattedDate,
@@ -317,7 +383,10 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusBg,
                     borderRadius: BorderRadius.circular(20),
@@ -353,7 +422,10 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(8),
@@ -381,7 +453,11 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                             color: primaryColor.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.notes_rounded, color: primaryColor, size: 16),
+                          child: const Icon(
+                            Icons.notes_rounded,
+                            color: primaryColor,
+                            size: 16,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         const Text(
@@ -423,11 +499,18 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: Color(0xFFD97706),
+                            size: 16,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'No written findings — report document may be attached below.',
-                            style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
                           ),
                         ],
                       ),
@@ -436,7 +519,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
 
                   if (reportUrl.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                      SizedBox(
+                    SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
@@ -452,13 +535,18 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                         icon: const Icon(Icons.copy_rounded, size: 16),
                         label: const Text(
                           'Copy Report Link',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           elevation: 0,
                         ),
                       ),
@@ -472,7 +560,11 @@ class _LabReportsScreenState extends State<LabReportsScreen>
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  const Icon(Icons.hourglass_bottom_rounded, color: Color(0xFFF59E0B), size: 16),
+                  const Icon(
+                    Icons.hourglass_bottom_rounded,
+                    color: Color(0xFFF59E0B),
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Awaiting lab results — booked for $formattedDate',

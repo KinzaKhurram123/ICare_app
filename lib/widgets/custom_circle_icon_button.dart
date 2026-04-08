@@ -1,5 +1,4 @@
-
-  import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
@@ -15,7 +14,7 @@ class CustomCircleIconButton extends StatelessWidget {
     this.onTap,
   });
 
-final double? size;
+  final double? size;
   final Color? bgColor;
   final String? iconPath;
   final IconData? iconData;
@@ -35,17 +34,16 @@ final double? size;
         width: s,
         height: s,
         clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: bgColor,
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: bgColor),
         child: Center(
-          child: iconData != null ? Icon(iconData, color: iconColor, size: iSize) : SvgWrapper(
-            assetPath: iconPath ?? "",
-            color: iconColor,
-            width: iSize,
-            height: iSize,
-          ),
+          child: iconData != null
+              ? Icon(iconData, color: iconColor, size: iSize)
+              : SvgWrapper(
+                  assetPath: iconPath ?? "",
+                  color: iconColor,
+                  width: iSize,
+                  height: iSize,
+                ),
         ),
       ),
     );

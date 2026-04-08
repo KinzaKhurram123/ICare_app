@@ -9,6 +9,10 @@ import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/tasks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'dart:async';
+import 'package:icare/screens/lab_supplies_management.dart';
+import 'package:icare/services/lab_supply_service.dart';
+import 'package:icare/utils/error_handler.dart';
+import 'package:icare/screens/my_appointments_list.dart';
 
 class LaboratoryDashboard extends StatefulWidget {
   const LaboratoryDashboard({super.key});
@@ -17,7 +21,8 @@ class LaboratoryDashboard extends StatefulWidget {
   State<LaboratoryDashboard> createState() => _LaboratoryDashboardState();
 }
 
-class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTickerProviderStateMixin {
+class _LaboratoryDashboardState extends State<LaboratoryDashboard>
+    with SingleTickerProviderStateMixin {
   final LaboratoryService _labService = LaboratoryService();
   bool _isLoading = true;
   Map<String, dynamic>? _stats;
@@ -27,6 +32,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
   int _lastKnownBookingCount = 0;
   AnimationController? _animationController;
   Animation<double>? _fadeAnimation;
+  int _lowStockCount = 0;
 
   // Premium Theme Colors
   final Color primaryColor = const Color(0xFF0B2D6E);
@@ -61,7 +67,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
       if (_labProfile == null) return;
       final stats = await _labService.getDashboardStats(_labProfile!['_id']);
       final currentCount = stats['totalBookings'] ?? 0;
-      
+
       if (currentCount > _lastKnownBookingCount && _lastKnownBookingCount > 0) {
         _showNewBookingNotification();
         _loadData(); // Full refresh to update UI
@@ -81,7 +87,13 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
         decoration: BoxDecoration(
           color: primaryColor,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -90,15 +102,28 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
             const SizedBox(width: 12),
             const Text(
               'New Lab Booking Received!',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(width: 12),
             TextButton(
               onPressed: () {
                 SmartDialog.dismiss();
-                Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabBookingsManagement()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const LabBookingsManagement(),
+                  ),
+                );
               },
-              child: const Text('VIEW', style: TextStyle(color: Colors.white, decoration: TextDecoration.underline)),
+              child: const Text(
+                'VIEW',
+                style: TextStyle(
+                  color: Colors.white,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
           ],
         ),
@@ -124,6 +149,15 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
       final profile = await _labService.getProfile();
       final stats = await _labService.getDashboardStats(profile['_id']);
 
+      // Load low stock alerts
+      try {
+        final lowStockData = await LabSupplyService.getLowStockAlerts();
+        _lowStockCount = lowStockData['count'] ?? 0;
+      } catch (e) {
+        debugPrint('Error loading low stock alerts: $e');
+        _lowStockCount = 0;
+      }
+
       setState(() {
         _labProfile = profile;
         _stats = stats;
@@ -133,7 +167,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
       _animationController?.forward();
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = ErrorHandler.getFriendlyMessage(e);
         _isLoading = false;
       });
     }
@@ -153,69 +187,89 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                 children: [
                   CircularProgressIndicator(color: primaryColor),
                   const SizedBox(height: 16),
-                  Text('Loading dashboard...', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                  Text(
+                    'Loading dashboard...',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  ),
                 ],
               ),
             )
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text('Error: $_error', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _loadData,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: $_error',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _loadData,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
                       ),
-                    ],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  color: primaryColor,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.all(isMobile ? 16 : 24),
-                    child: _fadeAnimation != null
-                        ? FadeTransition(
-                            opacity: _fadeAnimation!,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildWelcomeCard(isMobile),
-                                const SizedBox(height: 24),
-                                _buildStatsGrid(isMobile),
-                                const SizedBox(height: 32),
-                                _buildQuickActions(isMobile),
-                                const SizedBox(height: 32),
-                                _buildRecentActivity(isMobile),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildWelcomeCard(isMobile),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: primaryColor,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(isMobile ? 16 : 24),
+                child: _fadeAnimation != null
+                    ? FadeTransition(
+                        opacity: _fadeAnimation!,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildWelcomeCard(isMobile),
+                            const SizedBox(height: 24),
+                            if (_lowStockCount > 0) ...[
+                              _buildLowStockAlert(isMobile),
                               const SizedBox(height: 24),
-                              _buildStatsGrid(isMobile),
-                              const SizedBox(height: 32),
-                              _buildQuickActions(isMobile),
-                              const SizedBox(height: 32),
-                              _buildRecentActivity(isMobile),
                             ],
-                          ),
-                  ),
-                ),
+                            _buildStatsGrid(isMobile),
+                            const SizedBox(height: 32),
+                            _buildQuickActions(isMobile),
+                            const SizedBox(height: 32),
+                            _buildRecentActivity(isMobile),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildWelcomeCard(isMobile),
+                          const SizedBox(height: 24),
+                          if (_lowStockCount > 0) ...[
+                            _buildLowStockAlert(isMobile),
+                            const SizedBox(height: 24),
+                          ],
+                          _buildStatsGrid(isMobile),
+                          const SizedBox(height: 32),
+                          _buildQuickActions(isMobile),
+                          const SizedBox(height: 32),
+                          _buildRecentActivity(isMobile),
+                        ],
+                      ),
+              ),
+            ),
     );
   }
 
@@ -290,7 +344,11 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            Icon(Icons.location_on, size: 16, color: accentColor),
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: accentColor,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               _labProfile?['city'] ?? 'Location not set',
@@ -307,11 +365,21 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabBookingsManagement())),
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabBookingsManagement(),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -322,10 +390,87 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
     );
   }
 
+  Widget _buildLowStockAlert(bool isMobile) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orange.shade600, Colors.orange.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabSuppliesManagement()),
+          ),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Low Stock Alert',
+                        style: TextStyle(
+                          fontSize: isMobile ? 16 : 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$_lowStockCount ${_lowStockCount == 1 ? 'item needs' : 'items need'} restocking',
+                        style: TextStyle(
+                          fontSize: isMobile ? 13 : 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatsGrid(bool isMobile) {
     final stats = [
       {
-        'title': 'Total Bookings',
+        'title': 'Total Requests',
         'value': _stats?['totalBookings']?.toString() ?? '0',
         'icon': Icons.calendar_month_rounded,
         'trend': '+12%',
@@ -402,13 +547,16 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: stat['trend'] == 'Needs Action' 
-                            ? Colors.orange.withOpacity(0.1) 
+                        color: stat['trend'] == 'Needs Action'
+                            ? Colors.orange.withOpacity(0.1)
                             : stat['trend'] == 'New'
-                                ? accentColor.withOpacity(0.1)
-                                : Colors.green.withOpacity(0.1),
+                            ? accentColor.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -416,11 +564,11 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: stat['trend'] == 'Needs Action' 
-                              ? Colors.orange[800] 
+                          color: stat['trend'] == 'Needs Action'
+                              ? Colors.orange[800]
                               : stat['trend'] == 'New'
-                                  ? accentColor
-                                  : Colors.green[700],
+                              ? accentColor
+                              : Colors.green[700],
                         ),
                       ),
                     ),
@@ -475,7 +623,10 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
             TextButton(
               onPressed: () {},
               style: TextButton.styleFrom(foregroundColor: primaryColor),
-              child: const Text('View All', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'View All',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -500,39 +651,96 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
               runSpacing: 16,
               children: [
                 _buildActionButton(
-                  'Bookings',
-                  Icons.list_alt_rounded,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabBookingsManagement())),
+                  'Diagnostic Queue',
+                  Icons.assignment_ind_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabBookingsManagement(
+                        title: 'Diagnostic Queue',
+                        initialFilter: 'pending',
+                      ),
+                    ),
+                  ),
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Manage Tests',
-                  Icons.science_outlined,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabTestsManagement())),
+                  'Result Entry',
+                  Icons.biotech_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabBookingsManagement(
+                        title: 'Result Entry',
+                        initialFilter: 'confirmed',
+                      ),
+                    ),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Clinical Archive',
+                  Icons.history_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabBookingsManagement(
+                        title: 'Clinical Archive',
+                        initialFilter: 'completed',
+                      ),
+                    ),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Supplies',
+                  Icons.inventory_2_outlined,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabSuppliesManagement(),
+                    ),
+                  ),
                   isMobile,
                 ),
                 _buildActionButton(
                   'Analytics',
                   Icons.analytics_outlined,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics())),
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const LabAnalytics()),
+                  ),
                   isMobile,
                 ),
                 _buildActionButton(
                   'Invoices',
                   Icons.receipt_long_rounded,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices())),
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const PaymentInvoices(),
+                    ),
+                  ),
                   isMobile,
                 ),
                 _buildActionButton(
                   'Tasks',
                   Icons.task_alt_rounded,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const TaskScreen())),
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const TaskScreen()),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'My Appointments',
+                  Icons.calendar_month_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => MyAppointmentsListScreen(),
+                    ),
+                  ),
                   isMobile,
                 ),
                 _buildActionButton(
                   'Settings',
                   Icons.settings_outlined,
-                  () => Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen())),
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
+                  ),
                   isMobile,
                 ),
               ],
@@ -543,7 +751,12 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onTap, bool isMobile) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+    bool isMobile,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -572,10 +785,18 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                   color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
                   ],
                 ),
-                child: Icon(icon, color: primaryColor, size: isMobile ? 24 : 28),
+                child: Icon(
+                  icon,
+                  color: primaryColor,
+                  size: isMobile ? 24 : 28,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -641,12 +862,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                     children: recentActivity.asMap().entries.map((entry) {
                       final index = entry.key;
                       final activity = entry.value;
-                      
-                      final status = activity['status']?.toString().toLowerCase() ?? 'unknown';
+
+                      final status =
+                          activity['status']?.toString().toLowerCase() ??
+                          'unknown';
                       IconData icon = Icons.info_outline;
                       Color color = accentColor;
                       String title = 'Booking Updated';
-                      
+
                       if (status == 'completed') {
                         icon = Icons.check_circle_outline;
                         color = Colors.green;
@@ -665,10 +888,21 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
                         title = 'Booking Cancelled';
                       }
 
-                      final patientName = activity['patient']?['name'] ?? 'Patient';
-                      final testName = (activity['tests'] as List<dynamic>?)?.map((t) => t['testName']).join(', ') ?? 'Test';
-                      final parsedDate = DateTime.tryParse(activity['createdAt'] ?? activity['date'] ?? '') ?? DateTime.now();
-                      final timeString = DateFormat('MMM d, hh:mm a').format(parsedDate);
+                      final patientName =
+                          activity['patient']?['name'] ?? 'Patient';
+                      final testName =
+                          (activity['tests'] as List<dynamic>?)
+                              ?.map((t) => t['testName'])
+                              .join(', ') ??
+                          'Test';
+                      final parsedDate =
+                          DateTime.tryParse(
+                            activity['createdAt'] ?? activity['date'] ?? '',
+                          ) ??
+                          DateTime.now();
+                      final timeString = DateFormat(
+                        'MMM d, hh:mm a',
+                      ).format(parsedDate);
 
                       return Column(
                         children: [
@@ -691,7 +925,13 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard> with SingleTi
     );
   }
 
-  Widget _buildActivityItem(IconData icon, String title, String subtitle, String time, Color color) {
+  Widget _buildActivityItem(
+    IconData icon,
+    String title,
+    String subtitle,
+    String time,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       child: Row(

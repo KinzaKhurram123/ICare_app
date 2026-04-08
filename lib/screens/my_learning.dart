@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/course_service.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/certificates_list.dart';
 
@@ -12,10 +13,11 @@ class MyLearningScreen extends ConsumerStatefulWidget {
   ConsumerState<MyLearningScreen> createState() => _MyLearningScreenState();
 }
 
-class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with SingleTickerProviderStateMixin {
+class _MyLearningScreenState extends ConsumerState<MyLearningScreen>
+    with SingleTickerProviderStateMixin {
   final CourseService _courseService = CourseService();
   late TabController _tabController;
-  
+
   List<dynamic> _enrolledCourses = [];
   bool _isLoading = true;
 
@@ -52,13 +54,16 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final role = ref.read(authProvider).userRole?.toLowerCase();
+    final isPatient = role == 'patient';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'My Learning',
+        title: Text(
+          isPatient ? 'My Health Journey' : 'My Learning',
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontSize: 20,
@@ -70,10 +75,13 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
           labelColor: AppColors.primaryColor,
           unselectedLabelColor: const Color(0xFF64748B),
           indicatorColor: AppColors.primaryColor,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          tabs: const [
-            Tab(text: 'My Courses'),
-            Tab(text: 'Certificates'),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+          tabs: [
+            Tab(text: isPatient ? 'Assigned Programs' : 'My Courses'),
+            Tab(text: isPatient ? 'My Progress' : 'Certificates'),
           ],
         ),
       ),
@@ -81,25 +89,33 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabController,
-              children: [
-                _buildCoursesTab(),
-                _buildCertificatesTab(),
-              ],
+              children: [_buildCoursesTab(), _buildCertificatesTab()],
             ),
     );
   }
 
   Widget _buildCoursesTab() {
+    final role = ref.read(authProvider).userRole?.toLowerCase();
+    final isPatient = role == 'patient';
+
     if (_enrolledCourses.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school_outlined, size: 80, color: Colors.grey[300]),
+            Icon(
+              isPatient
+                  ? Icons.health_and_safety_outlined
+                  : Icons.school_outlined,
+              size: 80,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 16),
-            const Text(
-              'No enrolled courses yet',
-              style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+            Text(
+              isPatient
+                  ? 'No assigned programs yet'
+                  : 'No enrolled courses yet',
+              style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -112,29 +128,36 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
       itemBuilder: (context, index) {
         final enrollment = _enrolledCourses[index];
         final course = enrollment['course'];
-        
+
         // Handle progress - it's a Map with percent field
         int progress = 0;
         final progressData = enrollment['progress'];
-        if (progressData is int) {
+        if (progressData is int)
           progress = progressData;
-        } else if (progressData is Map) {
-          // Backend returns progress as { completedVideos, totalVideos, percent }
+        else if (progressData is Map)
           progress = (progressData['percent'] ?? 0).toInt();
-        }
-        
-        final status = enrollment['status'] ?? 'active';
 
-        return _buildCourseCard(course, progress, status);
+        final status = enrollment['status'] ?? 'active';
+        final enrollmentId = enrollment['_id'] ?? enrollment['id'];
+
+        return _buildCourseCard(course, progress, status, enrollmentId);
       },
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course, int progress, String status) {
+  Widget _buildCourseCard(
+    Map<String, dynamic> course,
+    int progress,
+    String status,
+    String? enrollmentId,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (ctx) => ViewCourse(courseData: course)),
+          MaterialPageRoute(
+            builder: (ctx) =>
+                ViewCourse(courseData: course, enrollmentId: enrollmentId),
+          ),
         );
       },
       child: Container(
@@ -171,7 +194,11 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
                           width: 120,
                           height: 120,
                           color: Colors.grey[200],
-                          child: const Icon(Icons.book, size: 40, color: Colors.grey),
+                          child: const Icon(
+                            Icons.book,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                         ),
                 ),
                 // Course Info
@@ -182,7 +209,9 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          course['title'] ?? course['name'] ?? 'Untitled Course',
+                          course['title'] ??
+                              course['name'] ??
+                              'Untitled Course',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -195,7 +224,10 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: status == 'completed'
                                     ? const Color(0xFF10B981).withOpacity(0.1)
@@ -203,7 +235,9 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen> with Single
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                status == 'completed' ? 'Completed' : 'In Progress',
+                                status == 'completed'
+                                    ? 'Completed'
+                                    : 'In Progress',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,

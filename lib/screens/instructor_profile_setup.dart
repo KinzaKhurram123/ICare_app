@@ -10,21 +10,24 @@ class InstructorProfileSetupScreen extends StatefulWidget {
   const InstructorProfileSetupScreen({super.key});
 
   @override
-  State<InstructorProfileSetupScreen> createState() => _InstructorProfileSetupScreenState();
+  State<InstructorProfileSetupScreen> createState() =>
+      _InstructorProfileSetupScreenState();
 }
 
-class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScreen> {
+class _InstructorProfileSetupScreenState
+    extends State<InstructorProfileSetupScreen> {
   final InstructorService _instructorService = InstructorService();
   final _formKey = GlobalKey<FormState>();
-  
+
   final TextEditingController _bioController = TextEditingController();
-  final TextEditingController _qualificationController = TextEditingController();
+  final TextEditingController _qualificationController =
+      TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _experienceController = TextEditingController();
   final TextEditingController _specialtyController = TextEditingController();
   final TextEditingController _languageController = TextEditingController();
-  
+
   String _selectedGender = 'Male';
   List<String> _specialties = [];
   List<String> _languages = [];
@@ -33,7 +36,15 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
   TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
   bool _isLoading = false;
 
-  final List<String> _weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  final List<String> _weekDays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
 
   @override
   void initState() {
@@ -54,16 +65,24 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
           _selectedGender = profile['gender'] ?? 'Male';
           _specialties = List<String>.from(profile['specialties'] ?? []);
           _languages = List<String>.from(profile['languages'] ?? []);
-          _availabilityDays = List<String>.from(profile['availabilityDays'] ?? []);
-          
+          _availabilityDays = List<String>.from(
+            profile['availabilityDays'] ?? [],
+          );
+
           if (profile['availabilityTime'] != null) {
             final start = profile['availabilityTime']['start']?.split(':');
             final end = profile['availabilityTime']['end']?.split(':');
             if (start != null && start.length == 2) {
-              _startTime = TimeOfDay(hour: int.parse(start[0]), minute: int.parse(start[1]));
+              _startTime = TimeOfDay(
+                hour: int.parse(start[0]),
+                minute: int.parse(start[1]),
+              );
             }
             if (end != null && end.length == 2) {
-              _endTime = TimeOfDay(hour: int.parse(end[0]), minute: int.parse(end[1]));
+              _endTime = TimeOfDay(
+                hour: int.parse(end[0]),
+                minute: int.parse(end[1]),
+              );
             }
           }
         });
@@ -90,8 +109,10 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
         'experience': _experienceController.text,
         'availabilityDays': _availabilityDays,
         'availabilityTime': {
-          'start': '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-          'end': '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
+          'start':
+              '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+          'end':
+              '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
         },
       });
 
@@ -103,9 +124,9 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -140,7 +161,10 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
         elevation: 0,
         title: const Text(
           'Instructor Profile Setup',
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       body: Form(
@@ -182,9 +206,13 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                           border: OutlineInputBorder(),
                         ),
                         items: ['Male', 'Female', 'Other'].map((gender) {
-                          return DropdownMenuItem(value: gender, child: Text(gender));
+                          return DropdownMenuItem(
+                            value: gender,
+                            child: Text(gender),
+                          );
                         }).toList(),
-                        onChanged: (val) => setState(() => _selectedGender = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedGender = val!),
                       ),
                     ),
                   ],
@@ -200,9 +228,9 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                   hintText: 'Years of Experience',
                 ),
               ]),
-              
+
               const SizedBox(height: 24),
-              
+
               _buildSection('Specialties', [
                 Row(
                   children: [
@@ -215,22 +243,30 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: _addSpecialty,
-                      icon: const Icon(Icons.add_circle, color: AppColors.primaryColor),
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: _specialties.map((s) => Chip(
-                    label: Text(s),
-                    onDeleted: () => setState(() => _specialties.remove(s)),
-                  )).toList(),
+                  children: _specialties
+                      .map(
+                        (s) => Chip(
+                          label: Text(s),
+                          onDeleted: () =>
+                              setState(() => _specialties.remove(s)),
+                        ),
+                      )
+                      .toList(),
                 ),
               ]),
-              
+
               const SizedBox(height: 24),
-              
+
               _buildSection('Languages', [
                 Row(
                   children: [
@@ -243,40 +279,54 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: _addLanguage,
-                      icon: const Icon(Icons.add_circle, color: AppColors.primaryColor),
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: _languages.map((l) => Chip(
-                    label: Text(l),
-                    onDeleted: () => setState(() => _languages.remove(l)),
-                  )).toList(),
+                  children: _languages
+                      .map(
+                        (l) => Chip(
+                          label: Text(l),
+                          onDeleted: () => setState(() => _languages.remove(l)),
+                        ),
+                      )
+                      .toList(),
                 ),
               ]),
-              
+
               const SizedBox(height: 24),
-              
+
               _buildSection('Availability', [
-                const Text('Available Days:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text(
+                  'Available Days:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: _weekDays.map((day) => FilterChip(
-                    label: Text(day),
-                    selected: _availabilityDays.contains(day),
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _availabilityDays.add(day);
-                        } else {
-                          _availabilityDays.remove(day);
-                        }
-                      });
-                    },
-                  )).toList(),
+                  children: _weekDays
+                      .map(
+                        (day) => FilterChip(
+                          label: Text(day),
+                          selected: _availabilityDays.contains(day),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _availabilityDays.add(day);
+                              } else {
+                                _availabilityDays.remove(day);
+                              }
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -286,7 +336,10 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                         title: const Text('Start Time'),
                         subtitle: Text(_startTime.format(context)),
                         onTap: () async {
-                          final time = await showTimePicker(context: context, initialTime: _startTime);
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: _startTime,
+                          );
                           if (time != null) setState(() => _startTime = time);
                         },
                       ),
@@ -296,7 +349,10 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                         title: const Text('End Time'),
                         subtitle: Text(_endTime.format(context)),
                         onTap: () async {
-                          final time = await showTimePicker(context: context, initialTime: _endTime);
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: _endTime,
+                          );
                           if (time != null) setState(() => _endTime = time);
                         },
                       ),
@@ -304,9 +360,9 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
                   ],
                 ),
               ]),
-              
+
               const SizedBox(height: 32),
-              
+
               CustomButton(
                 label: _isLoading ? 'Saving...' : 'Save Profile',
                 onPressed: _isLoading ? null : _saveProfile,
@@ -324,7 +380,11 @@ class _InstructorProfileSetupScreenState extends State<InstructorProfileSetupScr
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
         ),
         const SizedBox(height: 16),
         ...children,

@@ -1,71 +1,153 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-class HelpAndSupport extends StatelessWidget {
+class HelpAndSupport extends ConsumerWidget {
   const HelpAndSupport({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role = ref.read(authProvider).userRole ?? '';
+    final isStudent = role == 'Student';
     if (MediaQuery.of(context).size.width > 600) {
-      return const _WebHelpAndSupport();
+      return _WebHelpAndSupport(isStudent: isStudent);
     }
 
-    // ORIGINAL MOBILE LAYOUT
+    // REFINED MOBILE LAYOUT
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFD),
       appBar: AppBar(
-        leading: CustomBackButton(),
-        title: CustomText(text: "Help And Support"),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomText( 
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text: "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.", 
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023,),
-              CustomText( 
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 10,
-                text: "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.", 
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023,),
-              CustomText( 
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text: "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.", 
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023,),
-              CustomText( 
-                fontFamily: "Gilroy-Regular",       
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text: "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.", 
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-            ],
-          ),
+        leading: const CustomBackButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: CustomText(
+          text: "Help & Support",
+          fontWeight: FontWeight.bold,
+          color: AppColors.primaryColor,
         ),
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Academic Support",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Welcome to the iCare Student Support Center. Our faculty and technical teams are here to ensure your learning journey is seamless.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF64748B),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildContactTile(
+                    Icons.email_outlined,
+                    "Academic Support",
+                    "academic@icare.com",
+                  ),
+                  const SizedBox(height: 12),
+                  _buildContactTile(
+                    Icons.help_center_outlined,
+                    "Technical Desk",
+                    "tech-support@icare.com",
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              "Frequently Asked Questions",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _WebFaqCard(
+              question: "How do I download my certificate?",
+              answer:
+                  "Certificates are automatically generated upon 100% completion of a program. You can find them in the 'Certificates' tab of your My Learning section.",
+            ),
+            _WebFaqCard(
+              question: "Can I access courses offline?",
+              answer:
+                  "Currently, our lessons require an active internet connection to stream video and interactive content reliably.",
+            ),
+            _WebFaqCard(
+              question: "How do I take a module quiz?",
+              answer:
+                  "Once you complete all lessons in a module, the 'Module Quiz' button becomes active at the bottom of the curriculum list.",
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primaryColor, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -75,7 +157,8 @@ class HelpAndSupport extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _WebHelpAndSupport extends StatelessWidget {
-  const _WebHelpAndSupport();
+  final bool isStudent;
+  const _WebHelpAndSupport({this.isStudent = false});
 
   @override
   Widget build(BuildContext context) {
@@ -113,24 +196,64 @@ class _WebHelpAndSupport extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 16)],
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          offset: Offset(0, 4),
+                          blurRadius: 16,
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.support_agent_rounded, size: 32, color: AppColors.primaryColor),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.support_agent_rounded,
+                            size: 32,
+                            color: AppColors.primaryColor,
+                          ),
                         ),
                         const SizedBox(height: 20),
-                        const Text("Still need help?", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold")),
+                        const Text(
+                          "Still need help?",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                            fontFamily: "Gilroy-Bold",
+                          ),
+                        ),
                         const SizedBox(height: 12),
-                        const Text("Our support team is available 24/7 to help you with any issues or queries.", style: TextStyle(fontSize: 15, color: Color(0xFF64748B), height: 1.6)),
+                        Text(
+                          isStudent
+                              ? "Our academic support team is available to help you with courses, certificates, and platform questions."
+                              : "Our support team is available 24/7 to help you with any issues or queries.",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF64748B),
+                            height: 1.6,
+                          ),
+                        ),
                         const SizedBox(height: 32),
-                        _WebContactItem(icon: Icons.email_outlined, title: "Email Us", subtitle: "support@icare.com"),
+                        _WebContactItem(
+                          icon: Icons.email_outlined,
+                          title: "Email Us",
+                          subtitle: isStudent
+                              ? "academic@icare.com"
+                              : "support@icare.com",
+                        ),
                         const SizedBox(height: 20),
-                        _WebContactItem(icon: Icons.phone_outlined, title: "Call Us", subtitle: "+1 (800) 123-4567"),
+                        _WebContactItem(
+                          icon: Icons.phone_outlined,
+                          title: "Call Us",
+                          subtitle: "+1 (800) 123-4567",
+                        ),
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
@@ -139,17 +262,25 @@ class _WebHelpAndSupport extends StatelessWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: () {},
-                            child: const Text("Message Support", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                            child: const Text(
+                              "Message Support",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 40),
 
                 // ── Right: FAQ Block ──
@@ -160,26 +291,59 @@ class _WebHelpAndSupport extends StatelessWidget {
                     children: [
                       const Text(
                         "Frequently Asked Questions",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold"),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                          fontFamily: "Gilroy-Bold",
+                        ),
                       ),
                       const SizedBox(height: 24),
-                      _WebFaqCard(
-                        question: "How do I book a new appointment?",
-                        answer: "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
-                        isExpanded: true,
-                      ),
-                      _WebFaqCard(
-                        question: "How can I access my lab reports?",
-                        answer: "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
-                      ),
-                      _WebFaqCard(
-                        question: "What should I do if my payment fails?",
-                        answer: "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
-                      ),
-                      _WebFaqCard(
-                        question: "Can I cancel or reschedule my task?",
-                        answer: "Yes, tasks can be managed directly from the 'My Tasks' dashboard. Click the three dots icon next to a task to edit or cancel it.",
-                      ),
+                      if (isStudent) ...[
+                        _WebFaqCard(
+                          question: "How do I download my certificate?",
+                          answer:
+                              "Certificates are automatically generated upon 100% completion of a program. Go to the 'Certificates' tab in your courses section to view and download them.",
+                          isExpanded: true,
+                        ),
+                        _WebFaqCard(
+                          question: "Can I access courses offline?",
+                          answer:
+                              "Currently, lessons require an active internet connection to stream video and interactive content reliably. Offline support is coming soon.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I take a module quiz?",
+                          answer:
+                              "Once you complete all lessons in a module, a 'Take Quiz' button will appear at the bottom of the curriculum. You must be enrolled to access quizzes.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I track my course progress?",
+                          answer:
+                              "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
+                        ),
+                      ] else ...[
+                        _WebFaqCard(
+                          question: "How do I book a new appointment?",
+                          answer:
+                              "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
+                          isExpanded: true,
+                        ),
+                        _WebFaqCard(
+                          question: "How can I access my lab reports?",
+                          answer:
+                              "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
+                        ),
+                        _WebFaqCard(
+                          question: "What should I do if my payment fails?",
+                          answer:
+                              "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
+                        ),
+                        _WebFaqCard(
+                          question: "Can I cancel or reschedule my task?",
+                          answer:
+                              "Yes, tasks can be managed directly from the 'My Tasks' dashboard. Click the three dots icon next to a task to edit or cancel it.",
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -197,7 +361,11 @@ class _WebContactItem extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _WebContactItem({required this.icon, required this.title, required this.subtitle});
+  const _WebContactItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -205,18 +373,36 @@ class _WebContactItem extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
           child: Icon(icon, color: const Color(0xFF475569), size: 20),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF64748B))),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(subtitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+              ),
+            ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -227,7 +413,11 @@ class _WebFaqCard extends StatefulWidget {
   final String answer;
   final bool isExpanded;
 
-  const _WebFaqCard({required this.question, required this.answer, this.isExpanded = false});
+  const _WebFaqCard({
+    required this.question,
+    required this.answer,
+    this.isExpanded = false,
+  });
 
   @override
   State<_WebFaqCard> createState() => _WebFaqCardState();
@@ -249,8 +439,18 @@ class _WebFaqCardState extends State<_WebFaqCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _expanded ? AppColors.primaryColor.withOpacity(0.3) : const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Color(0x05000000), offset: Offset(0, 2), blurRadius: 8)],
+        border: Border.all(
+          color: _expanded
+              ? AppColors.primaryColor.withOpacity(0.3)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x05000000),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -260,7 +460,14 @@ class _WebFaqCardState extends State<_WebFaqCard> {
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           title: Text(
             widget.question,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _expanded ? AppColors.primaryColor : const Color(0xFF1E293B), fontFamily: "Gilroy-SemiBold"),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: _expanded
+                  ? AppColors.primaryColor
+                  : const Color(0xFF1E293B),
+              fontFamily: "Gilroy-SemiBold",
+            ),
           ),
           iconColor: AppColors.primaryColor,
           collapsedIconColor: const Color(0xFF64748B),
@@ -269,7 +476,11 @@ class _WebFaqCardState extends State<_WebFaqCard> {
               padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
               child: Text(
                 widget.answer,
-                style: const TextStyle(fontSize: 15, color: Color(0xFF64748B), height: 1.6),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF64748B),
+                  height: 1.6,
+                ),
               ),
             ),
           ],

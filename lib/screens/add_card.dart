@@ -155,11 +155,13 @@ class _AddCardState extends State<AddCard> {
               CustomButton(
                 label: "Add Card",
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ConfirmDetails()));
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (ctx) => ConfirmDetails()));
                 },
                 borderRadius: 30,
                 width: Utils.windowWidth(context) * 0.9,
-              )
+              ),
             ],
           ),
         ),
@@ -217,41 +219,74 @@ class _AddCardState extends State<AddCard> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 32),
-                
-                _buildWebField("Card Type", "e.g. Visa, Mastercard", (v) => _cardType = v),
+
+                _buildWebField(
+                  "Card Type",
+                  "e.g. Visa, Mastercard",
+                  (v) => _cardType = v,
+                ),
                 const SizedBox(height: 20),
-                _buildWebField("Name on Card", "Full Name", (v) => _nameOnCard = v),
+                _buildWebField(
+                  "Name on Card",
+                  "Full Name",
+                  (v) => _nameOnCard = v,
+                ),
                 const SizedBox(height: 20),
-                _buildWebField("Card Number", "0000 0000 0000 0000", (v) => _cardNumber = v, isNumber: true),
+                _buildWebField(
+                  "Card Number",
+                  "0000 0000 0000 0000",
+                  (v) => _cardNumber = v,
+                  isNumber: true,
+                ),
                 const SizedBox(height: 20),
-                
+
                 Row(
                   children: [
-                    Expanded(child: _buildWebField("Expiry Date", "MM/YY", (v) => _expiry = v)),
+                    Expanded(
+                      child: _buildWebField(
+                        "Expiry Date",
+                        "MM/YY",
+                        (v) => _expiry = v,
+                      ),
+                    ),
                     const SizedBox(width: 20),
-                    Expanded(child: _buildWebField("CVV", "123", (v) => _cvv = v, isPassword: true)),
+                    Expanded(
+                      child: _buildWebField(
+                        "CVV",
+                        "123",
+                        (v) => _cvv = v,
+                        isPassword: true,
+                      ),
+                    ),
                   ],
                 ),
 
                 const SizedBox(height: 48),
-                
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ConfirmDetails()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (ctx) => ConfirmDetails()),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 8,
                       shadowColor: AppColors.primaryColor.withOpacity(0.4),
                     ),
                     child: const Text(
                       "Save Card Details",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -259,11 +294,19 @@ class _AddCardState extends State<AddCard> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.verified_user_outlined, size: 16, color: Color(0xFF10B981)),
+                    Icon(
+                      Icons.verified_user_outlined,
+                      size: 16,
+                      color: Color(0xFF10B981),
+                    ),
                     SizedBox(width: 8),
                     Text(
                       "Your data is protected with bank-grade security.",
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -275,7 +318,13 @@ class _AddCardState extends State<AddCard> {
     );
   }
 
-  Widget _buildWebField(String label, String hint, Function(String) onChanged, {bool isNumber = false, bool isPassword = false}) {
+  Widget _buildWebField(
+    String label,
+    String hint,
+    Function(String) onChanged, {
+    bool isNumber = false,
+    bool isPassword = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -300,9 +349,15 @@ class _AddCardState extends State<AddCard> {
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 14,
+              ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ),

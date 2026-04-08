@@ -51,12 +51,16 @@ class AppointmentDetail {
       timeSlot: json['timeSlot'] ?? '',
       reason: json['reason'],
       status: json['status'] ?? 'pending',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
   String get doctorName => doctor?.name ?? 'Doctor';
   String get doctorEmail => doctor?.email ?? 'N/A';
+  String get patientName => patient?.name ?? 'Patient';
 }
-

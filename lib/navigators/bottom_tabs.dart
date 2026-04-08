@@ -6,326 +6,350 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_tab_button.dart';
 import 'package:icare/models/app_enums.dart';
 
-
 List<Widget> _doctorTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(1);
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.bookings,
-          title: "Bookings",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(2);
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.chat,
-          title: "Chat",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(1);
+      },
+      iconColor: currentIndex == 1
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.bookings,
+      title: "Bookings",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.chat,
+      title: "Chat",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
 
 List<Widget> _patientTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(1);
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.bookings,
-          title: "Bookings",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(2);
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.chat,
-          title: "Chat",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(1);
+      },
+      iconColor: currentIndex == 1 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.bookings,
+      title: "Bookings",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.chat,
+      title: "Chat",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(4); // 4 is the new index for Programs for Patient
+      },
+      iconColor: currentIndex == 4 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.track,
+      title: "Programs",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
+
 List<Widget> _labTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(1);
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.bookings,
-          title: "Bookings",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(2);
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.chat,
-          title: "Chat",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
-
-
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(1);
+      },
+      iconColor: currentIndex == 1
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.bookings,
+      title: "Requests",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.track,
+      title: "Reports",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
 
 List<Widget> _instructorTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            // _selectPage(1);
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (ctx) => MyCartScreen()));
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.cart2,
-          title: "Cart",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            // _selectPage(2);
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (ctx) => OrderTrackingScreen()));
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.track,
-          title: "track",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        // _selectPage(1);
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (ctx) => MyCartScreen()));
+      },
+      iconColor: currentIndex == 1
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.cart2,
+      title: "Cart",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        // _selectPage(2);
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (ctx) => OrderTrackingScreen()));
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.track,
+      title: "track",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
+
 List<Widget> _pharmacistTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            // _selectPage(1);
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (ctx) => MyCartScreen()));
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.cart2,
-          title: "Cart",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            // _selectPage(2);
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (ctx) => OrderTrackingScreen()));
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.track,
-          title: "track",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(1);
+      },
+      iconColor: currentIndex == 1
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.bookings,
+      title: "Prescriptions",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.track,
+      title: "Inventory",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
 
 List<Widget> _studentTabs(
-   BuildContext context,
+  BuildContext context,
   int currentIndex,
   Function(int) onSelect,
 ) {
-   return [
-        CustomTabButton(
-          onPressed: () {
-            onSelect(0);
-          },
-          iconColor: currentIndex == 0
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.home,
-          title: "Home",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(1);
-          },
-          iconColor: currentIndex == 1
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.bookings,
-          title: "Bookings",
-        ),
-        SizedBox(width: 20),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(2);
-          },
-          iconColor: currentIndex == 2
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.chat,
-          title: "Chat",
-        ),
-        CustomTabButton(
-          onPressed: () {
-            onSelect(3);
-          },
-          iconColor: currentIndex == 3
-              ? AppColors.primaryColor
-              : AppColors.grayColor,
-          image: ImagePaths.profile2,
-          title: "Profile",
-        ),
-      ];
-  
-} 
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Home",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(1);
+      },
+      iconColor: currentIndex == 1 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths
+          .bookings, // Reusing bookings icon for courses context or could use a book icon
+      title: "Programs",
+    ),
+    SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.chat,
+      title: "Chat",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
 
-
+List<Widget> _adminTabs(
+  BuildContext context,
+  int currentIndex,
+  Function(int) onSelect,
+) {
+  return [
+    CustomTabButton(
+      onPressed: () {
+        onSelect(0);
+      },
+      iconColor: currentIndex == 0
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.home,
+      title: "Verify",
+    ),
+    const SizedBox(width: 20),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(2);
+      },
+      iconColor: currentIndex == 2
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.chat,
+      title: "Chat",
+    ),
+    CustomTabButton(
+      onPressed: () {
+        onSelect(3);
+      },
+      iconColor: currentIndex == 3
+          ? AppColors.primaryColor
+          : AppColors.grayColor,
+      image: ImagePaths.profile2,
+      title: "Profile",
+    ),
+  ];
+}
 
 List<Widget>? buildTabs({
   required String role,
@@ -334,24 +358,21 @@ List<Widget>? buildTabs({
   required Function(int) onSelect,
 }) {
   switch (role) {
-    case "pharmacist":
+    case "Pharmacy":
       return _pharmacistTabs(context, currentIndex, onSelect);
-
-    case "instructor":
+    case "Instructor":
       return _instructorTabs(context, currentIndex, onSelect);
-    
-    case "patient":
+    case "Patient":
       return _patientTabs(context, currentIndex, onSelect);
-    
-    case "lab_technician":
+    case "Laboratory":
       return _labTabs(context, currentIndex, onSelect);
-    
-    case "doctor":
-       return _doctorTabs(context, currentIndex, onSelect);
-    
-    case "student":
+    case "Doctor":
+      return _doctorTabs(context, currentIndex, onSelect);
+    case "Student":
       return _studentTabs(context, currentIndex, onSelect);
-  default:
+    case "Admin":
+      return _adminTabs(context, currentIndex, onSelect);
+    default:
       return _doctorTabs(context, currentIndex, onSelect);
   }
 }

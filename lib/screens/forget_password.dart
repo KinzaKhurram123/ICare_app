@@ -36,12 +36,10 @@ class _ForgetPasswordState extends State<ForgetPassword> {
         if (mounted) {
           // Show OTP in console for testing
           print('OTP for testing: ${result['otp']}');
-          
+
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (ctx) => VerifyCode(
-                email: emailController.text.trim(),
-              ),
+              builder: (ctx) => VerifyCode(email: emailController.text.trim()),
             ),
           );
         }
@@ -69,14 +67,16 @@ class _ForgetPasswordState extends State<ForgetPassword> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-        final isMobile = ResponsiveHelper.isMobile(context);
+    final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final isDesktop = ResponsiveHelper.isDesktop(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: null,
-    
-      body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(isTablet: isTablet),
+
+      body: isDesktop
+          ? _buildDesktopLayout()
+          : _buildMobileLayout(isTablet: isTablet),
     );
   }
 
@@ -96,10 +96,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
             flex: 5,
             child: SizedBox(
               height: screenHeight,
-              child: Image.asset(
-                "assets/images/splash.jpg",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
             ),
           ),
 
@@ -227,14 +224,14 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                                           ),
                                         )
                                       : const Text(
-                                    "Send Verification Code",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Gilroy-Bold",
-                                    ),
-                                  ),
+                                          "Send Verification Code",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: "Gilroy-Bold",
+                                          ),
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 24),
@@ -267,7 +264,14 @@ class _ForgetPasswordState extends State<ForgetPassword> {
   }
 
   // Helper widgets for desktop layout
-  Widget _buildDecorativeCircle({double? top, double? left, double? right, double? bottom, required double size, required double opacity}) {
+  Widget _buildDecorativeCircle({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    required double size,
+    required double opacity,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -328,152 +332,160 @@ class _ForgetPasswordState extends State<ForgetPassword> {
     );
   }
 
-
-Widget _buildMobileLayout({bool isTablet = false}) {
-  return Stack(
-        children: [
-    
-          Container(
-            width: Utils.windowWidth(context),
-            height: Utils.windowHeight(context),
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(ImagePaths.backgroundImage),
-                fit: BoxFit.cover,
-              ),
+  Widget _buildMobileLayout({bool isTablet = false}) {
+    return Stack(
+      children: [
+        Container(
+          width: Utils.windowWidth(context),
+          height: Utils.windowHeight(context),
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(ImagePaths.backgroundImage),
+              fit: BoxFit.cover,
             ),
           ),
-         
- Container(
-              width: Utils.windowWidth(context),
-            height: isTablet ?  Utils.windowHeight(context) * 0.35 : double.infinity,
- 
+        ),
+
+        Container(
+          width: Utils.windowWidth(context),
+          height: isTablet
+              ? Utils.windowHeight(context) * 0.35
+              : double.infinity,
+
+          padding: EdgeInsets.symmetric(
+            horizontal: ScallingConfig.moderateScale(15),
+            vertical: ScallingConfig.moderateScale(isTablet ? 20 : 100),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: ScallingConfig.moderateScale(30)),
+              CustomText(
+                text: "Forget Password",
+                fontWeight: FontWeight.w900,
+                textAlign: TextAlign.center,
+                fontSize: 22,
+                color: AppColors.primaryColor,
+              ),
+              SizedBox(height: 3),
+              CustomText(
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                text:
+                    "Please enter your email or phone number to reset password",
+                fontSize: 13,
+                width: Utils.windowHeight(context) * 0.4,
+                color: AppColors.themeBlack,
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            width: isTablet
+                ? Utils.windowWidth(context) * 0.7
+                : double.infinity,
+            height: Utils.windowHeight(context) * 0.67,
+            decoration: BoxDecoration(
+              color: isTablet
+                  ? AppColors.bgColor.withAlpha(70)
+                  : AppColors.bgColor,
+              // color: AppColors.grayColor.withAlpha(60),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40),
+                topRight: Radius.circular(40),
+              ),
+            ),
             padding: EdgeInsets.symmetric(
-              horizontal: ScallingConfig.moderateScale(15),
-              vertical: ScallingConfig.moderateScale(isTablet ?  20 : 100),
+              horizontal: isTablet ? 50 : 15,
+              vertical: 30,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: ScallingConfig.moderateScale(30)),
-                CustomText(
-                  text: "Forget Password",
-                  fontWeight: FontWeight.w900,
-                  textAlign: TextAlign.center,
-                  fontSize: 22,
-                  color: AppColors.primaryColor,
-                ),
-                SizedBox(height: 3),
-                CustomText(
-                  maxLines: 2,
-                                    textAlign: TextAlign.center,
-                  text:
-                      "Please enter your email or phone number to reset password",
-                  fontSize: 13,
-                  width: Utils.windowHeight(context) * 0.4,
-                  color: AppColors.themeBlack,
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
-          ),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomInputField(
+                      hintText: "Email or Phone Number",
+                      leadingIcon: Icon(
+                        Icons.person_outline,
+                        color: AppColors.primary500,
+                      ),
+                      controller: emailController,
+                      bgColor: AppColors.white,
+                      borderRadius: 30,
+                      borderColor: AppColors.veryLightGrey,
+                      borderWidth: 2,
+                      validator: (val) {
+                        if (val == null || val.isEmpty) {
+                          return "Please enter your username";
+                        }
+                        return null;
+                      },
+                    ),
 
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: isTablet ? Utils.windowWidth(context) * 0.7 : double.infinity,
-              height: Utils.windowHeight(context) * 0.67,
-              decoration: BoxDecoration(
-                color: isTablet ?  AppColors.bgColor.withAlpha(70) : AppColors.bgColor,
-                // color: AppColors.grayColor.withAlpha(60),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(40),
-                  topRight: Radius.circular(40),
-                ),
-              ),
-              padding:  EdgeInsets.symmetric(horizontal: isTablet ? 50 : 15, vertical: 30),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomInputField(
-                        hintText: "Email or Phone Number",
-                        leadingIcon: Icon(
-                          Icons.person_outline,
-                          color: AppColors.primary500,
+                    const SizedBox(height: 50),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 60,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
-                        controller: emailController,
-                        bgColor: AppColors.white,
-                        borderRadius: 30,
-                        borderColor: AppColors.veryLightGrey,
-                        borderWidth: 2,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return "Please enter your username";
-                          }
-                          return null;
+                        onPressed: () {
+                          _handleSendOTP();
                         },
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Send",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
-
-                      const SizedBox(height: 50),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          onPressed: () {
-               _handleSendOTP();
-
-                          },
-                          child: isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                            "Send",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Back to Login",
+                          style: TextStyle(
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "Back to Login",
-                            style: TextStyle(
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-         Positioned(
-
-          top:ScallingConfig.scale(isTablet ? 20 : 40),
-          child: CustomBackButton()
-         )
-        ],
-      );
-}
+        ),
+        Positioned(
+          top: ScallingConfig.scale(isTablet ? 20 : 40),
+          child: CustomBackButton(),
+        ),
+      ],
+    );
+  }
 }

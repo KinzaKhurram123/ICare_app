@@ -13,7 +13,7 @@ class LabAppointments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Lab> lab_appointments=[
+    final List<Lab> lab_appointments = [
       Lab(
         id: "1",
         title: "Green Lab",
@@ -22,27 +22,32 @@ class LabAppointments extends StatelessWidget {
         appointmentFee: "20",
         address: "20 Cooper Square, USA",
         photo: ImagePaths.lab1,
-        tests: ["Blood Sugar test"]
-      )
+        tests: ["Blood Sugar test"],
+      ),
     ];
     return Scaffold(
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text: "Lab Appointment",),
+        title: CustomText(text: "Lab Appointment"),
       ),
-        
+
       body: ListView.builder(
         itemCount: lab_appointments.length,
         padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(15)),
 
-        itemBuilder: (ctx,i) {
-        return (
-        LabWidget(lab: lab_appointments[i], actionText: "Pay Now", onActionBtnPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => SelectPaymentMethod() ));
-                    }, )
-        );
-      }) ,
+        itemBuilder: (ctx, i) {
+          return (LabWidget(
+            lab: lab_appointments[i],
+            actionText: "Pay Now",
+            onActionBtnPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => SelectPaymentMethod()),
+              );
+            },
+          ));
+        },
+      ),
     );
   }
 }

@@ -23,27 +23,23 @@ class _FiltersScreenState extends State<FiltersScreen> {
     "Orthopedic",
     "Pediatrician",
     "Psychiatrist",
-    "Dentist"
+    "Dentist",
   ];
 
   final List<String> availabilityArray = [
     "Today",
     "Tomorrow",
     "This Week",
-    "Next Week"
+    "Next Week",
   ];
 
-  final List<String> consultationTypeArray = [
-    "Video",
-    "Audio",
-    "In-Person"
-  ];
+  final List<String> consultationTypeArray = ["Video", "Audio", "In-Person"];
 
   final List<String> locationArray = [
     "Nearby",
     "Within 5 km",
     "Within 10 km",
-    "Citywide"
+    "Citywide",
   ];
 
   final List<String> reviewsArray = [
@@ -51,7 +47,7 @@ class _FiltersScreenState extends State<FiltersScreen> {
     "2+ Stars",
     "3+ Stars",
     "4+ Stars",
-    "5 Stars"
+    "5 Stars",
   ];
 
   final List<String> languageArray = [
@@ -60,7 +56,7 @@ class _FiltersScreenState extends State<FiltersScreen> {
     "Spanish",
     "French",
     "German",
-    "Arabic"
+    "Arabic",
   ];
 
   String? _selectedSpeciality;
@@ -99,7 +95,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               CustomDropdown<String>(
                 title: "Speciality",
                 selectedItem: _selectedSpeciality,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: specialityArray,
                 onChanged: (value) {
                   setState(() {
@@ -110,7 +108,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               CustomDropdown<String>(
                 title: "Availablity",
                 selectedItem: _selectedAvailablity,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: availabilityArray,
                 onChanged: (value) {
                   setState(() {
@@ -121,7 +121,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               CustomDropdown<String>(
                 title: "Consultation Type",
                 selectedItem: _selectedConsultationType,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: consultationTypeArray,
                 onChanged: (value) {
                   setState(() {
@@ -132,7 +134,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               CustomDropdown<String>(
                 title: "Reviews",
                 selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 items: reviewsArray,
                 onChanged: (value) {
                   setState(() {
@@ -142,7 +146,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               ),
               CustomDropdown<String>(
                 title: "Location",
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 selectedItem: _selectedLocation,
                 items: locationArray,
                 onChanged: (value) {
@@ -153,7 +159,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
               ),
               CustomDropdown<String>(
                 title: "Language",
-                margin: EdgeInsets.symmetric(vertical: ScallingConfig.verticalScale(6)),
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
                 selectedItem: _selectedLanguage,
                 items: languageArray,
                 onChanged: (value) {
@@ -167,7 +175,7 @@ class _FiltersScreenState extends State<FiltersScreen> {
                 label: "Search",
                 borderRadius: 30,
                 width: Utils.windowWidth(context) * 0.9,
-              )
+              ),
             ],
           ),
         ),
@@ -228,35 +236,65 @@ class _FiltersScreenState extends State<FiltersScreen> {
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Filters Grid
                 Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: [
-                    _buildWebDropdown("Speciality", specialityArray, _selectedSpeciality, (val) {
-                      setState(() => _selectedSpeciality = val);
-                    }),
-                    _buildWebDropdown("Availability", availabilityArray, _selectedAvailablity, (val) {
-                      setState(() => _selectedAvailablity = val);
-                    }),
-                    _buildWebDropdown("Consultation Type", consultationTypeArray, _selectedConsultationType, (val) {
-                      setState(() => _selectedConsultationType = val);
-                    }),
-                    _buildWebDropdown("Minimum Reviews", reviewsArray, _selectedReviews, (val) {
-                      setState(() => _selectedReviews = val);
-                    }),
-                    _buildWebDropdown("Location", locationArray, _selectedLocation, (val) {
-                      setState(() => _selectedLocation = val);
-                    }),
-                    _buildWebDropdown("Preferred Language", languageArray, _selectedLanguage, (val) {
-                      setState(() => _selectedLanguage = val);
-                    }),
+                    _buildWebDropdown(
+                      "Speciality",
+                      specialityArray,
+                      _selectedSpeciality,
+                      (val) {
+                        setState(() => _selectedSpeciality = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Availability",
+                      availabilityArray,
+                      _selectedAvailablity,
+                      (val) {
+                        setState(() => _selectedAvailablity = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Consultation Type",
+                      consultationTypeArray,
+                      _selectedConsultationType,
+                      (val) {
+                        setState(() => _selectedConsultationType = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Minimum Reviews",
+                      reviewsArray,
+                      _selectedReviews,
+                      (val) {
+                        setState(() => _selectedReviews = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Location",
+                      locationArray,
+                      _selectedLocation,
+                      (val) {
+                        setState(() => _selectedLocation = val);
+                      },
+                    ),
+                    _buildWebDropdown(
+                      "Preferred Language",
+                      languageArray,
+                      _selectedLanguage,
+                      (val) {
+                        setState(() => _selectedLanguage = val);
+                      },
+                    ),
                   ],
                 ),
 
                 const SizedBox(height: 56),
-                
+
                 // Action Buttons
                 Row(
                   children: [
@@ -274,12 +312,18 @@ class _FiltersScreenState extends State<FiltersScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text(
                           "Reset All",
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -292,13 +336,19 @@ class _FiltersScreenState extends State<FiltersScreen> {
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 10,
                           shadowColor: AppColors.primaryColor.withOpacity(0.4),
                         ),
                         child: const Text(
                           "Apply Filters",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -312,7 +362,12 @@ class _FiltersScreenState extends State<FiltersScreen> {
     );
   }
 
-  Widget _buildWebDropdown(String title, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildWebDropdown(
+    String title,
+    List<String> items,
+    String? selected,
+    Function(String?) onChanged,
+  ) {
     return SizedBox(
       width: 328, // Fix width for grid-like layout in wrap
       child: Column(
@@ -336,14 +391,26 @@ class _FiltersScreenState extends State<FiltersScreen> {
             ),
             child: DropdownButton<String>(
               value: selected,
-              hint: const Text("Select option", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              hint: const Text(
+                "Select option",
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              ),
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF94A3B8),
+              ),
               items: items.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,

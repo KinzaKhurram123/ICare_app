@@ -6,7 +6,7 @@ class Lab {
   final dynamic appointmentFee;
   final String? address;
   final String? delivery;
-  final dynamic rating; 
+  final dynamic rating;
 
   const Lab({
     this.id,
@@ -16,7 +16,7 @@ class Lab {
     this.appointmentFee,
     this.address,
     this.delivery,
-    this.rating
+    this.rating,
   });
 
   factory Lab.fromJson(Map<String, dynamic> json) {
@@ -24,13 +24,11 @@ class Lab {
       id: json['id']?.toString(),
       title: json['title'],
       photo: json['photo'],
-      tests: json['tests'] != null
-          ? List<String>.from(json['tests'])
-          : null,
+      tests: json['tests'] != null ? List<String>.from(json['tests']) : null,
       appointmentFee: json['appointmentFee'],
       address: json['address'],
       delivery: json['delivery'],
-      rating: json['rating']
+      rating: json['rating'],
     );
   }
 
@@ -43,7 +41,7 @@ class Lab {
       'appointmentFee': appointmentFee,
       'address': address,
       'delivery': delivery,
-      'rating':rating,
+      'rating': rating,
     };
   }
 }

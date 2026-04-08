@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/app_enums.dart';
+import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 
 import 'package:icare/utils/theme.dart';
@@ -12,7 +13,13 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/test_appointment.dart';
 
 class BookingCategories extends StatefulWidget {
-  const BookingCategories({super.key});
+  const BookingCategories({
+    super.key,
+    required this.appointments,
+    this.initialTabIndex = 0,
+  });
+  final List<AppointmentDetail> appointments;
+  final int initialTabIndex;
 
   @override
   State<BookingCategories> createState() => _BookingCategoriesState();
@@ -25,13 +32,20 @@ class _BookingCategoriesState extends State<BookingCategories>
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 3, vsync: this);
+    controller = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebBookingCategories(tabController: controller);
+      return _WebBookingCategories(
+        tabController: controller,
+        appointments: widget.appointments,
+      );
     }
     return Scaffold(
       appBar: AppBar(
@@ -69,15 +83,25 @@ class _BookingCategoriesState extends State<BookingCategories>
         children: [
           UpcomingBOokingsList(
             status: BookingStatus.upcoming,
-            data: [1, 2, 3],
+            data: widget.appointments
+                .where(
+                  (a) =>
+                      a.status.toLowerCase() == 'pending' ||
+                      a.status.toLowerCase() == 'confirmed',
+                )
+                .toList(),
           ),
           UpcomingBOokingsList(
             status: BookingStatus.cancelled,
-            data: [1, 2, 3],
+            data: widget.appointments
+                .where((a) => a.status.toLowerCase() == 'cancelled')
+                .toList(),
           ),
           UpcomingBOokingsList(
             status: BookingStatus.completed,
-            data: [1, 2, 3],
+            data: widget.appointments
+                .where((a) => a.status.toLowerCase() == 'completed')
+                .toList(),
           ),
         ],
       ),
@@ -101,9 +125,10 @@ class UpcomingBOokingsList extends ConsumerWidget {
         left: ScallingConfig.scale(20),
       ),
       itemBuilder: (ctx, i) {
+        final appointment = data![i] as AppointmentDetail;
         return (selectedRole == "lab_technician"
             ? TestAppointment(status: status)
-            : BookingCard(status: status));
+            : BookingCard(appointment: appointment));
       },
     );
   }
@@ -115,7 +140,11 @@ class UpcomingBOokingsList extends ConsumerWidget {
 
 class _WebBookingCategories extends StatefulWidget {
   final TabController tabController;
-  const _WebBookingCategories({required this.tabController});
+  final List<AppointmentDetail> appointments;
+  const _WebBookingCategories({
+    required this.tabController,
+    required this.appointments,
+  });
 
   @override
   State<_WebBookingCategories> createState() => _WebBookingCategoriesState();
@@ -234,7 +263,9 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 16),
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? color.withOpacity(0.08)
@@ -252,7 +283,7 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                               color: color.withOpacity(0.1),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
-                                            )
+                                            ),
                                           ]
                                         : null,
                                   ),
@@ -264,14 +295,17 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                           color: isSelected
                                               ? color.withOpacity(0.15)
                                               : const Color(0xFFF8FAFC),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
-                                        child: Icon(tab["icon"],
-                                            color: isSelected
-                                                ? color
-                                                : const Color(0xFF94A3B8),
-                                            size: 22),
+                                        child: Icon(
+                                          tab["icon"],
+                                          color: isSelected
+                                              ? color
+                                              : const Color(0xFF94A3B8),
+                                          size: 22,
+                                        ),
                                       ),
                                       const SizedBox(width: 14),
                                       Expanded(
@@ -289,16 +323,35 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                       ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: isSelected
                                               ? color.withOpacity(0.15)
                                               : const Color(0xFFF1F5F9),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                         ),
                                         child: Text(
-                                          "3",
+                                          widget.appointments
+                                              .where((a) {
+                                                if (index == 0)
+                                                  return a.status
+                                                              .toLowerCase() ==
+                                                          'pending' ||
+                                                      a.status.toLowerCase() ==
+                                                          'confirmed';
+                                                if (index == 1)
+                                                  return a.status
+                                                          .toLowerCase() ==
+                                                      'cancelled';
+                                                return a.status.toLowerCase() ==
+                                                    'completed';
+                                              })
+                                              .length
+                                              .toString(),
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w700,
@@ -325,7 +378,9 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: const Color(0xFFF1F4F9), width: 1.5),
+                              color: const Color(0xFFF1F4F9),
+                              width: 1.5,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,17 +395,48 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _buildStatRow("Total Bookings", "9",
-                                  const Color(0xFF3B82F6)),
+                              _buildStatRow(
+                                "Total Bookings",
+                                widget.appointments.length.toString(),
+                                const Color(0xFF3B82F6),
+                              ),
                               const SizedBox(height: 12),
                               _buildStatRow(
-                                  "Upcoming", "3", const Color(0xFF3B82F6)),
+                                "Upcoming",
+                                widget.appointments
+                                    .where(
+                                      (a) =>
+                                          a.status.toLowerCase() == 'pending' ||
+                                          a.status.toLowerCase() == 'confirmed',
+                                    )
+                                    .length
+                                    .toString(),
+                                const Color(0xFF3B82F6),
+                              ),
                               const SizedBox(height: 12),
                               _buildStatRow(
-                                  "Cancelled", "3", const Color(0xFFEF4444)),
+                                "Cancelled",
+                                widget.appointments
+                                    .where(
+                                      (a) =>
+                                          a.status.toLowerCase() == 'cancelled',
+                                    )
+                                    .length
+                                    .toString(),
+                                const Color(0xFFEF4444),
+                              ),
                               const SizedBox(height: 12),
                               _buildStatRow(
-                                  "Completed", "3", const Color(0xFF22C55E)),
+                                "Completed",
+                                widget.appointments
+                                    .where(
+                                      (a) =>
+                                          a.status.toLowerCase() == 'completed',
+                                    )
+                                    .length
+                                    .toString(),
+                                const Color(0xFF22C55E),
+                              ),
                             ],
                           ),
                         ),
@@ -368,13 +454,18 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                         // Tab header
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 20),
+                            horizontal: 28,
+                            vertical: 20,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(20)),
+                              top: Radius.circular(20),
+                            ),
                             border: Border.all(
-                                color: const Color(0xFFF1F4F9), width: 1.5),
+                              color: const Color(0xFFF1F4F9),
+                              width: 1.5,
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -396,15 +487,20 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                               const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 6),
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      (_tabs[_selectedTab]["color"] as Color)
-                                          .withOpacity(0.08),
+                                  color: (_tabs[_selectedTab]["color"] as Color)
+                                      .withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  "3 bookings",
+                                  "${widget.appointments.where((a) {
+                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'pending' || a.status.toLowerCase() == 'confirmed';
+                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'cancelled';
+                                    return a.status.toLowerCase() == 'completed';
+                                  }).length} bookings",
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -421,13 +517,23 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: const BorderRadius.vertical(
-                                bottom: Radius.circular(20)),
+                              bottom: Radius.circular(20),
+                            ),
                             border: Border.all(
-                                color: const Color(0xFFF1F4F9), width: 1.5),
+                              color: const Color(0xFFF1F4F9),
+                              width: 1.5,
+                            ),
                           ),
                           child: _WebBookingList(
                             status: _tabs[_selectedTab]["status"],
-                            data: [1, 2, 3],
+                            data: widget.appointments.where((a) {
+                              if (_selectedTab == 0)
+                                return a.status.toLowerCase() == 'pending' ||
+                                    a.status.toLowerCase() == 'confirmed';
+                              if (_selectedTab == 1)
+                                return a.status.toLowerCase() == 'cancelled';
+                              return a.status.toLowerCase() == 'completed';
+                            }).toList(),
                           ),
                         ),
                       ],
@@ -448,10 +554,7 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF64748B),
-          ),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -486,15 +589,13 @@ class _WebBookingList extends ConsumerWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: data.length,
-      separatorBuilder: (context, index) => const Divider(
-        color: Color(0xFFF1F5F9),
-        height: 1,
-        thickness: 1,
-      ),
+      separatorBuilder: (context, index) =>
+          const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
       itemBuilder: (ctx, i) {
+        final appointment = data[i] as AppointmentDetail;
         return selectedRole == "lab_technician"
             ? TestAppointment(status: status)
-            : BookingCard(status: status);
+            : BookingCard(appointment: appointment);
       },
     );
   }

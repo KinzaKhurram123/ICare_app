@@ -28,7 +28,7 @@ class PharmcyCategories extends StatelessWidget {
         ),
         SizedBox(height: ScallingConfig.scale(10)),
         Padding(
-       padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
+          padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(10)),
           child: Row(
             spacing: ScallingConfig.scale(20),
             children: [

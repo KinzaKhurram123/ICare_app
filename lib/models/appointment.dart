@@ -30,19 +30,27 @@ class Appointment {
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['_id'] ?? '',
-      doctorId: json['doctor'] is String ? json['doctor'] : json['doctor']?['_id'] ?? '',
-      patientId: json['patient'] is String ? json['patient'] : json['patient']?['_id'] ?? '',
+      doctorId: json['doctor'] is String
+          ? json['doctor']
+          : json['doctor']?['_id'] ?? '',
+      patientId: json['patient'] is String
+          ? json['patient']
+          : json['patient']?['_id'] ?? '',
       date: DateTime.parse(json['date']),
       timeSlot: json['timeSlot'] ?? '',
       reason: json['reason'],
       status: json['status'] ?? 'pending',
       cancellationReason: json['cancellationReason'],
       cancelledBy: json['cancelledBy'],
-      cancelledAt: json['cancelledAt'] != null 
-          ? DateTime.parse(json['cancelledAt']) 
+      cancelledAt: json['cancelledAt'] != null
+          ? DateTime.parse(json['cancelledAt'])
           : null,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 

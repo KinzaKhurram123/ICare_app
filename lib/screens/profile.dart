@@ -20,8 +20,9 @@ class ProfileScreen extends StatelessWidget {
       child: CustomButton(
         label: "Create Profile",
         onPressed: () {
-          Navigator.of(context)
-              .push(MaterialPageRoute(builder: (ctx) => const CreateProfile()));
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const CreateProfile()));
         },
       ),
     );
@@ -81,7 +82,8 @@ class _WebProfileInitial extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const CustomText(
-                text: "To get the most out of ICare, please set up your medical profile. This helps us provide personalized recommendations and seamless care.",
+                text:
+                    "To get the most out of ICare, please set up your medical profile. This helps us provide personalized recommendations and seamless care.",
                 fontSize: 16,
                 color: Color(0xFF64748B),
                 textAlign: TextAlign.center,
@@ -93,7 +95,9 @@ class _WebProfileInitial extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const CreateProfile()),
+                      MaterialPageRoute(
+                        builder: (ctx) => const CreateProfile(),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

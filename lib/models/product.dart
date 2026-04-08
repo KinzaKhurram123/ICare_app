@@ -1,4 +1,4 @@
-class Product{
+class Product {
   final String? id;
   final String? title;
   final String? image;
@@ -14,31 +14,31 @@ class Product{
     this.ratings,
     this.title,
     this.price,
-    this.category
+    this.category,
   });
 
-  factory Product.fromJson(Map<dynamic, dynamic> json){
+  factory Product.fromJson(Map<dynamic, dynamic> json) {
     return Product(
       id: json['id'],
       title: json["title"],
       image: json["image"],
       link: json['link'],
-      ratings: json['reviews'], 
+      ratings: json['reviews'],
       price: json["price"],
-      category: json['category']
+      category: json['category'],
     );
   }
-  
-Map<String, dynamic> toJson() {
+
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'title': title,
       'image': image,
       'ratings': ratings,
-      'price' :price,
-      'category': category
+      'price': price,
+      'category': category,
+
       // 'link': link,
-     
     };
   }
 }
