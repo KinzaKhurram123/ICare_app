@@ -3,19 +3,27 @@ import 'package:icare/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
-  final Future<SharedPreferencesWithCache> _prefs =
-      SharedPreferencesWithCache.create(
-        cacheOptions: const SharedPreferencesWithCacheOptions(
-          // This cache will only accept the key 'counter'.
-          allowList: <String>{
-            'auth',
-            'userData',
-            'token',
-            'userRole',
-            'walkthrough',
-          },
-        ),
-      );
+  // Singleton
+  static final SharedPref _instance = SharedPref._internal();
+  factory SharedPref() => _instance;
+  SharedPref._internal();
+
+  SharedPreferencesWithCache? _cache;
+
+  Future<SharedPreferencesWithCache> get _prefs async {
+    _cache ??= await SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{
+          'auth',
+          'userData',
+          'token',
+          'userRole',
+          'walkthrough',
+        },
+      ),
+    );
+    return _cache!;
+  }
 
   Future<void> setUserData(User userData) async {
     final SharedPreferencesWithCache pref = await _prefs;
