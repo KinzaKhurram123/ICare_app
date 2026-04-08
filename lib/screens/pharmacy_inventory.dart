@@ -232,6 +232,18 @@ class _MedicineCard extends StatelessWidget {
     }
   }
 
+  String get _imageUrl {
+    switch ((product['type'] as String).toLowerCase()) {
+      case 'syrup': return 'https://img.icons8.com/color/200/cough-syrup.png';
+      case 'capsule': return 'https://img.icons8.com/color/200/capsule.png';
+      case 'injection': return 'https://img.icons8.com/color/200/syringe.png';
+      case 'gel':
+      case 'cream': return 'https://img.icons8.com/color/200/ointment.png';
+      case 'drops': return 'https://img.icons8.com/color/200/eye-drops.png';
+      default: return 'https://img.icons8.com/color/200/pill.png';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final stock = product['stock'] as int;
@@ -259,7 +271,18 @@ class _MedicineCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Center(child: Icon(_typeIcon, size: 52, color: color.withOpacity(0.7))),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.network(
+                      _imageUrl,
+                      height: 72,
+                      width: 72,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(_typeIcon, size: 52, color: color.withOpacity(0.7)),
+                    ),
+                  ),
+                ),
                 // Category badge
                 Positioned(
                   top: 8, left: 8,
@@ -512,9 +535,11 @@ class _AddMedicineModalState extends State<_AddMedicineModal> {
               child: Row(children: [
                 Expanded(child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: const Text('Cancel'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Cancel', style: TextStyle(fontSize: 14)),
                 )),
                 const SizedBox(width: 12),
                 Expanded(child: ElevatedButton(
@@ -523,10 +548,11 @@ class _AddMedicineModalState extends State<_AddMedicineModal> {
                     backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                   child: _saving
                       ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Add Medicine', style: TextStyle(fontWeight: FontWeight.w700)),
+                      : const Text('Add Medicine'),
                 )),
               ]),
             ),
