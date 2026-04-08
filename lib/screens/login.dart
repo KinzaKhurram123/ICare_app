@@ -122,29 +122,87 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               : const Color(0xFFE2E8F0),
           borderWidth: isMobile ? 2 : 1.5,
           validator: (val) {
-            if (val == null || val.isEmpty) {
-              return "Required";
-            }
+            if (val == null || val.isEmpty) return "Required";
             return null;
           },
         ),
       );
     }
 
-    if (selectedSignupRole == 'Doctor') {
-      fields.add(
-        buildField(
-          isMobile ? "License No" : "Medical License Number",
+    switch (selectedSignupRole) {
+      case 'Doctor':
+        fields.add(buildField(
+          isMobile ? "License No." : "Medical License Number",
           Icons.badge_outlined,
           licenseController,
-        ),
-      );
-      fields.add(
-        buildField("Credentials", Icons.school_outlined, credentialsController),
-      );
+        ));
+        fields.add(buildField(
+          "Credentials (e.g. MBBS, MD)",
+          Icons.school_outlined,
+          credentialsController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Pharmacy':
+        fields.add(buildField(
+          "Pharmacy / Organization Name",
+          Icons.local_pharmacy_outlined,
+          orgNameController,
+        ));
+        fields.add(buildField(
+          "License Number",
+          Icons.badge_outlined,
+          licenseController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Laboratory':
+        fields.add(buildField(
+          "Lab / Organization Name",
+          Icons.biotech_outlined,
+          orgNameController,
+        ));
+        fields.add(buildField(
+          "License Number",
+          Icons.badge_outlined,
+          licenseController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Instructor':
+        fields.add(buildField(
+          "Credentials / Qualifications",
+          Icons.school_outlined,
+          credentialsController,
+        ));
+        fields.add(buildField(
+          "Organization / Institution",
+          Icons.business_outlined,
+          orgNameController,
+        ));
+        break;
+      case 'Student':
+        fields.add(buildField(
+          "Institution / University",
+          Icons.school_outlined,
+          orgNameController,
+        ));
+        break;
+      // Patient: no extra fields needed
     }
-    // Roles like Pharmacy, Laboratory, Instructor, Student are admin-managed
-    // and removed from public signup list.
+
     return fields;
   }
 
@@ -206,96 +264,98 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 60,
-                            vertical: 80,
+                            vertical: 40,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ScaleTransition(
-                                scale: _logoScaleAnimation,
-                                child: Container(
-                                  width: 80,
-                                  height: 80,
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 10),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ScaleTransition(
+                                  scale: _logoScaleAnimation,
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Image.asset(
+                                      ImagePaths.logo,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "iCare Virtual\nHealthcare Platform",
+                                        style: TextStyle(
+                                          fontSize: 44,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          fontFamily: "Gilroy-Bold",
+                                          height: 1.1,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        "Secure consultations, prescriptions & health records",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 32),
+                                      _buildFeatureItem(
+                                        Icons.check_circle_outline_rounded,
+                                        "Book doctors online anytime",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildFeatureItem(
+                                        Icons.medical_services_outlined,
+                                        "Get digital prescriptions",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildFeatureItem(
+                                        Icons.description_outlined,
+                                        "Access lab reports instantly",
                                       ),
                                     ],
                                   ),
-                                  child: Image.asset(
-                                    ImagePaths.logo,
-                                    fit: BoxFit.contain,
+                                ),
+                                const SizedBox(height: 40),
+                                FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Column(
+                                    children: [
+                                      _buildTrustRow(
+                                        Icons.shield_rounded,
+                                        "Data Protected & Secure",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildTrustRow(
+                                        Icons.verified_user_rounded,
+                                        "Verified Doctors & Specialists",
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 48),
-                              FadeTransition(
-                                opacity: _fadeAnimation,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "iCare Virtual\nHealthcare Platform",
-                                      style: TextStyle(
-                                        fontSize: 44,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                        fontFamily: "Gilroy-Bold",
-                                        height: 1.1,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      "Secure consultations, prescriptions & health records",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 40),
-                                    _buildFeatureItem(
-                                      Icons.check_circle_outline_rounded,
-                                      "Book doctors online anytime",
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildFeatureItem(
-                                      Icons.medical_services_outlined,
-                                      "Get digital prescriptions",
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildFeatureItem(
-                                      Icons.description_outlined,
-                                      "Access lab reports instantly",
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Spacer(),
-                              FadeTransition(
-                                opacity: _fadeAnimation,
-                                child: Column(
-                                  children: [
-                                    _buildTrustRow(
-                                      Icons.shield_rounded,
-                                      "Data Protected & Secure",
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildTrustRow(
-                                      Icons.verified_user_rounded,
-                                      "Verified Doctors & Specialists",
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -874,7 +934,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: Utils.windowHeight(context) * 0.67,
+              constraints: BoxConstraints(
+                minHeight: Utils.windowHeight(context) * 0.67,
+                maxHeight: Utils.windowHeight(context) * 0.85,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.85),
                 borderRadius: const BorderRadius.only(
@@ -1011,8 +1074,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           value: selectedSignupRole,
           isExpanded: true,
           items: const [
-            DropdownMenuItem(value: 'Patient', child: Text('I am a Patient')),
-            DropdownMenuItem(value: 'Doctor', child: Text('I am a Doctor')),
+            DropdownMenuItem(value: 'Patient', child: Text('Patient — Consult & Manage Health')),
+            DropdownMenuItem(value: 'Doctor', child: Text('Doctor — Manage Patients & Prescriptions')),
+            DropdownMenuItem(value: 'Pharmacy', child: Text('Pharmacy — Prescription Fulfillment')),
+            DropdownMenuItem(value: 'Laboratory', child: Text('Laboratory — Diagnostics & Reports')),
+            DropdownMenuItem(value: 'Instructor', child: Text('Instructor — Teach Health Programs')),
+            DropdownMenuItem(value: 'Student', child: Text('Student — Learn & Grow')),
           ],
           onChanged: (val) {
             if (val != null) setState(() => selectedSignupRole = val);

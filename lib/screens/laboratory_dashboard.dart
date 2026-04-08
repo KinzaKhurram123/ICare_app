@@ -499,10 +499,10 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isDesktop ? 5 : (isTablet ? 3 : 2),
+        crossAxisCount: isMobile ? 2 : 4,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: isDesktop ? 1.4 : (isTablet ? 1.2 : 1.05),
+        childAspectRatio: isMobile ? 1.05 : 1.3,
       ),
       itemCount: stats.length,
       itemBuilder: (context, index) {

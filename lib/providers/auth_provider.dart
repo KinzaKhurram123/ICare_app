@@ -20,6 +20,7 @@ class AuthNotifier extends StateNotifier<Auth> {
 
   void setUserToken(String _token) {
     state = state.copyWith(token: _token, isLoggedIn: true);
+    SharedPref().setToken(_token);
   }
 
   void setUserWalkthrough(bool value) {
