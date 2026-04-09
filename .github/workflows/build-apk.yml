@@ -42,7 +42,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: icare-app-release
           path: build/app/outputs/flutter-apk/app-release.apk
@@ -58,7 +58,7 @@ jobs:
              build/app/outputs/flutter-apk/icare-${{ steps.date.outputs.date }}.apk
 
       - name: Upload dated APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: icare-${{ steps.date.outputs.date }}
           path: build/app/outputs/flutter-apk/icare-${{ steps.date.outputs.date }}.apk
