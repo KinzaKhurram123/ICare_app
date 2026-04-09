@@ -662,57 +662,616 @@ class _DoctorConsultationScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Treatment Plan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        const Text(
+          'Treatment Plan',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Add prescriptions, lab tests, health programs, and referrals for this patient.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        ),
+        const SizedBox(height: 24),
+
+        // ── PRESCRIPTIONS ────────────────────────────────────────────
+        _buildPlanSection(
+          title: 'Medications',
+          icon: Icons.medication_rounded,
+          color: const Color(0xFF3B82F6),
+          items: _prescriptions,
+          labelKey: 'name',
+          sublabelKey: 'dosage',
+          sublabelSuffix: (item) => ' • ${item['frequency'] ?? ''} • ${item['duration'] ?? ''}',
+          onAdd: _showAddPrescriptionDialog,
+          onRemove: (i) => setState(() => _prescriptions.removeAt(i)),
+          emptyLabel: 'No medications added',
+        ),
         const SizedBox(height: 20),
-        ElevatedButton(onPressed: _addPrescription, child: const Text('Add Prescription')),
-        const SizedBox(height: 12),
-        ElevatedButton(onPressed: _addLabTest, child: const Text('Order Lab Test')),
-        const SizedBox(height: 12),
-        ElevatedButton(onPressed: _addHealthProgram, child: const Text('Assign Health Program')),
-        const SizedBox(height: 12),
-        ElevatedButton(onPressed: _addReferral, child: const Text('Create Referral')),
+
+        // ── LAB TESTS ────────────────────────────────────────────────
+        _buildPlanSection(
+          title: 'Lab Tests',
+          icon: Icons.biotech_rounded,
+          color: const Color(0xFF8B5CF6),
+          items: _labTests,
+          labelKey: 'name',
+          sublabelKey: 'urgency',
+          sublabelSuffix: (item) => item['notes'] != null && item['notes'].toString().isNotEmpty
+              ? ' • ${item['notes']}' : '',
+          onAdd: _showAddLabTestDialog,
+          onRemove: (i) => setState(() => _labTests.removeAt(i)),
+          emptyLabel: 'No lab tests ordered',
+        ),
         const SizedBox(height: 20),
-        TextField(controller: _instructionsController, decoration: const InputDecoration(labelText: 'Instructions'), maxLines: 3),
+
+        // ── HEALTH PROGRAMS ──────────────────────────────────────────
+        _buildPlanSection(
+          title: 'Health Programs',
+          icon: Icons.health_and_safety_rounded,
+          color: const Color(0xFF10B981),
+          items: _healthPrograms,
+          labelKey: 'name',
+          sublabelKey: 'category',
+          sublabelSuffix: (_) => '',
+          onAdd: _showAddHealthProgramDialog,
+          onRemove: (i) => setState(() => _healthPrograms.removeAt(i)),
+          emptyLabel: 'No health programs assigned',
+        ),
+        const SizedBox(height: 20),
+
+        // ── REFERRAL ─────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.person_search_rounded, color: Color(0xFFF59E0B), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Specialist Referral', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _showAddReferralDialog,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: Text(_referral == null ? 'Add' : 'Change'),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFF59E0B)),
+                  ),
+                ],
+              ),
+              if (_referral != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.arrow_forward_rounded, color: Color(0xFFF59E0B), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${_referral!['specialty']} — ${_referral!['reason'] ?? 'Specialist Consultation'}',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18, color: Color(0xFF94A3B8)),
+                        onPressed: () => setState(() => _referral = null),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── INSTRUCTIONS ─────────────────────────────────────────────
+        const Text(
+          'Instructions to Patient',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _instructionsController,
+          decoration: InputDecoration(
+            hintText: 'General instructions, lifestyle advice, diet, etc.',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          maxLines: 3,
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Follow-up Instructions',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _followUpInstructionsController,
+          decoration: InputDecoration(
+            hintText: 'When to return, warning signs to watch for...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          maxLines: 2,
+        ),
       ],
     );
   }
 
-  void _onStepContinue() { if (_currentStep < 3) setState(() => _currentStep++); }
-  void _onStepCancel() { if (_currentStep > 0) setState(() => _currentStep--); }
-  void _addPrescription() { setState(() => _prescriptions.add({'name': 'Medicine', 'dosage': '10mg', 'id': 'rx_1'})); }
-  void _addLabTest() { setState(() => _labTests.add({'name': 'Blood Test', 'id': 'lab_1'})); }
-  void _addHealthProgram() { setState(() => _healthPrograms.add({'name': 'Program', 'id': 'prog_1'})); }
-  void _addReferral() { setState(() => _referral = {'specialty': 'Cardiology', 'id': 'ref_1'}); }
+  Widget _buildPlanSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Map<String, dynamic>> items,
+    required String labelKey,
+    required String sublabelKey,
+    required String Function(Map<String, dynamic>) sublabelSuffix,
+    required VoidCallback onAdd,
+    required void Function(int) onRemove,
+    required String emptyLabel,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add'),
+                style: TextButton.styleFrom(foregroundColor: color),
+              ),
+            ],
+          ),
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(emptyLabel, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+            )
+          else
+            ...items.asMap().entries.map((e) {
+              final i = e.key;
+              final item = e.value;
+              return Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: color, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item[labelKey]?.toString() ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                          if ((item[sublabelKey]?.toString() ?? '').isNotEmpty || sublabelSuffix(item).isNotEmpty)
+                            Text(
+                              '${item[sublabelKey] ?? ''}${sublabelSuffix(item)}',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18, color: Color(0xFF94A3B8)),
+                      onPressed: () => onRemove(i),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  void _onStepContinue() {
+    if (_currentStep < 3) setState(() => _currentStep++);
+  }
+
+  void _onStepCancel() {
+    if (_currentStep > 0) setState(() => _currentStep--);
+  }
+
+  void _showAddPrescriptionDialog() {
+    final nameCtrl = TextEditingController();
+    final dosageCtrl = TextEditingController();
+    final freqCtrl = TextEditingController(text: 'Once daily');
+    final durationCtrl = TextEditingController(text: '7 days');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Medication'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Paracetamol 500mg')),
+            const SizedBox(height: 12),
+            TextField(controller: dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 1 tablet')),
+            const SizedBox(height: 12),
+            TextField(controller: freqCtrl, decoration: const InputDecoration(labelText: 'Frequency')),
+            const SizedBox(height: 12),
+            TextField(controller: durationCtrl, decoration: const InputDecoration(labelText: 'Duration')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isEmpty) return;
+              setState(() => _prescriptions.add({
+                'name': nameCtrl.text.trim(),
+                'dosage': dosageCtrl.text.trim(),
+                'frequency': freqCtrl.text.trim(),
+                'duration': durationCtrl.text.trim(),
+                'id': 'rx_${DateTime.now().millisecondsSinceEpoch}',
+              }));
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddLabTestDialog() {
+    final nameCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    String urgency = 'Routine';
+    final urgencyOptions = ['Routine', 'Urgent', 'STAT'];
+    final commonTests = ['CBC (Complete Blood Count)', 'HbA1c', 'Lipid Profile', 'Liver Function Test', 'Kidney Function Test', 'Thyroid Panel', 'Urine Analysis', 'Blood Glucose', 'Chest X-Ray', 'ECG'];
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('Order Lab Test'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Common Tests:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: commonTests.map((t) => GestureDetector(
+                  onTap: () => nameCtrl.text = t,
+                  child: Chip(label: Text(t, style: const TextStyle(fontSize: 11)), padding: EdgeInsets.zero),
+                )).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Test Name')),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: urgency,
+                decoration: const InputDecoration(labelText: 'Urgency'),
+                items: urgencyOptions.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                onChanged: (v) => setDlgState(() => urgency = v!),
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: notesCtrl, decoration: const InputDecoration(labelText: 'Clinical Notes (optional)')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                if (nameCtrl.text.trim().isEmpty) return;
+                setState(() => _labTests.add({
+                  'name': nameCtrl.text.trim(),
+                  'urgency': urgency,
+                  'notes': notesCtrl.text.trim(),
+                  'id': 'lab_${DateTime.now().millisecondsSinceEpoch}',
+                }));
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+              child: const Text('Order'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddHealthProgramDialog() {
+    final programs = [
+      'Diabetes Management Program',
+      'Hypertension Control Program',
+      'Weight Loss Plan',
+      'Cardiac Rehabilitation',
+      'Post-Surgery Rehabilitation',
+      'Prenatal Care Program',
+      'Mental Health & Wellness',
+      'COPD Management',
+      'Smoking Cessation',
+      'Chronic Pain Management',
+    ];
+    String? selected;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('Assign Health Program'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Select a program to assign to the patient:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              const SizedBox(height: 12),
+              ...programs.map((p) => RadioListTile<String>(
+                value: p,
+                groupValue: selected,
+                title: Text(p, style: const TextStyle(fontSize: 14)),
+                onChanged: (v) => setDlgState(() => selected = v),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              )),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: selected == null ? null : () {
+                setState(() => _healthPrograms.add({
+                  'name': selected!,
+                  'category': 'Clinical Program',
+                  'id': 'prog_${DateTime.now().millisecondsSinceEpoch}',
+                }));
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+              child: const Text('Assign'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddReferralDialog() {
+    final specialties = ['Cardiology', 'Neurology', 'Orthopedics', 'Pulmonology', 'Endocrinology', 'Gastroenterology', 'Dermatology', 'Psychiatry', 'Ophthalmology', 'ENT'];
+    String? selected;
+    final reasonCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Text('Create Specialist Referral'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Specialty'),
+                items: specialties.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (v) => setDlgState(() => selected = v),
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: reasonCtrl, decoration: const InputDecoration(labelText: 'Reason for Referral'), maxLines: 2),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: selected == null ? null : () {
+                setState(() => _referral = {
+                  'specialty': selected!,
+                  'reason': reasonCtrl.text.trim(),
+                  'id': 'ref_${DateTime.now().millisecondsSinceEpoch}',
+                });
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+              child: const Text('Create'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _completeConsultation() async {
+    if (_chiefComplaintController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete the patient history section first.'), backgroundColor: Color(0xFFEF4444)),
+      );
+      setState(() => _currentStep = 0);
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final consultation = Consultation(
-        id: 'c1', patientId: widget.patientId, doctorId: 'd1', appointmentId: widget.appointmentId,
-        status: ConsultationStatus.completed, consultationDate: DateTime.now(),
-        history: PatientHistory(chiefComplaint: _chiefComplaintController.text, historyOfPresentIllness: _hpiController.text,
-          pastMedicalHistory: [], medications: [], allergies: [], familyHistory: '', socialHistory: ''),
-        examination: PhysicalExamination(vitalSigns: VitalSigns(), generalAppearance: '', systemicExamination: {}, notes: ''),
-        diagnosis: Diagnosis(primaryDiagnosis: _primaryDiagnosisController.text, differentialDiagnosis: [], icdCode: '', clinicalNotes: ''),
-        plan: TreatmentPlan(prescriptionIds: [], labTestRequestIds: [], healthProgramIds: [], instructions: '', followUpInstructions: ''),
-        createdAt: DateTime.now(), completedAt: DateTime.now(),
+        id: 'c_${DateTime.now().millisecondsSinceEpoch}',
+        patientId: widget.patientId,
+        doctorId: 'd1',
+        appointmentId: widget.appointmentId,
+        status: ConsultationStatus.completed,
+        consultationDate: DateTime.now(),
+        history: PatientHistory(
+          chiefComplaint: _chiefComplaintController.text.trim(),
+          historyOfPresentIllness: _hpiController.text.trim(),
+          pastMedicalHistory: _pastMedicalHistoryController.text.trim().isNotEmpty
+              ? [_pastMedicalHistoryController.text.trim()] : [],
+          medications: _medicationsController.text.trim().isNotEmpty
+              ? [_medicationsController.text.trim()] : [],
+          allergies: _allergiesController.text.trim().isNotEmpty
+              ? [_allergiesController.text.trim()] : [],
+          familyHistory: _familyHistoryController.text.trim(),
+          socialHistory: _socialHistoryController.text.trim(),
+        ),
+        examination: PhysicalExamination(
+          vitalSigns: VitalSigns(
+            bloodPressureSystolic: int.tryParse(_bpSystolicController.text) ?? 0,
+            bloodPressureDiastolic: int.tryParse(_bpDiastolicController.text) ?? 0,
+            heartRate: int.tryParse(_heartRateController.text) ?? 0,
+            temperature: double.tryParse(_temperatureController.text) ?? 0,
+            oxygenSaturation: double.tryParse(_oxygenSaturationController.text) ?? 0,
+            weight: double.tryParse(_weightController.text) ?? 0,
+            height: double.tryParse(_heightController.text) ?? 0,
+          ),
+          generalAppearance: _generalAppearanceController.text.trim(),
+          systemicExamination: {},
+          notes: _examinationNotesController.text.trim(),
+        ),
+        diagnosis: Diagnosis(
+          primaryDiagnosis: _primaryDiagnosisController.text.trim(),
+          differentialDiagnosis: _differentialDiagnosisController.text.trim().isNotEmpty
+              ? [_differentialDiagnosisController.text.trim()] : [],
+          icdCode: _icdCodeController.text.trim(),
+          clinicalNotes: _clinicalNotesController.text.trim(),
+        ),
+        plan: TreatmentPlan(
+          prescriptionIds: _prescriptions.map((p) => p['id'].toString()).toList(),
+          labTestRequestIds: _labTests.map((l) => l['id'].toString()).toList(),
+          healthProgramIds: _healthPrograms.map((h) => h['id'].toString()).toList(),
+          instructions: _instructionsController.text.trim(),
+          followUpInstructions: _followUpInstructionsController.text.trim(),
+          referralId: _referral?['id'],
+        ),
+        createdAt: DateTime.now(),
+        completedAt: DateTime.now(),
       );
+
       final workflowService = HealthcareWorkflowService();
-      await workflowService.processConsultationCompletion(consultation);
+      final result = await workflowService.processConsultationCompletion(consultation);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Consultation completed!')));
-        Navigator.pop(context);
+        // Show completion summary
+        _showCompletionSummary(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to complete consultation. Please try again.'), backgroundColor: Color(0xFFEF4444)),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
+  void _showCompletionSummary(WorkflowResult result) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 28),
+            ),
+            const SizedBox(width: 12),
+            const Text('Consultation Complete', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('The following actions have been triggered:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 16),
+            if (_prescriptions.isNotEmpty)
+              _summaryRow(Icons.medication_rounded, const Color(0xFF3B82F6), '${_prescriptions.length} prescription(s) issued'),
+            if (_labTests.isNotEmpty)
+              _summaryRow(Icons.biotech_rounded, const Color(0xFF8B5CF6), '${_labTests.length} lab test(s) sent to lab dashboard'),
+            if (_healthPrograms.isNotEmpty)
+              _summaryRow(Icons.health_and_safety_rounded, const Color(0xFF10B981), '${_healthPrograms.length} health program(s) assigned to patient'),
+            if (_referral != null)
+              _summaryRow(Icons.person_search_rounded, const Color(0xFFF59E0B), 'Referral to ${_referral!['specialty']} created'),
+            const SizedBox(height: 8),
+            const Text('Patient will see all updates in their health dashboard.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(IconData icon, Color color, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveAsDraft() async {
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Consultation draft saved successfully.')),
+      );
       setState(() => _isSaving = false);
     }
   }

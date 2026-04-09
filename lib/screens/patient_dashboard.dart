@@ -82,8 +82,8 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
       }
 
       _assignedPrograms = programs;
-    } catch (e) {
-      print('Dashboard loading error: $e');
+    } catch (_) {
+      // Silent fail — dashboard still shows with available data
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -117,6 +117,8 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
                     _buildWelcomeHeader(userName),
                     const SizedBox(height: 24),
                     _buildQuickStats(isDesktop),
+                    const SizedBox(height: 24),
+                    _buildActiveTreatmentOverview(),
                     const SizedBox(height: 24),
                     _buildGamificationCard(context, isDesktop),
                     const SizedBox(height: 24),
@@ -211,6 +213,124 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActiveTreatmentOverview() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.medical_information_rounded, color: Color(0xFF6366F1), size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'My Active Care',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                    Text(
+                      'Your current treatment overview',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          // Row of 3 tiles
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                _buildCareTile(
+                  Icons.medication_rounded,
+                  const Color(0xFF3B82F6),
+                  'My Medications',
+                  'View prescriptions',
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const PatientPrescriptions()),
+                  ),
+                ),
+                Container(width: 1, color: const Color(0xFFF1F5F9)),
+                _buildCareTile(
+                  Icons.biotech_rounded,
+                  const Color(0xFF8B5CF6),
+                  'My Lab Tests',
+                  'View test orders & reports',
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const PatientLabOrdersScreen()),
+                  ),
+                ),
+                Container(width: 1, color: const Color(0xFFF1F5F9)),
+                _buildCareTile(
+                  Icons.health_and_safety_rounded,
+                  const Color(0xFF10B981),
+                  'My Programs',
+                  'Health & care plans',
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const Courses(myPurchased: true)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCareTile(IconData icon, Color color, String title, String subtitle, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(0),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+              const SizedBox(height: 2),
+              Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+            ],
+          ),
+        ),
       ),
     );
   }
