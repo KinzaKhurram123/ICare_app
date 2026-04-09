@@ -13,11 +13,11 @@ class AppointmentService {
     String? reason,
   }) async {
     try {
-      print('📅 Booking appointment...');
-      print('Doctor ID: $doctorId');
-      print('Date: $date');
-      print('Time Slot: $timeSlot');
-      print('Reason: $reason');
+      debugPrint('📅 Booking appointment...');
+      debugPrint('Doctor ID: $doctorId');
+      debugPrint('Date: $date');
+      debugPrint('Time Slot: $timeSlot');
+      debugPrint('Reason: $reason');
 
       final response = await _apiService
           .post('/appointments/book_appointment', {
@@ -27,8 +27,8 @@ class AppointmentService {
             'reason': reason,
           });
 
-      print('✅ Appointment booked successfully');
-      print('Response: ${response.data}');
+      debugPrint('✅ Appointment booked successfully');
+      debugPrint('Response: ${response.data}');
 
       final data = response.data as Map<String, dynamic>;
 
@@ -40,44 +40,44 @@ class AppointmentService {
             : null,
       };
     } on DioException catch (e) {
-      print('❌ Appointment booking error: ${e.message}');
-      print('Response: ${e.response?.data}');
+      debugPrint('❌ Appointment booking error: ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
 
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Failed to book appointment',
       };
     } catch (e) {
-      print('❌ Unexpected error: $e');
+      debugPrint('❌ Unexpected error: $e');
       return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
 
   Future<Map<String, dynamic>> getMyAppointmentsDetailed() async {
     try {
-      print('📋 Fetching my appointments...');
+      debugPrint('📋 Fetching my appointments...');
 
       final response = await _apiService.get('/appointments/getAppointments');
       final data = response.data as Map<String, dynamic>;
 
-      print('✅ Appointments fetched successfully');
-      print('Count: ${data['count']}');
-      print('Raw appointments data: ${data['appointments']}');
+      debugPrint('✅ Appointments fetched successfully');
+      debugPrint('Count: ${data['count']}');
+      debugPrint('Raw appointments data: ${data['appointments']}');
 
       final List<AppointmentDetail> appointments = [];
       if (data['appointments'] != null) {
         for (var appointmentJson in data['appointments']) {
           try {
-            print('📝 Parsing appointment: $appointmentJson');
+            debugPrint('📝 Parsing appointment: $appointmentJson');
             appointments.add(AppointmentDetail.fromJson(appointmentJson));
           } catch (e) {
-            print('⚠️ Error parsing appointment: $e');
-            print('Appointment data: $appointmentJson');
+            debugPrint('⚠️ Error parsing appointment: $e');
+            debugPrint('Appointment data: $appointmentJson');
           }
         }
       }
 
-      print('✅ Successfully parsed ${appointments.length} appointments');
+      debugPrint('✅ Successfully parsed ${appointments.length} appointments');
 
       return {
         'success': true,
@@ -85,8 +85,8 @@ class AppointmentService {
         'count': data['count'] ?? 0,
       };
     } on DioException catch (e) {
-      print('❌ Get appointments error: ${e.message}');
-      print('Response data: ${e.response?.data}');
+      debugPrint('❌ Get appointments error: ${e.message}');
+      debugPrint('Response data: ${e.response?.data}');
 
       return {
         'success': false,
@@ -95,7 +95,7 @@ class AppointmentService {
         'appointments': <AppointmentDetail>[],
       };
     } catch (e) {
-      print('❌ Unexpected error: $e');
+      debugPrint('❌ Unexpected error: $e');
       return {
         'success': false,
         'message': 'An unexpected error occurred',
@@ -109,16 +109,16 @@ class AppointmentService {
     required String status,
   }) async {
     try {
-      print('📝 Updating appointment status...');
-      print('Appointment ID: $appointmentId');
-      print('New Status: $status');
+      debugPrint('📝 Updating appointment status...');
+      debugPrint('Appointment ID: $appointmentId');
+      debugPrint('New Status: $status');
 
       final response = await _apiService.put('/appointments/update_status', {
         'appointmentId': appointmentId,
         'status': status,
       });
 
-      print('✅ Status updated successfully');
+      debugPrint('✅ Status updated successfully');
 
       final data = response.data as Map<String, dynamic>;
 
@@ -127,14 +127,14 @@ class AppointmentService {
         'message': data['message'] ?? 'Status updated successfully',
       };
     } on DioException catch (e) {
-      print('❌ Update status error: ${e.message}');
+      debugPrint('❌ Update status error: ${e.message}');
 
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Failed to update status',
       };
     } catch (e) {
-      print('❌ Unexpected error: $e');
+      debugPrint('❌ Unexpected error: $e');
       return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }

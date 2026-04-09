@@ -47,7 +47,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('Error loading prescriptions: $e');
+      debugPrint('Error loading prescriptions: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }

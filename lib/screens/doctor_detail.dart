@@ -340,9 +340,9 @@ class DoctorDetailScreen extends StatelessWidget {
                         return;
                       }
 
-                      print('🚀 Opening chat with doctor:');
-                      print('   ID: ${doctor.user.id}');
-                      print('   Name: ${doctor.user.name}');
+                      debugPrint('🚀 Opening chat with doctor:');
+                      debugPrint('   ID: ${doctor.user.id}');
+                      debugPrint('   Name: ${doctor.user.name}');
 
                       Navigator.push(
                         context,
@@ -990,9 +990,9 @@ class DoctorDetailScreen extends StatelessWidget {
                       return;
                     }
 
-                    print('🚀 Opening chat with doctor (desktop):');
-                    print('   ID: ${doctor.user.id}');
-                    print('   Name: ${doctor.user.name}');
+                    debugPrint('🚀 Opening chat with doctor (desktop):');
+                    debugPrint('   ID: ${doctor.user.id}');
+                    debugPrint('   Name: ${doctor.user.name}');
 
                     Navigator.push(
                       context,

@@ -56,7 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _loadChatHistory(silent: true);
       });
     } catch (e) {
-      print('❌ Initialization error: $e');
+      debugPrint('❌ Initialization error: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -81,7 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      print('❌ Error loading current user: $e');
+      debugPrint('❌ Error loading current user: $e');
       if (mounted) {
         setState(() {
           _currentUserId = '';
@@ -120,7 +120,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatService.markAsRead(widget.userId).catchError((_) {});
       }
     } catch (e) {
-      print('❌ Error loading chat history: $e');
+      debugPrint('❌ Error loading chat history: $e');
       if (mounted && !silent) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

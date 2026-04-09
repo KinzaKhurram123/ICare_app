@@ -67,7 +67,7 @@ class _IntakeNotesRedesignState extends State<IntakeNotesRedesign> {
         });
       }
     } catch (e) {
-      print('Error loading intake notes: $e');
+      debugPrint('Error loading intake notes: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -103,7 +103,7 @@ class _IntakeNotesRedesignState extends State<IntakeNotesRedesign> {
                 Navigator.pop(ctx);
                 _loadExistingNotes();
               } catch (e) {
-                print('Addendum error: $e');
+                debugPrint('Addendum error: $e');
               }
             },
             child: const Text('Sign & Add'),
@@ -195,7 +195,7 @@ class _IntakeNotesRedesignState extends State<IntakeNotesRedesign> {
           });
         }
       },
-      onError: (val) => print('onError: $val'),
+      onError: (val) => debugPrint('onError: $val'),
     );
 
     if (available) {

@@ -29,7 +29,7 @@ class PharmacyService {
       );
       return response.data['pharmacy'] ?? response.data['existingProfile'];
     } catch (e) {
-      print('Error updating pharmacy profile: $e');
+      debugPrint('Error updating pharmacy profile: $e');
       rethrow;
     }
   }
@@ -37,15 +37,15 @@ class PharmacyService {
   Future<String> _getPharmacyId() async {
     try {
       if (_cachedPharmacyId != null) {
-        print('✅ Using cached pharmacy ID: $_cachedPharmacyId');
+        debugPrint('✅ Using cached pharmacy ID: $_cachedPharmacyId');
         return _cachedPharmacyId!;
       }
-      print('🔍 Fetching pharmacy profile from: /pharmacy/profile');
+      debugPrint('🔍 Fetching pharmacy profile from: /pharmacy/profile');
       final profile = await getPharmacyProfile();
-      print('✅ Got pharmacy profile, ID: ${profile['_id']}');
+      debugPrint('✅ Got pharmacy profile, ID: ${profile['_id']}');
       return profile['_id'];
     } catch (e) {
-      print('❌ Error getting pharmacy ID: $e');
+      debugPrint('❌ Error getting pharmacy ID: $e');
       rethrow;
     }
   }
@@ -53,27 +53,27 @@ class PharmacyService {
   // Get pharmacy statistics
   Future<Map<String, dynamic>> getPharmacyStats() async {
     try {
-      print('📊 Getting pharmacy stats...');
+      debugPrint('📊 Getting pharmacy stats...');
       final pharmacyId = await _getPharmacyId();
-      print('✅ Pharmacy ID: $pharmacyId');
+      debugPrint('✅ Pharmacy ID: $pharmacyId');
 
       // Get all orders for the pharmacy
-      print('📦 Fetching orders from: /pharmacy/orders/pharmacy/list');
+      debugPrint('📦 Fetching orders from: /pharmacy/orders/pharmacy/list');
       final ordersResponse = await _apiService.get(
         '/pharmacy/orders/pharmacy/list',
       );
       final orders = ordersResponse.data['orders'] as List;
-      print('✅ Got ${orders.length} orders');
+      debugPrint('✅ Got ${orders.length} orders');
 
       // Get all medicines for the pharmacy
-      print(
+      debugPrint(
         '💊 Fetching medicines from: /pharmacy/products?pharmacyId=$pharmacyId',
       );
       final medicinesResponse = await _apiService.get(
         '/pharmacy/products?pharmacyId=$pharmacyId',
       );
       final medicines = medicinesResponse.data['medicines'] as List;
-      print('✅ Got ${medicines.length} medicines');
+      debugPrint('✅ Got ${medicines.length} medicines');
 
       // Calculate stats
       final totalOrders = orders.length;
@@ -103,7 +103,7 @@ class PharmacyService {
         'revenue': revenue.toInt(),
       };
     } catch (e) {
-      print('Error getting pharmacy stats: $e');
+      debugPrint('Error getting pharmacy stats: $e');
       rethrow;
     }
   }
@@ -209,7 +209,7 @@ class PharmacyService {
         );
         topSellingProducts = topSellingResponse.data['topProducts'] ?? [];
       } catch (e) {
-        print('Error getting top selling products: $e');
+        debugPrint('Error getting top selling products: $e');
         // Fallback to empty list if endpoint fails
         topSellingProducts = [];
       }
@@ -221,7 +221,7 @@ class PharmacyService {
         'topSellingProducts': topSellingProducts,
       };
     } catch (e) {
-      print('Error getting analytics: $e');
+      debugPrint('Error getting analytics: $e');
       rethrow;
     }
   }

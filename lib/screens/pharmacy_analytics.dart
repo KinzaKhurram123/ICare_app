@@ -37,7 +37,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading analytics: $e');
+      debugPrint('Error loading analytics: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(

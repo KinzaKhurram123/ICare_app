@@ -77,7 +77,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
         _availableLabs = labs;
       });
     } catch (e) {
-      print('Error fetching labs for referral: $e');
+      // silently ignored
     } finally {
       setState(() => _isLoadingLabs = false);
     }
@@ -90,7 +90,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
         _availablePharmacies = pharmacies;
       });
     } catch (e) {
-      print('Error fetching pharmacies for referral: $e');
+      // silently ignored
     } finally {
       setState(() => _isLoadingPharmacies = false);
     }
@@ -103,7 +103,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
         _availablePrograms = result;
       });
     } catch (e) {
-      print('Error fetching programs for assignment: $e');
+      // silently ignored
     } finally {
       setState(() => _isLoadingPrograms = false);
     }

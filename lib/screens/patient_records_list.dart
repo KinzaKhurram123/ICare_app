@@ -31,24 +31,24 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('📋 Patient Records - Fetching records...');
+      debugPrint('📋 Patient Records - Fetching records...');
       final result = await _service.getDoctorRecords();
 
-      print('📋 Patient Records - Result success: ${result['success']}');
+      debugPrint('📋 Patient Records - Result success: ${result['success']}');
 
       if (result['success']) {
         final recordsList = result['records'] as List;
-        print('📋 Patient Records - Found ${recordsList.length} records');
+        debugPrint('📋 Patient Records - Found ${recordsList.length} records');
 
         final parsedRecords = <MedicalRecord>[];
         for (var i = 0; i < recordsList.length; i++) {
           try {
-            print('📋 Parsing record $i: ${recordsList[i]}');
+            debugPrint('📋 Parsing record $i: ${recordsList[i]}');
             final record = MedicalRecord.fromJson(recordsList[i]);
             parsedRecords.add(record);
-            print('✅ Record $i parsed successfully');
+            debugPrint('✅ Record $i parsed successfully');
           } catch (e) {
-            print('❌ Error parsing record $i: $e');
+            debugPrint('❌ Error parsing record $i: $e');
           }
         }
 
@@ -56,15 +56,15 @@ class _PatientRecordsListScreenState extends State<PatientRecordsListScreen> {
           _records = parsedRecords;
           _isLoading = false;
         });
-        print(
+        debugPrint(
           '✅ Patient Records - Loaded ${_records.length} records into state',
         );
       } else {
-        print('❌ Patient Records - Failed: ${result['message']}');
+        debugPrint('❌ Patient Records - Failed: ${result['message']}');
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('❌ Patient Records - Exception: $e');
+      debugPrint('❌ Patient Records - Exception: $e');
       setState(() => _isLoading = false);
     }
   }

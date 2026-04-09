@@ -40,7 +40,7 @@ class _LaboratoriesScreenState extends State<LaboratoriesScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching labs: $e');
+      debugPrint('Error fetching labs: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

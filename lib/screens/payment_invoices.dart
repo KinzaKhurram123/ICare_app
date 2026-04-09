@@ -79,7 +79,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
         _isLoading = false;
       });
     } catch (e) {
-      print('Error fetching invoices: $e');
+      debugPrint('Error fetching invoices: $e');
       setState(() => _isLoading = false);
     }
   }

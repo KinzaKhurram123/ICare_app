@@ -18,7 +18,7 @@ class PusherService {
   Function(String)? onMessageRead;
 
   Future<void> initialize(String userId) async {
-    print('Pusher service initialized for user: $userId');
+    debugPrint('Pusher service initialized for user: $userId');
     // TODO: Uncomment when pusher_channels_flutter package is added
     /*
     _pusher = PusherChannelsFlutter.getInstance();
@@ -44,7 +44,7 @@ class PusherService {
 
       await _pusher!.connect();
     } catch (e) {
-      print('Pusher initialization error: $e');
+      debugPrint('Pusher initialization error: $e');
     }
     */
   }
@@ -58,21 +58,21 @@ class PusherService {
       final authData = await _chatService.getPusherAuth(socketId, channelName);
       return authData;
     } catch (e) {
-      print('Pusher auth error: $e');
+      debugPrint('Pusher auth error: $e');
       return null;
     }
   }
 
   void onConnectionStateChange(dynamic currentState, dynamic previousState) {
-    print('Pusher connection: $previousState -> $currentState');
+    debugPrint('Pusher connection: $previousState -> $currentState');
   }
 
   void onError(String message, int? code, dynamic e) {
-    print('Pusher error: $message');
+    debugPrint('Pusher error: $message');
   }
 
   void onEvent(dynamic event) {
-    print('Pusher event received');
+    debugPrint('Pusher event received');
     // TODO: Uncomment when pusher_channels_flutter is added
     /*
     try {
@@ -89,29 +89,29 @@ class PusherService {
         onMessageRead?.call(data['reader']);
       }
     } catch (e) {
-      print('Error processing event: $e');
+      debugPrint('Error processing event: $e');
     }
     */
   }
 
   void onSubscriptionSucceeded(String channelName, dynamic data) {
-    print('Pusher subscribed to: $channelName');
+    debugPrint('Pusher subscribed to: $channelName');
   }
 
   void onSubscriptionError(String message, dynamic e) {
-    print('Pusher subscription error: $message');
+    debugPrint('Pusher subscription error: $message');
   }
 
   void onDecryptionFailure(String event, String reason) {
-    print('Pusher decryption failure: $event');
+    debugPrint('Pusher decryption failure: $event');
   }
 
   void onMemberAdded(String channelName, dynamic member) {
-    print('Member added to channel');
+    debugPrint('Member added to channel');
   }
 
   void onMemberRemoved(String channelName, dynamic member) {
-    print('Member removed from channel');
+    debugPrint('Member removed from channel');
   }
 
   Future<void> disconnect() async {

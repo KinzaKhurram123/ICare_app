@@ -71,10 +71,11 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading orders: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        Utils.showErrorSnackBar(context, e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to load orders. Please try again.')),
+        );
       }
     }
   }

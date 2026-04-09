@@ -380,7 +380,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     amount += str;
                   }
                 });
-                print(str);
+                debugPrint(str);
               },
             ),
             SizedBox(height: ScallingConfig.scale(20)),

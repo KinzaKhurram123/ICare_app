@@ -7,7 +7,7 @@ class ReferralService {
 
   Future<Map<String, dynamic>> createReferral(Map<String, dynamic> data) async {
     try {
-      print('🔄 Creating referral...');
+      debugPrint('🔄 Creating referral...');
       final response = await _apiService.post('/clinical/referrals', data);
 
       if (response.statusCode == 201) {
@@ -18,7 +18,7 @@ class ReferralService {
       }
       return {'success': false, 'message': 'Failed to create referral'};
     } on DioException catch (e) {
-      print('❌ Error: ${e.response?.data}');
+      debugPrint('❌ Error: ${e.response?.data}');
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Network error',
@@ -28,7 +28,7 @@ class ReferralService {
 
   Future<Map<String, dynamic>> getMyReferrals() async {
     try {
-      print('📋 Fetching my referrals...');
+      debugPrint('📋 Fetching my referrals...');
       final response = await _apiService.get('/clinical/referrals/my');
 
       if (response.statusCode == 200) {
@@ -47,7 +47,7 @@ class ReferralService {
 
   Future<Map<String, dynamic>> getReceivedReferrals() async {
     try {
-      print('📋 Fetching received referrals...');
+      debugPrint('📋 Fetching received referrals...');
       final response = await _apiService.get('/clinical/referrals/received');
 
       if (response.statusCode == 200) {

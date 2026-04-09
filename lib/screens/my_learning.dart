@@ -45,7 +45,7 @@ class _MyLearningScreenState extends ConsumerState<MyLearningScreen>
         });
       }
     } catch (e) {
-      print('Error loading my learning data: $e');
+      debugPrint('Error loading my learning data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

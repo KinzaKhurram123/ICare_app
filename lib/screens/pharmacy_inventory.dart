@@ -51,7 +51,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading products: $e');
+      debugPrint('Error loading products: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(

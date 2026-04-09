@@ -52,7 +52,7 @@ class _WrtieReviewScreenState extends State<WrtieReviewScreen> {
                   color: AppColors.themeDarkGrey,
                 ),
                 onRatingUpdate: (rating) {
-                  //  print(rating);
+                  //  debugPrint(rating);
                 },
               ),
               SizedBox(height: ScallingConfig.scale(20)),
