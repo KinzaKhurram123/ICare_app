@@ -448,7 +448,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                   setState(() => _isLoading = false);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Failed to create user: $e'),
+                      content: const Text('Unable to complete action. Please try again.'),
                       backgroundColor: Colors.red,
                     ),
                   );

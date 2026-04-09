@@ -161,7 +161,7 @@ class _IntakeNotesRedesignState extends State<IntakeNotesRedesign> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

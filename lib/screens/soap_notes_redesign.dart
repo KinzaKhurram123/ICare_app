@@ -251,7 +251,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

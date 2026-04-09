@@ -57,7 +57,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to book: $e'),
+          content: const Text('Booking failed. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );

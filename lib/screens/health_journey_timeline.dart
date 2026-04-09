@@ -42,7 +42,7 @@ class _HealthJourneyTimelineState extends State<HealthJourneyTimeline> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading timeline: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -446,7 +446,7 @@ class _HealthJourneyTimelineState extends State<HealthJourneyTimeline> {
         Navigator.pop(context);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     }
   }

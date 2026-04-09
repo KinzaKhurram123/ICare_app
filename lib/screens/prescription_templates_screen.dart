@@ -37,7 +37,7 @@ class _PrescriptionTemplatesScreenState
       if (mounted) setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch templates: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
     }
   }
 

@@ -59,7 +59,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading tests: $e'),
+            content: const Text('Unable to load data. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -87,7 +87,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error adding test: $e'),
+            content: const Text('Unable to complete action. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -115,7 +115,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error removing test: $e'),
+            content: const Text('Unable to delete. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

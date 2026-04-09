@@ -42,7 +42,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       if (mounted) setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch analytics: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
     }
   }
 

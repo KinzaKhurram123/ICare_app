@@ -113,7 +113,7 @@ class _LabAnalyticsState extends State<LabAnalytics>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading analytics: $e'),
+            content: const Text('Unable to load data. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

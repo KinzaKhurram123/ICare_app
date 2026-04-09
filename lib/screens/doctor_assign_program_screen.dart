@@ -68,7 +68,7 @@ class _DoctorAssignProgramScreenState extends State<DoctorAssignProgramScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to assign program: $e'),
+            content: const Text('Login failed. Please check your credentials.'),
             backgroundColor: Colors.red,
           ),
         );

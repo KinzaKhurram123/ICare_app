@@ -37,7 +37,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load certificates: $e')),
+          SnackBar(content: const Text('Unable to load data. Please try again.')),
         );
       }
     }

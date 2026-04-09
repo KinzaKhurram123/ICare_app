@@ -42,7 +42,7 @@ class _InstructorCoursesManagementScreenState
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading courses: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -89,7 +89,7 @@ class _InstructorCoursesManagementScreenState
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error deleting course: $e')));
+          ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
         }
       }
     }
@@ -117,7 +117,7 @@ class _InstructorCoursesManagementScreenState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     }
   }

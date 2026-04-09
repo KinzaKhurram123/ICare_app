@@ -36,7 +36,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load summary: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -53,7 +53,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to log activity: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     }
   }

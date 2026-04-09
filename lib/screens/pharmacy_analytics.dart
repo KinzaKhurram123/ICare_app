@@ -42,7 +42,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading analytics: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }

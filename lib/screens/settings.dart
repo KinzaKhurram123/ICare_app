@@ -49,7 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update 2FA: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
     }
   }
 
@@ -124,7 +124,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       setState(() => _isBiometricEnabled = value);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update Biometrics: $e')),
+        SnackBar(content: const Text('Something went wrong. Please try again.')),
       );
     }
   }

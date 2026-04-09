@@ -71,7 +71,7 @@ class _UploadLabReportScreenState extends State<UploadLabReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
+          SnackBar(content: const Text('Unable to load data. Please try again.'), backgroundColor: Colors.red),
         );
       }
     } finally {

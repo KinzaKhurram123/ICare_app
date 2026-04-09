@@ -174,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to submit. Please try again.')));
       }
       // Restore message text on failure
       _messageController.text = messageText;
@@ -226,7 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to send image: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to submit. Please try again.')));
       }
     } finally {
       setState(() => _isSending = false);
@@ -282,7 +282,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to send file: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to submit. Please try again.')));
       }
     } finally {
       setState(() => _isSending = false);
@@ -301,7 +301,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Could not open file: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     }
   }

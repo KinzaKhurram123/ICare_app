@@ -121,7 +121,7 @@ class _StudentProfileSetupState extends State<StudentProfileSetup>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving profile: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

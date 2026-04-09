@@ -50,7 +50,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         setState(() => _isLoading = false);
         if (!silent) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load conversations: $e')),
+            SnackBar(content: const Text('Unable to load data. Please try again.')),
           );
         }
       }

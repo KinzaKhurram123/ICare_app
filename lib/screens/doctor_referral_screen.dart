@@ -126,7 +126,7 @@ class _DoctorReferralScreenState extends State<DoctorReferralScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create referral: $e'),
+            content: const Text('Unable to complete action. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

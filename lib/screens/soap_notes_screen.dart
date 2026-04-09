@@ -80,7 +80,7 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save SOAP notes: $e')),
+          SnackBar(content: const Text('Something went wrong. Please try again.')),
         );
       }
     }
@@ -153,7 +153,7 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send referral: $e')),
+                    SnackBar(content: const Text('Unable to submit. Please try again.')),
                   );
                 }
               }

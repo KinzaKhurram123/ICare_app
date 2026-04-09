@@ -56,7 +56,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading products: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -88,7 +88,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error adding product: $e')),
+                SnackBar(content: const Text('Unable to complete action. Please try again.')),
               );
             }
           }

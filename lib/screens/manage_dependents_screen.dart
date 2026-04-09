@@ -35,7 +35,7 @@ class _ManageDependentsScreenState extends State<ManageDependentsScreen> {
       if (mounted) setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch dependents: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
     }
   }
 

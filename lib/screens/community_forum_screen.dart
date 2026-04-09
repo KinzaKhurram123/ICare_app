@@ -43,7 +43,7 @@ class _CommunityForumScreenState extends State<CommunityForumScreen> {
       if (mounted) setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch categories: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
     }
   }
 
@@ -60,7 +60,7 @@ class _CommunityForumScreenState extends State<CommunityForumScreen> {
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch discussions: $e')),
+        SnackBar(content: const Text('Unable to load data. Please try again.')),
       );
     }
   }
