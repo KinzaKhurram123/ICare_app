@@ -38,7 +38,7 @@ class _TaskScreenState extends State<TaskScreen>
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Error loading tasks: $e');
+      debugPrint('Error loading tasks: $e');
     }
   }
 

@@ -27,7 +27,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to fetch products'};
     } catch (e) {
-      print('Get products error: $e');
+      debugPrint('Get products error: $e');
       return {'success': false, 'message': 'Failed to fetch products'};
     }
   }
@@ -44,7 +44,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Product not found'};
     } catch (e) {
-      print('Get product error: $e');
+      debugPrint('Get product error: $e');
       return {'success': false, 'message': 'Failed to fetch product'};
     }
   }
@@ -67,7 +67,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to add to cart'};
     } catch (e) {
-      print('Add to cart error: $e');
+      debugPrint('Add to cart error: $e');
       return {'success': false, 'message': 'Failed to add to cart'};
     }
   }
@@ -86,7 +86,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to fetch cart'};
     } catch (e) {
-      print('Get cart error: $e');
+      debugPrint('Get cart error: $e');
       return {'success': false, 'message': 'Failed to fetch cart'};
     }
   }
@@ -106,7 +106,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to update cart'};
     } catch (e) {
-      print('Update cart error: $e');
+      debugPrint('Update cart error: $e');
       return {'success': false, 'message': 'Failed to update cart'};
     }
   }
@@ -120,7 +120,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to remove item'};
     } catch (e) {
-      print('Remove from cart error: $e');
+      debugPrint('Remove from cart error: $e');
       return {'success': false, 'message': 'Failed to remove item'};
     }
   }
@@ -147,7 +147,7 @@ class ProductService {
       }
       return {'success': false, 'message': 'Failed to place order'};
     } catch (e) {
-      print('Checkout error: $e');
+      debugPrint('Checkout error: $e');
       return {'success': false, 'message': 'Failed to place order'};
     }
   }

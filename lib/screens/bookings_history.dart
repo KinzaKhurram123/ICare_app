@@ -28,13 +28,13 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
 
     final result = await _appointmentService.getMyAppointmentsDetailed();
 
-    print('📋 Bookings History - Load result: ${result['success']}');
+    debugPrint('📋 Bookings History - Load result: ${result['success']}');
 
     if (result['success']) {
       final appointments = result['appointments'] as List<AppointmentDetail>;
-      print('📋 Bookings History - Loaded ${appointments.length} appointments');
+      debugPrint('📋 Bookings History - Loaded ${appointments.length} appointments');
       for (var apt in appointments) {
-        print(
+        debugPrint(
           '   - ${apt.status}: ${apt.doctor?.name ?? "Unknown"} on ${apt.date}',
         );
       }
@@ -44,7 +44,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         _isLoading = false;
       });
     } else {
-      print('❌ Bookings History - Failed to load: ${result['message']}');
+      debugPrint('❌ Bookings History - Failed to load: ${result['message']}');
       setState(() => _isLoading = false);
     }
   }

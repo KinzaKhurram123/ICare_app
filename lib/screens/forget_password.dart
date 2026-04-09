@@ -35,7 +35,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
       if (result['success']) {
         if (mounted) {
           // Show OTP in console for testing
-          print('OTP for testing: ${result['otp']}');
+          debugPrint('OTP for testing: ${result['otp']}');
 
           Navigator.of(context).push(
             MaterialPageRoute(

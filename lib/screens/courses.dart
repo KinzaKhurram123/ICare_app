@@ -435,7 +435,7 @@ class _WebCoursesListState extends State<_WebCoursesList> {
         });
       }
     } catch (e) {
-      print('Error fetching web courses: $e');
+      debugPrint('Error fetching web courses: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -699,7 +699,7 @@ class _WebCertificatesListState extends State<_WebCertificatesList> {
         });
       }
     } catch (e) {
-      print('Error fetching web certificates: $e');
+      debugPrint('Error fetching web certificates: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

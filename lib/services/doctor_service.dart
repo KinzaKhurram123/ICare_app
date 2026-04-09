@@ -6,28 +6,28 @@ class DoctorService {
 
   Future<Map<String, dynamic>> getAllDoctors() async {
     try {
-      print('🔍 Fetching doctors from API...');
+      debugPrint('🔍 Fetching doctors from API...');
       final response = await _apiService.get('/doctors/get_all_doctors');
 
-      print('📡 Response status: ${response.statusCode}');
-      print('📡 Response data type: ${response.data.runtimeType}');
-      print('📡 Response data: ${response.data}');
+      debugPrint('📡 Response status: ${response.statusCode}');
+      debugPrint('📡 Response data type: ${response.data.runtimeType}');
+      debugPrint('📡 Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final doctors = response.data['doctors'];
-        print('✅ Doctors data: $doctors');
+        debugPrint('✅ Doctors data: $doctors');
         return {'success': true, 'doctors': doctors};
       }
       return {'success': false, 'message': 'Failed to fetch doctors'};
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
-      print('❌ Response: ${e.response?.data}');
+      debugPrint('❌ DioException: ${e.message}');
+      debugPrint('❌ Response: ${e.response?.data}');
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Network error',
       };
     } catch (e) {
-      print('❌ Unexpected error: $e');
+      debugPrint('❌ Unexpected error: $e');
       return {'success': false, 'message': 'Unexpected error: $e'};
     }
   }
@@ -46,13 +46,13 @@ class DoctorService {
     required String endTime,
   }) async {
     try {
-      print('📋 Updating doctor profile...');
-      print('Specialization: $specialization');
-      print('Consultation Types: $consultationType');
-      print('Languages: $languages');
-      print('Degrees: $degrees');
-      print('Available Days: $availableDays');
-      print('Time: $startTime - $endTime');
+      debugPrint('📋 Updating doctor profile...');
+      debugPrint('Specialization: $specialization');
+      debugPrint('Consultation Types: $consultationType');
+      debugPrint('Languages: $languages');
+      debugPrint('Degrees: $degrees');
+      debugPrint('Available Days: $availableDays');
+      debugPrint('Time: $startTime - $endTime');
 
       final requestData = {
         'specialization': specialization,
@@ -78,15 +78,15 @@ class DoctorService {
         requestData,
       );
 
-      print('✅ Response status: ${response.statusCode}');
-      print('Response data: ${response.data}');
+      debugPrint('✅ Response status: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true, 'message': 'Profile updated successfully'};
       }
       return {'success': false, 'message': 'Failed to update profile'};
     } on DioException catch (e) {
-      print('❌ Error updating profile: ${e.response?.data}');
+      debugPrint('❌ Error updating profile: ${e.response?.data}');
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Network error',
@@ -100,7 +100,7 @@ class DoctorService {
     String? review,
   }) async {
     try {
-      print('⭐ Adding review for doctor: $doctorId');
+      debugPrint('⭐ Adding review for doctor: $doctorId');
       final response = await _apiService.post('/doctors/$doctorId/review', {
         'rating': rating,
         if (review != null) 'review': review,
@@ -190,7 +190,7 @@ class DoctorService {
       });
       return response.data;
     } catch (e) {
-      print('Error updating availability: $e');
+      debugPrint('Error updating availability: $e');
       rethrow;
     }
   }
@@ -216,7 +216,7 @@ class DoctorService {
       final response = await _apiService.get('/doctors/stats');
       return response.data;
     } catch (e) {
-      print('Error getting doctor stats: $e');
+      debugPrint('Error getting doctor stats: $e');
       rethrow;
     }
   }
@@ -228,7 +228,7 @@ class DoctorService {
       );
       return response.data;
     } catch (e) {
-      print('Error getting patient history: $e');
+      debugPrint('Error getting patient history: $e');
       rethrow;
     }
   }
@@ -244,7 +244,7 @@ class DoctorService {
       );
       return response.data;
     } catch (e) {
-      print('Error assigning program: $e');
+      debugPrint('Error assigning program: $e');
       rethrow;
     }
   }

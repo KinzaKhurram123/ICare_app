@@ -37,7 +37,7 @@ class ClinicalService {
       );
       return response.data;
     } catch (e) {
-      print('Error getting SOAP notes: $e');
+      debugPrint('Error getting SOAP notes: $e');
       rethrow;
     }
   }
@@ -49,7 +49,7 @@ class ClinicalService {
       );
       return response.data;
     } catch (e) {
-      print('Error getting patient history: $e');
+      debugPrint('Error getting patient history: $e');
       rethrow;
     }
   }
@@ -64,7 +64,7 @@ class ClinicalService {
         'text': text,
       });
     } catch (e) {
-      print('Error adding addendum: $e');
+      debugPrint('Error adding addendum: $e');
       rethrow;
     }
   }
@@ -80,7 +80,7 @@ class ClinicalService {
       );
       return response.data;
     } catch (e) {
-      print('Error creating referral: $e');
+      debugPrint('Error creating referral: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -93,7 +93,7 @@ class ClinicalService {
       }
       return [];
     } catch (e) {
-      print('Error getting my referrals: $e');
+      debugPrint('Error getting my referrals: $e');
       return [];
     }
   }
@@ -106,7 +106,7 @@ class ClinicalService {
       }
       return [];
     } catch (e) {
-      print('Error getting received referrals: $e');
+      debugPrint('Error getting received referrals: $e');
       return [];
     }
   }
@@ -119,7 +119,7 @@ class ClinicalService {
       );
       return response.data;
     } catch (e) {
-      print('Error accepting referral: $e');
+      debugPrint('Error accepting referral: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -135,7 +135,7 @@ class ClinicalService {
       );
       return response.data;
     } catch (e) {
-      print('Error declining referral: $e');
+      debugPrint('Error declining referral: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

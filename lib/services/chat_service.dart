@@ -17,11 +17,11 @@ class ChatService {
     List<Map<String, dynamic>>? attachments,
   }) async {
     try {
-      print('📤 Sending message to: $receiverId');
-      print('📝 Message: $message');
+      debugPrint('📤 Sending message to: $receiverId');
+      debugPrint('📝 Message: $message');
 
       final token = await _getToken();
-      print('🔑 Token: ${token?.substring(0, 20)}...');
+      debugPrint('🔑 Token: ${token?.substring(0, 20)}...');
 
       final response = await _dio.post(
         '${ApiConfig.baseUrl}/chat/send',
@@ -33,13 +33,13 @@ class ChatService {
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
-      print('✅ Message sent successfully');
-      print('📡 Response status: ${response.statusCode}');
-      print('📡 Response data: ${response.data}');
+      debugPrint('✅ Message sent successfully');
+      debugPrint('📡 Response status: ${response.statusCode}');
+      debugPrint('📡 Response data: ${response.data}');
 
       return response.data;
     } catch (e) {
-      print('❌ Failed to send message: $e');
+      debugPrint('❌ Failed to send message: $e');
       throw Exception('Failed to send message: $e');
     }
   }
@@ -72,14 +72,14 @@ class ChatService {
 
       return response.data;
     } catch (e) {
-      print('❌ Failed to upload file: $e');
+      debugPrint('❌ Failed to upload file: $e');
       throw Exception('Failed to upload file: $e');
     }
   }
 
   Future<List<dynamic>> getChatHistory(String userId) async {
     try {
-      print('🔍 Fetching chat history with user: $userId');
+      debugPrint('🔍 Fetching chat history with user: $userId');
 
       if (userId.isEmpty) {
         throw Exception('User ID cannot be empty');
@@ -90,7 +90,7 @@ class ChatService {
         throw Exception('Authentication token not found. Please login again.');
       }
 
-      print('🔑 Token: ${token.substring(0, 20)}...');
+      debugPrint('🔑 Token: ${token.substring(0, 20)}...');
 
       final response = await _dio.get(
         '${ApiConfig.baseUrl}/chat/history/$userId',
@@ -100,14 +100,14 @@ class ChatService {
         ),
       );
 
-      print('✅ Chat history response: ${response.statusCode}');
+      debugPrint('✅ Chat history response: ${response.statusCode}');
 
       if (response.statusCode == 401) {
         throw Exception('Unauthorized. Please login again.');
       }
 
       if (response.statusCode == 404) {
-        print('ℹ️ No chat history found, returning empty list');
+        debugPrint('ℹ️ No chat history found, returning empty list');
         return [];
       }
 
@@ -117,18 +117,18 @@ class ChatService {
         );
       }
 
-      print('📦 Response data: ${response.data}');
+      debugPrint('📦 Response data: ${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
         return response.data['data'] ?? [];
       }
       return [];
     } on DioException catch (e) {
-      print('❌ DioException getting chat history: ${e.message}');
-      print('❌ Response: ${e.response?.data}');
+      debugPrint('❌ DioException getting chat history: ${e.message}');
+      debugPrint('❌ Response: ${e.response?.data}');
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('❌ Error getting chat history: $e');
+      debugPrint('❌ Error getting chat history: $e');
       rethrow;
     }
   }
@@ -141,10 +141,10 @@ class ChatService {
         data: {'senderId': senderId},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      print('✅ Messages marked as read');
+      debugPrint('✅ Messages marked as read');
     } catch (e) {
       // Non-critical error - just log it and continue
-      print('⚠️ Could not mark messages as read (non-critical): $e');
+      debugPrint('⚠️ Could not mark messages as read (non-critical): $e');
     }
   }
 

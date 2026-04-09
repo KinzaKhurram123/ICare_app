@@ -35,16 +35,16 @@ class _DoctorsListState extends State<DoctorsList> {
 
     final result = await _doctorService.getAllDoctors();
 
-    print('📋 Doctors API Result: $result');
+    debugPrint('📋 Doctors API Result: $result');
 
     if (result['success']) {
       final doctorsList = (result['doctors'] as List)
           .map((json) => Doctor.fromJson(json))
           .toList();
 
-      print('✅ Loaded ${doctorsList.length} doctors');
+      debugPrint('✅ Loaded ${doctorsList.length} doctors');
       doctorsList.forEach((doc) {
-        print('  - ${doc.user.name}: ${doc.specialization ?? "NO SPEC"}');
+        debugPrint('  - ${doc.user.name}: ${doc.specialization ?? "NO SPEC"}');
       });
 
       final specs = doctorsList
@@ -61,7 +61,7 @@ class _DoctorsListState extends State<DoctorsList> {
         _isLoading = false;
       });
     } else {
-      print('❌ Failed to load doctors: ${result['message']}');
+      debugPrint('❌ Failed to load doctors: ${result['message']}');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +74,7 @@ class _DoctorsListState extends State<DoctorsList> {
   }
 
   void _filterDoctors() {
-    print(
+    debugPrint(
       '🔍 Filtering doctors: query="$_searchQuery", spec=$_selectedSpecialization',
     );
     setState(() {
@@ -95,7 +95,7 @@ class _DoctorsListState extends State<DoctorsList> {
 
         return matchesSearch && matchesSpecialization;
       }).toList();
-      print('✅ Filtered to ${_filteredDoctors.length} doctors');
+      debugPrint('✅ Filtered to ${_filteredDoctors.length} doctors');
     });
   }
 

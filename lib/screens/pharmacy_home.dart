@@ -43,7 +43,7 @@ class _PharmacyHomeState extends State<PharmacyHome> {
             setState(() {
               selectedCategory = value;
             });
-            print("Selected Category: $value");
+            debugPrint("Selected Category: $value");
           },
           categories: [
             {"id": "1", "name": "Pain", "icon": ImagePaths.pain},

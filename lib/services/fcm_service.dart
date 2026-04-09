@@ -7,7 +7,7 @@ import '../services/api_service.dart';
 // Background message handler — must be top-level function
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('📬 Background FCM message: ${message.messageId}');
+  debugPrint('📬 Background FCM message: ${message.messageId}');
 }
 
 class FcmService {
@@ -55,7 +55,7 @@ class FcmService {
 
     // Get and print FCM token
     final token = await getToken();
-    print('🔑 FCM Token: $token');
+    debugPrint('🔑 FCM Token: $token');
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -72,7 +72,7 @@ class FcmService {
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (details) {
-        print('🔔 Local notification tapped: ${details.payload}');
+        debugPrint('🔔 Local notification tapped: ${details.payload}');
       },
     );
 
@@ -92,7 +92,7 @@ class FcmService {
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
-    print('📩 Foreground FCM: ${message.notification?.title}');
+    debugPrint('📩 Foreground FCM: ${message.notification?.title}');
     final notification = message.notification;
     if (notification == null) return;
 
@@ -116,7 +116,7 @@ class FcmService {
   }
 
   void _handleNotificationTap(RemoteMessage message) {
-    print('👆 Notification tapped: ${message.data}');
+    debugPrint('👆 Notification tapped: ${message.data}');
   }
 
   Future<String?> getToken() async {
@@ -124,7 +124,7 @@ class FcmService {
     try {
       return await fcm.getToken();
     } catch (e) {
-      print('⚠️ Could not get FCM token: $e');
+      debugPrint('⚠️ Could not get FCM token: $e');
       return null;
     }
   }
@@ -133,13 +133,13 @@ class FcmService {
   Future<String?> getAndSaveToken() async {
     final token = await getToken();
     if (token != null) {
-      print('📱 Sending FCM token to backend...');
+      debugPrint('📱 Sending FCM token to backend...');
       try {
         final apiService = ApiService();
         await apiService.post('/users/fcm-token', {'fcmToken': token});
-        print('✅ FCM token saved to backend');
+        debugPrint('✅ FCM token saved to backend');
       } catch (e) {
-        print('⚠️ Could not save FCM token to backend: $e');
+        debugPrint('⚠️ Could not save FCM token to backend: $e');
       }
     }
     return token;

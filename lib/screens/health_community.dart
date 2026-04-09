@@ -47,7 +47,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading community posts: $e');
+      debugPrint('Error loading community posts: $e');
       setState(() => _isLoading = false);
     }
   }

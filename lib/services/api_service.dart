@@ -22,20 +22,20 @@ class ApiService {
 
     if (token == null) {
       token = await _sharedPref.getToken();
-      print(
+      debugPrint(
         "🔑 ApiService: Token from SharedPref: ${token != null ? '${token.substring(0, 20)}...' : 'null'}",
       );
     } else {
-      print(
+      debugPrint(
         "🔑 ApiService: Using provided token: ${token.substring(0, 20)}...",
       );
     }
 
     if (token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $token';
-      print("✅ ApiService: Authorization header set");
+      debugPrint("✅ ApiService: Authorization header set");
     } else {
-      print("⚠️ ApiService: No token found, request will be unauthorized");
+      debugPrint("⚠️ ApiService: No token found, request will be unauthorized");
     }
   }
 

@@ -37,7 +37,7 @@ class _PharmaciesScreenState extends State<PharmaciesScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching pharmacies: $e');
+      debugPrint('Error fetching pharmacies: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

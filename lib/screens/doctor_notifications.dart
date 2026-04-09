@@ -102,7 +102,7 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         notification['read'] = true;
       });
     } catch (e) {
-      print('Error marking as read: $e');
+      debugPrint('Error marking as read: $e');
     }
   }
 
@@ -115,7 +115,7 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         }
       });
     } catch (e) {
-      print('Error marking all as read: $e');
+      debugPrint('Error marking all as read: $e');
     }
   }
 

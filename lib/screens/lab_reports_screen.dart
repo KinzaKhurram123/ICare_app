@@ -64,7 +64,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading lab reports: $e');
+      debugPrint('Error loading lab reports: $e');
       setState(() => _isLoading = false);
     }
   }
