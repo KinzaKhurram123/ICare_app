@@ -41,6 +41,7 @@ import 'package:icare/screens/pharmacy_management.dart';
 import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/screens/product_details.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/rating_n_reviews.dart';
 import 'package:icare/screens/receipt.dart';
 import 'package:icare/screens/reminder_list.dart';
@@ -71,73 +72,53 @@ class App extends ConsumerStatefulWidget {
 }
 
 class _AppState extends ConsumerState<App> {
-  Widget content = SplashScreen();
+  Widget content = const PublicHome();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    splash();
+    _checkAuth();
   }
 
-  Future<void> loadData() async {
+  Future<void> _checkAuth() async {
     try {
-      final userWalkthrough = await SharedPref().getUserWalkthrough();
-      ref
-          .read(authProvider.notifier)
-          .setUserWalkthrough(userWalkthrough ?? false);
-
-      print("$userWalkthrough ===========>");
-
       final token = await SharedPref().getToken();
-      print(
-        "🔑 Loaded token from cache: ${token != null ? '${token.substring(0, 20)}...' : 'null'}",
-      );
 
       if (token != null && token.isNotEmpty) {
         ref.read(authProvider.notifier).setUserToken(token);
 
         final userRole = await SharedPref().getUserRole();
-        print("👤 Loaded role from cache: $userRole");
-
         if (userRole != null) {
           ref.read(authProvider.notifier).setUserRole(userRole);
         }
 
         final userDataMap = await SharedPref().getUserData();
         if (userDataMap != null) {
-          print(
-            "📋 Loaded user data from cache: ${userDataMap.email} - ${userDataMap.role}",
-          );
           ref.read(authProvider.notifier).setUser(userDataMap);
         }
+
+        if (mounted) {
+          setState(() {
+            content = const TabsScreen();
+            _isLoading = false;
+          });
+        }
       } else {
-        print("⚠️ No token found in cache, user needs to login");
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      print("❌ Error loading data: $e");
-      // Clear any partial state on error
-      ref.read(authProvider.notifier).setUserLogout();
-    }
-  }
-
-  void splash() async {
-    // Wait for data loading and splash delay
-    await loadData();
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted) return;
-
-    final auth = ref.read(authProvider);
-
-    setState(() {
-      if (auth.isLoggedIn && auth.token != null) {
-        content = const TabsScreen();
-      } else if (auth.userWalkthrough) {
-        content = LoginScreen();
-      } else {
-        content = const Walkthrough();
+      print("❌ Error loading auth: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
-    });
+    }
   }
 
   @override

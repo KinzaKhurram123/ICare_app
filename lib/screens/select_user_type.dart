@@ -23,24 +23,45 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
   final List<Map<String, dynamic>> userTypes = [
     {
       "id": 1,
-      "title": "Patient",
-      "description":
-          "Consult doctors, access prescriptions & manage your health",
+      "title": "I am a Patient",
+      "description": "The easy way to reach your Doctor face-to-face.",
       "role": "patient",
       "image": ImagePaths.userType1,
-      "benefits": [
-        "24/7 Doctor Access",
-        "Digital Prescriptions",
-        "Health Records",
-      ],
     },
     {
       "id": 2,
-      "title": "Doctor",
-      "description": "Manage patients, consultations & digital prescriptions",
+      "title": "I am a Doctor",
+      "description": "The easy way to reach your Patients face-to-face.",
       "role": "doctor",
       "image": ImagePaths.userType2,
-      "benefits": ["Patient Management", "Telemedicine", "Clinical Tools"],
+    },
+    {
+      "id": 4,
+      "title": "I am a Lab Technician",
+      "description": "The easy way to reach your Tests/Reports face-to-face.",
+      "role": "lab_technician",
+      "image": ImagePaths.userType4,
+    },
+    {
+      "id": 3,
+      "title": "I am a Pharmacist",
+      "description": "The easy way to reach your Medicine face-to-face.",
+      "role": "pharmacist",
+      "image": ImagePaths.userType3,
+    },
+    {
+      "id": 5,
+      "title": "I am an Instructor",
+      "description": "The easy way to manage and guide your students.",
+      "role": "instructor",
+      "image": ImagePaths.userType5,
+    },
+    {
+      "id": 6,
+      "title": "I am a Student",
+      "description": "The easy way to learn and connect with instructors.",
+      "role": "student",
+      "image": ImagePaths.userType6,
     },
   ];
 
