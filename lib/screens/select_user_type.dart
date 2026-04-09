@@ -20,48 +20,24 @@ class SelectUserType extends ConsumerStatefulWidget {
 }
 
 class _SelectUserTypeState extends ConsumerState<SelectUserType> {
+  // Only Patient & Doctor are shown publicly.
+  // Lab, Pharmacy, Instructor, Student accounts are created by Admin.
   final List<Map<String, dynamic>> userTypes = [
     {
       "id": 1,
       "title": "I am a Patient",
-      "description": "The easy way to reach your Doctor face-to-face.",
+      "description":
+          "Consult verified doctors, access prescriptions & manage your complete health journey.",
       "role": "patient",
       "image": ImagePaths.userType1,
     },
     {
       "id": 2,
       "title": "I am a Doctor",
-      "description": "The easy way to reach your Patients face-to-face.",
+      "description":
+          "Manage patients, conduct consultations & issue digital prescriptions securely.",
       "role": "doctor",
       "image": ImagePaths.userType2,
-    },
-    {
-      "id": 4,
-      "title": "I am a Lab Technician",
-      "description": "The easy way to reach your Tests/Reports face-to-face.",
-      "role": "lab_technician",
-      "image": ImagePaths.userType4,
-    },
-    {
-      "id": 3,
-      "title": "I am a Pharmacist",
-      "description": "The easy way to reach your Medicine face-to-face.",
-      "role": "pharmacist",
-      "image": ImagePaths.userType3,
-    },
-    {
-      "id": 5,
-      "title": "I am an Instructor",
-      "description": "The easy way to manage and guide your students.",
-      "role": "instructor",
-      "image": ImagePaths.userType5,
-    },
-    {
-      "id": 6,
-      "title": "I am a Student",
-      "description": "The easy way to learn and connect with instructors.",
-      "role": "student",
-      "image": ImagePaths.userType6,
     },
   ];
 
@@ -112,7 +88,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
           children: [
             SizedBox(height: ScallingConfig.scale(50)),
             CustomText(
-              text: "Begin Your Healthcare Journey",
+              text: "Welcome to Your Healthcare Journey",
               fontSize: 28,
               maxLines: 2,
               padding: EdgeInsets.only(left: ScallingConfig.moderateScale(12)),
@@ -122,7 +98,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
               isBold: true,
             ),
             CustomText(
-              text: "Choose how you'll experience iCare Virtual Hospital",
+              text: "Your role helps personalize your experience",
               padding: EdgeInsets.only(
                 top: ScallingConfig.verticalScale(8),
                 left: ScallingConfig.moderateScale(12),
@@ -181,7 +157,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                       left: ScallingConfig.scale(20),
                       child: CustomButton(
                         width: Utils.windowWidth(context) * 0.9,
-                        label: "Continue",
+                        label: "Continue to Login",
                         borderRadius: ScallingConfig.moderateScale(30),
                         onPressed: () {
                           Navigator.of(context).push(
@@ -281,12 +257,23 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           Text(
-                            "Your Complete Virtual Hospital Experience\nStart your healthcare journey today",
+                            "Your Virtual Healthcare Platform",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 17,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withOpacity(0.95),
+                              fontFamily: "Gilroy-Bold",
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Secure consultations, prescriptions & health records",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                               color: Colors.white.withOpacity(0.75),
                               fontFamily: "Gilroy-Medium",
@@ -408,7 +395,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                               color: Colors.white,
                             ),
                             label: const Text(
-                              "Continue",
+                              "Continue to Login",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,

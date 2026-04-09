@@ -19,6 +19,7 @@ class PharmacistDashboard extends ConsumerStatefulWidget {
 class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
   final PharmacyService _pharmacyService = PharmacyService();
   bool _isLoading = true;
+  bool _hasError = false;
 
   Map<String, int> _stats = {
     'totalOrders': 0,
@@ -37,20 +38,20 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
 
   Future<void> _loadStats() async {
     try {
-      setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
       final stats = await _pharmacyService.getPharmacyStats();
       setState(() {
         _stats = stats.map((key, value) => MapEntry(key, value as int));
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading stats: $e');
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading dashboard: $e')));
-      }
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
     }
   }
 
@@ -63,6 +64,37 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
+          : _hasError
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.cloud_off_rounded, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Unable to load dashboard',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please check your connection and try again.',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _loadStats,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            )
           : SingleChildScrollView(
               padding: EdgeInsets.all(isDesktop ? 32 : 20),
               child: Column(

@@ -54,7 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _logoScaleAnimation = Tween<double>(begin: 3.0, end: 1.0).animate(
+    _logoScaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -244,13 +244,99 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       child: Row(
         children: [
           // ══════════════════════════════════════════════════════════════
-          // LEFT HERO PANEL — gradient + branding
+          // LEFT HERO PANEL — healthcare branding + trust indicators
           // ══════════════════════════════════════════════════════════════
           Expanded(
             flex: 5,
-            child: SizedBox(
+            child: Container(
               height: screenHeight,
-              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF001E6C), Color(0xFF0036BC), Color(0xFF035BE5)],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -80, left: -80,
+                    child: Container(
+                      width: 300, height: 300,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.04),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -100, right: -50,
+                    child: Container(
+                      width: 350, height: 350,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.03),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 90, height: 90,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                            ),
+                            child: Image.asset(ImagePaths.logo, fit: BoxFit.contain),
+                          ),
+                          const SizedBox(height: 28),
+                          const Text(
+                            "iCare Virtual Hospital",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 32, fontWeight: FontWeight.w800,
+                              color: Colors.white, letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            "Your Virtual Healthcare Platform",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Secure consultations, prescriptions\n& health records",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.7),
+                              height: 1.6,
+                            ),
+                          ),
+                          const SizedBox(height: 44),
+                          _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
+                          const SizedBox(height: 14),
+                          _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
+                          const SizedBox(height: 14),
+                          _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
+                          const SizedBox(height: 14),
+                          _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -640,22 +726,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                         ),
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (ctx) => SelectUserType(),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Switch Role / Testing Bypass",
-                                  style: TextStyle(
-                                    color: AppColors.primaryColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-
                               if (isLogin) ...[
                                 const SizedBox(height: 32),
                                 // Divider with text
@@ -1058,22 +1128,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 32),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => SelectUserType(),
-                                ),
-                              ),
-                              child: const Text(
-                                "Switch Role / Testing Bypass",
-                                style: TextStyle(
-                                  color: AppColors.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: "Gilroy-Bold",
-                                ),
-                              ),
-                            ),
                           ],
 
                           if (isLogin) ...[
@@ -1121,6 +1175,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeroTrust(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
