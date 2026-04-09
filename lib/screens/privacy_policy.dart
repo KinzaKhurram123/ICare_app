@@ -27,60 +27,94 @@ class PrivacyPolicy extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomText(
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text:
-                    "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023),
-              CustomText(
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 10,
-                text:
-                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
-
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023),
-              CustomText(
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text:
-                    "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-              SizedBox(height: Utils.windowHeight(context) * 0.023),
-              CustomText(
-                fontFamily: "Gilroy-Regular",
-                width: Utils.windowWidth(context) * 0.85,
-                textAlign: TextAlign.left,
-                maxLines: 7,
-                text:
-                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                color: AppColors.themeDarkGrey,
-                fontSize: 12,
-              ),
-            ],
-          ),
+        padding: EdgeInsets.symmetric(
+          horizontal: Utils.windowWidth(context) * 0.075,
+          vertical: 20,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CustomText(
+              text: "Last updated: January 1, 2025",
+              fontFamily: "Gilroy-Medium",
+              fontSize: 12,
+              color: AppColors.themeDarkGrey,
+            ),
+            SizedBox(height: Utils.windowHeight(context) * 0.02),
+            ..._sections.map((s) => _MobilePolicySection(title: s[0], body: s[1])),
+          ],
         ),
       ),
     );
   }
 }
+
+class _MobilePolicySection extends StatelessWidget {
+  final String title;
+  final String body;
+  const _MobilePolicySection({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: Utils.windowHeight(context) * 0.025),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CustomText(
+            text: title,
+            fontFamily: "Gilroy-Bold",
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary500,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              fontFamily: "Gilroy-Regular",
+              color: AppColors.themeDarkGrey,
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+const List<List<String>> _sections = [
+  [
+    "1. Introduction",
+    "Welcome to ICare. We are committed to protecting your personal and medical information. This Privacy Policy explains how we collect, use, store, and share your data when you use our healthcare platform. By using ICare, you agree to the practices described in this policy.",
+  ],
+  [
+    "2. Information We Collect",
+    "We collect information you provide directly, including your name, contact details, date of birth, gender, and medical history. We also collect appointment records, lab test results, prescriptions, and payment information. Usage data such as device type, IP address, and app activity may also be collected automatically.",
+  ],
+  [
+    "3. How We Use Your Information",
+    "Your information is used to provide and improve our healthcare services, including booking appointments, processing lab tests, managing prescriptions, and facilitating doctor-patient communication. We may also use your data to send health reminders, service updates, and personalized recommendations.",
+  ],
+  [
+    "4. Sharing of Information",
+    "We do not sell your personal data. We may share your information with licensed healthcare providers involved in your care, diagnostic laboratories, pharmacies fulfilling your prescriptions, and payment processors. All third parties are bound by strict confidentiality agreements.",
+  ],
+  [
+    "5. Data Security",
+    "We implement industry-standard security measures including encryption, secure servers, and access controls to protect your data. However, no method of transmission over the internet is 100% secure. We encourage you to keep your account credentials confidential.",
+  ],
+  [
+    "6. Your Rights",
+    "You have the right to access, correct, or delete your personal information at any time through your profile settings. You may also request a copy of your data or withdraw consent for specific uses. To exercise these rights, contact our support team.",
+  ],
+  [
+    "7. Contact Us",
+    "If you have any questions or concerns about this Privacy Policy, please contact us at privacy@icare.health or through the Help & Support section in the app.",
+  ],
+];
 
 class _WebPrivacyPolicy extends StatelessWidget {
   const _WebPrivacyPolicy();
@@ -116,13 +150,7 @@ class _WebPrivacyPolicy extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0A000000),
-                    offset: Offset(0, 4),
-                    blurRadius: 20,
-                  ),
-                ],
+                boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +166,7 @@ class _WebPrivacyPolicy extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Last updated: March 1, 2026",
+                    "Last updated: January 1, 2025",
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF94A3B8),
@@ -148,22 +176,7 @@ class _WebPrivacyPolicy extends StatelessWidget {
                   const SizedBox(height: 32),
                   const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
                   const SizedBox(height: 32),
-                  _buildSection(
-                    "Introduction",
-                    "Lorem ipsum dolor sit amet consectetur adipiscing, elit congue nisi rutrum platea lacinia sapien, sed vel cras torquent scelerisque. Tempus pharetra quam congue natoque aptent sollicitudin et bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                  ),
-                  _buildSection(
-                    "Information We Collect",
-                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant.",
-                  ),
-                  _buildSection(
-                    "How We Use Your Information",
-                    "Lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar. Inceptos phasellus magnis.",
-                  ),
-                  _buildSection(
-                    "Data Security",
-                    "Inceptos phasellus magnis netus at primis sodales torquent cras, lacus potenti habitant lobortis aliquam turpis risus enim, cubilia natoque ligula aenean gravida nascetur curae.bibendum ullamcorper fames facilisis urna, ac tempor arcu ridiculus proin etiam diam taciti vivamus id pulvinar.",
-                  ),
+                  ..._sections.map((s) => _buildSection(s[0], s[1])),
                 ],
               ),
             ),
