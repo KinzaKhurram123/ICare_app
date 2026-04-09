@@ -671,20 +671,83 @@ class CustomDrawer extends ConsumerWidget {
                         ),
                       ),
 
-                      _drawerActionItem(
-                        context,
-                        'Book Appointment',
-                        const Color(0xFF6366F1),
-                        Icons.calendar_month_rounded,
-                        () {},
-                      ),
-                      _drawerActionItem(
-                        context,
-                        'View Lab Reports',
-                        const Color(0xFF0EA5E9),
-                        Icons.science_rounded,
-                        () {},
-                      ),
+                      // Role-specific quick actions
+                      if (selectedRole == 'Patient') ...[
+                        _drawerActionItem(
+                          context,
+                          'Book Appointment',
+                          const Color(0xFF6366F1),
+                          Icons.calendar_month_rounded,
+                          () {},
+                        ),
+                        _drawerActionItem(
+                          context,
+                          'View Lab Reports',
+                          const Color(0xFF0EA5E9),
+                          Icons.science_rounded,
+                          () {},
+                        ),
+                      ] else if (selectedRole == 'Laboratory') ...[
+                        _drawerActionItem(
+                          context,
+                          'Test Requests',
+                          const Color(0xFF6366F1),
+                          Icons.pending_actions_rounded,
+                          () {},
+                        ),
+                        _drawerActionItem(
+                          context,
+                          'Upload Reports',
+                          const Color(0xFF0EA5E9),
+                          Icons.upload_file_rounded,
+                          () {},
+                        ),
+                      ] else if (selectedRole == 'Pharmacy') ...[
+                        _drawerActionItem(
+                          context,
+                          'Incoming Prescriptions',
+                          const Color(0xFF10B981),
+                          Icons.receipt_long_rounded,
+                          () {},
+                        ),
+                        _drawerActionItem(
+                          context,
+                          'Manage Inventory',
+                          const Color(0xFFF59E0B),
+                          Icons.inventory_2_rounded,
+                          () {},
+                        ),
+                      ] else if (selectedRole == 'Instructor') ...[
+                        _drawerActionItem(
+                          context,
+                          'Manage Courses',
+                          const Color(0xFF8B5CF6),
+                          Icons.school_rounded,
+                          () {},
+                        ),
+                        _drawerActionItem(
+                          context,
+                          'My Learners',
+                          const Color(0xFF0EA5E9),
+                          Icons.people_rounded,
+                          () {},
+                        ),
+                      ] else if (selectedRole == 'Doctor') ...[
+                        _drawerActionItem(
+                          context,
+                          'My Appointments',
+                          const Color(0xFF6366F1),
+                          Icons.calendar_month_rounded,
+                          () {},
+                        ),
+                        _drawerActionItem(
+                          context,
+                          'Patient Records',
+                          const Color(0xFF0EA5E9),
+                          Icons.folder_shared_rounded,
+                          () {},
+                        ),
+                      ],
 
                       const Padding(
                         padding: EdgeInsets.symmetric(

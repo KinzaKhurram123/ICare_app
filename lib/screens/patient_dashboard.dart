@@ -63,8 +63,8 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
       List<dynamic> programs = [];
       try {
         programs = await _courseService.myPurchases();
-      } catch (e) {
-        print('Error fetching assigned programs: $e');
+      } catch (_) {
+        // Silently handle — programs section stays empty
       }
 
       if (appointmentsResult['success']) {

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:icare/screens/my_cart.dart';
-import 'package:icare/screens/order_tracking.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_tab_button.dart';
@@ -163,49 +161,27 @@ List<Widget> _instructorTabs(
 ) {
   return [
     CustomTabButton(
-      onPressed: () {
-        onSelect(0);
-      },
-      iconColor: currentIndex == 0
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
+      onPressed: () => onSelect(0),
+      iconColor: currentIndex == 0 ? AppColors.primaryColor : AppColors.grayColor,
       image: ImagePaths.home,
-      title: "Home",
+      title: "Dashboard",
     ),
     CustomTabButton(
-      onPressed: () {
-        // _selectPage(1);
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (ctx) => MyCartScreen()));
-      },
-      iconColor: currentIndex == 1
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.cart2,
-      title: "Cart",
+      onPressed: () => onSelect(1),
+      iconColor: currentIndex == 1 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.bookings,
+      title: "Courses",
     ),
     SizedBox(width: 20),
     CustomTabButton(
-      onPressed: () {
-        // _selectPage(2);
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (ctx) => OrderTrackingScreen()));
-      },
-      iconColor: currentIndex == 2
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.track,
-      title: "track",
+      onPressed: () => onSelect(2),
+      iconColor: currentIndex == 2 ? AppColors.primaryColor : AppColors.grayColor,
+      image: ImagePaths.chat,
+      title: "Chat",
     ),
     CustomTabButton(
-      onPressed: () {
-        onSelect(3);
-      },
-      iconColor: currentIndex == 3
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
+      onPressed: () => onSelect(3),
+      iconColor: currentIndex == 3 ? AppColors.primaryColor : AppColors.grayColor,
       image: ImagePaths.profile2,
       title: "Profile",
     ),

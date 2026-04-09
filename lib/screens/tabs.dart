@@ -102,7 +102,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(authProvider).userRole;
-    print("📱 TabsScreen: Building with role = '$role'");
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -141,12 +140,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = ProfileScreen();
       }
     } else if (role == "Instructor") {
-      if (currentIndex == 2) {
+      if (currentIndex == 0) {
+        activePage = const InstructorDashboardScreen();
+      } else if (currentIndex == 1) {
+        activePage = const InstructorCoursesManagement();
+      } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
-      } else {
-        activePage = const HomeScreen();
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
