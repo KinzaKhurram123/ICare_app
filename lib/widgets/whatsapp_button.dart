@@ -24,17 +24,22 @@ class WhatsAppFloatingButton extends StatelessWidget {
         _showError(context, 'Unable to open WhatsApp. Please try again.');
       }
     } catch (_) {
-      _showError(context, 'Error opening WhatsApp. Please check your connection.');
+      _showError(
+        context,
+        'Error opening WhatsApp. Please check your connection.',
+      );
     }
   }
 
   void _showError(BuildContext context, String message) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
