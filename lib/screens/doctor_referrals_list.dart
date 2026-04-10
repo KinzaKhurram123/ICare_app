@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:icare/models/user.dart';
 import 'package:icare/models/referral.dart';
 import 'package:icare/services/referral_service.dart';
+import 'package:icare/services/patient_service.dart'; 
 import 'package:icare/screens/create_referral_screen.dart';
 import 'package:icare/screens/referral_detail_screen.dart';
 import 'package:icare/utils/theme.dart';
@@ -18,18 +20,38 @@ class DoctorReferralsListScreen extends StatefulWidget {
 class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
     with SingleTickerProviderStateMixin {
   final ReferralService _referralService = ReferralService();
+  final PatientService _patientService = PatientService();
   late TabController _tabController;
 
   List<Referral> _sentReferrals = [];
   List<Referral> _receivedReferrals = [];
   bool _isLoadingSent = true;
   bool _isLoadingReceived = true;
+  List<User> _patients = [];
+  bool _isLoadingPatients = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadReferrals();
+    _loadPatients();
+  }
+
+  Future<void> _loadPatients() async {
+    setState(() => _isLoadingPatients = true);
+    try {
+      // Fetch patients list - adjust based on your API
+      final result = await _patientService.getMyPatients();
+      if (result['success']) {
+        setState(() {
+          _patients = result['patients'];
+        });
+      }
+    } catch (e) {
+      print('Error loading patients: $e');
+    }
+    setState(() => _isLoadingPatients = false);
   }
 
   Future<void> _loadReferrals() async {
@@ -58,6 +80,100 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
       });
     } else {
       setState(() => _isLoadingReceived = false);
+    }
+  }
+
+  Future<void> _showPatientSelectionDialog() async {
+    if (_patients.isEmpty) {
+      // Show message if no patients
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No patients found. Please add patients first.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Select Patient',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _patients.length,
+                  itemBuilder: (context, index) {
+                    final patient = _patients[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                        child: Text(
+                          patient.name.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        patient.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(patient.email),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _navigateToCreateReferral(patient);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _navigateToCreateReferral(User patient) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateReferralScreen(
+          patient: patient,
+          appointmentId: null, // Optional, can be null
+        ),
+      ),
+    );
+    if (result == true) {
+      _loadReferrals();
     }
   }
 
@@ -100,7 +216,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        color: AppColors.primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -129,7 +245,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -153,21 +269,18 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
         children: [_buildSentReferralsTab(), _buildReceivedReferralsTab()],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateReferralScreen(
-                patient: null, // Will need to select patient
-              ),
-            ),
-          );
-          if (result == true) {
-            _loadReferrals();
-          }
-        },
+        onPressed: _isLoadingPatients ? null : _showPatientSelectionDialog,
         backgroundColor: AppColors.primaryColor,
-        icon: const Icon(Icons.add),
+        icon: _isLoadingPatients
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Icon(Icons.add),
         label: const Text('New Referral'),
       ),
     );
@@ -260,10 +373,10 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+        border: Border.all(color: statusColor.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -296,7 +409,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
+                        color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -342,7 +455,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
+                        color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'api_service.dart';
 import 'api_config.dart';
+import 'package:flutter/foundation.dart';
 
 class UserService {
   final ApiService _apiService = ApiService();

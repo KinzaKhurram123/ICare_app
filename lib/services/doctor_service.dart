@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'api_service.dart';
+import 'package:flutter/foundation.dart';
 
 class DoctorService {
   final ApiService _apiService = ApiService();

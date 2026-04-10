@@ -1,5 +1,5 @@
 import 'package:icare/services/api_service.dart';
-
+import 'package:flutter/foundation.dart';
 class GamificationService {
   final ApiService _apiService = ApiService();
 

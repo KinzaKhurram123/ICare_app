@@ -9,7 +9,7 @@ import 'package:icare/widgets/back_button.dart';
 class CreateReferralScreen extends StatefulWidget {
   final User patient;
   final String? appointmentId;
-
+  
   const CreateReferralScreen({
     super.key,
     required this.patient,

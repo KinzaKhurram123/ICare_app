@@ -143,7 +143,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (currentIndex == 0) {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
-        activePage = const InstructorCoursesManagement();
+        activePage = const InstructorCoursesManagementScreen();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
@@ -257,12 +257,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           ],
         ),
         drawer: CustomDrawer(),
-        body: Stack(
-          children: [
-            activePage,
-            const WhatsAppFloatingButton(),
-          ],
-        ),
+        body: Stack(children: [activePage, const WhatsAppFloatingButton()]),
         bottomNavigationBar: BottomTabBar(
           tabs: buildTabs(
             role: role,
@@ -366,17 +361,37 @@ class _WebSidebar extends ConsumerWidget {
       items = <_SidebarItem>[];
     } else if (role == 'Instructor') {
       items = [
-        _SidebarItem(icon: Icons.dashboard_rounded, label: 'Dashboard', index: 0),
+        _SidebarItem(
+          icon: Icons.dashboard_rounded,
+          label: 'Dashboard',
+          index: 0,
+        ),
         _SidebarItem(icon: Icons.school_rounded, label: 'Courses', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
+        _SidebarItem(
+          icon: Icons.chat_bubble_rounded,
+          label: 'Messages',
+          index: 2,
+        ),
         _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
       ];
     } else if (role == 'Patient') {
       items = [
         _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'Appointments', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
-        _SidebarItem(icon: Icons.health_and_safety_rounded, label: 'Health Programs', index: 4),
+        _SidebarItem(
+          icon: Icons.calendar_month_rounded,
+          label: 'Appointments',
+          index: 1,
+        ),
+        _SidebarItem(
+          icon: Icons.chat_bubble_rounded,
+          label: 'Messages',
+          index: 2,
+        ),
+        _SidebarItem(
+          icon: Icons.health_and_safety_rounded,
+          label: 'Health Programs',
+          index: 4,
+        ),
         _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
       ];
     } else {

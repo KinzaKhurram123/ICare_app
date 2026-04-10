@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../utils/shared_pref.dart';
 import 'api_config.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:icare/utils/api_constants.dart';
 import 'package:icare/utils/shared_pref.dart';
+import 'package:flutter/foundation.dart';
 
 class ReminderService {
   final Dio _dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));

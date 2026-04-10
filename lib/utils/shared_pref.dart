@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:icare/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class SharedPref {
   // Singleton
@@ -8,32 +9,21 @@ class SharedPref {
   factory SharedPref() => _instance;
   SharedPref._internal();
 
-  SharedPreferencesWithCache? _cache;
+  SharedPreferences? _prefs;
 
-  Future<SharedPreferencesWithCache> get _prefs async {
-    _cache ??= await SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{
-          'auth',
-          'userData',
-          'token',
-          'userRole',
-          'walkthrough',
-        },
-      ),
-    );
-    return _cache!;
+  Future<SharedPreferences> get prefs async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
   }
 
   Future<void> setUserData(User userData) async {
-    final SharedPreferencesWithCache pref = await _prefs;
-    String userJson = jsonEncode(userData);
+    final SharedPreferences pref = await prefs;
+    String userJson = jsonEncode(userData.toJson());
     await pref.setString('userData', userJson);
   }
 
-  /// Get user data (returns Map or null)
   Future<User?> getUserData() async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     String? userJson = pref.getString('userData');
     if (userJson != null) {
       final map = jsonDecode(userJson);
@@ -42,53 +32,57 @@ class SharedPref {
     return null;
   }
 
-  /// Set authentication token
   Future<void> setToken(String token) async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     await pref.setString('token', token);
+    debugPrint('✅ Token saved: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
   }
 
-  /// Get authentication token
   Future<String?> getToken() async {
-    final SharedPreferencesWithCache pref = await _prefs;
-    return pref.getString('token');
+    final SharedPreferences pref = await prefs;
+    final token = pref.getString('token');
+    debugPrint('🔑 Token retrieved: ${token != null ? "Yes (length: ${token.length})" : "No"}');
+    return token;
   }
 
   Future<void> setUserWalkthrough(bool value) async {
-    final SharedPreferencesWithCache pref = await _prefs;
-    print("walkthrough == > " + value.toString());
+    final SharedPreferences pref = await prefs;
+    debugPrint("Walkthrough saved: $value");
     await pref.setBool("walkthrough", value);
   }
 
   Future<bool?> getUserWalkthrough() async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     return pref.getBool("walkthrough");
   }
 
   Future<void> setUserRole(String value) async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     await pref.setString("userRole", value);
+    debugPrint("User role saved: $value");
   }
 
   Future<String?> getUserRole() async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     return pref.getString("userRole");
   }
 
   Future<void> remove(String key) async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     await pref.remove(key);
+    debugPrint("Removed key: $key");
   }
 
-  /// Clear all stored preferences
   Future<void> clearAll() async {
-    final SharedPreferencesWithCache pref = await _prefs;
+    final SharedPreferences pref = await prefs;
     await pref.clear();
+    debugPrint("All shared preferences cleared");
   }
 
-  /// Check if user is logged in (based on token existence)
   Future<bool> isLoggedIn() async {
-    final SharedPreferencesWithCache pref = await _prefs;
-    return pref.containsKey('token');
+    final SharedPreferences pref = await prefs;
+    final hasToken = pref.containsKey('token');
+    debugPrint("Is logged in: $hasToken");
+    return hasToken;
   }
 }

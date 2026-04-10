@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:icare/models/appointment.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/services/api_service.dart';
-
+import 'package:flutter/foundation.dart';
 class AppointmentService {
   final ApiService _apiService = ApiService();
 
