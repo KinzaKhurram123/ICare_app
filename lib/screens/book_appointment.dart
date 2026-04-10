@@ -101,7 +101,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
       return '$hour:$minute $period';
     } catch (e) {
-      print('Error parsing time: $time, error: $e');
+      debugPrint('Error parsing time: $time, error: $e');
       return time;
     }
   }

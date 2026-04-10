@@ -53,7 +53,7 @@ class _SelectTestState extends State<SelectTest> {
         });
       }
     } catch (e) {
-      print('Error fetching lab tests: $e');
+      debugPrint('Error fetching lab tests: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

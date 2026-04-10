@@ -13,7 +13,7 @@ class StudentService {
       );
       return response.data;
     } catch (e) {
-      print('Error updating student profile: $e');
+      debugPrint('Error updating student profile: $e');
       rethrow;
     }
   }
@@ -24,7 +24,7 @@ class StudentService {
       final response = await _apiService.get('/students/me');
       return response.data;
     } catch (e) {
-      print('Error getting student profile: $e');
+      debugPrint('Error getting student profile: $e');
       rethrow;
     }
   }
@@ -35,7 +35,7 @@ class StudentService {
       final response = await _apiService.get('/students/get_all_students');
       return response.data['students'];
     } catch (e) {
-      print('Error getting all students: $e');
+      debugPrint('Error getting all students: $e');
       rethrow;
     }
   }
@@ -46,7 +46,7 @@ class StudentService {
       final response = await _apiService.get('/students/$id');
       return response.data['student'];
     } catch (e) {
-      print('Error getting student by id: $e');
+      debugPrint('Error getting student by id: $e');
       rethrow;
     }
   }

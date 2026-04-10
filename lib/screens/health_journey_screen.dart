@@ -50,7 +50,7 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load health journey: $e')),
+          SnackBar(content: const Text('Unable to load data. Please try again.')),
         );
       }
     }

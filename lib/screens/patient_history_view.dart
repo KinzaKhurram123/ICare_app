@@ -430,7 +430,7 @@ class _PatientHistoryViewState extends State<PatientHistoryView>
                   onTap: () {
                     // Logic to view the reportUrl (e.g. open in browser or PDF viewer)
                     // ignore: avoid_print
-                    print("Opening Report URL: ${report['url']}");
+                    debugPrint("Opening Report URL: ${report['url']}");
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(

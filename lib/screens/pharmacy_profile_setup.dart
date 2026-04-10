@@ -64,7 +64,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading profile: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -101,7 +101,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     } finally {
       setState(() => _isSaving = false);

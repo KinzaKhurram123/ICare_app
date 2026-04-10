@@ -99,7 +99,7 @@ class _InstructorAssignCourseScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to assign course: $e'),
+            content: const Text('Login failed. Please check your credentials.'),
             backgroundColor: Colors.red,
           ),
         );

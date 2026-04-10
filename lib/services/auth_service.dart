@@ -8,43 +8,58 @@ class AuthService {
   final ApiService _apiService = ApiService();
   final SharedPref _sharedPref = SharedPref();
 
+  // Hostinger backend expects: Patient, Doctor, Pharmacy, Laboratory etc
+  String _capitalizeRole(String role) {
+    if (role.isEmpty) return role;
+    return role[0].toUpperCase() + role.substring(1).toLowerCase();
+  }
+
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
     required String role,
     String? phoneNumber,
-    String? licenseNumber,
-    String? location,
-    String? organizationName,
-    String? credentials,
   }) async {
     try {
-      final response = await _apiService.post(ApiConfig.register, {
-        'name': name,
-        'email': email,
-        'password': password,
-        'role': role,
-        'phoneNumber': phoneNumber ?? '0000000000',
-        if (licenseNumber != null) 'licenseNumber': licenseNumber,
-        if (location != null) 'location': location,
-        if (organizationName != null) 'organizationName': organizationName,
-        if (credentials != null) 'credentials': credentials,
-      });
-
-      if (response.statusCode == 201) {
-        final data = response.data;
-        if (data['token'] != null) {
-          await _saveToken(data['token']);
+      Response? response;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          response = await _apiService.post(
+            ApiConfig.register,
+            {
+              'name': name,
+              'email': email,
+              'password': password,
+              'role': _capitalizeRole(role),
+              'phone': phoneNumber ?? '',
+            },
+          );
+          break;
+        } on DioException catch (e) {
+          if (attempt == 3 || !_isNetworkError(e)) rethrow;
+          await Future.delayed(const Duration(seconds: 5));
         }
-        return {'success': true, 'data': data};
       }
-      return {'success': false, 'message': 'Registration failed'};
+
+      final res = response!;
+      if (res.statusCode == 201 || res.statusCode == 200) {
+        final data = res.data as Map<String, dynamic>;
+        final token = data['token']?.toString() ??
+            data['data']?['token']?.toString() ?? '';
+        if (token.isNotEmpty) await _saveToken(token);
+        return {
+          'success': true,
+          'data': data,
+          'message': data['message'] ?? 'Registration successful',
+        };
+      }
+      final msg = (res.data as Map?)?['message']?.toString() ?? 'Registration failed';
+      return {'success': false, 'message': msg};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'Network error',
-      };
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 
@@ -53,34 +68,71 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await _apiService.post(ApiConfig.login, {
-        'email': email,
-        'password': password,
-      });
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        await _saveToken(data['token']);
-        await _saveUserData(data);
-        // Send FCM token to backend after successful login
-        FcmService().getAndSaveToken();
-        return {'success': true, 'data': data};
+      Response? response;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          response = await _apiService.post(
+            ApiConfig.login,
+            {'email': email, 'password': password},
+          );
+          break;
+        } on DioException catch (e) {
+          if (attempt == 3 || !_isNetworkError(e)) rethrow;
+          await Future.delayed(const Duration(seconds: 5));
+        }
       }
-      return {'success': false, 'message': 'Login failed'};
+
+      final res = response!;
+      if (res.statusCode == 200) {
+        final data = res.data as Map<String, dynamic>;
+        // Hostinger returns token at top level, Vercel inside data
+        final inner = data['data'] ?? data;
+        final token = inner['token']?.toString() ?? data['token']?.toString() ?? '';
+        if (token.isEmpty) {
+          return {'success': false, 'message': 'No token received from server'};
+        }
+        await _saveToken(token);
+        FcmService().getAndSaveToken();
+        return {
+          'success': true,
+          'data': inner is Map ? inner : data,
+          'message': data['message'] ?? 'Login successful',
+        };
+      }
+      final msg = (res.data as Map?)?['message']?.toString() ?? 'Login failed (${res.statusCode})';
+      return {'success': false, 'message': msg};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'Network error',
-      };
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
+  }
+
+  String _friendlyError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+        return 'Connection timed out. Please try again.';
+      case DioExceptionType.receiveTimeout:
+        return 'Server took too long to respond. Please try again.';
+      case DioExceptionType.connectionError:
+        return 'Cannot reach server. Please check your internet connection.';
+      default:
+        final msg = (e.response?.data as Map?)?['message']?.toString();
+        return msg ?? 'Network error. Please try again.';
+    }
+  }
+
+  bool _isNetworkError(DioException e) {
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.connectionError ||
+        e.response == null;
   }
 
   Future<void> _saveToken(String token) async {
     await _sharedPref.setToken(token);
-  }
-
-  Future<void> _saveUserData(Map<String, dynamic> userData) async {
-    // User data is saved through auth provider, keeping this for compatibility
   }
 
   Future<String?> getToken() async {
@@ -95,45 +147,29 @@ class AuthService {
 
   Future<Map<String, dynamic>> forgotPassword({required String email}) async {
     try {
-      final response = await _apiService.post(ApiConfig.forgetPassword, {
-        'email': email,
-      });
-
+      final response = await _apiService.post(ApiConfig.forgetPassword, {'email': email});
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': 'OTP sent to your email',
-          'otp': response.data['otp'], // For testing
-        };
+        return {'success': true, 'message': 'OTP sent to your email', 'otp': response.data['otp']};
       }
       return {'success': false, 'message': 'Failed to send OTP'};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['error'] ?? 'Network error',
-      };
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (_) {
+      return {'success': false, 'message': 'Unexpected error. Please try again.'};
     }
   }
 
-  Future<Map<String, dynamic>> verifyOTP({
-    required String email,
-    required String code,
-  }) async {
+  Future<Map<String, dynamic>> verifyOTP({required String email, required String code}) async {
     try {
-      final response = await _apiService.post(ApiConfig.checkOTP, {
-        'email': email,
-        'code': code,
-      });
-
+      final response = await _apiService.post(ApiConfig.checkOTP, {'email': email, 'code': code});
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'OTP verified successfully'};
       }
       return {'success': false, 'message': 'Invalid OTP'};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['error'] ?? 'Network error',
-      };
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (_) {
+      return {'success': false, 'message': 'Unexpected error. Please try again.'};
     }
   }
 
@@ -148,16 +184,69 @@ class AuthService {
         'password': password,
         'confirmpassword': confirmPassword,
       });
-
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'Password reset successfully'};
       }
       return {'success': false, 'message': 'Failed to reset password'};
     } on DioException catch (e) {
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (_) {
+      return {'success': false, 'message': 'Unexpected error. Please try again.'};
+    }
+  }
+
+  // Email verification
+  Future<Map<String, dynamic>> verifyEmail(String token) async {
+    try {
+      final response = await _apiService.post(
+        '${ApiConfig.baseUrl}/auth/verify-email',
+        {'token': token},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        return {
+          'success': data['success'] ?? true,
+          'message': data['message'] ?? 'Email verified successfully',
+          'data': data['user'],
+        };
+      }
+
       return {
         'success': false,
-        'message': e.response?.data['error'] ?? 'Network error',
+        'message': (response.data as Map?)?['message'] ?? 'Verification failed',
       };
+    } on DioException catch (e) {
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
+    }
+  }
+
+  // Resend verification email
+  Future<Map<String, dynamic>> resendVerificationEmail(String email) async {
+    try {
+      final response = await _apiService.post(
+        '${ApiConfig.baseUrl}/auth/resend-verification',
+        {'email': email},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+        return {
+          'success': data['success'] ?? true,
+          'message': data['message'] ?? 'Verification email sent',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': (response.data as Map?)?['message'] ?? 'Failed to send email',
+      };
+    } on DioException catch (e) {
+      return {'success': false, 'message': _friendlyError(e)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 }

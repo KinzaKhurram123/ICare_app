@@ -12,7 +12,7 @@ import 'dart:async';
 import 'package:icare/screens/lab_supplies_management.dart';
 import 'package:icare/services/lab_supply_service.dart';
 import 'package:icare/utils/error_handler.dart';
-import 'package:icare/screens/my_appointments_list.dart';
+// import removed: my_appointments_list (patient feature, not relevant to lab);
 
 class LaboratoryDashboard extends StatefulWidget {
   const LaboratoryDashboard({super.key});
@@ -722,16 +722,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   Icons.task_alt_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'My Appointments',
-                  Icons.calendar_month_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => MyAppointmentsListScreen(),
-                    ),
                   ),
                   isMobile,
                 ),

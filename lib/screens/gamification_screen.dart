@@ -52,7 +52,7 @@ class _GamificationScreenState extends State<GamificationScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading stats: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -72,7 +72,7 @@ class _GamificationScreenState extends State<GamificationScreen>
       setState(() => _isLoadingLeaderboard = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading leaderboard: $e')),
+          SnackBar(content: const Text('Unable to load data. Please try again.')),
         );
       }
     }

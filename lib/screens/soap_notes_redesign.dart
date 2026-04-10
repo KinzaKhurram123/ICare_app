@@ -140,7 +140,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
         }
       }
     } catch (e) {
-      print('Error loading SOAP data: $e');
+      debugPrint('Error loading SOAP data: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -195,7 +195,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
                 Navigator.pop(ctx);
                 _loadData();
               } catch (e) {
-                print('Addendum error: $e');
+                debugPrint('Addendum error: $e');
               }
             },
             child: const Text('Sign & Add'),
@@ -251,7 +251,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -285,7 +285,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
           });
         }
       },
-      onError: (val) => print('onError: $val'),
+      onError: (val) => debugPrint('onError: $val'),
     );
 
     if (available) {

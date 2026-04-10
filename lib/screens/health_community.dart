@@ -47,7 +47,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading community posts: $e');
+      debugPrint('Error loading community posts: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -386,7 +386,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                       if (mounted)
                         ScaffoldMessenger.of(
                           context,
-                        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
                     }
                   },
                 ),
@@ -803,7 +803,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         setState(() => _isPosting = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
       }
     }
   }

@@ -132,7 +132,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
                     Navigator.pop(ctx);
                     _fetchPosts();
                   } catch (e) {
-                    print('Post creation error: $e');
+                    debugPrint('Post creation error: $e');
                   }
                 },
               ),
@@ -411,7 +411,7 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
         });
       });
     } catch (e) {
-      print('Comment error: $e');
+      debugPrint('Comment error: $e');
     }
   }
 

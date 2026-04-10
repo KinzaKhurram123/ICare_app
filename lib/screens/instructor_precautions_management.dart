@@ -38,7 +38,7 @@ class _InstructorPrecautionsManagementScreenState
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading health tips: $e')),
+          SnackBar(content: const Text('Unable to load data. Please try again.')),
         );
       }
     }
@@ -77,7 +77,7 @@ class _InstructorPrecautionsManagementScreenState
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error deleting: $e')));
+          ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
         }
       }
     }

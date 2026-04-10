@@ -1,84 +1,53 @@
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:icare/utils/imagePaths.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _opacity = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bool isWeb = kIsWeb && screenWidth > 900;
+    final isDesktop = screenWidth >= 1920;
+    final logoSize = isDesktop ? 180.0 : 130.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Cinematic high-resolution web background with fallback
-          Image.asset(
-            isWeb ? "assets/images/web_splash.jpeg" : "assets/images/splash.jpg",
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                "assets/images/bgImage.jpeg",
-                fit: BoxFit.cover,
-              );
-            },
+      body: Center(
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, child) => Opacity(opacity: _opacity.value, child: child),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(ImagePaths.logo, width: logoSize, height: logoSize, fit: BoxFit.contain),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0036BC)),
+                strokeWidth: 3,
+              ),
+            ]
           ),
-          // Clean professional logo center
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: isWeb ? 160 : 100,
-                  height: isWeb ? 160 : 100,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 30,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                if (isWeb) ...[
-                  const SizedBox(height: 32),
-                  const Text(
-                    "iCare Virtual Hospital",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                      fontFamily: "Gilroy-Bold",
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Clinical Ecosystem • Secure Care • Expert Consultation",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

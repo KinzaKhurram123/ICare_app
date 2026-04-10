@@ -102,7 +102,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(authProvider).userRole;
-    print("📱 TabsScreen: Building with role = '$role'");
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -141,12 +140,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = ProfileScreen();
       }
     } else if (role == "Instructor") {
-      if (currentIndex == 2) {
+      if (currentIndex == 0) {
+        activePage = const InstructorDashboardScreen();
+      } else if (currentIndex == 1) {
+        activePage = const InstructorCoursesManagement();
+      } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
         activePage = ProfileScreen();
-      } else {
-        activePage = const HomeScreen();
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -360,50 +361,64 @@ class _WebSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print("🎨 _WebSidebar: Building with role = '$role'");
-
-    final items = (role == 'Admin')
-        ? <_SidebarItem>[] // Admin items are handled separately below
-        : [
-            _SidebarItem(
-              icon: Icons.home_rounded,
-              label: role == 'Student' ? 'Student Dashboard' : 'Home',
-              index: 0,
-            ),
-            _SidebarItem(
-              icon: role == 'Pharmacy'
-                  ? Icons.receipt_long_rounded
-                  : (role == 'Laboratory'
-                        ? Icons.list_alt_rounded
-                        : (role == 'Student'
-                              ? Icons.school_rounded
-                              : Icons.calendar_month_rounded)),
-              label: role == 'Pharmacy'
-                  ? 'Prescriptions'
-                  : (role == 'Laboratory'
-                        ? 'Requests'
-                        : (role == 'Student'
-                              ? 'Course Catalog'
-                              : 'Appointments')),
-              index: 1,
-            ),
-            _SidebarItem(
-              icon: role == 'Pharmacy'
-                  ? Icons.inventory_2_rounded
-                  : (role == 'Laboratory'
-                        ? Icons.science_rounded
-                        : Icons.chat_bubble_rounded),
-              label: role == 'Pharmacy'
-                  ? 'Inventory'
-                  : (role == 'Laboratory' ? 'Lab Reports' : 'Messages'),
-              index: 2,
-            ),
-            _SidebarItem(
-              icon: Icons.person_rounded,
-              label: role == 'Student' ? 'My Account' : 'My Profile',
-              index: 3,
-            ),
-          ];
+    final List<_SidebarItem> items;
+    if (role == 'Admin') {
+      items = <_SidebarItem>[];
+    } else if (role == 'Instructor') {
+      items = [
+        _SidebarItem(icon: Icons.dashboard_rounded, label: 'Dashboard', index: 0),
+        _SidebarItem(icon: Icons.school_rounded, label: 'Courses', index: 1),
+        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
+        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
+      ];
+    } else if (role == 'Patient') {
+      items = [
+        _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
+        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'Appointments', index: 1),
+        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
+        _SidebarItem(icon: Icons.health_and_safety_rounded, label: 'Health Programs', index: 4),
+        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
+      ];
+    } else {
+      items = [
+        _SidebarItem(
+          icon: Icons.home_rounded,
+          label: role == 'Student' ? 'Learning Dashboard' : 'Home',
+          index: 0,
+        ),
+        _SidebarItem(
+          icon: role == 'Pharmacy'
+              ? Icons.receipt_long_rounded
+              : (role == 'Laboratory'
+                    ? Icons.list_alt_rounded
+                    : (role == 'Student'
+                          ? Icons.school_rounded
+                          : Icons.calendar_month_rounded)),
+          label: role == 'Pharmacy'
+              ? 'Prescriptions'
+              : (role == 'Laboratory'
+                    ? 'Test Requests'
+                    : (role == 'Student' ? 'My Programs' : 'Appointments')),
+          index: 1,
+        ),
+        _SidebarItem(
+          icon: role == 'Pharmacy'
+              ? Icons.inventory_2_rounded
+              : (role == 'Laboratory'
+                    ? Icons.upload_file_rounded
+                    : Icons.chat_bubble_rounded),
+          label: role == 'Pharmacy'
+              ? 'Inventory'
+              : (role == 'Laboratory' ? 'Upload Reports' : 'Messages'),
+          index: 2,
+        ),
+        _SidebarItem(
+          icon: Icons.person_rounded,
+          label: role == 'Student' ? 'My Account' : 'My Profile',
+          index: 3,
+        ),
+      ];
+    }
 
     List<_SidebarAction> actions = [];
     if (role == 'Student') {

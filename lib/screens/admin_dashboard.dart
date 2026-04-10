@@ -43,7 +43,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         });
       }
     } catch (e) {
-      print('Error fetching users: $e');
+      debugPrint('Error fetching users: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -79,7 +79,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         _fetchUsers();
       }
     } catch (e) {
-      print('Error approving user: $e');
+      debugPrint('Error approving user: $e');
     }
   }
 
@@ -101,7 +101,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         _fetchUsers();
       }
     } catch (e) {
-      print('Error rejecting user: $e');
+      debugPrint('Error rejecting user: $e');
     }
   }
 
@@ -448,7 +448,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                   setState(() => _isLoading = false);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Failed to create user: $e'),
+                      content: const Text('Unable to complete action. Please try again.'),
                       backgroundColor: Colors.red,
                     ),
                   );

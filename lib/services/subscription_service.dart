@@ -11,7 +11,7 @@ class SubscriptionService {
       }
       return [];
     } catch (e) {
-      print('Error getting plans: $e');
+      debugPrint('Error getting plans: $e');
       return [];
     }
   }
@@ -24,7 +24,7 @@ class SubscriptionService {
       }
       return null;
     } catch (e) {
-      print('Error getting subscription: $e');
+      debugPrint('Error getting subscription: $e');
       return null;
     }
   }
@@ -42,7 +42,7 @@ class SubscriptionService {
       });
       return response.data;
     } catch (e) {
-      print('Error subscribing: $e');
+      debugPrint('Error subscribing: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -54,7 +54,7 @@ class SubscriptionService {
       });
       return response.data;
     } catch (e) {
-      print('Error cancelling subscription: $e');
+      debugPrint('Error cancelling subscription: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

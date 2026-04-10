@@ -8,7 +8,7 @@ class GamificationService {
       final response = await _apiService.get('/gamification/my-stats');
       return response.data;
     } catch (e) {
-      print('Error getting gamification stats: $e');
+      debugPrint('Error getting gamification stats: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -24,7 +24,7 @@ class GamificationService {
       });
       return response.data;
     } catch (e) {
-      print('Error awarding points: $e');
+      debugPrint('Error awarding points: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -37,7 +37,7 @@ class GamificationService {
       }
       return [];
     } catch (e) {
-      print('Error getting leaderboard: $e');
+      debugPrint('Error getting leaderboard: $e');
       return [];
     }
   }

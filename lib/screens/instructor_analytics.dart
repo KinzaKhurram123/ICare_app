@@ -59,7 +59,7 @@ class _InstructorAnalyticsState extends ConsumerState<InstructorAnalytics> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

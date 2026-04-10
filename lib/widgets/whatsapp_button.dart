@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class WhatsAppFloatingButton extends StatelessWidget {
-  static const String phoneNumber = '923333646229';
+  static const String phoneNumber = '923068961564';
   static const String defaultMessage =
       'Hello! I would like to inquire about your services.';
 
@@ -24,17 +24,22 @@ class WhatsAppFloatingButton extends StatelessWidget {
         _showError(context, 'Unable to open WhatsApp. Please try again.');
       }
     } catch (_) {
-      _showError(context, 'Error opening WhatsApp. Please check your connection.');
+      _showError(
+        context,
+        'Error opening WhatsApp. Please check your connection.',
+      );
     }
   }
 
   void _showError(BuildContext context, String message) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

@@ -1,69 +1,121 @@
-import 'user.dart';
-
 class Referral {
   final String id;
-  final User patient;
-  final User referringDoctor;
-  final User? referredToDoctor;
-  final String reason;
-  final String? clinicalNotes;
-  final List<String> attachedRecords;
-  final String status; // pending, accepted, completed, declined
+  final String patientId;
+  final String referringDoctorId;
+  final String? specialistDoctorId;
+  final String consultationId;
+  final ReferralStatus status;
+
+  // Referral details
+  final String specialtyRequired;
+  final String reasonForReferral;
+  final String clinicalSummary;
+  final String urgency;
+
+  // Documents
+  final List<String> attachedDocuments;
+
+  // Specialist response
+  final String? specialistNotes;
+  final DateTime? specialistAcceptedAt;
+  final DateTime? specialistRejectedAt;
+  final String? rejectionReason;
+
+  // Appointment
+  final String? appointmentId;
+  final DateTime? appointmentDate;
+
+  // Timestamps
   final DateTime createdAt;
-  final DateTime? acceptedAt;
   final DateTime? completedAt;
-  final String? declineReason;
-  final String? consultationSummary;
 
   Referral({
     required this.id,
-    required this.patient,
-    required this.referringDoctor,
-    this.referredToDoctor,
-    required this.reason,
-    this.clinicalNotes,
-    this.attachedRecords = const [],
+    required this.patientId,
+    required this.referringDoctorId,
+    this.specialistDoctorId,
+    required this.consultationId,
     required this.status,
+    required this.specialtyRequired,
+    required this.reasonForReferral,
+    required this.clinicalSummary,
+    required this.urgency,
+    required this.attachedDocuments,
+    this.specialistNotes,
+    this.specialistAcceptedAt,
+    this.specialistRejectedAt,
+    this.rejectionReason,
+    this.appointmentId,
+    this.appointmentDate,
     required this.createdAt,
-    this.acceptedAt,
     this.completedAt,
-    this.declineReason,
-    this.consultationSummary,
   });
 
   factory Referral.fromJson(Map<String, dynamic> json) {
     return Referral(
       id: json['_id'] ?? '',
-      patient: User.fromJson(json['patient']),
-      referringDoctor: User.fromJson(json['doctor']),
-      referredToDoctor: json['referredTo'] != null
-          ? User.fromJson(json['referredTo'])
+      patientId: json['patientId'] ?? '',
+      referringDoctorId: json['referringDoctorId'] ?? '',
+      specialistDoctorId: json['specialistDoctorId'],
+      consultationId: json['consultationId'] ?? '',
+      status: ReferralStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == json['status'],
+        orElse: () => ReferralStatus.pending,
+      ),
+      specialtyRequired: json['specialtyRequired'] ?? '',
+      reasonForReferral: json['reasonForReferral'] ?? '',
+      clinicalSummary: json['clinicalSummary'] ?? '',
+      urgency: json['urgency'] ?? 'normal',
+      attachedDocuments: List<String>.from(json['attachedDocuments'] ?? []),
+      specialistNotes: json['specialistNotes'],
+      specialistAcceptedAt: json['specialistAcceptedAt'] != null
+          ? DateTime.parse(json['specialistAcceptedAt'])
           : null,
-      reason: json['reason'] ?? '',
-      clinicalNotes: json['clinicalNotes'],
-      attachedRecords: json['attachedRecords'] != null
-          ? List<String>.from(json['attachedRecords'])
-          : [],
-      status: json['status'] ?? 'pending',
+      specialistRejectedAt: json['specialistRejectedAt'] != null
+          ? DateTime.parse(json['specialistRejectedAt'])
+          : null,
+      rejectionReason: json['rejectionReason'],
+      appointmentId: json['appointmentId'],
+      appointmentDate: json['appointmentDate'] != null
+          ? DateTime.parse(json['appointmentDate'])
+          : null,
       createdAt: DateTime.parse(json['createdAt']),
-      acceptedAt: json['acceptedAt'] != null
-          ? DateTime.parse(json['acceptedAt'])
-          : null,
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'])
           : null,
-      declineReason: json['declineReason'],
-      consultationSummary: json['consultationSummary'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'patientId': patient.id,
-      'referredTo': referredToDoctor?.id,
-      'reason': reason,
-      'clinicalNotes': clinicalNotes,
-      'attachedRecords': attachedRecords,
+      '_id': id,
+      'patientId': patientId,
+      'referringDoctorId': referringDoctorId,
+      'specialistDoctorId': specialistDoctorId,
+      'consultationId': consultationId,
+      'status': status.toString().split('.').last,
+      'specialtyRequired': specialtyRequired,
+      'reasonForReferral': reasonForReferral,
+      'clinicalSummary': clinicalSummary,
+      'urgency': urgency,
+      'attachedDocuments': attachedDocuments,
+      'specialistNotes': specialistNotes,
+      'specialistAcceptedAt': specialistAcceptedAt?.toIso8601String(),
+      'specialistRejectedAt': specialistRejectedAt?.toIso8601String(),
+      'rejectionReason': rejectionReason,
+      'appointmentId': appointmentId,
+      'appointmentDate': appointmentDate?.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
+}
+
+enum ReferralStatus {
+  pending,
+  accepted,
+  rejected,
+  appointmentScheduled,
+  completed,
+  cancelled,
 }

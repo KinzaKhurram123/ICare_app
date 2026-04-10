@@ -132,7 +132,7 @@ class RatingsWidget extends StatelessWidget {
                     color: Colors.amber,
                   ),
                   onRatingUpdate: (rating) {
-                    //  print(rating);
+                    //  debugPrint(rating);
                   },
                 ),
                 CustomText(
@@ -214,7 +214,7 @@ class ReviewsWidget extends StatelessWidget {
                             color: Colors.amber,
                           ),
                           onRatingUpdate: (rating) {
-                            //  print(rating);
+                            //  debugPrint(rating);
                           },
                         ),
                         CustomText(

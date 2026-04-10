@@ -86,7 +86,7 @@ class _RecordVitalsScreenState extends State<RecordVitalsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save vitals: $e'),
+            content: const Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

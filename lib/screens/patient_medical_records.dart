@@ -69,7 +69,7 @@ class _PatientMedicalRecordsState extends ConsumerState<PatientMedicalRecords> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading records: $e'),
+            content: const Text('Unable to load data. Please try again.'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),

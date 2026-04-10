@@ -34,7 +34,7 @@ class _SecurityAuditLogScreenState extends State<SecurityAuditLogScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch logs: $e')));
+      ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
     }
   }
 
