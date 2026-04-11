@@ -531,14 +531,14 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   int _currentPage = 0;
 
   static const _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'fee': 'Rs. 1,200', 'img': 'https://randomuser.me/api/portraits/men/32.jpg'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'fee': 'Rs. 1,000', 'img': 'https://randomuser.me/api/portraits/women/44.jpg'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'fee': 'Rs. 1,500', 'img': 'https://randomuser.me/api/portraits/men/45.jpg'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'fee': 'Rs. 900', 'img': 'https://randomuser.me/api/portraits/women/68.jpg'},
-    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'fee': 'Rs. 800', 'img': 'https://randomuser.me/api/portraits/men/52.jpg'},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'fee': 'Rs. 1,100', 'img': 'https://randomuser.me/api/portraits/women/22.jpg'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'fee': 'Rs. 1,800', 'img': 'https://randomuser.me/api/portraits/men/78.jpg'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'fee': 'Rs. 950', 'img': 'https://randomuser.me/api/portraits/women/55.jpg'},
+    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'fee': 'Rs. 1,200', 'gender': 'male'},
+    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'fee': 'Rs. 1,000', 'gender': 'female'},
+    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'fee': 'Rs. 1,500', 'gender': 'male'},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'fee': 'Rs. 900', 'gender': 'female'},
+    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'fee': 'Rs. 800', 'gender': 'male'},
+    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'fee': 'Rs. 1,100', 'gender': 'female'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'fee': 'Rs. 1,800', 'gender': 'male'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'fee': 'Rs. 950', 'gender': 'female'},
   ];
 
   @override
@@ -751,32 +751,18 @@ class _DoctorCardState extends State<_DoctorCard> {
                   color: const Color(0xFF14B1FF),
                   width: 2.5,
                 ),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  widget.doctor['img']!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: const Color(0xFFE8F4FF),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0036BC)),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFFE8F4FF),
-                    child: const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Color(0xFF0036BC),
-                    ),
-                  ),
+                gradient: LinearGradient(
+                  colors: widget.doctor['gender'] == 'male'
+                      ? [const Color(0xFF0036BC), const Color(0xFF14B1FF)]
+                      : [const Color(0xFFE91E63), const Color(0xFFF48FB1)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+              ),
+              child: Icon(
+                Icons.person,
+                size: 40,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 12),
