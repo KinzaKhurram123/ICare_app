@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/user.dart';
-import 'package:icare/utils/theme.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/services/course_service.dart';
@@ -16,13 +16,34 @@ class PatientProfileView extends StatefulWidget {
 
 class _PatientProfileViewState extends State<PatientProfileView> {
   final CourseService _courseService = CourseService();
+  final ApiService _apiService = ApiService();
   List<dynamic> _enrolledCourses = [];
+  List<dynamic> _emergencyContacts = [];
   bool _loadingCourses = false;
+  bool _loadingContacts = false;
 
   @override
   void initState() {
     super.initState();
     _loadEnrolledCourses();
+    _loadEmergencyContacts();
+  }
+
+  Future<void> _loadEmergencyContacts() async {
+    setState(() => _loadingContacts = true);
+    try {
+      final response = await _apiService.get('/paitents/${widget.patient.id}/emergency-contacts');
+      if (response.data['success'] == true && mounted) {
+        setState(() {
+          _emergencyContacts = response.data['contacts'] ?? [];
+          _loadingContacts = false;
+        });
+      } else {
+        if (mounted) setState(() => _loadingContacts = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingContacts = false);
+    }
   }
 
   Future<void> _loadEnrolledCourses() async {
@@ -238,10 +259,89 @@ class _PatientProfileViewState extends State<PatientProfileView> {
                       }).toList(),
                   ],
                 ),
+                const SizedBox(height: 16),
+
+                // Emergency Contacts Card
+                _buildInfoCard(
+                  'Emergency Contacts',
+                  Icons.contact_emergency_rounded,
+                  const Color(0xFFEF4444),
+                  [
+                    if (_loadingContacts)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_emergencyContacts.isEmpty)
+                      const Text(
+                        'No emergency contacts added by patient',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      )
+                    else
+                      ..._emergencyContacts.map((c) => _buildEmergencyContactRow(c)),
+                  ],
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyContactRow(dynamic contact) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEF4444),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                (contact['name'] as String? ?? 'U').isNotEmpty
+                    ? (contact['name'] as String)[0].toUpperCase()
+                    : 'U',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(contact['name'] ?? '',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(contact['relation'] ?? 'Other',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.phone_rounded, size: 13, color: Color(0xFF94A3B8)),
+                    const SizedBox(width: 4),
+                    Text(contact['phone'] ?? '',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

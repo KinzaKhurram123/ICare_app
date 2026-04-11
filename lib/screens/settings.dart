@@ -174,8 +174,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               MaterialPageRoute(builder: (ctx) => const CertificatesScreen()),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Subscription Plans coming soon!")),
+            showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF6366F1), size: 32),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Coming Soon!',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 8),
+                      const Text('Subscription Plans are under development.\nWe\'ll notify you when it\'s ready.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6366F1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             );
           }
         },
@@ -418,15 +457,6 @@ class _WebSettingsScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                "Danger Zone",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: "Gilroy-Bold",
-                                  color: Color(0xFFDC2626),
-                                ),
-                              ),
                               const SizedBox(height: 8),
                               const Text(
                                 "Permanently delete your account and all associated data.",

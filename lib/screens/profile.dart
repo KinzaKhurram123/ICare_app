@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/providers/auth_provider.dart';
@@ -158,10 +160,15 @@ class _ProfileView extends StatelessWidget {
                   CircleAvatar(
                     radius: 48,
                     backgroundColor: Colors.white.withValues(alpha: 0.25),
-                    child: Text(
-                      _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white),
-                    ),
+                    backgroundImage: (profileData?['profileImage'] as String?)?.isNotEmpty == true
+                        ? MemoryImage(_tryDecodeBase64(profileData!['profileImage']))
+                        : null,
+                    child: (profileData?['profileImage'] as String?)?.isNotEmpty == true
+                        ? null
+                        : Text(
+                            _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+                            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   Text(_name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
@@ -287,6 +294,15 @@ class _ProfileView extends StatelessWidget {
   }
 
   String _str(dynamic v) => v?.toString() ?? '';
+
+  Uint8List _tryDecodeBase64(String data) {
+    try {
+      final base64Str = data.contains(',') ? data.split(',').last : data;
+      return base64Decode(base64Str);
+    } catch (_) {
+      return Uint8List(0);
+    }
+  }
 
   Widget _card(String title, List<Widget> children) {
     return Container(
