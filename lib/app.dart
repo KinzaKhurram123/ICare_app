@@ -51,6 +51,7 @@ import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/soap_notes.dart';
 import 'package:icare/screens/splash.dart';
+import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/tasks.dart';
 import 'package:icare/screens/upload_course.dart';
@@ -133,7 +134,7 @@ class _AppState extends ConsumerState<App> {
       if (auth.isLoggedIn && auth.token != null) {
         content = const TabsScreen();
       } else if (auth.userWalkthrough) {
-        content = LoginScreen();
+        content = const PublicHome();
       } else {
         content = const Walkthrough();
       }

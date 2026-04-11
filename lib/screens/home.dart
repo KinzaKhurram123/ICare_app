@@ -9,6 +9,7 @@ import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/filters.dart';
 import 'package:icare/screens/lab_filters.dart';
 import 'package:icare/screens/patient_filters.dart';
+import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/patient_dashboard.dart';
 import 'package:icare/screens/pharmacy_home.dart';
 import 'package:icare/screens/profile_edit.dart';
@@ -1143,246 +1144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     } else if (selectedRole == "Patient") {
       if (isDesktop) {
-        content = Container(
-          decoration: const BoxDecoration(color: Color(0xFFF8FAFC)),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1300),
-              child: Column(
-                children: [
-                  // Desktop: Premium Welcome Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 30,
-                    ),
-                    child: Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomText(
-                              text: "Welcome back,",
-                              fontSize: 15,
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
-                            ),
-                            const SizedBox(height: 4),
-                            CustomText(
-                              text:
-                                  ref.watch(authProvider).user?.name ?? "User",
-                              fontSize: 32,
-                              color: const Color(0xFF0F172A),
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -1,
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Container(
-                          width: 450,
-                          margin: const EdgeInsets.only(top: 10),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF0F172A,
-                                ).withOpacity(0.03),
-                                blurRadius: 25,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: CustomInputField(
-                            width: 450,
-                            height: 52,
-                            margin: EdgeInsets.zero,
-                            hintText: "Search for doctors, labs, courses...",
-                            trailingIcon: SvgWrapper(
-                              assetPath: ImagePaths.filters,
-                              onPress: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) =>
-                                      const PatientFiltersScreen(),
-                                ),
-                              ),
-                            ),
-                            leadingIcon: const Icon(
-                              Icons.search_rounded,
-                              color: Color(0xFF94A3B8),
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Hero Slider (Optional but premium)
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Row(
-                            children: [
-                              CustomRecordCard(
-                                width: 380,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) =>
-                                          const ActiveOrdersScreen(),
-                                    ),
-                                  );
-                                },
-                                label: "Active Orders",
-                                number: "120",
-                                icon: SvgWrapper(
-                                  assetPath: ImagePaths.lab_tech,
-                                ),
-                              ),
-                              const SizedBox(width: 15),
-                              CustomRecordCard(
-                                width: 380,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) =>
-                                          const CompletedReportsScreen(),
-                                    ),
-                                  );
-                                },
-                                color: AppColors.primaryColor,
-                                label: "Completed Reports",
-                                number: "32",
-                                icon: SvgWrapper(
-                                  assetPath: ImagePaths.lab_tech,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Today's Appointments Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CustomText(
-                              text: "Today’s Appointments",
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary500,
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.themeRed.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: CustomText(
-                                text: "(in 20 min)",
-                                fontSize: 13,
-                                color: AppColors.themeRed,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const DoctorConsultationCard(),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Doctors List Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CustomText(
-                          text: "Top Recommended Doctors",
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary500,
-                        ),
-                        CustomText(
-                          text: "View All",
-                          fontSize: 15,
-                          underline: true,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => const DoctorsList(),
-                              ),
-                            );
-                          },
-                          color: AppColors.primaryColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Doctors Responsive Grid
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: _loadingDoctors
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(40),
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
-                        : _topDoctors.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(40),
-                              child: CustomText(
-                                text: 'No doctors available',
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : Wrap(
-                            spacing: 24,
-                            runSpacing: 24,
-                            children: _topDoctors.map((doctor) {
-                              return DoctorProfileCard(
-                                doctor: doctor,
-                                width: 380,
-                                padding: const EdgeInsets.all(20),
-                              );
-                            }).toList(),
-                          ),
-                  ),
-                  const SizedBox(height: 60),
-                ],
-              ),
-            ),
-          ),
-        );
+        content = const _PatientPublicHomeContent();
       } else {
         content = const PatientDashboard();
       }
@@ -2385,4 +2147,12 @@ class DoctorConsultationCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Patient logged-in home: same content as public home, no top navbar ────────
+class _PatientPublicHomeContent extends StatelessWidget {
+  const _PatientPublicHomeContent();
+
+  @override
+  Widget build(BuildContext context) => const PublicHomeBody();
 }

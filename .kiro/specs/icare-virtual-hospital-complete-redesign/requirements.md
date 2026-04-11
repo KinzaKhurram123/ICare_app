@@ -119,7 +119,7 @@ The iCare Virtual Hospital Platform is a comprehensive healthcare ecosystem that
 **User Story:** As a Patient, I want a unified dashboard showing all my health information in one place, so that I can easily manage my healthcare journey.
 
 #### Acceptance Criteria
-
+l
 1. THE Platform SHALL display Patient dashboard with sections for appointments, prescriptions, lab reports, and health programs
 2. THE Platform SHALL display upcoming appointments with doctor name, date, time, and specialty
 3. THE Platform SHALL display active prescriptions with medication names and pharmacy fulfillment status
@@ -582,7 +582,7 @@ The iCare Virtual Hospital Platform is a comprehensive healthcare ecosystem that
 **User Story:** As a Patient, I want to receive prescriptions digitally and choose how to fulfill them, so that I have flexibility in obtaining my medications.
 
 #### Acceptance Criteria
-
+y
 1. WHEN a Doctor prescribes medication, THE Platform SHALL create a digital prescription
 2. THE Platform SHALL display the prescription in the Patient dashboard
 3. THE Platform SHALL include medication name, dosage, frequency, duration, and instructions in the prescription
@@ -650,7 +650,8 @@ The iCare Virtual Hospital Platform is a comprehensive healthcare ecosystem that
 
 #### Acceptance Criteria
 
-1. THE Platform SHALL allow Doctor to self-register through public signup
+1. THE Platform SHALL allow Doctor to self-register through 
+ signup
 2. WHEN Doctor registers, THE Platform SHALL require medical license number
 3. WHEN Doctor registers, THE Platform SHALL require specialty and qualifications
 4. WHEN Doctor registers, THE Platform SHALL require years of experience
