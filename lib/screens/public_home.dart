@@ -527,7 +527,7 @@ class _DoctorsSlider extends StatefulWidget {
 }
 
 class _DoctorsSliderState extends State<_DoctorsSlider> {
-  final PageController _pageController = PageController(viewportFraction: 0.25);
+  final PageController _pageController = PageController();
   int _currentPage = 0;
 
   static const _doctors = [
@@ -547,13 +547,26 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
     super.dispose();
   }
 
+  void _nextPage() {
+    if (_currentPage < _doctors.length - 4) {
+      setState(() => _currentPage++);
+    }
+  }
+
+  void _prevPage() {
+    if (_currentPage > 0) {
+      setState(() => _currentPage--);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
     
     if (isMobile) {
       return SizedBox(
-        height: 280,
+        height: 300,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -564,62 +577,58 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
       );
     }
 
-    return Column(
-      children: [
-        Stack(
-          children: [
-            SizedBox(
-              height: 320,
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (page) => setState(() => _currentPage = page),
-                itemCount: _doctors.length,
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: _DoctorCard(doctor: _doctors[i]),
+    // Desktop: Show 4 cards at a time with navigation
+    final visibleDoctors = _doctors.skip(_currentPage).take(4).toList();
+    final totalPages = (_doctors.length / 4).ceil();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Doctor Cards
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: visibleDoctors.map((doctor) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 11),
+                        child: _DoctorCard(doctor: doctor),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 20,
-              top: 140,
-              child: _SliderButton(
-                icon: Icons.arrow_back,
-                onTap: () {
-                  if (_currentPage > 0) {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  }
-                },
-                enabled: _currentPage > 0,
+              // Navigation Buttons
+              Positioned(
+                left: 0,
+                child: _SliderButton(
+                  icon: Icons.arrow_back,
+                  onTap: _prevPage,
+                  enabled: _currentPage > 0,
+                ),
               ),
-            ),
-            Positioned(
-              right: 20,
-              top: 140,
-              child: _SliderButton(
-                icon: Icons.arrow_forward,
-                onTap: () {
-                  if (_currentPage < _doctors.length - 4) {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  }
-                },
-                enabled: _currentPage < _doctors.length - 4,
+              Positioned(
+                right: 0,
+                child: _SliderButton(
+                  icon: Icons.arrow_forward,
+                  onTap: _nextPage,
+                  enabled: _currentPage < _doctors.length - 4,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _SliderDots(
-          total: (_doctors.length / 4).ceil(),
-          current: (_currentPage / 4).floor(),
-        ),
-      ],
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SliderDots(
+            total: totalPages,
+            current: (_currentPage / 4).floor(),
+          ),
+        ],
+      ),
     );
   }
 }
