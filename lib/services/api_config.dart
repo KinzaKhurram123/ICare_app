@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 class ApiConfig {
   // Production backend URL
   static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';

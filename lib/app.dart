@@ -123,6 +123,7 @@ class _AppState extends ConsumerState<App> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) return const SplashScreen();
     return content;
   }
 }

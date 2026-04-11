@@ -143,7 +143,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (currentIndex == 0) {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
-        activePage = const InstructorCoursesManagement();
+        activePage = InstructorCoursesManagementScreen();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {

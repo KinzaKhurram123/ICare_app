@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icare/screens/login.dart';
-import 'package:icare/screens/signup.dart';
+import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -16,6 +16,8 @@ class PublicHome extends StatelessWidget {
     {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'img': 'https://randomuser.me/api/portraits/women/68.jpg'},
     {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'img': 'https://randomuser.me/api/portraits/men/52.jpg'},
     {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'img': 'https://randomuser.me/api/portraits/women/22.jpg'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic', 'img': 'https://randomuser.me/api/portraits/men/78.jpg'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'img': 'https://randomuser.me/api/portraits/women/55.jpg'},
   ];
 
   static const List<Map<String, String>> _pharmacies = [
@@ -25,6 +27,8 @@ class PublicHome extends StatelessWidget {
     {'name': 'Al-Shifa Pharmacy', 'area': 'Saddar, Karachi'},
     {'name': 'Cure Pharmacy', 'area': 'Model Town, Lahore'},
     {'name': 'Wellness Pharma', 'area': 'G-11, Islamabad'},
+    {'name': 'Shifaa Pharmacy', 'area': 'Clifton, Karachi'},
+    {'name': 'Apollo Pharmacy', 'area': 'Johar Town, Lahore'},
   ];
 
   static const List<Map<String, String>> _labs = [
@@ -34,6 +38,8 @@ class PublicHome extends StatelessWidget {
     {'name': 'Shaukat Khanum Lab', 'area': 'Lahore'},
     {'name': 'Agha Khan Lab', 'area': 'Karachi'},
     {'name': 'Islamabad Diagnostic', 'area': 'Islamabad'},
+    {'name': 'Doctors Lab', 'area': 'Rawalpindi'},
+    {'name': 'Metropole Lab', 'area': 'Karachi'},
   ];
 
   @override
@@ -77,7 +83,7 @@ class PublicHome extends StatelessWidget {
                         label: 'Sign Up',
                         filled: false,
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SignupScreen(role: 'patient')),
+                          MaterialPageRoute(builder: (_) => const SelectUserType()),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -106,23 +112,44 @@ class PublicHome extends StatelessWidget {
                 const SizedBox(height: 40),
 
                 // ── Connect To Doctor carousel ───────────────────────────────
-                _SectionHeader(title: 'Connect To Doctor'),
-                const SizedBox(height: 16),
-                _DoctorCarousel(doctors: _doctors),
+                _CenteredSection(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(title: 'Connect To Doctor'),
+                      const SizedBox(height: 16),
+                      _DoctorCarousel(doctors: _doctors),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 40),
 
                 // ── Pharmacies carousel ──────────────────────────────────────
-                _SectionHeader(title: 'Pharmacies'),
-                const SizedBox(height: 16),
-                _PharmacyCarousel(pharmacies: _pharmacies),
+                _CenteredSection(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(title: 'Pharmacies'),
+                      const SizedBox(height: 16),
+                      _PharmacyCarousel(pharmacies: _pharmacies),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 40),
 
                 // ── Laboratories carousel ────────────────────────────────────
-                _SectionHeader(title: 'Laboratories'),
-                const SizedBox(height: 16),
-                _LabCarousel(labs: _labs),
+                _CenteredSection(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(title: 'Laboratories'),
+                      const SizedBox(height: 16),
+                      _LabCarousel(labs: _labs),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 60),
 
@@ -255,6 +282,22 @@ class _Banner extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Centered Section Wrapper ─────────────────────────────────────────────────
+class _CenteredSection extends StatelessWidget {
+  final Widget child;
+  const _CenteredSection({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: child,
       ),
     );
   }

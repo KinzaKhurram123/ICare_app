@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/api_service.dart';
 
