@@ -756,6 +756,18 @@ class _DoctorCardState extends State<_DoctorCard> {
                 child: Image.network(
                   widget.doctor['img']!,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: const Color(0xFFE8F4FF),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0036BC)),
+                        ),
+                      ),
+                    );
+                  },
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFFE8F4FF),
                     child: const Icon(
