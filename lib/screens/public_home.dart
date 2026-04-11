@@ -1085,7 +1085,7 @@ class _SectionHeader extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (subtitle != null) ..[
+          if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
               subtitle!,
