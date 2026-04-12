@@ -105,10 +105,68 @@ class PublicHome extends StatelessWidget {
                 _Banner(),
                 const SizedBox(height: 40),
 
-                // Browse by Specialty Section
+                // 1. Connect to a Doctor Section
+                Container(
+                  color: const Color(0xFFF4F8FF),
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: _CenteredSection(
+                    child: Column(
+                      children: [
+                        _SectionHeader(
+                          title: 'Connect to a Doctor',
+                          subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                        ),
+                        const SizedBox(height: 40),
+                        _DoctorsSlider(),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // 2. Pharmacies Section
                 _CenteredSection(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _SectionHeader(
+                        title: 'Pharmacies',
+                        subtitle: 'Order medicines from trusted pharmacies near you',
+                      ),
+                      const SizedBox(height: 24),
+                      _PharmaciesGrid(),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // 3. Laboratories Section
+                Container(
+                  color: const Color(0xFFF4F8FF),
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: _CenteredSection(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _SectionHeader(
+                          title: 'Laboratories',
+                          subtitle: 'Book lab tests and get results delivered at home',
+                        ),
+                        const SizedBox(height: 24),
+                        _LaboratoriesGrid(),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // 4. Browse by Specialty Section
+                _CenteredSection(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       _SectionHeader(
                         title: 'Browse by Specialty',
@@ -122,27 +180,7 @@ class PublicHome extends StatelessWidget {
 
                 const SizedBox(height: 60),
 
-                // Consult Online Section (Doctors Slider)
-                Container(
-                  color: const Color(0xFFF4F8FF),
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: _CenteredSection(
-                    child: Column(
-                      children: [
-                        _SectionHeader(
-                          title: 'Consult Online',
-                          subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
-                        ),
-                        const SizedBox(height: 40),
-                        _DoctorsSlider(),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 60),
-
-                // How it Works Section
+                // 5. How it Works Section
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 60),
@@ -884,6 +922,162 @@ class _DoctorCardState extends State<_DoctorCard> {
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pharmacies Grid ──────────────────────────────────────────────────────────
+class _PharmaciesGrid extends StatelessWidget {
+  static const _pharmacies = [
+    {'name': 'MedPlus Pharmacy', 'area': 'Gulshan, Karachi'},
+    {'name': 'HealthCare Pharma', 'area': 'DHA, Lahore'},
+    {'name': 'City Pharmacy', 'area': 'F-7, Islamabad'},
+    {'name': 'Al-Shifa Pharmacy', 'area': 'Saddar, Karachi'},
+    {'name': 'Cure Pharmacy', 'area': 'Model Town, Lahore'},
+    {'name': 'Wellness Pharma', 'area': 'G-11, Islamabad'},
+    {'name': 'Shifaa Pharmacy', 'area': 'Clifton, Karachi'},
+    {'name': 'Apollo Pharmacy', 'area': 'Johar Town, Lahore'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        alignment: WrapAlignment.center,
+        children: _pharmacies.map((p) => _ServiceCard(
+          name: p['name']!,
+          subtitle: p['area']!,
+          icon: Icons.local_pharmacy_rounded,
+          iconColor: const Color(0xFF10B981),
+          width: isMobile ? 150 : 180,
+        )).toList(),
+      ),
+    );
+  }
+}
+
+// ── Laboratories Grid ─────────────────────────────────────────────────────────
+class _LaboratoriesGrid extends StatelessWidget {
+  static const _labs = [
+    {'name': 'Chughtai Lab', 'area': 'Lahore'},
+    {'name': 'Essa Lab', 'area': 'Karachi'},
+    {'name': 'Excel Labs', 'area': 'Islamabad'},
+    {'name': 'Shaukat Khanum Lab', 'area': 'Lahore'},
+    {'name': 'Agha Khan Lab', 'area': 'Karachi'},
+    {'name': 'Islamabad Diagnostic', 'area': 'Islamabad'},
+    {'name': 'Doctors Lab', 'area': 'Rawalpindi'},
+    {'name': 'Metropole Lab', 'area': 'Karachi'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        alignment: WrapAlignment.center,
+        children: _labs.map((l) => _ServiceCard(
+          name: l['name']!,
+          subtitle: l['area']!,
+          icon: Icons.biotech_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          width: isMobile ? 150 : 180,
+        )).toList(),
+      ),
+    );
+  }
+}
+
+// ── Service Card (Pharmacy / Lab) ─────────────────────────────────────────────
+class _ServiceCard extends StatefulWidget {
+  final String name;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final double width;
+
+  const _ServiceCard({
+    required this.name,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.width,
+  });
+
+  @override
+  State<_ServiceCard> createState() => _ServiceCardState();
+}
+
+class _ServiceCardState extends State<_ServiceCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: widget.width,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+        transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _hovered ? widget.iconColor : const Color(0xFFE8ECF5),
+            width: 1.5,
+          ),
+          boxShadow: [
+            if (_hovered)
+              BoxShadow(
+                color: widget.iconColor.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: widget.iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(widget.icon, color: widget.iconColor, size: 24),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              widget.name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
+                fontFamily: 'Gilroy-Bold',
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.subtitle,
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -1676,9 +1870,62 @@ class PublicHomeBody extends StatelessWidget {
       children: [
         _Banner(),
         const SizedBox(height: 40),
+        // 1. Connect to a Doctor
+        Container(
+          color: const Color(0xFFF4F8FF),
+          padding: const EdgeInsets.symmetric(vertical: 60),
+          child: _CenteredSection(
+            child: Column(
+              children: [
+                _SectionHeader(
+                  title: 'Connect to a Doctor',
+                  subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                ),
+                const SizedBox(height: 40),
+                _DoctorsSlider(),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 60),
+        // 2. Pharmacies
         _CenteredSection(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _SectionHeader(
+                title: 'Pharmacies',
+                subtitle: 'Order medicines from trusted pharmacies near you',
+              ),
+              const SizedBox(height: 24),
+              _PharmaciesGrid(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 60),
+        // 3. Laboratories
+        Container(
+          color: const Color(0xFFF4F8FF),
+          padding: const EdgeInsets.symmetric(vertical: 60),
+          child: _CenteredSection(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _SectionHeader(
+                  title: 'Laboratories',
+                  subtitle: 'Book lab tests and get results delivered at home',
+                ),
+                const SizedBox(height: 24),
+                _LaboratoriesGrid(),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 60),
+        // 4. Browse by Specialty
+        _CenteredSection(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _SectionHeader(
                 title: 'Browse by Specialty',
@@ -1690,24 +1937,7 @@ class PublicHomeBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 60),
-        Container(
-          color: const Color(0xFFF4F8FF),
-          padding: const EdgeInsets.symmetric(vertical: 60),
-          child: _CenteredSection(
-            child: Column(
-              children: [
-                _SectionHeader(
-                  title: 'Consult Online',
-                  subtitle:
-                      'Talk to verified doctors within minutes from the comfort of your home',
-                ),
-                const SizedBox(height: 40),
-                _DoctorsSlider(),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 60),
+        // 5. How iCare Works
         Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 60),
