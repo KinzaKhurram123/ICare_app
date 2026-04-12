@@ -387,72 +387,17 @@ class _WebSettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Permanently delete your account and all associated data.",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF991B1B),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFDC2626),
-                                    side: const BorderSide(
-                                      color: Color(0xFFDC2626),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    AppDialogs.showWarningDialog(
-                                      context,
-                                      "Are you sure you want to delete your account?",
-                                      null,
-                                      [
-                                        "I don’t need it anymore",
-                                        "I don’t find it useful",
-                                        "Other",
-                                      ],
-                                      numOfActions: 2,
-                                      onPrimaryButtonPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (ctx) => LoginScreen(),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: const Text(
-                                    "Delete Account",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                  const SizedBox(width: 48),
-
-                  // ── Right Side: Settings List ──
-                  Expanded(
-                    flex: 5,
+class _WebSettingsScreen extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
