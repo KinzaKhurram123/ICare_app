@@ -448,23 +448,18 @@ class _WebSidebar extends ConsumerWidget {
         children: [
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Image.asset(
-                  ImagePaths.logo,
-                  height: 40,
-                  fit: BoxFit.contain,
-                ),
-              ],
+          Center(
+            child: Image.asset(
+              ImagePaths.logo,
+              height: 70,
+              fit: BoxFit.contain,
             ),
           ),
 
           const SizedBox(height: 28),
 
-          // ── Profile card (hidden for Patient) ──────────────────────────
-          if (role != 'Patient')
+          // ── Profile card (hidden for Patient and Doctor) ───────────────
+          if (role != 'Patient' && role != 'Doctor')
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
