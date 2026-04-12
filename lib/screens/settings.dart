@@ -385,7 +385,7 @@ class _WebSettingsScreen extends StatelessWidget {
 
                         const SizedBox(height: 48),
 
-                        // Delete Account Zone
+                        // Delete Account Section
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -396,16 +396,6 @@ class _WebSettingsScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                "Danger Zone",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: "Gilroy-Bold",
-                                  color: Color(0xFFDC2626),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
                               const Text(
                                 "Permanently delete your account and all associated data.",
                                 style: TextStyle(

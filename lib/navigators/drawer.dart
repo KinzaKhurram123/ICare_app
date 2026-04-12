@@ -166,7 +166,7 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
         }),
-        _drawerItem('Book A Lab', Icons.science_rounded, () {
+        _drawerItem('Laboratories', Icons.science_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabsListScreen()));
@@ -189,6 +189,16 @@ class CustomDrawer extends ConsumerWidget {
           ).push(MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()));
         }),
         _drawerItem('Reminders', Icons.alarm_rounded, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
+        }),
+        _drawerItem('Lifestyle Tracker', Icons.directions_run_rounded, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Coming Soon!')),
+          );
+        }),
+        _drawerItem('Emergency Contacts', Icons.contact_emergency_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
@@ -545,94 +555,15 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
-              // Profile section with border and edit icon
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      // Navigate to role-specific profile setup or view profile
-                      if (selectedRole == "Laboratory") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const LabProfileSetup(),
-                          ),
-                        );
-                      } else if (selectedRole == "Pharmacy") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const PharmacyProfileSetup(),
-                          ),
-                        );
-                      } else if (selectedRole == "Student") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const StudentProfileSetup(),
-                          ),
-                        );
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => ViewProfile()),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue, width: 2),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 45,
-                        backgroundImage: AssetImage(ImagePaths.user7),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    // bottom: 4,
-                    top: ScallingConfig.verticalScale(5),
-                    right: ScallingConfig.scale(5),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+              // Logo only at top
+              Image.asset(
+                ImagePaths.logo,
+                width: 60,
+                height: 60,
               ),
 
-              const SizedBox(height: 10),
-              Consumer(
-                builder: (context, ref, child) {
-                  final userName = ref.watch(authProvider).user?.name ?? 'User';
-                  return Text(
-                    userName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: Colors.black,
-                    ),
-                  );
-                },
-              ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final userEmail = ref.watch(authProvider).user?.email ?? '';
-                  return Text(
-                    userEmail,
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  );
-                },
-              ),
               const SizedBox(height: 25),
 
               // Menu list (exact items)
@@ -763,7 +694,7 @@ class CustomDrawer extends ConsumerWidget {
                           vertical: 8,
                         ),
                         child: CustomText(
-                          text: "NAVIGATION",
+                          text: "MY ACCOUNT",
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF94A3B8),

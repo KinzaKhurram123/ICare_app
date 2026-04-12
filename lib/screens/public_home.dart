@@ -1695,6 +1695,7 @@ class _Footer extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 700;
     
     return Container(
+      width: double.infinity,
       color: const Color(0xFF0A1A4A),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Column(
