@@ -717,7 +717,7 @@ class _WebSidebar extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'NAVIGATION',
+                'MY ACCOUNT',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 10,
