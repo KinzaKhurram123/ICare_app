@@ -280,22 +280,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 32),
-              CustomButton(
-                borderRadius: 30,
-                onPressed: () {
-                  // Logout logic
-                },
-                label: "Logout",
-              ),
-              const SizedBox(height: 12),
-              CustomButton(
-                borderRadius: 30,
-                onPressed: () {
-                  // Delete logic
-                },
-                label: "Delete Account",
-              ),
               const SizedBox(height: 40),
             ],
           ),

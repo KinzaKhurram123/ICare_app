@@ -774,8 +774,8 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
 
-              // Logout button - only for non-Patient roles
-              if (selectedRole != 'Patient')
+              // Logout button - only for non-Patient, non-Doctor roles
+              if (selectedRole != 'Patient' && selectedRole != 'Doctor')
               Padding(
                 padding: EdgeInsets.only(bottom: 30),
                 child: CustomButton(

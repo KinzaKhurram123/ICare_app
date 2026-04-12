@@ -884,25 +884,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               },
             ),
             _buildFeatureCard(
-              'clinical_audit'.tr(),
+              'Quality Score',
               Icons.rule_folder_rounded,
               const Color(0xFF0F172A),
               () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const ClinicalAuditScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildFeatureCard(
-              'care_programs'.tr(),
-              Icons.monitor_heart_rounded,
-              const Color(0xFFEF4444),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const SubscriptionChronicCareScreen(),
                   ),
                 );
               },
@@ -920,8 +908,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               },
             ),
             _buildFeatureCard(
-              'vault'.tr(),
-              Icons.verified_user_rounded,
+              'Certificate',
+              Icons.workspace_premium_rounded,
               const Color(0xFF10B981),
               () {
                 Navigator.of(context).push(
