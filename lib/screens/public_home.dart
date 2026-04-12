@@ -1396,11 +1396,11 @@ class _AppDownloadBanner extends StatelessWidget {
       children: [
         Image.asset(
           'assets/images/mockup.png',
-          height: 350,
+          height: 560,
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Container(
-            height: 350,
-            width: 250,
+            height: 480,
+            width: 340,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
@@ -1610,12 +1610,12 @@ class _PhoneMockups extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       'assets/images/mockup.png',
-      height: 500,
+      height: 800,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => Container(
-        height: 500,
-        width: 350,
+        height: 680,
+        width: 480,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(30),

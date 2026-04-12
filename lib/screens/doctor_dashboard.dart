@@ -108,7 +108,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           ),
         ),
         actions: [
-          _buildVerificationBadge(),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Color(0xFF0F172A)),
             onPressed: () {
@@ -155,9 +154,11 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                       ],
                     ),
                   ),
-                ),
-              ),
+),
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -294,7 +295,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               ],
             ),
           ),
-          _buildVerificationBadge(),
         ],
       ),
     );

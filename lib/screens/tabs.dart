@@ -661,20 +661,21 @@ class _WebSidebar extends ConsumerWidget {
 
           // ── Nav items ──────────────────────────────────────────────────
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                ...items.map((item) {
-                  final isSelected = currentIndex == item.index;
-                  return GestureDetector(
-                    onTap: () => onSelect(item.index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
+            child: Scrollbar(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  ...items.map((item) {
+                    final isSelected = currentIndex == item.index;
+                    return GestureDetector(
+                      onTap: () => onSelect(item.index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.18)
