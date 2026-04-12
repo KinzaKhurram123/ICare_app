@@ -154,11 +154,9 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                       ],
                     ),
                   ),
-),
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -1664,7 +1664,8 @@ class _WebSidebar extends ConsumerWidget {
                     },
                   ),
                 ],
-              ],
+                ],
+              ),
             ),
           ),
 

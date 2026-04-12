@@ -1367,116 +1367,117 @@ class _AppDownloadBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-    
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.zero,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 60,
-        vertical: isMobile ? 40 : 60,
-      ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0036BC), Color(0xFF0049E6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
-        ),
+
+    const decoration = BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Color(0xFF0036BC), Color(0xFF0049E6)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
     );
-  }
 
-  Widget _buildMobileLayout() {
-    return Column(
-      children: [
-        Image.asset(
-          'assets/images/mockup.png',
-          height: 560,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => Container(
-            height: 480,
-            width: 340,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+    if (isMobile) {
+      return Container(
+        width: double.infinity,
+        decoration: decoration,
+        padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
+        child: Column(
+          children: [
+            Image.asset(
+              'assets/images/mockup.png',
+              height: 300,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => const SizedBox(
+                height: 200,
+                child: Icon(Icons.phone_android, size: 80, color: Colors.white54),
+              ),
             ),
-            child: Icon(
-              Icons.phone_android,
-              size: 100,
-              color: Colors.white.withOpacity(0.3),
+            const SizedBox(height: 20),
+            const Text(
+              'Download the iCare App',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontFamily: 'Gilroy-Bold',
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 10),
+            Text(
+              'Get instant access to 500+ doctors, lab results, prescriptions, and health records — all in one place.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withOpacity(0.9),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            _AppBadges(),
+          ],
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'Download the iCare App',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            fontFamily: 'Gilroy-Bold',
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Get instant access to 500+ doctors, lab results, prescriptions, and health records — all in one place.',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.9),
-            height: 1.6,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
-        _AppBadges(),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildDesktopLayout() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Download the iCare App',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  fontFamily: 'Gilroy-Bold',
+    // Desktop — fixed height so blue bg stays compact, image overflows upward
+    return SizedBox(
+      height: 400,
+      child: Container(
+        width: double.infinity,
+        decoration: decoration,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 60),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Download the iCare App',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            fontFamily: 'Gilroy-Bold',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Get instant access to 500+ doctors, lab results,\nprescriptions, and health records — all in one place.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withOpacity(0.95),
+                            height: 1.6,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        _AppBadges(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Get instant access to 500+ doctors, lab results,\nprescriptions, and health records — all in one place.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.95),
-                  height: 1.6,
+                // Image column — overflows above the blue banner
+                SizedBox(
+                  width: 520,
+                  child: OverflowBox(
+                    maxHeight: 780,
+                    alignment: Alignment.center,
+                    child: _PhoneMockups(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              _AppBadges(),
-            ],
+              ],
+            ),
           ),
         ),
-        const SizedBox(width: 60),
-        Expanded(
-          flex: 2,
-          child: _PhoneMockups(),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1610,12 +1611,12 @@ class _PhoneMockups extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       'assets/images/mockup.png',
-      height: 800,
+      height: 750,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => Container(
-        height: 680,
-        width: 480,
+        height: 600,
+        width: 440,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(30),
