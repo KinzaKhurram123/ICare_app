@@ -387,17 +387,10 @@ class _WebSettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WebSettingsScreen extends StatelessWidget {
+                  const SizedBox(width: 40),
+                  // ── Right Side: Settings List ──
+                  Expanded(
+                    flex: 5,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
