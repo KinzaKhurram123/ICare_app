@@ -1395,18 +1395,19 @@ class _AppDownloadBanner extends StatelessWidget {
     return Column(
       children: [
         Image.asset(
-          'assets/images/mob.png',
-          height: 300,
+          'assets/images/mockup.png',
+          height: 350,
+          fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Container(
-            height: 300,
-            width: 200,
+            height: 350,
+            width: 250,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
               Icons.phone_android,
-              size: 80,
+              size: 100,
               color: Colors.white.withOpacity(0.3),
             ),
           ),
@@ -1609,12 +1610,12 @@ class _PhoneMockups extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       'assets/images/mockup.png',
-      height: 420,
+      height: 500,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => Container(
-        height: 420,
-        width: 300,
+        height: 500,
+        width: 350,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(30),
@@ -1628,7 +1629,7 @@ class _PhoneMockups extends StatelessWidget {
           children: [
             Icon(
               Icons.phone_android,
-              size: 80,
+              size: 100,
               color: Colors.white.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
@@ -1636,7 +1637,7 @@ class _PhoneMockups extends StatelessWidget {
               'Mobile Screens',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.6),
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
