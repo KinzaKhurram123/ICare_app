@@ -1456,51 +1456,83 @@ class _AppBadges extends StatelessWidget {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _AppBadge(
-          label: 'App Store',
-          icon: Icons.apple,
+        _StoreBadgeButton(
+          onTap: () {},
+          child: Image.network(
+            'https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg',
+            height: 50,
+            errorBuilder: (_, __, ___) => Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.apple, color: Colors.white, size: 24),
+                  SizedBox(width: 8),
+                  Text('App Store', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
         ),
-        _AppBadge(
-          label: 'Google Play',
-          icon: Icons.play_arrow_rounded,
+        _StoreBadgeButton(
+          onTap: () {},
+          child: Image.network(
+            'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg',
+            height: 50,
+            errorBuilder: (_, __, ___) => Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
+                  SizedBox(width: 8),
+                  Text('Google Play', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-class _AppBadge extends StatelessWidget {
-  final String label;
-  final IconData icon;
+class _StoreBadgeButton extends StatefulWidget {
+  final VoidCallback onTap;
+  final Widget child;
 
-  const _AppBadge({required this.label, required this.icon});
+  const _StoreBadgeButton({required this.onTap, required this.child});
+
+  @override
+  State<_StoreBadgeButton> createState() => _StoreBadgeButtonState();
+}
+
+class _StoreBadgeButtonState extends State<_StoreBadgeButton> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.32),
-          width: 1,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: Matrix4.identity()..scale(_hovered ? 1.05 : 1.0),
+          child: widget.child,
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1509,62 +1541,21 @@ class _AppBadge extends StatelessWidget {
 class _PhoneMockups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _PhoneMock(height: 120),
-        const SizedBox(width: 12),
-        _PhoneMock(height: 140),
-      ],
-    );
-  }
-}
-
-class _PhoneMock extends StatelessWidget {
-  final double height;
-  const _PhoneMock({required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 70,
-      height: height,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.13),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.22),
-          width: 1,
+    return Image.asset(
+      'assets/images/mob.png',
+      height: 280,
+      errorBuilder: (_, __, ___) => Container(
+        height: 280,
+        width: 200,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            height: 6,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.45),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 6,
-            width: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.45),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const Spacer(),
-          Container(
-            height: 20,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.22),
-              borderRadius: BorderRadius.circular(6),
-            ),
-          ),
-        ],
+        child: Icon(
+          Icons.phone_android,
+          size: 80,
+          color: Colors.white.withOpacity(0.3),
+        ),
       ),
     );
   }
