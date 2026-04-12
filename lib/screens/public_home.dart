@@ -1529,45 +1529,42 @@ class _AppBadges extends StatelessWidget {
         ),
         _StoreBadgeButton(
           onTap: () {},
-          child: Image.asset(
-            'assets/images/google.webp',
+          child: Container(
             height: 56,
-            errorBuilder: (_, __, ___) => Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
-                  const SizedBox(width: 12),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'GET IT ON',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                        ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'GET IT ON',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.5,
                       ),
-                      const Text(
-                        'Google Play',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    const Text(
+                      'Google Play',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -1614,6 +1611,8 @@ class _PhoneMockups extends StatelessWidget {
       'assets/images/mob.png',
       height: 400,
       fit: BoxFit.contain,
+      cacheHeight: 800,
+      filterQuality: FilterQuality.medium,
       errorBuilder: (_, __, ___) => Container(
         height: 400,
         width: 250,
