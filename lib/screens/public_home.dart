@@ -1369,23 +1369,49 @@ class _AppDownloadBanner extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 700;
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: EdgeInsets.all(isMobile ? 24 : 40),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      width: double.infinity,
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 24 : 60,
+        vertical: isMobile ? 40 : 60,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           colors: [Color(0xFF0036BC), Color(0xFF0049E6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
       ),
-      child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
+        ),
+      ),
     );
   }
 
   Widget _buildMobileLayout() {
     return Column(
       children: [
+        Image.asset(
+          'assets/images/mob.png',
+          height: 300,
+          errorBuilder: (_, __, ___) => Container(
+            height: 300,
+            width: 200,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.phone_android,
+              size: 80,
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         const Text(
           'Download the iCare App',
           style: TextStyle(
@@ -1414,36 +1440,41 @@ class _AppDownloadBanner extends StatelessWidget {
 
   Widget _buildDesktopLayout() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
+          flex: 3,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Download the iCare App',
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
                   color: Colors.white,
                   fontFamily: 'Gilroy-Bold',
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
                 'Get instant access to 500+ doctors, lab results,\nprescriptions, and health records — all in one place.',
                 style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.95),
                   height: 1.6,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               _AppBadges(),
             ],
           ),
         ),
-        const SizedBox(width: 40),
-        _PhoneMockups(),
+        const SizedBox(width: 60),
+        Expanded(
+          flex: 2,
+          child: _PhoneMockups(),
+        ),
       ],
     );
   }
@@ -1453,50 +1484,88 @@ class _AppBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: 16,
+      runSpacing: 16,
       children: [
         _StoreBadgeButton(
           onTap: () {},
-          child: Image.network(
-            'https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg',
-            height: 50,
-            errorBuilder: (_, __, ___) => Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.apple, color: Colors.white, size: 24),
-                  SizedBox(width: 8),
-                  Text('App Store', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                ],
-              ),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.apple, color: Colors.white, size: 32),
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Download on the',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const Text(
+                      'App Store',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
         _StoreBadgeButton(
           onTap: () {},
-          child: Image.network(
-            'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg',
-            height: 50,
+          child: Image.asset(
+            'assets/images/google.webp',
+            height: 56,
             errorBuilder: (_, __, ___) => Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.black,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
-                  SizedBox(width: 8),
-                  Text('Google Play', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'GET IT ON',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const Text(
+                        'Google Play',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1543,17 +1612,18 @@ class _PhoneMockups extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       'assets/images/mob.png',
-      height: 280,
+      height: 400,
+      fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => Container(
-        height: 280,
-        width: 200,
+        height: 400,
+        width: 250,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(
           Icons.phone_android,
-          size: 80,
+          size: 100,
           color: Colors.white.withOpacity(0.3),
         ),
       ),
