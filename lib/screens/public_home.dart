@@ -521,173 +521,21 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final isMobile = w < 700;
-    final h = isMobile ? 500.0 : 600.0;
-    
-    return Container(
+    final h = w < 600 ? 200.0 : (w < 900 ? 300.0 : 480.0);
+    return SizedBox(
       width: double.infinity,
       height: h,
-      child: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/banner.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              errorBuilder: (_, __, ___) => Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
-                  ),
-                ),
-              ),
+      child: Image.asset(
+        'assets/images/icare-banenr.png',
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        errorBuilder: (_, __, ___) => Container(
+          height: h,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
             ),
           ),
-          // Overlay Content
-          Positioned.fill(
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 24 : 60,
-                vertical: isMobile ? 40 : 60,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Download the iCare App',
-                    style: TextStyle(
-                      fontSize: isMobile ? 28 : 42,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      fontFamily: 'Gilroy-Bold',
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withOpacity(0.3),
-                          offset: const Offset(0, 2),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    textAlign: isMobile ? TextAlign.center : TextAlign.left,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: isMobile ? double.infinity : 500,
-                    child: Text(
-                      'Get instant access to 500+ doctors, lab results,\nprescriptions, and health records — all in one place.',
-                      style: TextStyle(
-                        fontSize: isMobile ? 14 : 16,
-                        color: Colors.white,
-                        height: 1.6,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.3),
-                            offset: const Offset(0, 1),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      textAlign: isMobile ? TextAlign.center : TextAlign.left,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // App Store Badges
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    alignment: isMobile ? WrapAlignment.center : WrapAlignment.start,
-                    children: [
-                      _StoreBadge(
-                        onTap: () {},
-                        child: Image.network(
-                          'https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg',
-                          height: 50,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 50,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.apple, color: Colors.white, size: 24),
-                                SizedBox(width: 8),
-                                Text(
-                                  'App Store',
-                                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      _StoreBadge(
-                        onTap: () {},
-                        child: Image.network(
-                          'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg',
-                          height: 50,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 50,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Google Play',
-                                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StoreBadge extends StatefulWidget {
-  final VoidCallback onTap;
-  final Widget child;
-
-  const _StoreBadge({required this.onTap, required this.child});
-
-  @override
-  State<_StoreBadge> createState() => _StoreBadgeState();
-}
-
-class _StoreBadgeState extends State<_StoreBadge> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()..scale(_hovered ? 1.05 : 1.0),
-          child: widget.child,
         ),
       ),
     );
