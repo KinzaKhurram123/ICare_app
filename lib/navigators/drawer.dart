@@ -171,11 +171,6 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabsListScreen()));
         }),
-        _drawerItem('Lab Results/Reports', Icons.biotech_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => LabReportsScreen()));
-        }),
         _drawerItem('My Appointment', Icons.calendar_month_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -779,7 +774,8 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
 
-              // Logout button
+              // Logout button - only for non-Patient roles
+              if (selectedRole != 'Patient')
               Padding(
                 padding: EdgeInsets.only(bottom: 30),
                 child: CustomButton(

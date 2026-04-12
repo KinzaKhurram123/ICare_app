@@ -452,48 +452,10 @@ class _WebSidebar extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'iCare',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'PRO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+                Image.asset(
+                  ImagePaths.logo,
+                  height: 40,
+                  fit: BoxFit.contain,
                 ),
               ],
             ),
@@ -589,34 +551,17 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ── Quick Action Buttons (Show for all roles except Admin) ───────────
-          if (role.isNotEmpty && role != 'Admin') ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 24, bottom: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'QUICK ACTIONS',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ),
+          // ── Quick Action Buttons (Show for non-Patient, non-Admin roles) ───
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient') ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  // Quick Action Button (Role specific)
                   GestureDetector(
                     onTap: () {
                       if (role == 'Student') {
-                        onSelect(1); // Go to All Programs
+                        onSelect(1);
                       } else if (role == 'Laboratory') {
-                        // Lab quick action: Go to Test Requests
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (ctx) => LabBookingsManagement(
@@ -628,9 +573,7 @@ class _WebSidebar extends ConsumerWidget {
                       } else {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (ctx) => role == 'Patient'
-                                ? LabReportsScreen()
-                                : LabBookingsManagement(),
+                            builder: (ctx) => LabBookingsManagement(),
                           ),
                         );
                       }
@@ -641,22 +584,16 @@ class _WebSidebar extends ConsumerWidget {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            (role == 'Student'
-                                    ? AppColors.secondaryColor
-                                    : role == 'Laboratory'
-                                    ? const Color(0xFF0EA5E9)
-                                    : const Color(0xFF0EA5E9))
-                                .withValues(alpha: 0.15),
+                        color: (role == 'Student'
+                                ? AppColors.secondaryColor
+                                : const Color(0xFF0EA5E9))
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color:
-                              (role == 'Student'
-                                      ? AppColors.secondaryColor
-                                      : role == 'Laboratory'
-                                      ? const Color(0xFF0EA5E9)
-                                      : const Color(0xFF0EA5E9))
-                                  .withValues(alpha: 0.3),
+                          color: (role == 'Student'
+                                  ? AppColors.secondaryColor
+                                  : const Color(0xFF0EA5E9))
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -666,8 +603,6 @@ class _WebSidebar extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: role == 'Student'
                                   ? AppColors.secondaryColor
-                                  : role == 'Laboratory'
-                                  ? const Color(0xFF0EA5E9)
                                   : const Color(0xFF0EA5E9),
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -688,7 +623,7 @@ class _WebSidebar extends ConsumerWidget {
                                   ? 'Browse Programs'
                                   : role == 'Laboratory'
                                   ? 'Manage Test Requests'
-                                  : 'View Lab Reports',
+                                  : 'Manage Bookings',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -1736,52 +1671,48 @@ class _WebSidebar extends ConsumerWidget {
             ),
           ),
 
-          // ── Divider ────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-
-          // ── Logout ─────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.3),
+          if (role != 'Patient') ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.3),
+                    ),
                   ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Logout',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ] else
+            const SizedBox(height: 28),
         ],
       ),
     );
@@ -1926,44 +1857,46 @@ class _WebTopBar extends ConsumerWidget {
             },
             child: Row(
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final userName =
-                            ref.watch(authProvider).user?.name ?? 'User';
-                        return Text(
-                          userName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: Color(0xFF1A1A2E),
-                          ),
-                        );
-                      },
-                    ),
-                    Text(
-                      role.isNotEmpty
-                          ? role == 'Laboratory'
-                                ? 'Lab Technician'
-                                : role == 'Pharmacy'
-                                ? 'Pharmacist'
-                                : role[0].toUpperCase() + role.substring(1)
-                          : role,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF888888),
+                if (role != 'Patient') ...[
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final userName =
+                              ref.watch(authProvider).user?.name ?? 'User';
+                          return Text(
+                            userName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 10),
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage(ImagePaths.user7),
-                ),
+                      Text(
+                        role.isNotEmpty
+                            ? role == 'Laboratory'
+                                  ? 'Lab Technician'
+                                  : role == 'Pharmacy'
+                                  ? 'Pharmacist'
+                                  : role[0].toUpperCase() + role.substring(1)
+                            : role,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(ImagePaths.user7),
+                  ),
+                ],
               ],
             ),
           ),

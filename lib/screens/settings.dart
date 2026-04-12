@@ -144,21 +144,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         },
       },
       {
-        "id": "2",
-        "title": isStudent ? "My Certificates" : "Subscription Plans",
-        "onPress": () {
-          if (isStudent) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (ctx) => const CertificatesScreen()),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Subscription Plans coming soon!")),
-            );
-          }
-        },
-      },
-      {
         "id": "3",
         "title": "Change Passwords",
         "onPress": () {
