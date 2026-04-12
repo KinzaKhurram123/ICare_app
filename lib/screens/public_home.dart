@@ -1608,12 +1608,12 @@ class _PhoneMockups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/screens.jpg',
-      height: 450,
+      'assets/images/mockup.png',
+      height: 420,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => Container(
-        height: 450,
+        height: 420,
         width: 300,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.15),
