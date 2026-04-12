@@ -834,7 +834,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.family_restroom_rounded,
-                    'Manage Dependents',
+                    'Emergency Contacts',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -856,7 +856,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.science_rounded,
-                    'Diagnostics Support',
+                    'Laboratories',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -894,7 +894,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.medication_rounded,
-                    'Medication Fulfillment',
+                    'Pharmacies',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(

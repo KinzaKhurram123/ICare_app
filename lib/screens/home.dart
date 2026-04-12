@@ -1157,7 +1157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: ScallingConfig.scale(50)),
+      padding: EdgeInsets.only(bottom: 0),
       child: content,
     );
   }

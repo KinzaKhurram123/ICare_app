@@ -533,38 +533,12 @@ class CustomDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 10),
-
-              // Close button (top-right)
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Logo only at top
+              // Logo only at top (no text, no icon beside it)
               Image.asset(
                 ImagePaths.logo,
-                width: 60,
-                height: 60,
+                width: 80,
+                height: 80,
               ),
-
-              const SizedBox(height: 25),
 
               // Menu list (exact items)
               Expanded(
@@ -586,20 +560,6 @@ class CustomDrawer extends ConsumerWidget {
                           vertical: 15,
                         ),
                         child: Divider(color: Color(0xFFF1F5F9), height: 1),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        child: CustomText(
-                          text: "QUICK ACTIONS",
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF94A3B8),
-                          letterSpacing: 1.5,
-                        ),
                       ),
 
                       // Role-specific quick actions
