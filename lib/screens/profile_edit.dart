@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/services/user_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_text_input.dart';
@@ -308,6 +309,35 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Logout Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (ctx) => LoginScreen()),
+                                (route) => false,
+                              );
+                            },
+                            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                            label: const Text(
+                              'Logout',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.redAccent),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
                           ),
                         ),
                       ],

@@ -463,7 +463,8 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 28),
 
-          // ── Profile card ───────────────────────────────────────────────
+          // ── Profile card (hidden for Patient) ──────────────────────────
+          if (role != 'Patient')
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -1857,46 +1858,44 @@ class _WebTopBar extends ConsumerWidget {
             },
             child: Row(
               children: [
-                if (role != 'Patient') ...[
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Consumer(
-                        builder: (context, ref, child) {
-                          final userName =
-                              ref.watch(authProvider).user?.name ?? 'User';
-                          return Text(
-                            userName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          );
-                        },
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final userName =
+                            ref.watch(authProvider).user?.name ?? 'User';
+                        return Text(
+                          userName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        );
+                      },
+                    ),
+                    Text(
+                      role.isNotEmpty
+                          ? role == 'Laboratory'
+                                ? 'Lab Technician'
+                                : role == 'Pharmacy'
+                                ? 'Pharmacist'
+                                : role[0].toUpperCase() + role.substring(1)
+                          : role,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF888888),
                       ),
-                      Text(
-                        role.isNotEmpty
-                            ? role == 'Laboratory'
-                                  ? 'Lab Technician'
-                                  : role == 'Pharmacy'
-                                  ? 'Pharmacist'
-                                  : role[0].toUpperCase() + role.substring(1)
-                            : role,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF888888),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 10),
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundImage: AssetImage(ImagePaths.user7),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 10),
+                const CircleAvatar(
+                  radius: 20,
+                  backgroundImage: AssetImage(ImagePaths.user7),
+                ),
               ],
             ),
           ),
