@@ -1721,21 +1721,7 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Image.asset(ImagePaths.logo, width: 36, height: 36),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'iCare Virtual Hospital',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        fontFamily: 'Gilroy-Bold',
-                      ),
-                    ),
-                  ],
-                ),
+                Image.asset(ImagePaths.logo, width: 64, height: 64),
                 const SizedBox(height: 12),
                 Text(
                   "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
@@ -1795,17 +1781,7 @@ class _Footer extends StatelessWidget {
     return [
       Row(
         children: [
-          Image.asset(ImagePaths.logo, width: 32, height: 32),
-          const SizedBox(width: 8),
-          const Text(
-            'iCare Virtual Hospital',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              fontFamily: 'Gilroy-Bold',
-            ),
-          ),
+          Image.asset(ImagePaths.logo, width: 56, height: 56),
         ],
       ),
       const SizedBox(height: 12),
@@ -1857,16 +1833,7 @@ class _Footer extends StatelessWidget {
       return Column(
         children: [
           Text(
-            '© 2026 iCare Virtual Hospital. All rights reserved.',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.5),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Karachi, Pakistan',
+            '© 2026 iCare. All rights reserved.',
             style: TextStyle(
               fontSize: 11,
               color: Colors.white.withOpacity(0.5),
@@ -1880,14 +1847,7 @@ class _Footer extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '© 2026 iCare Virtual Hospital. All rights reserved.',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.5),
-          ),
-        ),
-        Text(
-          'Karachi, Pakistan',
+          '© 2026 iCare. All rights reserved.',
           style: TextStyle(
             fontSize: 12,
             color: Colors.white.withOpacity(0.5),
