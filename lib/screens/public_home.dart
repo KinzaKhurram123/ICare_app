@@ -2032,9 +2032,9 @@ class PublicHomeBody extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 60),
+        // App Download Section (no gap)
         _AppDownloadBanner(),
-        const SizedBox(height: 40),
+        // Footer (no gap)
         _Footer(),
       ],
     );
