@@ -1607,24 +1607,66 @@ class _StoreBadgeButtonState extends State<_StoreBadgeButton> {
 class _PhoneMockups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/mob.png',
-      height: 400,
-      fit: BoxFit.contain,
-      cacheHeight: 800,
-      filterQuality: FilterQuality.medium,
-      errorBuilder: (_, __, ___) => Container(
-        height: 400,
-        width: 250,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, 20),
+          child: Image.asset(
+            'assets/images/mob.png',
+            height: 450,
+            fit: BoxFit.contain,
+            cacheHeight: 900,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, __, ___) => _buildFallbackPhone(450),
+          ),
         ),
-        child: Icon(
-          Icons.phone_android,
-          size: 100,
+        const SizedBox(width: 20),
+        Transform.translate(
+          offset: const Offset(0, -20),
+          child: Image.asset(
+            'assets/images/mob.png',
+            height: 480,
+            fit: BoxFit.contain,
+            cacheHeight: 960,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, __, ___) => _buildFallbackPhone(480),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFallbackPhone(double height) {
+    return Container(
+      height: height,
+      width: height * 0.5,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
           color: Colors.white.withOpacity(0.3),
+          width: 3,
         ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.phone_android,
+            size: 80,
+            color: Colors.white.withOpacity(0.4),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Mobile App',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
