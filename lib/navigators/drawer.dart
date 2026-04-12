@@ -528,11 +528,13 @@ class CustomDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Logo only at top (no text, no icon beside it)
-              Image.asset(
-                ImagePaths.logo,
-                width: 80,
-                height: 80,
+              // Logo only at top
+              Center(
+                child: Image.asset(
+                  ImagePaths.logo,
+                  width: 100,
+                  height: 100,
+                ),
               ),
 
               // Menu list (exact items)

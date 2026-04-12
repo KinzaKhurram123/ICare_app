@@ -547,8 +547,8 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ── Quick Action Buttons (Show for non-Patient, non-Admin roles) ───
-          if (role.isNotEmpty && role != 'Admin' && role != 'Patient') ...[
+          // ── Quick Action Buttons (Show for non-Patient, non-Admin, non-Doctor roles) ───
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
