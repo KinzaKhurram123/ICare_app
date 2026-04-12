@@ -640,7 +640,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 children: [
                   Expanded(
                     child: _buildActionCardCompact(
-                      'appointments'.tr(),
+                      'Appointments',
                       Icons.calendar_month_rounded,
                       const Color(0xFF3B82F6),
                       () {
@@ -655,7 +655,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'availability'.tr(),
+                      'Availability',
                       Icons.schedule_rounded,
                       const Color(0xFF10B981),
                       () {
@@ -670,7 +670,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'records'.tr(),
+                      'Records',
                       Icons.folder_rounded,
                       const Color(0xFFF59E0B),
                       () {
@@ -685,7 +685,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'profile'.tr(),
+                      'Profile',
                       Icons.person_rounded,
                       const Color(0xFF8B5CF6),
                       () {
@@ -724,7 +724,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               childAspectRatio: aspectRatio,
               children: [
                 _buildActionCardCompact(
-                  'appointments'.tr(),
+                  'Appointments',
                   Icons.calendar_month_rounded,
                   const Color(0xFF3B82F6),
                   () {
@@ -736,7 +736,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'availability'.tr(),
+                  'Availability',
                   Icons.schedule_rounded,
                   const Color(0xFF10B981),
                   () {
@@ -748,7 +748,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'records'.tr(),
+                  'Records',
                   Icons.folder_rounded,
                   const Color(0xFFF59E0B),
                   () {
@@ -760,7 +760,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'profile'.tr(),
+                  'Profile',
                   Icons.person_rounded,
                   const Color(0xFF8B5CF6),
                   () {
@@ -952,7 +952,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           childAspectRatio: profRatio,
           children: [
             _buildFeatureCard(
-              'courses'.tr(),
+              'Courses',
               Icons.school_rounded,
               const Color(0xFF8B5CF6),
               () {
