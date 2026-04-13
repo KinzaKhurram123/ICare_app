@@ -522,20 +522,140 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final h = w < 600 ? 200.0 : (w < 900 ? 300.0 : 480.0);
-    return SizedBox(
-      width: double.infinity,
-      height: h,
-      child: Image.asset(
-        'assets/images/icare-banenr.png',
-        fit: BoxFit.cover,
-        alignment: Alignment.topCenter,
-        errorBuilder: (_, __, ___) => Container(
+    final isMobile = w < 700;
+    final h = isMobile ? 260.0 : (w < 900 ? 340.0 : 500.0);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 24,
+        vertical: isMobile ? 12 : 20,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(isMobile ? 20 : 28),
+        child: SizedBox(
+          width: double.infinity,
           height: h,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
-            ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background image
+              Image.asset(
+                'assets/images/icare-banenr.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.centerRight,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
+              ),
+              // Dark gradient overlay on left for text readability
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xCC001A7A), Color(0x55001A7A), Colors.transparent],
+                    stops: [0.0, 0.5, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+              // Text + Buttons
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : 48,
+                  vertical: isMobile ? 20 : 40,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Connecting You to Quality\nHealthcare Instantly',
+                      style: TextStyle(
+                        fontSize: isMobile ? 20 : 36,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        fontFamily: 'Gilroy-Bold',
+                        height: 1.25,
+                        shadows: const [
+                          Shadow(color: Colors.black26, blurRadius: 8),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: isMobile ? 8 : 14),
+                    Text(
+                      'Book appointments, consult trusted doctors, and\naccess healthcare services from the comfort of your home.',
+                      style: TextStyle(
+                        fontSize: isMobile ? 11 : 15,
+                        color: Colors.white.withOpacity(0.92),
+                        height: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: isMobile ? 16 : 28),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 10,
+                      children: [
+                        // Book Appointment → Login
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF0036BC),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 16 : 24,
+                              vertical: isMobile ? 10 : 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Book Appointment',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: isMobile ? 12 : 14,
+                            ),
+                          ),
+                        ),
+                        // Doctor Login → SelectUserType (signup)
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SelectUserType()),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white, width: 1.5),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 16 : 24,
+                              vertical: isMobile ? 10 : 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            'Doctor Login',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: isMobile ? 12 : 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -953,16 +1073,19 @@ class _PharmaciesGrid extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 700;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 14,
-        alignment: WrapAlignment.center,
+      child: GridView.count(
+        crossAxisCount: isMobile ? 2 : 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: isMobile ? 1.4 : 1.6,
         children: _pharmacies.map((p) => _ServiceCard(
           name: p['name']!,
           subtitle: p['area']!,
           icon: Icons.local_pharmacy_rounded,
           iconColor: const Color(0xFF10B981),
-          width: isMobile ? 150 : 180,
+          width: double.infinity,
         )).toList(),
       ),
     );
@@ -987,16 +1110,19 @@ class _LaboratoriesGrid extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 700;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 14,
-        alignment: WrapAlignment.center,
+      child: GridView.count(
+        crossAxisCount: isMobile ? 2 : 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: isMobile ? 1.4 : 1.6,
         children: _labs.map((l) => _ServiceCard(
           name: l['name']!,
           subtitle: l['area']!,
           icon: Icons.biotech_rounded,
           iconColor: const Color(0xFF8B5CF6),
-          width: isMobile ? 150 : 180,
+          width: double.infinity,
         )).toList(),
       ),
     );
@@ -1102,28 +1228,28 @@ class _SpecialtyGrid extends StatelessWidget {
     {'name': 'Eye Specialist', 'desc': 'Ophthalmology', 'icon': Icons.remove_red_eye},
     {'name': 'Pulmonologist', 'desc': 'Lungs & Chest', 'icon': Icons.air},
     {'name': 'Dermatologist', 'desc': 'Skin & Hair', 'icon': Icons.face},
-    {'name': 'Gynecologist', 'desc': "Women's Health", 'icon': Icons.pregnant_woman},
-    {'name': 'View All', 'desc': '50+ Specialties', 'icon': Icons.grid_view, 'isViewAll': true},
   ];
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 14,
-        alignment: isMobile ? WrapAlignment.center : WrapAlignment.center,
+      child: GridView.count(
+        crossAxisCount: isMobile ? 2 : 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: isMobile ? 1.3 : 1.5,
         children: _specialties.map((spec) {
-          final isViewAll = spec['isViewAll'] == true;
           return _SpecialtyCard(
             name: spec['name'] as String,
             description: spec['desc'] as String,
             icon: spec['icon'] as IconData,
-            isViewAll: isViewAll,
-            width: isMobile ? 100 : 120,
+            isViewAll: false,
+            width: double.infinity,
           );
         }).toList(),
       ),
