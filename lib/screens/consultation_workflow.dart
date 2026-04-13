@@ -317,7 +317,7 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
           if (records.isEmpty)
             const Center(child: Text('No previous intake notes found.'))
           else
-            ...records.map((r) {
+            ...records.take(10).map((r) {
               final String recordType =
                   r['type']?.toString().toUpperCase() ?? 'RECORD';
               final String createdAt = r['createdAt'] ?? '';
@@ -330,14 +330,7 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
                 recordType,
                 date,
                 diagnosis,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateMedicalRecordScreen(
-                      appointment: widget.appointment,
-                    ),
-                  ),
-                ),
+                null,
               );
             }).toList(),
         ],
@@ -564,7 +557,7 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
     String type,
     String date,
     String diagnosis,
-    VoidCallback onTap,
+    VoidCallback? onTap,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

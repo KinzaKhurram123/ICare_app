@@ -774,21 +774,32 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
       vitalSigns['height'] = double.tryParse(_heightController.text) ?? 0.0;
     }
 
+    // Strip prescription to minimal fields backend expects
+    final cleanPrescription = _prescriptions.map((p) => {
+      'name': p['name'] ?? '',
+      'dosage': p['dosage'] ?? '',
+      if ((p['frequency'] ?? '').isNotEmpty) 'frequency': p['frequency'],
+      if ((p['duration'] ?? '').isNotEmpty) 'duration': p['duration'],
+      if ((p['instructions'] ?? '').isNotEmpty) 'instructions': p['instructions'],
+    }).toList();
+
     final data = <String, dynamic>{
       'patientId': widget.appointment.patient!.id,
       'appointmentId': widget.appointment.id,
       'diagnosis': _diagnosisController.text.trim(),
-      'symptoms': symptoms,
-      'prescription': _prescriptions,
-      'labTests': _labTests,
-      'notes': _notesController.text.trim(),
     };
 
+    if (symptoms.isNotEmpty) data['symptoms'] = symptoms;
+    if (cleanPrescription.isNotEmpty) data['prescription'] = cleanPrescription;
+    if (_labTests.isNotEmpty) data['labTests'] = _labTests;
+    if (_notesController.text.trim().isNotEmpty) data['notes'] = _notesController.text.trim();
     if (vitalSigns.isNotEmpty) data['vitalSigns'] = vitalSigns;
     if (_followUpDate != null) data['followUpDate'] = _followUpDate!.toIso8601String();
     if (_selectedProgramIds.isNotEmpty) data['assignedCourses'] = _selectedProgramIds;
     if (_selectedLabId != null) data['referredLaboratory'] = _selectedLabId;
     if (_selectedPharmacyId != null) data['selectedPharmacy'] = _selectedPharmacyId;
+
+    debugPrint('📤 Sending medical record: $data');
 
     final result = await _medicalRecordService.createMedicalRecord(data);
 
