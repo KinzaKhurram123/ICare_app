@@ -7,6 +7,7 @@ import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/change_password.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/login.dart';
+import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/notification_settings.dart';
 import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/screens/reset_password.dart';
@@ -14,6 +15,7 @@ import 'package:icare/screens/terms_and_conditions.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/services/security_service.dart';
+import 'package:icare/services/biometric_service.dart';
 import 'package:icare/widgets/app_modals.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -28,13 +30,21 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SecurityService _securityService = SecurityService();
+  final BiometricService _biometricService = BiometricService();
   bool _is2FAEnabled = false;
-  bool _isBiometricEnabled = true;
+  bool _isBiometricEnabled = false;
+  bool _biometricAvailable = false;
 
   @override
   void initState() {
     super.initState();
-    // In a real app, fetch initial states from backend/local storage
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await _biometricService.isAvailable();
+    final enabled = await _biometricService.isEnabled();
+    if (mounted) setState(() { _biometricAvailable = available; _isBiometricEnabled = enabled; });
   }
 
   Future<void> _toggle2FA(bool value) async {
@@ -119,13 +129,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
-    try {
-      await _securityService.updateBiometricPreference(value);
-      setState(() => _isBiometricEnabled = value);
-    } catch (e) {
+    if (!_biometricAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Something went wrong. Please try again.')),
+        const SnackBar(content: Text('Biometric authentication not available on this device')),
       );
+      return;
+    }
+    if (value) {
+      final success = await _biometricService.authenticate(
+        reason: 'Verify your identity to enable biometric login',
+      );
+      if (success) {
+        await _biometricService.enable();
+        if (mounted) setState(() => _isBiometricEnabled = true);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Biometric login enabled'), backgroundColor: Color(0xFF10B981)),
+        );
+      }
+    } else {
+      await _biometricService.disable();
+      if (mounted) setState(() => _isBiometricEnabled = false);
     }
   }
 
@@ -141,6 +164,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => NotificationSettings()));
+        },
+      },
+      {
+        "id": "2",
+        "title": isStudent ? "My Certificates" : "Subscription Plans",
+        "onPress": () {
+          if (isStudent) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (ctx) => const CertificatesScreen()),
+            );
+          } else {
+            showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF6366F1), size: 32),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Coming Soon!',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 8),
+                      const Text('Subscription Plans are under development.\nWe\'ll notify you when it\'s ready.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6366F1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
         },
       },
       {
@@ -280,6 +357,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }).toList(),
                 ),
               ),
+              const SizedBox(height: 32),
+              CustomButton(
+                borderRadius: 30,
+                onPressed: () {
+                  ref.read(authProvider.notifier).setUserLogout();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                    (route) => false,
+                  );
+                },
+                label: "Logout",
+              ),
+              const SizedBox(height: 12),
+              CustomButton(
+                borderRadius: 30,
+                onPressed: () {
+                  // Delete logic
+                },
+                label: "Delete Account",
+              ),
               const SizedBox(height: 40),
             ],
           ),
@@ -353,6 +450,73 @@ class _WebSettingsScreen extends StatelessWidget {
                         ),
 
                         const SizedBox(height: 48),
+
+                        // Delete Account Zone
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Permanently delete your account and all associated data.",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF991B1B),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFFDC2626),
+                                    side: const BorderSide(
+                                      color: Color(0xFFDC2626),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    AppDialogs.showWarningDialog(
+                                      context,
+                                      "Are you sure you want to delete your account?",
+                                      null,
+                                      [
+                                        "I don’t need it anymore",
+                                        "I don’t find it useful",
+                                        "Other",
+                                      ],
+                                      numOfActions: 2,
+                                      onPrimaryButtonPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (ctx) => LoginScreen(),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: const Text(
+                                    "Delete Account",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),

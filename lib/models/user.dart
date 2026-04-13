@@ -24,7 +24,7 @@ class User {
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
       role: json['role'] ?? '',
-      profilePicture: json['profilePicture'],
+      profilePicture: json['profileImage'] ?? json['profilePicture'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,

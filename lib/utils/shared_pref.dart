@@ -19,6 +19,7 @@ class SharedPref {
           'token',
           'userRole',
           'walkthrough',
+          'biometric_enabled',
         },
       ),
     );
@@ -90,5 +91,15 @@ class SharedPref {
   Future<bool> isLoggedIn() async {
     final SharedPreferencesWithCache pref = await _prefs;
     return pref.containsKey('token');
+  }
+
+  Future<void> setBiometricEnabled(bool value) async {
+    final pref = await _prefs;
+    await pref.setBool('biometric_enabled', value);
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    final pref = await _prefs;
+    return pref.getBool('biometric_enabled') ?? false;
   }
 }

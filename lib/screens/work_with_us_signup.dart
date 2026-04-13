@@ -64,106 +64,101 @@ class WorkWithUsSignup extends StatelessWidget {
           ],
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Choose your role',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                    fontFamily: 'Gilroy-Bold',
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Select how you want to join the iCare platform',
-                  style: TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'Gilroy-Medium'),
-                ),
-                const SizedBox(height: 32),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: _roles.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (_, i) {
-                      final r = _roles[i];
-                      final color = r['color'] as Color;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => SignupScreen(role: r['role'] as String),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: color.withOpacity(0.2), width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withOpacity(0.06),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: color.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(r['icon'] as IconData, color: color, size: 28),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      r['title'] as String,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w800,
-                                        color: color,
-                                        fontFamily: 'Gilroy-Bold',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      r['subtitle'] as String,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey,
-                                        fontFamily: 'Gilroy-Medium',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.arrow_forward_ios_rounded, color: color, size: 16),
-                            ],
-                          ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Choose your role',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                fontFamily: 'Gilroy-Bold',
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Select how you want to join the iCare platform',
+              style: TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'Gilroy-Medium'),
+            ),
+            const SizedBox(height: 32),
+            Expanded(
+              child: ListView.separated(
+                itemCount: _roles.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (_, i) {
+                  final r = _roles[i];
+                  final color = r['color'] as Color;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => LoginScreen(initialSignup: true, initialRole: r['role'] as String),
                         ),
                       );
                     },
-                  ),
-                ),
-              ],
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(r['icon'] as IconData, color: color, size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r['title'] as String,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: color,
+                                    fontFamily: 'Gilroy-Bold',
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  r['subtitle'] as String,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                    fontFamily: 'Gilroy-Medium',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, color: color, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

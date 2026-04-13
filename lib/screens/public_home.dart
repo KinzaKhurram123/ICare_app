@@ -77,7 +77,7 @@ class PublicHome extends StatelessWidget {
                         label: 'Sign In',
                         filled: true,
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(builder: (_) => const LoginScreen(hideSignup: true)),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -209,7 +209,7 @@ class PublicHome extends StatelessWidget {
                 // App Download Section
                 _AppDownloadBanner(),
 
-                // Footer (no gap)
+                const SizedBox(height: 40),
                 _Footer(),
               ],
             ),

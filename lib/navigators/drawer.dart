@@ -21,6 +21,7 @@ import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/lab_list.dart';
 import 'package:icare/screens/lab_appointment.dart';
 import 'package:icare/screens/login.dart';
+import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/my_appointment.dart';
 import 'package:icare/screens/my_appointments_list.dart';
 import 'package:icare/screens/my_orders.dart';
@@ -202,6 +203,16 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
+        }),
+        _drawerItem('Help & Support', Icons.help_outline_rounded, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
+        }),
+        _drawerItem('Settings', Icons.settings_rounded, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
         }),
       ];
     } else if (selectedRole == "Doctor") {
@@ -782,9 +793,11 @@ class CustomDrawer extends ConsumerWidget {
                 padding: EdgeInsets.only(bottom: 30),
                 child: CustomButton(
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (ctx) => LoginScreen()));
+                    ref.read(authProvider.notifier).setUserLogout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                      (route) => false,
+                    );
                   },
                   width: Utils.windowWidth(context) * 0.6,
                   borderRadius: 30,

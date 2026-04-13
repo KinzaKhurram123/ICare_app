@@ -132,9 +132,6 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                             description: userTypes[i]["description"],
                             benefits: userTypes[i]["benefits"] ?? [],
                             onPressed: () {
-                              ref
-                                  .read(authProvider.notifier)
-                                  .setUserRole(userTypes[i]["role"]);
                               onSelect(userTypes[i]["id"]);
                             },
                             isSelected: selected_id == userTypes[i]["id"],
@@ -154,7 +151,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (ctx) => const LoginScreen(),
+                              builder: (ctx) => const LoginScreen(initialSignup: true, initialRole: 'Patient'),
                             ),
                           );
                         },
@@ -328,9 +325,6 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                             benefits: userTypes[i]["benefits"] ?? [],
                             isSelected: selected_id == userTypes[i]["id"],
                             onPressed: () {
-                              ref
-                                  .read(authProvider.notifier)
-                                  .setUserRole(userTypes[i]["role"]);
                               onSelect(userTypes[i]["id"]);
                             },
                           );
@@ -377,7 +371,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const LoginScreen(),
+                                        builder: (_) => const LoginScreen(initialSignup: true, initialRole: 'Patient'),
                                       ),
                                     );
                                   },

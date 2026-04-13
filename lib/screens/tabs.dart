@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:icare/screens/public_home.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
 import 'package:icare/screens/admin_dashboard.dart';
@@ -448,107 +450,98 @@ class _WebSidebar extends ConsumerWidget {
         children: [
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
-          Center(
-            child: Image.asset(
-              ImagePaths.logo,
-              height: 70,
-              fit: BoxFit.contain,
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── Profile card (hidden for Patient and Doctor) ───────────────
-          if (role != 'Patient' && role != 'Doctor')
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                if (role == 'Patient') ...[
+                  // iCare logo image for Patient — white bg so colors show correctly
                   Container(
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(13),
                     ),
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: AssetImage(ImagePaths.user7),
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      ImagePaths.logo,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.local_hospital_rounded,
+                        color: Color(0xFF0B2D6E),
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final userName =
-                                ref.watch(authProvider).user?.name ?? 'User';
-                            return Text(
-                              userName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            role.isNotEmpty
-                                ? role == 'Laboratory'
-                                      ? 'Lab Technician'
-                                      : role == 'Pharmacy'
-                                      ? 'Pharmacist'
-                                      : role[0].toUpperCase() +
-                                            role.substring(1)
-                                : role,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                  const Text(
+                    'iCare',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Colors.white54,
-                    size: 18,
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'PRO',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
-          // ── Quick Action Buttons (Show for non-Patient, non-Admin, non-Doctor roles) ───
-          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
+          // ── Quick Action Buttons (Show for all roles except Admin and Patient) ───────────
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient') ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 24, bottom: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'QUICK ACTIONS',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -648,7 +641,7 @@ class _WebSidebar extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'MY ACCOUNT',
+                role == 'Patient' ? 'MY ACCOUNT' : 'NAVIGATION',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 10,
@@ -747,18 +740,6 @@ class _WebSidebar extends ConsumerWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const HealthJourneyScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.monitor_heart_rounded,
-                    'Lifestyle Tracker',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LifestyleTrackerScreen(),
                         ),
                       );
                     },
@@ -870,6 +851,12 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                  ),
+                  // Lifestyle Tracker — coming soon
+                  _buildComingSoonNavItem(
+                    context,
+                    Icons.monitor_heart_rounded,
+                    'Lifestyle Tracker',
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1669,48 +1656,54 @@ class _WebSidebar extends ConsumerWidget {
             ),
           ),
 
-          if (role != 'Patient') ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(color: Colors.white.withValues(alpha: 0.15)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.3),
+          // ── Divider ────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+          ),
+
+          // ── Logout ─────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+            child: GestureDetector(
+              onTap: () {
+                ref.read(authProvider.notifier).setUserLogout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                  (route) => false,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.redAccent.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.logout_rounded,
+                      color: Colors.redAccent,
+                      size: 18,
                     ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Logout',
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ] else
-            const SizedBox(height: 28),
+          ),
         ],
       ),
     );
@@ -1748,10 +1741,90 @@ class _WebSidebar extends ConsumerWidget {
       ),
     );
   }
+  Widget _buildComingSoonNavItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (_) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF6366F1), size: 32),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Coming Soon!',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                  const SizedBox(height: 8),
+                  Text('$label is under development.\nWe\'ll notify you when it\'s ready.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      child: Opacity(
+        opacity: 0.45,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.55)),
+              const SizedBox(width: 14),
+              Text(label,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white.withValues(alpha: 0.6))),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Soon', style: TextStyle(fontSize: 9, color: Colors.white70, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Web Top Navbar
 // ═══════════════════════════════════════════════════════════════════════════
 class _WebTopBar extends ConsumerWidget {
   const _WebTopBar({required this.role});
@@ -1889,9 +1962,30 @@ class _WebTopBar extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(width: 10),
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage(ImagePaths.user7),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final user = ref.watch(authProvider).user;
+                    final pic = user?.profilePicture;
+                    if (pic != null && pic.isNotEmpty) {
+                      try {
+                        final bytes = pic.contains(',')
+                            ? base64Decode(pic.split(',').last)
+                            : base64Decode(pic);
+                        return CircleAvatar(
+                          radius: 20,
+                          backgroundImage: MemoryImage(bytes),
+                        );
+                      } catch (_) {}
+                    }
+                    return CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                      child: Text(
+                        (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF6366F1)),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
