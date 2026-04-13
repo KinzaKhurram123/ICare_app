@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
@@ -903,7 +904,11 @@ class _DoctorCardState extends State<_DoctorCard> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0036BC),
                   foregroundColor: Colors.white,
