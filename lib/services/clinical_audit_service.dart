@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:icare/models/clinical_audit.dart';
 import 'package:icare/models/consultation.dart';
 import 'package:icare/models/prescription.dart';

@@ -108,7 +108,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           ),
         ),
         actions: [
-          _buildVerificationBadge(),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Color(0xFF0F172A)),
             onPressed: () {
@@ -294,7 +293,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               ],
             ),
           ),
-          _buildVerificationBadge(),
         ],
       ),
     );
@@ -640,7 +638,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 children: [
                   Expanded(
                     child: _buildActionCardCompact(
-                      'appointments'.tr(),
+                      'Appointments',
                       Icons.calendar_month_rounded,
                       const Color(0xFF3B82F6),
                       () {
@@ -655,7 +653,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'availability'.tr(),
+                      'Availability',
                       Icons.schedule_rounded,
                       const Color(0xFF10B981),
                       () {
@@ -670,7 +668,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'records'.tr(),
+                      'Records',
                       Icons.folder_rounded,
                       const Color(0xFFF59E0B),
                       () {
@@ -685,7 +683,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'profile'.tr(),
+                      'Profile',
                       Icons.person_rounded,
                       const Color(0xFF8B5CF6),
                       () {
@@ -724,7 +722,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               childAspectRatio: aspectRatio,
               children: [
                 _buildActionCardCompact(
-                  'appointments'.tr(),
+                  'Appointments',
                   Icons.calendar_month_rounded,
                   const Color(0xFF3B82F6),
                   () {
@@ -736,7 +734,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'availability'.tr(),
+                  'Availability',
                   Icons.schedule_rounded,
                   const Color(0xFF10B981),
                   () {
@@ -748,7 +746,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'records'.tr(),
+                  'Records',
                   Icons.folder_rounded,
                   const Color(0xFFF59E0B),
                   () {
@@ -760,7 +758,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'profile'.tr(),
+                  'Profile',
                   Icons.person_rounded,
                   const Color(0xFF8B5CF6),
                   () {
@@ -884,25 +882,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               },
             ),
             _buildFeatureCard(
-              'clinical_audit'.tr(),
+              'Quality Score',
               Icons.rule_folder_rounded,
               const Color(0xFF0F172A),
               () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const ClinicalAuditScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildFeatureCard(
-              'care_programs'.tr(),
-              Icons.monitor_heart_rounded,
-              const Color(0xFFEF4444),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const SubscriptionChronicCareScreen(),
                   ),
                 );
               },
@@ -920,8 +906,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               },
             ),
             _buildFeatureCard(
-              'vault'.tr(),
-              Icons.verified_user_rounded,
+              'Certificate',
+              Icons.workspace_premium_rounded,
               const Color(0xFF10B981),
               () {
                 Navigator.of(context).push(
@@ -964,7 +950,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           childAspectRatio: profRatio,
           children: [
             _buildFeatureCard(
-              'courses'.tr(),
+              'Courses',
               Icons.school_rounded,
               const Color(0xFF8B5CF6),
               () {

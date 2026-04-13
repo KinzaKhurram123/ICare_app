@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/forget_password.dart';
+import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
@@ -45,6 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool rememberMe = false;
   bool isLogin = true;
   bool isLoading = false;
+  bool agreedToTerms = false;
   String selectedSignupRole = 'Patient';
 
   @override
@@ -617,6 +620,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     return null;
                                   },
                                 ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: Checkbox(
+                                        value: agreedToTerms,
+                                        onChanged: (val) {
+                                          setState(() => agreedToTerms = val!);
+                                        },
+                                        activeColor: AppColors.primaryColor,
+                                        checkColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(5),
+                                        ),
+                                        side: const BorderSide(
+                                          color: Color(0xFFCBD5E1),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF64748B),
+                                            fontFamily: "Gilroy-Medium",
+                                          ),
+                                          children: [
+                                            const TextSpan(text: "I agree to the "),
+                                            TextSpan(
+                                              text: "Terms & Conditions",
+                                              style: const TextStyle(
+                                                color: AppColors.primaryColor,
+                                                fontWeight: FontWeight.w600,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                              recognizer: TapGestureRecognizer()
+                                                ..onTap = () {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (ctx) => const PrivacyPolicy(),
+                                                    ),
+                                                  );
+                                                },
+                                            ),
+                                            const TextSpan(text: " and "),
+                                            TextSpan(
+                                              text: "Privacy Policy",
+                                              style: const TextStyle(
+                                                color: AppColors.primaryColor,
+                                                fontWeight: FontWeight.w600,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                              recognizer: TapGestureRecognizer()
+                                                ..onTap = () {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (ctx) => const PrivacyPolicy(),
+                                                    ),
+                                                  );
+                                                },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
 
                               if (isLogin) ...[
@@ -1076,6 +1152,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: Checkbox(
+                                    value: agreedToTerms,
+                                    onChanged: (val) {
+                                      setState(() => agreedToTerms = val!);
+                                    },
+                                    activeColor: AppColors.primary500,
+                                    checkColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    side: const BorderSide(
+                                      color: Color(0xFFCBD5E1),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF64748B),
+                                        fontFamily: "Gilroy-Medium",
+                                      ),
+                                      children: [
+                                        const TextSpan(text: "I agree to the "),
+                                        TextSpan(
+                                          text: "Terms & Conditions",
+                                          style: const TextStyle(
+                                            color: AppColors.primaryColor,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (ctx) => const PrivacyPolicy(),
+                                                ),
+                                              );
+                                            },
+                                        ),
+                                        const TextSpan(text: " and "),
+                                        TextSpan(
+                                          text: "Privacy Policy",
+                                          style: const TextStyle(
+                                            color: AppColors.primaryColor,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (ctx) => const PrivacyPolicy(),
+                                                ),
+                                              );
+                                            },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
 
                           if (isLogin) ...[
@@ -1310,6 +1459,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   void _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    // Terms & Conditions check for signup
+    if (!isLogin && !agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please agree to the Terms & Conditions to continue.'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      );
+      return;
+    }
     setState(() => isLoading = true);
     try {
       if (isLogin) {

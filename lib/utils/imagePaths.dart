@@ -2,6 +2,7 @@ class ImagePaths {
   static const basePath = "assets/images";
 
   static const logo = '$basePath/logo.png';
+  static const banner = '$basePath/icare-banner.png';
   static const backgroundImage = '$basePath/bgImage.jpeg';
 
   static const google = '$basePath/google.svg';

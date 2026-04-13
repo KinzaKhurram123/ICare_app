@@ -59,6 +59,10 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to load data. Please try again.')));
+      }
     }
   }
 

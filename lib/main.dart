@@ -17,8 +17,8 @@ void main() async {
 
   if (!kIsWeb) {
     await Firebase.initializeApp();
+    await FcmService().init();
   }
-  await FcmService().init();
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ur')],

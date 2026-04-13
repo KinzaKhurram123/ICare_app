@@ -143,7 +143,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (currentIndex == 0) {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
-        activePage = const InstructorCoursesManagement();
+        activePage = InstructorCoursesManagementScreen();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
@@ -176,7 +176,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     } else {
       // Default to Patient dashboard
       if (currentIndex == 0) {
-        activePage = const PatientDashboard();
+        activePage = const HomeScreen();
       } else if (currentIndex == 1) {
         activePage = BookingsScreen(tabs: true);
       } else if (currentIndex == 2) {
@@ -448,60 +448,18 @@ class _WebSidebar extends ConsumerWidget {
         children: [
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'iCare',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'PRO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-              ],
+          Center(
+            child: Image.asset(
+              ImagePaths.logo,
+              height: 70,
+              fit: BoxFit.contain,
             ),
           ),
 
           const SizedBox(height: 28),
 
-          // ── Profile card ───────────────────────────────────────────────
+          // ── Profile card (hidden for Patient and Doctor) ───────────────
+          if (role != 'Patient' && role != 'Doctor')
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -589,34 +547,17 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ── Quick Action Buttons (Show for all roles except Admin) ───────────
-          if (role.isNotEmpty && role != 'Admin') ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 24, bottom: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'QUICK ACTIONS',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ),
+          // ── Quick Action Buttons (Show for non-Patient, non-Admin, non-Doctor roles) ───
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  // Quick Action Button (Role specific)
                   GestureDetector(
                     onTap: () {
                       if (role == 'Student') {
-                        onSelect(1); // Go to All Programs
+                        onSelect(1);
                       } else if (role == 'Laboratory') {
-                        // Lab quick action: Go to Test Requests
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (ctx) => LabBookingsManagement(
@@ -628,9 +569,7 @@ class _WebSidebar extends ConsumerWidget {
                       } else {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (ctx) => role == 'Patient'
-                                ? LabReportsScreen()
-                                : LabBookingsManagement(),
+                            builder: (ctx) => LabBookingsManagement(),
                           ),
                         );
                       }
@@ -641,22 +580,16 @@ class _WebSidebar extends ConsumerWidget {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            (role == 'Student'
-                                    ? AppColors.secondaryColor
-                                    : role == 'Laboratory'
-                                    ? const Color(0xFF0EA5E9)
-                                    : const Color(0xFF0EA5E9))
-                                .withValues(alpha: 0.15),
+                        color: (role == 'Student'
+                                ? AppColors.secondaryColor
+                                : const Color(0xFF0EA5E9))
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color:
-                              (role == 'Student'
-                                      ? AppColors.secondaryColor
-                                      : role == 'Laboratory'
-                                      ? const Color(0xFF0EA5E9)
-                                      : const Color(0xFF0EA5E9))
-                                  .withValues(alpha: 0.3),
+                          color: (role == 'Student'
+                                  ? AppColors.secondaryColor
+                                  : const Color(0xFF0EA5E9))
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -666,8 +599,6 @@ class _WebSidebar extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: role == 'Student'
                                   ? AppColors.secondaryColor
-                                  : role == 'Laboratory'
-                                  ? const Color(0xFF0EA5E9)
                                   : const Color(0xFF0EA5E9),
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -688,7 +619,7 @@ class _WebSidebar extends ConsumerWidget {
                                   ? 'Browse Programs'
                                   : role == 'Laboratory'
                                   ? 'Manage Test Requests'
-                                  : 'View Lab Reports',
+                                  : 'Manage Bookings',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -717,7 +648,7 @@ class _WebSidebar extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'NAVIGATION',
+                'MY ACCOUNT',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 10,
@@ -730,20 +661,21 @@ class _WebSidebar extends ConsumerWidget {
 
           // ── Nav items ──────────────────────────────────────────────────
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                ...items.map((item) {
-                  final isSelected = currentIndex == item.index;
-                  return GestureDetector(
-                    onTap: () => onSelect(item.index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
+            child: Scrollbar(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  ...items.map((item) {
+                    final isSelected = currentIndex == item.index;
+                    return GestureDetector(
+                      onTap: () => onSelect(item.index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.18)
@@ -834,7 +766,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.family_restroom_rounded,
-                    'Manage Dependents',
+                    'Emergency Contacts',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -856,7 +788,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.science_rounded,
-                    'Diagnostics Support',
+                    'Laboratories',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -894,7 +826,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.medication_rounded,
-                    'Medication Fulfillment',
+                    'Pharmacies',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -1732,56 +1664,53 @@ class _WebSidebar extends ConsumerWidget {
                     },
                   ),
                 ],
-              ],
-            ),
-          ),
-
-          // ── Divider ────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-
-          // ── Logout ─────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Logout',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
+
+          if (role != 'Patient') ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ] else
+            const SizedBox(height: 28),
         ],
       ),
     );
