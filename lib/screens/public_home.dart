@@ -3,6 +3,7 @@ import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/screens/select_user_type.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
+import 'package:icare/screens/signup.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 
@@ -85,7 +86,7 @@ class PublicHome extends StatelessWidget {
                           label: 'Sign Up',
                           filled: false,
                           onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const SelectUserType()),
+                            MaterialPageRoute(builder: (_) => const SignupScreen()),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -95,7 +96,7 @@ class PublicHome extends StatelessWidget {
                         filled: isMobile,
                         accent: !isMobile,
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(builder: (_) => isMobile ? const LoginScreen() : const WorkWithUsSignup()),
                         ),
                       ),
                     ],
@@ -529,7 +530,7 @@ class _Banner extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final isMobile = w < 700;
-    final h = isMobile ? 280.0 : (w < 900 ? 320.0 : 420.0);
+    final h = isMobile ? 320.0 : (w < 900 ? 320.0 : 420.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(
