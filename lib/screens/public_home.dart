@@ -71,32 +71,30 @@ class PublicHome extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Image.asset(ImagePaths.logo, width: isMobile ? 36 : 44, height: isMobile ? 36 : 44),
+                      Image.asset(ImagePaths.logo, width: isMobile ? 32 : 44, height: isMobile ? 32 : 44),
                       const Spacer(),
-                      if (!isMobile) ...[
-                        _NavButton(
-                          label: 'Sign In',
-                          filled: true,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        _NavButton(
-                          label: 'Sign Up',
-                          filled: false,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const SignupScreen()),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
                       _NavButton(
-                        label: isMobile ? 'Login' : 'Work With Us',
-                        filled: isMobile,
-                        accent: !isMobile,
+                        label: 'Sign In',
+                        filled: true,
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => isMobile ? const LoginScreen() : const WorkWithUsSignup()),
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _NavButton(
+                        label: 'Sign Up',
+                        filled: false,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SignupScreen()),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _NavButton(
+                        label: isMobile ? 'Work With Us' : 'Work With Us',
+                        filled: false,
+                        accent: true,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const WorkWithUsSignup()),
                         ),
                       ),
                     ],
@@ -622,76 +620,29 @@ class _Banner extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: isMobile ? 14 : 24),
-                          if (isMobile) ...[
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const DoctorsList()),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF0036BC),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  elevation: 0,
-                                ),
-                                child: const Text('Book Appointment',
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+                          // Single centered CTA button for all screen sizes
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const DoctorsList()),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF0036BC),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 22 : 32,
+                                vertical: isMobile ? 11 : 15,
+                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Connect to a Doctor',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: isMobile ? 12 : 15,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white, width: 1.5),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                child: const Text('Doctor Login',
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
-                              ),
-                            ),
-                          ] else ...[
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 8,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const DoctorsList()),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF0036BC),
-                                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text('Book Appointment',
-                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                                ),
-                                OutlinedButton(
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white, width: 1.5),
-                                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  child: const Text('Doctor Login',
-                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
