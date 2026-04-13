@@ -760,33 +760,35 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
         .where((s) => s.isNotEmpty)
         .toList();
 
-    final data = {
+    // Build vitalSigns only with non-empty values
+    final Map<String, dynamic> vitalSigns = {};
+    if (_bpController.text.isNotEmpty) vitalSigns['bloodPressure'] = _bpController.text;
+    if (_tempController.text.isNotEmpty) vitalSigns['temperature'] = _tempController.text;
+    if (_heartRateController.text.isNotEmpty) {
+      vitalSigns['heartRate'] = int.tryParse(_heartRateController.text) ?? 0;
+    }
+    if (_weightController.text.isNotEmpty) {
+      vitalSigns['weight'] = double.tryParse(_weightController.text) ?? 0.0;
+    }
+    if (_heightController.text.isNotEmpty) {
+      vitalSigns['height'] = double.tryParse(_heightController.text) ?? 0.0;
+    }
+
+    final data = <String, dynamic>{
       'patientId': widget.appointment.patient!.id,
       'appointmentId': widget.appointment.id,
-      'diagnosis': _diagnosisController.text,
+      'diagnosis': _diagnosisController.text.trim(),
       'symptoms': symptoms,
       'prescription': _prescriptions,
       'labTests': _labTests,
-      'vitalSigns': {
-        'bloodPressure': _bpController.text,
-        'temperature': _tempController.text,
-        'heartRate': _heartRateController.text.isNotEmpty
-            ? int.tryParse(_heartRateController.text) ?? 0
-            : 0,
-        'weight': _weightController.text.isNotEmpty
-            ? double.tryParse(_weightController.text) ?? 0.0
-            : 0.0,
-        'height': _heightController.text.isNotEmpty
-            ? double.tryParse(_heightController.text) ?? 0.0
-            : 0.0,
-      },
-      'notes': _notesController.text,
-      if (_followUpDate != null)
-        'followUpDate': _followUpDate!.toIso8601String(),
-      'assignedCourses': _selectedProgramIds,
-      'referredLaboratory': _selectedLabId,
-      'selectedPharmacy': _selectedPharmacyId,
+      'notes': _notesController.text.trim(),
     };
+
+    if (vitalSigns.isNotEmpty) data['vitalSigns'] = vitalSigns;
+    if (_followUpDate != null) data['followUpDate'] = _followUpDate!.toIso8601String();
+    if (_selectedProgramIds.isNotEmpty) data['assignedCourses'] = _selectedProgramIds;
+    if (_selectedLabId != null) data['referredLaboratory'] = _selectedLabId;
+    if (_selectedPharmacyId != null) data['selectedPharmacy'] = _selectedPharmacyId;
 
     final result = await _medicalRecordService.createMedicalRecord(data);
 
