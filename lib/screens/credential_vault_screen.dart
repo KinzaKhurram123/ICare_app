@@ -235,7 +235,7 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Credential Vault',
+          'Certificate',
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w900,
@@ -292,7 +292,7 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Secure Document Storage',
+            'My Certificates',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,

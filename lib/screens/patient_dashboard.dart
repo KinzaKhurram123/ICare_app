@@ -1,39 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:icare/services/appointment_service.dart';
-import 'package:icare/services/medical_record_service.dart';
-import 'package:icare/services/course_service.dart';
-import 'package:icare/utils/theme.dart';
-import 'package:icare/screens/my_appointments_list.dart';
-import 'package:icare/screens/doctors_list.dart';
-import 'package:icare/screens/patient_medical_records.dart';
-import 'package:icare/screens/patient_prescriptions.dart';
-import 'package:icare/screens/patient_lab_orders.dart';
-import 'package:icare/screens/gamification_screen.dart';
-import 'package:icare/screens/subscription_screen.dart';
-import 'package:icare/screens/health_tracker.dart';
-import 'package:icare/screens/health_journey_screen.dart';
-import 'package:icare/screens/health_journey_timeline.dart';
-import 'package:icare/screens/lifestyle_tracker_screen.dart';
-import 'package:icare/screens/lab_list.dart';
-import 'package:icare/screens/courses.dart';
-import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/models/appointment_detail.dart';
-import 'package:icare/screens/view_course.dart';
-import 'package:icare/screens/star_click_game.dart';
-import 'package:icare/services/gamification_service.dart';
-import 'package:icare/screens/pharmacies.dart';
-import 'package:icare/screens/reminder_list.dart';
-import 'package:intl/intl.dart';
+import 'package:icare/screens/public_home.dart';
 
-class PatientDashboard extends ConsumerStatefulWidget {
+/// Patient Dashboard now shows the same public home layout (mobile view)
+class PatientDashboard extends StatelessWidget {
   const PatientDashboard({super.key});
 
   @override
-  ConsumerState<PatientDashboard> createState() => _PatientDashboardState();
+  Widget build(BuildContext context) => const PublicHomeBody();
 }
 
-class _PatientDashboardState extends ConsumerState<PatientDashboard> {
+// ══════════════════════════════════════════════════════════════════════════════
+// OLD IMPLEMENTATION (ARCHIVED)
+// ══════════════════════════════════════════════════════════════════════════════
+/*
+class _PatientDashboardState_OLD extends State<PatientDashboard> {
   final AppointmentService _appointmentService = AppointmentService();
   final MedicalRecordService _medicalRecordService = MedicalRecordService();
   final CourseService _courseService = CourseService();
@@ -1742,79 +1722,4 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
     );
   }
 
-  Widget _buildSubscriptionBanner() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.workspace_premium_rounded,
-              color: Colors.amber,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Upgrade to iCare Premium',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  'Unlimited doctor chats & priority bookings.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.black,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              'Upgrade',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+*/

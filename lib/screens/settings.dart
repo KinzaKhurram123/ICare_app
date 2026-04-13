@@ -144,21 +144,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         },
       },
       {
-        "id": "2",
-        "title": isStudent ? "My Certificates" : "Subscription Plans",
-        "onPress": () {
-          if (isStudent) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (ctx) => const CertificatesScreen()),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Subscription Plans coming soon!")),
-            );
-          }
-        },
-      },
-      {
         "id": "3",
         "title": "Change Passwords",
         "onPress": () {
@@ -295,22 +280,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 32),
-              CustomButton(
-                borderRadius: 30,
-                onPressed: () {
-                  // Logout logic
-                },
-                label: "Logout",
-              ),
-              const SizedBox(height: 12),
-              CustomButton(
-                borderRadius: 30,
-                onPressed: () {
-                  // Delete logic
-                },
-                label: "Delete Account",
-              ),
               const SizedBox(height: 40),
             ],
           ),
@@ -384,88 +353,10 @@ class _WebSettingsScreen extends StatelessWidget {
                         ),
 
                         const SizedBox(height: 48),
-
-                        // Delete Account Zone
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFFECACA)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Danger Zone",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: "Gilroy-Bold",
-                                  color: Color(0xFFDC2626),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                "Permanently delete your account and all associated data.",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF991B1B),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFDC2626),
-                                    side: const BorderSide(
-                                      color: Color(0xFFDC2626),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    AppDialogs.showWarningDialog(
-                                      context,
-                                      "Are you sure you want to delete your account?",
-                                      null,
-                                      [
-                                        "I don’t need it anymore",
-                                        "I don’t find it useful",
-                                        "Other",
-                                      ],
-                                      numOfActions: 2,
-                                      onPrimaryButtonPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (ctx) => LoginScreen(),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: const Text(
-                                    "Delete Account",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(width: 48),
-
+                  const SizedBox(width: 40),
                   // ── Right Side: Settings List ──
                   Expanded(
                     flex: 5,

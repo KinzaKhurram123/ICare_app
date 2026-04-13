@@ -166,15 +166,10 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
         }),
-        _drawerItem('Book A Lab', Icons.science_rounded, () {
+        _drawerItem('Laboratories', Icons.science_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabsListScreen()));
-        }),
-        _drawerItem('Lab Results/Reports', Icons.biotech_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => LabReportsScreen()));
         }),
         _drawerItem('My Appointment', Icons.calendar_month_rounded, () {
           Navigator.of(context).push(
@@ -189,6 +184,16 @@ class CustomDrawer extends ConsumerWidget {
           ).push(MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()));
         }),
         _drawerItem('Reminders', Icons.alarm_rounded, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
+        }),
+        _drawerItem('Lifestyle Tracker', Icons.directions_run_rounded, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Coming Soon!')),
+          );
+        }),
+        _drawerItem('Emergency Contacts', Icons.contact_emergency_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
@@ -523,117 +528,14 @@ class CustomDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 10),
-
-              // Close button (top-right)
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+              // Logo only at top
+              Center(
+                child: Image.asset(
+                  ImagePaths.logo,
+                  width: 100,
+                  height: 100,
                 ),
               ),
-
-              const SizedBox(height: 10),
-
-              // Profile section with border and edit icon
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      // Navigate to role-specific profile setup or view profile
-                      if (selectedRole == "Laboratory") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const LabProfileSetup(),
-                          ),
-                        );
-                      } else if (selectedRole == "Pharmacy") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const PharmacyProfileSetup(),
-                          ),
-                        );
-                      } else if (selectedRole == "Student") {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const StudentProfileSetup(),
-                          ),
-                        );
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => ViewProfile()),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue, width: 2),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 45,
-                        backgroundImage: AssetImage(ImagePaths.user7),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    // bottom: 4,
-                    top: ScallingConfig.verticalScale(5),
-                    right: ScallingConfig.scale(5),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-              Consumer(
-                builder: (context, ref, child) {
-                  final userName = ref.watch(authProvider).user?.name ?? 'User';
-                  return Text(
-                    userName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: Colors.black,
-                    ),
-                  );
-                },
-              ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final userEmail = ref.watch(authProvider).user?.email ?? '';
-                  return Text(
-                    userEmail,
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  );
-                },
-              ),
-              const SizedBox(height: 25),
 
               // Menu list (exact items)
               Expanded(
@@ -655,20 +557,6 @@ class CustomDrawer extends ConsumerWidget {
                           vertical: 15,
                         ),
                         child: Divider(color: Color(0xFFF1F5F9), height: 1),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        child: CustomText(
-                          text: "QUICK ACTIONS",
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF94A3B8),
-                          letterSpacing: 1.5,
-                        ),
                       ),
 
                       // Role-specific quick actions
@@ -763,7 +651,7 @@ class CustomDrawer extends ConsumerWidget {
                           vertical: 8,
                         ),
                         child: CustomText(
-                          text: "NAVIGATION",
+                          text: "MY ACCOUNT",
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF94A3B8),
@@ -888,7 +776,8 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
 
-              // Logout button
+              // Logout button - only for non-Patient, non-Doctor roles
+              if (selectedRole != 'Patient' && selectedRole != 'Doctor')
               Padding(
                 padding: EdgeInsets.only(bottom: 30),
                 child: CustomButton(

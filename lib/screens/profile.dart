@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icare/screens/create_profile.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -114,6 +115,34 @@ class _WebProfileInitial extends StatelessWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       fontFamily: "Gilroy-Bold",
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: 320,
+                height: 56,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (ctx) => LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                 ),
