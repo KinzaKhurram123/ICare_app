@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/services/efficiency_service.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -47,6 +48,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
   final CourseService _courseService = CourseService();
   final LaboratoryService _labService = LaboratoryService();
   final PharmacyService _pharmacyService = PharmacyService();
+  final EfficiencyService _efficiencyService = EfficiencyService();
 
   List<dynamic> _availablePrograms = [];
   List<String> _selectedProgramIds = [];
@@ -120,6 +122,68 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
     _weightController.dispose();
     _heightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showUseTemplateDialog() async {
+    final templates = await _efficiencyService.getPrescriptionTemplates();
+    if (!mounted) return;
+    if (templates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No templates saved. Create one from Prescription Templates.')),
+      );
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Select Template', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: templates.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final t = templates[i];
+              final drugs = (t['drugs'] ?? []) as List<dynamic>;
+              return ListTile(
+                leading: const Icon(Icons.medical_services_rounded, color: AppColors.primaryColor),
+                title: Text(t['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(
+                  drugs.map((d) => '${d['name']} (${d['dosage']})').join(', '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  setState(() {
+                    for (final drug in drugs) {
+                      _prescriptions.add({
+                        'name': drug['name']?.toString() ?? '',
+                        'dosage': drug['dosage']?.toString() ?? '',
+                        'frequency': '',
+                        'duration': '',
+                        'instructions': '',
+                      });
+                    }
+                  });
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${drugs.length} drug(s) added from "${t['name']}"'),
+                      backgroundColor: const Color(0xFF10B981),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ],
+      ),
+    );
   }
 
   void _addPrescription() {
@@ -967,12 +1031,25 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildSectionTitle('Prescriptions'),
-                      IconButton(
-                        onPressed: _addPrescription,
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: AppColors.primaryColor,
-                        ),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: _showUseTemplateDialog,
+                            icon: const Icon(Icons.folder_open_rounded, size: 18),
+                            label: const Text('Use Template'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primaryColor,
+                              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _addPrescription,
+                            icon: const Icon(
+                              Icons.add_circle,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
