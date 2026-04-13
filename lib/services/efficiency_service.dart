@@ -1,17 +1,19 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:icare/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EfficiencyService {
   final ApiService _apiService = ApiService();
+  static const String _templatesKey = 'prescription_templates_local';
 
-  // Prescription Templates
+  // Prescription Templates — stored locally (backend endpoint not available)
   Future<List<dynamic>> getPrescriptionTemplates() async {
     try {
-      final response = await _apiService.get(
-        '/efficiency/prescription-templates',
-      );
-      return response.data['templates'] ?? [];
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_templatesKey);
+      if (raw == null) return [];
+      return List<dynamic>.from(jsonDecode(raw));
     } catch (e) {
       debugPrint('❌ getPrescriptionTemplates error: $e');
       return [];
@@ -20,17 +22,17 @@ class EfficiencyService {
 
   Future<Map<String, dynamic>> createPrescriptionTemplate(Map<String, dynamic> data) async {
     try {
-      debugPrint('📋 Creating prescription template: ${data['name']}');
-      final response = await _apiService.post('/efficiency/prescription-templates', data);
-      debugPrint('✅ Template created: ${response.statusCode}');
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true};
-      }
-      return {'success': false, 'message': 'Unexpected response: ${response.statusCode}'};
-    } on DioException catch (e) {
-      debugPrint('❌ createPrescriptionTemplate DioException: ${e.response?.data}');
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Network error';
-      return {'success': false, 'message': msg};
+      final prefs = await SharedPreferences.getInstance();
+      final existing = await getPrescriptionTemplates();
+      final newTemplate = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'name': data['name'],
+        'drugs': data['drugs'],
+      };
+      existing.add(newTemplate);
+      await prefs.setString(_templatesKey, jsonEncode(existing));
+      debugPrint('✅ Template saved locally: ${data['name']}');
+      return {'success': true};
     } catch (e) {
       debugPrint('❌ createPrescriptionTemplate error: $e');
       return {'success': false, 'message': e.toString()};
@@ -42,28 +44,28 @@ class EfficiencyService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await _apiService.put(
-        '/efficiency/prescription-templates/$templateId',
-        data,
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true};
+      final prefs = await SharedPreferences.getInstance();
+      final existing = await getPrescriptionTemplates();
+      final idx = existing.indexWhere((t) => t['id'] == templateId);
+      if (idx != -1) {
+        existing[idx] = {'id': templateId, ...data};
+        await prefs.setString(_templatesKey, jsonEncode(existing));
       }
-      return {'success': false, 'message': 'Failed to update template'};
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.response?.data?['message'] ?? 'Network error'};
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 
   Future<Map<String, dynamic>> deletePrescriptionTemplate(String templateId) async {
     try {
-      final response = await _apiService.delete('/efficiency/prescription-templates/$templateId');
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return {'success': true};
-      }
-      return {'success': false, 'message': 'Failed to delete template'};
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.response?.data?['message'] ?? 'Network error'};
+      final prefs = await SharedPreferences.getInstance();
+      final existing = await getPrescriptionTemplates();
+      existing.removeWhere((t) => t['id'] == templateId);
+      await prefs.setString(_templatesKey, jsonEncode(existing));
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 
