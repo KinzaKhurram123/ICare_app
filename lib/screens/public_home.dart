@@ -10,14 +10,14 @@ class PublicHome extends StatelessWidget {
   const PublicHome({super.key});
 
   static const List<Map<String, String>> _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'img': 'https://randomuser.me/api/portraits/men/32.jpg'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'img': 'https://randomuser.me/api/portraits/women/44.jpg'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'img': 'https://randomuser.me/api/portraits/men/45.jpg'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'img': 'https://randomuser.me/api/portraits/women/68.jpg'},
-    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'img': 'https://randomuser.me/api/portraits/men/52.jpg'},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'img': 'https://randomuser.me/api/portraits/women/22.jpg'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic', 'img': 'https://randomuser.me/api/portraits/men/78.jpg'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'img': 'https://randomuser.me/api/portraits/women/55.jpg'},
+    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'img': 'assets/images/user1.png'},
+    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'img': 'assets/images/user10.png'},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'img': 'assets/images/user7.png'},
+    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'img': 'assets/images/user11.png'},
+    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'img': 'assets/images/user12.png'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic', 'img': 'assets/images/user13.png'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'img': 'assets/images/user5.png'},
   ];
 
   static const List<Map<String, String>> _pharmacies = [
@@ -44,6 +44,7 @@ class PublicHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -63,33 +64,38 @@ class PublicHome extends StatelessWidget {
               ),
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 24, 
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
-                      Image.asset(ImagePaths.logo, width: 44, height: 44),
+                      Image.asset(ImagePaths.logo, width: isMobile ? 36 : 44, height: isMobile ? 36 : 44),
                       const Spacer(),
+                      if (!isMobile) ...[
+                        _NavButton(
+                          label: 'Sign In',
+                          filled: true,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _NavButton(
+                          label: 'Sign Up',
+                          filled: false,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SelectUserType()),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
                       _NavButton(
-                        label: 'Sign In',
-                        filled: true,
+                        label: isMobile ? 'Login' : 'Work With Us',
+                        filled: isMobile,
+                        accent: !isMobile,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _NavButton(
-                        label: 'Sign Up',
-                        filled: false,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SelectUserType()),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _NavButton(
-                        label: 'Work With Us',
-                        filled: false,
-                        accent: true,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const WorkWithUsSignup()),
                         ),
                       ),
                     ],
@@ -523,137 +529,183 @@ class _Banner extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final isMobile = w < 700;
-    final h = isMobile ? 260.0 : (w < 900 ? 340.0 : 500.0);
+    final h = isMobile ? 280.0 : (w < 900 ? 320.0 : 420.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 24,
-        vertical: isMobile ? 12 : 20,
+        horizontal: isMobile ? 8 : 12,
+        vertical: isMobile ? 8 : 14,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(isMobile ? 20 : 28),
+        borderRadius: BorderRadius.circular(isMobile ? 18 : 22),
         child: SizedBox(
           width: double.infinity,
           height: h,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background image
-              Image.asset(
-                'assets/images/icare-banenr.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0036BC), Color(0xFF14B1FF)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
-              ),
-              // Dark gradient overlay on left for text readability
+              // 1. Background gradient
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xCC001A7A), Color(0x55001A7A), Colors.transparent],
-                    stops: [0.0, 0.5, 1.0],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
+                    colors: [Color(0xFF0036BC), Color(0xFF0554D4), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
               ),
-              // Text + Buttons
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : 48,
-                  vertical: isMobile ? 20 : 40,
+              // 2. Decorative circles (desktop only)
+              if (!isMobile) ...[
+                Positioned(
+                  right: -30, top: 20,
+                  child: Container(
+                    width: 160, height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.07),
+                    ),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Connecting You to Quality\nHealthcare Instantly',
-                      style: TextStyle(
-                        fontSize: isMobile ? 20 : 36,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        fontFamily: 'Gilroy-Bold',
-                        height: 1.25,
-                        shadows: const [
-                          Shadow(color: Colors.black26, blurRadius: 8),
+                Positioned(
+                  right: 50, bottom: 20,
+                  child: Container(
+                    width: 90, height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.05),
+                    ),
+                  ),
+                ),
+              ],
+              // 3. Row layout: text left | image right (no gap)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left: text + buttons (55%)
+                  Expanded(
+                    flex: 55,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: isMobile ? 16 : 52,
+                        right: isMobile ? 8 : 4,
+                        top: isMobile ? 20 : 40,
+                        bottom: isMobile ? 20 : 40,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isMobile
+                                ? 'Connecting You to\nQuality Healthcare\nInstantly'
+                                : 'Connecting You to Quality\nHealthcare Instantly',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 38,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              fontFamily: 'Gilroy-Bold',
+                              height: 1.25,
+                            ),
+                          ),
+                          SizedBox(height: isMobile ? 8 : 12),
+                          Text(
+                            isMobile
+                                ? 'Book appointments & consult\ntrusted doctors from home.'
+                                : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: isMobile ? 11 : 17,
+                              color: Colors.white.withOpacity(0.9),
+                              height: 1.5,
+                            ),
+                          ),
+                          SizedBox(height: isMobile ? 14 : 24),
+                          if (isMobile) ...[
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF0036BC),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Book Appointment',
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white, width: 1.5),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Doctor Login',
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+                              ),
+                            ),
+                          ] else ...[
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 8,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF0036BC),
+                                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Book Appointment',
+                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                ),
+                                OutlinedButton(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white, width: 1.5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('Doctor Login',
+                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    SizedBox(height: isMobile ? 8 : 14),
-                    Text(
-                      'Book appointments, consult trusted doctors, and\naccess healthcare services from the comfort of your home.',
-                      style: TextStyle(
-                        fontSize: isMobile ? 11 : 15,
-                        color: Colors.white.withOpacity(0.92),
-                        height: 1.5,
-                      ),
+                  ),
+                  // Right: doctor image (45%)
+                  Expanded(
+                    flex: 45,
+                    child: Image.asset(
+                      'assets/images/new.png',
+                      fit: BoxFit.contain,
+                      alignment: isMobile ? Alignment.centerRight : const Alignment(0.3, 0.0),
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
-                    SizedBox(height: isMobile ? 16 : 28),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 10,
-                      children: [
-                        // Book Appointment → Login
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF0036BC),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 16 : 24,
-                              vertical: isMobile ? 10 : 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Book Appointment',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: isMobile ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                        // Doctor Login → SelectUserType (signup)
-                        OutlinedButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const SelectUserType()),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white, width: 1.5),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 16 : 24,
-                              vertical: isMobile ? 10 : 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            'Doctor Login',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: isMobile ? 12 : 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -690,14 +742,14 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   int _currentPage = 0;
 
   static const _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'fee': 'Rs. 1,200', 'img': 'https://randomuser.me/api/portraits/men/32.jpg'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'fee': 'Rs. 1,000', 'img': 'https://randomuser.me/api/portraits/women/44.jpg'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'fee': 'Rs. 1,500', 'img': 'https://randomuser.me/api/portraits/men/45.jpg'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'fee': 'Rs. 900', 'img': 'https://randomuser.me/api/portraits/women/68.jpg'},
-    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'fee': 'Rs. 800', 'img': 'https://randomuser.me/api/portraits/men/52.jpg'},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'fee': 'Rs. 1,100', 'img': 'https://randomuser.me/api/portraits/women/22.jpg'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'fee': 'Rs. 1,800', 'img': 'https://randomuser.me/api/portraits/men/78.jpg'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'fee': 'Rs. 950', 'img': 'https://randomuser.me/api/portraits/women/55.jpg'},
+    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'fee': 'Rs. 1,200', 'img': 'assets/images/user1.png'},
+    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'fee': 'Rs. 1,000', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'fee': 'Rs. 1,500', 'img': 'assets/images/user10.png'},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'fee': 'Rs. 900', 'img': 'assets/images/user7.png'},
+    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'fee': 'Rs. 800', 'img': 'assets/images/user11.png'},
+    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'fee': 'Rs. 1,100', 'img': 'assets/images/user12.png'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'fee': 'Rs. 1,800', 'img': 'assets/images/user13.png'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'fee': 'Rs. 950', 'img': 'assets/images/user5.png'},
   ];
 
   @override
