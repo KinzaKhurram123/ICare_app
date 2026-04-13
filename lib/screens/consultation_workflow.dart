@@ -36,7 +36,7 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadPatientHistory();
   }
 
@@ -122,16 +122,9 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
           indicatorColor: AppColors.primaryColor,
           tabs: const [
             Tab(text: '1. History (DHR)', icon: Icon(Icons.history_rounded)),
-            Tab(text: '2. Vitals', icon: Icon(Icons.monitor_heart_rounded)),
-            Tab(
-              text: '3. Examination',
-              icon: Icon(Icons.person_search_rounded),
-            ),
-            Tab(text: '4. Diagnosis', icon: Icon(Icons.biotech_rounded)),
-            Tab(
-              text: '5. Treatment Plan',
-              icon: Icon(Icons.assignment_rounded),
-            ),
+            Tab(text: '2. Examination', icon: Icon(Icons.person_search_rounded)),
+            Tab(text: '3. Diagnosis', icon: Icon(Icons.biotech_rounded)),
+            Tab(text: '4. Treatment Plan', icon: Icon(Icons.assignment_rounded)),
           ],
         ),
       ),
@@ -139,7 +132,6 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
         controller: _tabController,
         children: [
           _buildHistoryTab(),
-          _buildVitalsTab(),
           _buildExaminationTab(),
           _buildDiagnosisTab(),
           _buildTreatmentPlanTab(),
@@ -482,15 +474,6 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
                     IntakeNotesRedesign(appointment: widget.appointment),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _buildWorkflowAction(
-            'Record Current Vitals',
-            'Update blood pressure, heart rate, and weight',
-            Icons.monitor_heart_rounded,
-            () {
-              // Navigation to vitals recording screen
-            },
           ),
         ],
       ),

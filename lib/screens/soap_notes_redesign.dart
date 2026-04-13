@@ -574,19 +574,7 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
-            suffixIcon: _isFinalized
-                ? null
-                : IconButton(
-                    onPressed: () => _startListening(controller, hint),
-                    icon: Icon(
-                      isThisListening
-                          ? Icons.mic_rounded
-                          : Icons.mic_none_rounded,
-                      color: isThisListening
-                          ? Colors.redAccent
-                          : AppColors.primaryColor,
-                    ),
-                  ),
+            suffixIcon: null,
           ),
         ),
       ],
