@@ -10,44 +10,13 @@ import 'package:icare/utils/theme.dart';
 class PublicHome extends StatelessWidget {
   const PublicHome({super.key});
 
-  static const List<Map<String, String>> _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'img': 'assets/images/user1.png'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'img': 'assets/images/user5.png'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'img': 'assets/images/user10.png'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'img': 'assets/images/user7.png'},
-    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'img': 'assets/images/user11.png'},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'img': 'assets/images/user12.png'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic', 'img': 'assets/images/user13.png'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'img': 'assets/images/user5.png'},
-  ];
-
-  static const List<Map<String, String>> _pharmacies = [
-    {'name': 'MedPlus Pharmacy', 'area': 'Gulshan, Karachi'},
-    {'name': 'HealthCare Pharma', 'area': 'DHA, Lahore'},
-    {'name': 'City Pharmacy', 'area': 'F-7, Islamabad'},
-    {'name': 'Al-Shifa Pharmacy', 'area': 'Saddar, Karachi'},
-    {'name': 'Cure Pharmacy', 'area': 'Model Town, Lahore'},
-    {'name': 'Wellness Pharma', 'area': 'G-11, Islamabad'},
-    {'name': 'Shifaa Pharmacy', 'area': 'Clifton, Karachi'},
-    {'name': 'Apollo Pharmacy', 'area': 'Johar Town, Lahore'},
-  ];
-
-  static const List<Map<String, String>> _labs = [
-    {'name': 'Chughtai Lab', 'area': 'Lahore'},
-    {'name': 'Essa Lab', 'area': 'Karachi'},
-    {'name': 'Excel Labs', 'area': 'Islamabad'},
-    {'name': 'Shaukat Khanum Lab', 'area': 'Lahore'},
-    {'name': 'Agha Khan Lab', 'area': 'Karachi'},
-    {'name': 'Islamabad Diagnostic', 'area': 'Islamabad'},
-    {'name': 'Doctors Lab', 'area': 'Rawalpindi'},
-    {'name': 'Metropole Lab', 'area': 'Karachi'},
-  ];
-
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: _WhatsAppFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -66,7 +35,7 @@ class PublicHome extends StatelessWidget {
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 12 : 24, 
+                    horizontal: isMobile ? 12 : 24,
                     vertical: 14,
                   ),
                   child: Row(
@@ -90,7 +59,7 @@ class PublicHome extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       _NavButton(
-                        label: isMobile ? 'Work With Us' : 'Work With Us',
+                        label: 'Work With Us',
                         filled: false,
                         accent: true,
                         onTap: () => Navigator.of(context).push(
@@ -131,45 +100,7 @@ class PublicHome extends StatelessWidget {
 
                 const SizedBox(height: 60),
 
-                // 2. Pharmacies Section
-                _CenteredSection(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _SectionHeader(
-                        title: 'Pharmacies',
-                        subtitle: 'Order medicines from trusted pharmacies near you',
-                      ),
-                      const SizedBox(height: 24),
-                      _PharmaciesGrid(),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 60),
-
-                // 3. Laboratories Section
-                Container(
-                  color: const Color(0xFFF4F8FF),
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: _CenteredSection(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _SectionHeader(
-                          title: 'Laboratories',
-                          subtitle: 'Book lab tests and get results delivered at home',
-                        ),
-                        const SizedBox(height: 24),
-                        _LaboratoriesGrid(),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 60),
-
-                // 4. Browse by Specialty Section
+                // 2. Browse by Specialty Section (moved before pharmacy/labs)
                 _CenteredSection(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -178,15 +109,99 @@ class PublicHome extends StatelessWidget {
                         title: 'Browse by Specialty',
                         subtitle: 'Find the right specialist for your health needs',
                       ),
+                      const SizedBox(height: 16),
+                      // Search by condition
+                      _ConditionSearchBar(),
                       const SizedBox(height: 24),
                       _SpecialtyGrid(),
+                      const SizedBox(height: 24),
+                      // See All Speciality centered button
+                      Center(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const DoctorsList()),
+                          ),
+                          icon: const Icon(Icons.grid_view_rounded, size: 18),
+                          label: const Text('See All Speciality'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF0036BC),
+                            side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 60),
 
-                // 5. How it Works Section
+                // 3. Order Medicines Section (renamed from Pharmacies)
+                _CenteredSection(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _SectionHeader(
+                        title: 'Order Medicines',
+                        subtitle: 'Order medicines from trusted pharmacies near you',
+                      ),
+                      const SizedBox(height: 16),
+                      _MedicineSearchBar(),
+                      const SizedBox(height: 24),
+                      _PharmaciesGrid(),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // 4. Book a Lab Test Section (renamed from Laboratories)
+                Container(
+                  color: const Color(0xFFF4F8FF),
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: _CenteredSection(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _SectionHeader(
+                          title: 'Book a Lab Test',
+                          subtitle: 'Book lab tests and get results delivered at home',
+                        ),
+                        const SizedBox(height: 16),
+                        _LabSearchBar(),
+                        const SizedBox(height: 24),
+                        _LaboratoriesGrid(),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.biotech_rounded, size: 18),
+                            label: const Text('Book Lab'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // 5. Courses Section (new — above How iCare Works)
+                _CoursesSection(),
+
+                const SizedBox(height: 60),
+
+                // 6. How iCare Works Section
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 60),
@@ -220,6 +235,252 @@ class PublicHome extends StatelessWidget {
   }
 }
 
+// ── WhatsApp FAB ──────────────────────────────────────────────────────────────
+class _WhatsAppFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF25D366),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF25D366).withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.chat_rounded, color: Colors.white, size: 28),
+      ),
+    );
+  }
+}
+
+// ── Search Bars ───────────────────────────────────────────────────────────────
+class _ConditionSearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Search by condition (e.g. Diabetes, Fever...)',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0036BC), size: 20),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MedicineSearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Search for medicines, brands...',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 20),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LabSearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Search test names (e.g. CBC, HbA1c...)',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 20),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Courses Section ───────────────────────────────────────────────────────────
+class _CoursesSection extends StatelessWidget {
+  static const _courses = [
+    {'title': 'Nutrition & Diet', 'desc': 'Learn healthy eating habits for a better lifestyle', 'icon': Icons.restaurant_menu_rounded, 'color': 0xFF10B981},
+    {'title': 'Mental Wellness', 'desc': 'Manage stress, anxiety and build emotional resilience', 'icon': Icons.self_improvement_rounded, 'color': 0xFF6366F1},
+    {'title': 'Fitness & Exercise', 'desc': 'Home workouts and fitness plans for all levels', 'icon': Icons.fitness_center_rounded, 'color': 0xFFEF4444},
+    {'title': 'Chronic Disease Care', 'desc': 'Expert guidance for diabetes, hypertension & more', 'icon': Icons.monitor_heart_rounded, 'color': 0xFFF59E0B},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return Container(
+      color: const Color(0xFFF4F8FF),
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: _CenteredSection(
+        child: Column(
+          children: [
+            _SectionHeader(
+              title: "Join Pakistan's First 360° Health Care Platform",
+              subtitle: 'Access courses, guides and wellness programs designed for you',
+            ),
+            const SizedBox(height: 32),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: isMobile
+                  ? Column(
+                      children: _courses.map((c) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _CourseCard(course: c),
+                      )).toList(),
+                    )
+                  : GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 2.8,
+                      children: _courses.map((c) => _CourseCard(course: c)).toList(),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CourseCard extends StatefulWidget {
+  final Map<String, Object> course;
+  const _CourseCard({required this.course});
+
+  @override
+  State<_CourseCard> createState() => _CourseCardState();
+}
+
+class _CourseCardState extends State<_CourseCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(widget.course['color'] as int);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(20),
+        transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered ? color : const Color(0xFFE8ECF5),
+            width: _hovered ? 2 : 1.5,
+          ),
+          boxShadow: [
+            if (_hovered)
+              BoxShadow(
+                color: color.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(widget.course['icon'] as IconData, color: color, size: 26),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.course['title'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                      fontFamily: 'Gilroy-Bold',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.course['desc'] as String,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Card Data Model ───────────────────────────────────────────────────────────
 class _CardData {
   final String title;
@@ -237,217 +498,6 @@ class _CardData {
     required this.iconColor,
     this.iconBg,
   });
-}
-
-// ── Card Grid — desktop: Wrap, mobile: horizontal scroll ─────────────────────
-class _CardGrid extends StatelessWidget {
-  final List<_CardData> items;
-  final double cardWidth;
-  final double cardHeight;
-
-  const _CardGrid({
-    required this.items,
-    required this.cardWidth,
-    required this.cardHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final isDesktop = w > 700;
-
-    if (isDesktop) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: items.map((item) => _AnimatedCard(
-            data: item,
-            width: cardWidth,
-            height: cardHeight,
-          )).toList(),
-        ),
-      );
-    }
-
-    // Mobile: horizontal scroll
-    return SizedBox(
-      height: cardHeight,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (_, i) => _AnimatedCard(
-          data: items[i],
-          width: cardWidth,
-          height: cardHeight,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Animated Card with hover + click blue effect ──────────────────────────────
-class _AnimatedCard extends StatefulWidget {
-  final _CardData data;
-  final double width;
-  final double height;
-
-  const _AnimatedCard({
-    required this.data,
-    required this.width,
-    required this.height,
-  });
-
-  @override
-  State<_AnimatedCard> createState() => _AnimatedCardState();
-}
-
-class _AnimatedCardState extends State<_AnimatedCard>
-    with SingleTickerProviderStateMixin {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = _hovered || _pressed;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          width: widget.width,
-          height: widget.height,
-          transform: Matrix4.identity()
-            ..translate(0.0, isActive ? -4.0 : 0.0),
-          decoration: BoxDecoration(
-            color: _pressed ? const Color(0xFF0036BC) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isActive ? const Color(0xFF14B1FF) : const Color(0xFFE8ECF5),
-              width: isActive ? 2 : 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isActive
-                    ? const Color(0xFF14B1FF).withOpacity(0.25)
-                    : Colors.black.withOpacity(0.05),
-                blurRadius: isActive ? 20 : 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: _buildContent(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    final textColor = _pressed ? Colors.white : const Color(0xFF0F172A);
-    final subtitleColor = _pressed ? Colors.white70 : Colors.grey;
-
-    if (widget.data.imageUrl != null) {
-      // Doctor card with photo
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: const Color(0xFFE8F4FF),
-            child: ClipOval(
-              child: Image.network(
-                widget.data.imageUrl!,
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.person_rounded,
-                  size: 40,
-                  color: _pressed ? Colors.white : const Color(0xFF0036BC),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              widget.data.title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: _pressed ? Colors.white : const Color(0xFF0036BC),
-                fontFamily: 'Gilroy-Bold',
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            widget.data.subtitle,
-            style: TextStyle(fontSize: 11, color: subtitleColor),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      );
-    }
-
-    // Pharmacy / Lab card with icon
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: _pressed
-                ? Colors.white.withOpacity(0.2)
-                : (widget.data.iconBg ?? widget.data.iconColor.withOpacity(0.1)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            widget.data.icon,
-            color: _pressed ? Colors.white : widget.data.iconColor,
-            size: 24,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            widget.data.title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-              fontFamily: 'Gilroy-Bold',
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          widget.data.subtitle,
-          style: TextStyle(fontSize: 11, color: subtitleColor),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
 }
 
 // ── Navbar Button ─────────────────────────────────────────────────────────────
@@ -523,12 +573,38 @@ class _NavButton extends StatelessWidget {
 }
 
 // ── Banner ────────────────────────────────────────────────────────────────────
-class _Banner extends StatelessWidget {
+class _Banner extends StatefulWidget {
+  @override
+  State<_Banner> createState() => _BannerState();
+}
+
+class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.06).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final isMobile = w < 700;
-    final h = isMobile ? 320.0 : (w < 900 ? 320.0 : 420.0);
+    final h = isMobile ? 380.0 : (w < 900 ? 360.0 : 460.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -576,11 +652,11 @@ class _Banner extends StatelessWidget {
                   ),
                 ),
               ],
-              // 3. Row layout: text left | image right (no gap)
+              // 3. Row layout: text left | image right
               Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Left: text + buttons (55%)
+                  // Left: text + buttons
                   Expanded(
                     flex: 55,
                     child: Padding(
@@ -596,11 +672,11 @@ class _Banner extends StatelessWidget {
                         children: [
                           Text(
                             isMobile
-                                ? 'Connecting You to\nQuality Healthcare\nInstantly'
-                                : 'Connecting You to Quality\nHealthcare Instantly',
+                                ? 'Talk to a verified\nSpecialist Doctor'
+                                : 'Talk to a verified Specialist Doctor',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: isMobile ? 20 : 38,
+                              fontSize: isMobile ? 22 : 36,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
                               fontFamily: 'Gilroy-Bold',
@@ -614,32 +690,97 @@ class _Banner extends StatelessWidget {
                                 : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: isMobile ? 11 : 17,
+                              fontSize: isMobile ? 11 : 16,
                               color: Colors.white.withOpacity(0.9),
                               height: 1.5,
                             ),
                           ),
-                          SizedBox(height: isMobile ? 14 : 24),
-                          // Single centered CTA button for all screen sizes
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const DoctorsList()),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF0036BC),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 22 : 32,
-                                vertical: isMobile ? 11 : 15,
+                          SizedBox(height: isMobile ? 16 : 24),
+                          // Two CTA buttons
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 12,
+                            runSpacing: 10,
+                            children: [
+                              // Pulsing Connect button
+                              AnimatedBuilder(
+                                animation: _pulseAnimation,
+                                builder: (context, child) => Transform.scale(
+                                  scale: _pulseAnimation.value,
+                                  child: child,
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF0036BC),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isMobile ? 20 : 28,
+                                      vertical: isMobile ? 11 : 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Connect to a Doctor',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: isMobile ? 12 : 14,
+                                      fontFamily: 'Gilroy-Bold',
+                                    ),
+                                  ),
+                                ),
                               ),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              elevation: 0,
+                              // Book Appointment button
+                              OutlinedButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white70, width: 1.5),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isMobile ? 20 : 28,
+                                    vertical: isMobile ? 11 : 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: Text(
+                                  'Book Appointment',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: isMobile ? 12 : 14,
+                                    fontFamily: 'Gilroy-Bold',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: isMobile ? 12 : 18),
+                          // Search bar below buttons
+                          Container(
+                            height: 44,
+                            margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              'Connect to a Doctor',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: isMobile ? 12 : 15,
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search doctors, specialties...',
+                                hintStyle: TextStyle(fontSize: isMobile ? 11 : 13, color: Colors.grey[400]),
+                                prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 18 : 20),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 13),
                               ),
                             ),
                           ),
@@ -694,14 +835,14 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   int _currentPage = 0;
 
   static const _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'fee': 'Rs. 1,200', 'img': 'assets/images/user1.png'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'fee': 'Rs. 1,000', 'img': 'assets/images/user5.png'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'fee': 'Rs. 1,500', 'img': 'assets/images/user10.png'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'fee': 'Rs. 900', 'img': 'assets/images/user7.png'},
-    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'fee': 'Rs. 800', 'img': 'assets/images/user11.png'},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'fee': 'Rs. 1,100', 'img': 'assets/images/user12.png'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'fee': 'Rs. 1,800', 'img': 'assets/images/user13.png'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'fee': 'Rs. 950', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'img': 'assets/images/user1.png'},
+    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'img': 'assets/images/user10.png'},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'img': 'assets/images/user7.png'},
+    {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'img': 'assets/images/user11.png'},
+    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'img': 'assets/images/user12.png'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'img': 'assets/images/user13.png'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user5.png'},
   ];
 
   @override
@@ -726,10 +867,10 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 700;
-    
+
     if (isMobile) {
       return SizedBox(
-        height: 300,
+        height: 270,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -883,8 +1024,8 @@ class _DoctorCardState extends State<_DoctorCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 220,
-        padding: const EdgeInsets.all(18),
+        width: 210,
+        padding: const EdgeInsets.all(16),
         transform: Matrix4.identity()..translate(0.0, _hovered ? -4.0 : 0.0),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -906,8 +1047,8 @@ class _DoctorCardState extends State<_DoctorCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -933,16 +1074,12 @@ class _DoctorCardState extends State<_DoctorCard> {
                   },
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFF0036BC),
-                    child: const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.person, size: 36, color: Colors.white),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               widget.doctor['name']!,
               style: const TextStyle(
@@ -955,76 +1092,41 @@ class _DoctorCardState extends State<_DoctorCard> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               widget.doctor['spec']!,
-              style: TextStyle(
-                fontSize: 11.5,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               widget.doctor['exp']!,
-              style: TextStyle(
-                fontSize: 10.5,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 10.5, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.star, color: Color(0xFFF5A623), size: 14),
-                const Icon(Icons.star, color: Color(0xFFF5A623), size: 14),
-                const Icon(Icons.star, color: Color(0xFFF5A623), size: 14),
-                const Icon(Icons.star, color: Color(0xFFF5A623), size: 14),
+                const Icon(Icons.star, color: Color(0xFFF5A623), size: 13),
+                const Icon(Icons.star, color: Color(0xFFF5A623), size: 13),
+                const Icon(Icons.star, color: Color(0xFFF5A623), size: 13),
+                const Icon(Icons.star, color: Color(0xFFF5A623), size: 13),
                 Icon(
                   double.parse(widget.doctor['rating']!) >= 4.8
                       ? Icons.star
                       : Icons.star_border,
                   color: const Color(0xFFF5A623),
-                  size: 14,
+                  size: 13,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${widget.doctor['rating']} (${widget.doctor['reviews']})',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: const TextStyle(fontSize: 10.5, color: Colors.grey),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FF),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Video Fee',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  Text(
-                    widget.doctor['fee']!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0036BC),
-                      fontFamily: 'Gilroy-Bold',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1036,7 +1138,7 @@ class _DoctorCardState extends State<_DoctorCard> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0036BC),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1045,7 +1147,7 @@ class _DoctorCardState extends State<_DoctorCard> {
                 child: const Text(
                   'Consult Now',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'Gilroy-Bold',
                   ),
@@ -1062,14 +1164,14 @@ class _DoctorCardState extends State<_DoctorCard> {
 // ── Pharmacies Grid ──────────────────────────────────────────────────────────
 class _PharmaciesGrid extends StatelessWidget {
   static const _pharmacies = [
-    {'name': 'MedPlus Pharmacy', 'area': 'Gulshan, Karachi'},
-    {'name': 'HealthCare Pharma', 'area': 'DHA, Lahore'},
-    {'name': 'City Pharmacy', 'area': 'F-7, Islamabad'},
-    {'name': 'Al-Shifa Pharmacy', 'area': 'Saddar, Karachi'},
-    {'name': 'Cure Pharmacy', 'area': 'Model Town, Lahore'},
-    {'name': 'Wellness Pharma', 'area': 'G-11, Islamabad'},
-    {'name': 'Shifaa Pharmacy', 'area': 'Clifton, Karachi'},
-    {'name': 'Apollo Pharmacy', 'area': 'Johar Town, Lahore'},
+    {'name': 'MedPlus Pharmacy', 'area': 'Gulshan, Karachi', 'rating': '4.8'},
+    {'name': 'HealthCare Pharma', 'area': 'DHA, Lahore', 'rating': '4.7'},
+    {'name': 'City Pharmacy', 'area': 'F-7, Islamabad', 'rating': '4.6'},
+    {'name': 'Al-Shifa Pharmacy', 'area': 'Saddar, Karachi', 'rating': '4.9'},
+    {'name': 'Cure Pharmacy', 'area': 'Model Town, Lahore', 'rating': '4.5'},
+    {'name': 'Wellness Pharma', 'area': 'G-11, Islamabad', 'rating': '4.7'},
+    {'name': 'Shifaa Pharmacy', 'area': 'Clifton, Karachi', 'rating': '4.8'},
+    {'name': 'Apollo Pharmacy', 'area': 'Johar Town, Lahore', 'rating': '4.6'},
   ];
 
   @override
@@ -1083,10 +1185,11 @@ class _PharmaciesGrid extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: isMobile ? 1.4 : 1.6,
+        childAspectRatio: isMobile ? 1.3 : 1.5,
         children: _pharmacies.map((p) => _ServiceCard(
           name: p['name']!,
           subtitle: p['area']!,
+          rating: p['rating']!,
           icon: Icons.local_pharmacy_rounded,
           iconColor: const Color(0xFF10B981),
           width: double.infinity,
@@ -1099,14 +1202,14 @@ class _PharmaciesGrid extends StatelessWidget {
 // ── Laboratories Grid ─────────────────────────────────────────────────────────
 class _LaboratoriesGrid extends StatelessWidget {
   static const _labs = [
-    {'name': 'Chughtai Lab', 'area': 'Lahore'},
-    {'name': 'Essa Lab', 'area': 'Karachi'},
-    {'name': 'Excel Labs', 'area': 'Islamabad'},
-    {'name': 'Shaukat Khanum Lab', 'area': 'Lahore'},
-    {'name': 'Agha Khan Lab', 'area': 'Karachi'},
-    {'name': 'Islamabad Diagnostic', 'area': 'Islamabad'},
-    {'name': 'Doctors Lab', 'area': 'Rawalpindi'},
-    {'name': 'Metropole Lab', 'area': 'Karachi'},
+    {'name': 'Chughtai Lab', 'area': 'Lahore', 'rating': '4.9'},
+    {'name': 'Essa Lab', 'area': 'Karachi', 'rating': '4.7'},
+    {'name': 'Excel Labs', 'area': 'Islamabad', 'rating': '4.8'},
+    {'name': 'Shaukat Khanum Lab', 'area': 'Lahore', 'rating': '4.9'},
+    {'name': 'Agha Khan Lab', 'area': 'Karachi', 'rating': '4.8'},
+    {'name': 'Islamabad Diagnostic', 'area': 'Islamabad', 'rating': '4.6'},
+    {'name': 'Doctors Lab', 'area': 'Rawalpindi', 'rating': '4.5'},
+    {'name': 'Metropole Lab', 'area': 'Karachi', 'rating': '4.7'},
   ];
 
   @override
@@ -1120,10 +1223,11 @@ class _LaboratoriesGrid extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: isMobile ? 1.4 : 1.6,
+        childAspectRatio: isMobile ? 1.3 : 1.5,
         children: _labs.map((l) => _ServiceCard(
           name: l['name']!,
           subtitle: l['area']!,
+          rating: l['rating']!,
           icon: Icons.biotech_rounded,
           iconColor: const Color(0xFF8B5CF6),
           width: double.infinity,
@@ -1137,6 +1241,7 @@ class _LaboratoriesGrid extends StatelessWidget {
 class _ServiceCard extends StatefulWidget {
   final String name;
   final String subtitle;
+  final String rating;
   final IconData icon;
   final Color iconColor;
   final double width;
@@ -1144,6 +1249,7 @@ class _ServiceCard extends StatefulWidget {
   const _ServiceCard({
     required this.name,
     required this.subtitle,
+    required this.rating,
     required this.icon,
     required this.iconColor,
     required this.width,
@@ -1165,7 +1271,7 @@ class _ServiceCardState extends State<_ServiceCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: widget.width,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1184,22 +1290,22 @@ class _ServiceCardState extends State<_ServiceCard> {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: widget.iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(widget.icon, color: widget.iconColor, size: 24),
+              child: Icon(widget.icon, color: widget.iconColor, size: 22),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               widget.name,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
                 fontFamily: 'Gilroy-Bold',
@@ -1208,11 +1314,23 @@ class _ServiceCardState extends State<_ServiceCard> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               widget.subtitle,
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 9.5, color: Colors.grey[600]),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFFF5A623), size: 12),
+                const SizedBox(width: 3),
+                Text(
+                  widget.rating,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
+                ),
+              ],
             ),
           ],
         ),
@@ -1252,7 +1370,6 @@ class _SpecialtyGrid extends StatelessWidget {
             name: spec['name'] as String,
             description: spec['desc'] as String,
             icon: spec['icon'] as IconData,
-            isViewAll: false,
             width: double.infinity,
           );
         }).toList(),
@@ -1265,14 +1382,12 @@ class _SpecialtyCard extends StatefulWidget {
   final String name;
   final String description;
   final IconData icon;
-  final bool isViewAll;
   final double width;
 
   const _SpecialtyCard({
     required this.name,
     required this.description,
     required this.icon,
-    this.isViewAll = false,
     required this.width,
   });
 
@@ -1289,74 +1404,66 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: widget.width,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
-        decoration: BoxDecoration(
-          color: widget.isViewAll ? const Color(0xFFF0F9FF) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: _hovered || widget.isViewAll
-                ? const Color(0xFF14B1FF)
-                : const Color(0xFFE8ECF5),
-            width: 1.5,
-          ),
-          boxShadow: [
-            if (_hovered)
-              BoxShadow(
-                color: const Color(0xFF14B1FF).withOpacity(0.16),
-                blurRadius: 24,
-                offset: const Offset(0, 6),
-              ),
-          ],
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const DoctorsList()),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: widget.isViewAll
-                    ? const Color(0xFFD0EEFF)
-                    : const Color(0xFFE8F4FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                widget.icon,
-                color: const Color(0xFF0036BC),
-                size: 24,
-              ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: widget.width,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFE8ECF5),
+              width: 1.5,
             ),
-            const SizedBox(height: 10),
-            Text(
-              widget.name,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: widget.isViewAll
-                    ? const Color(0xFF14B1FF)
-                    : const Color(0xFF1A1A2E),
-                fontFamily: 'Gilroy-Bold',
+            boxShadow: [
+              if (_hovered)
+                BoxShadow(
+                  color: const Color(0xFF14B1FF).withOpacity(0.16),
+                  blurRadius: 24,
+                  offset: const Offset(0, 6),
+                ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F4FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(widget.icon, color: const Color(0xFF0036BC), size: 22),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.description,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
+              const SizedBox(height: 8),
+              Text(
+                widget.name,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                  fontFamily: 'Gilroy-Bold',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                widget.description,
+                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1375,7 +1482,7 @@ class _HowItWorksSteps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-    
+
     if (isMobile) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1556,7 +1663,6 @@ class _AppDownloadBanner extends StatelessWidget {
       );
     }
 
-    // Desktop — fixed height so blue bg stays compact, image overflows upward
     return SizedBox(
       height: 400,
       child: Container(
@@ -1599,7 +1705,6 @@ class _AppDownloadBanner extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Image column — overflows above the blue banner
                 SizedBox(
                   width: 520,
                   child: OverflowBox(
@@ -1676,7 +1781,7 @@ class _AppBadges extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
                 const SizedBox(width: 12),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1800,7 +1905,7 @@ class _SectionHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w900,
               color: Color(0xFF0036BC),
               fontFamily: 'Gilroy-Bold',
@@ -1812,7 +1917,7 @@ class _SectionHeader extends StatelessWidget {
             Text(
               subtitle!,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
@@ -1824,22 +1929,22 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── Footer ────────────────────────────────────────────────────────────────────
+// ── Footer (white bg + blue theme) ────────────────────────────────────────────
 class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-    
+
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0A1A4A),
+      color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isMobile) ..._buildMobileFooter() else ..._buildDesktopFooter(),
           const SizedBox(height: 32),
-          const Divider(color: Color(0x1AFFFFFF), thickness: 1),
+          const Divider(color: Color(0xFFE8ECF5), thickness: 1),
           const SizedBox(height: 20),
           _buildFooterBottom(isMobile),
         ],
@@ -1863,7 +1968,7 @@ class _Footer extends StatelessWidget {
                   "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.grey[600],
                     height: 1.6,
                   ),
                 ),
@@ -1871,10 +1976,10 @@ class _Footer extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 40),
-          Expanded(
+          const Expanded(
             child: _FooterColumn(
               title: 'For Patients',
-              items: const [
+              items: [
                 'Find a Doctor',
                 'Book Lab Tests',
                 'Order Medicines',
@@ -1884,22 +1989,10 @@ class _Footer extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 40),
-          Expanded(
-            child: _FooterColumn(
-              title: 'For Doctors',
-              items: const [
-                'Join iCare',
-                'Doctor Login',
-                'Practice Management',
-                'Analytics',
-              ],
-            ),
-          ),
-          const SizedBox(width: 40),
-          Expanded(
+          const Expanded(
             child: _FooterColumn(
               title: 'Company',
-              items: const [
+              items: [
                 'About Us',
                 'Careers',
                 'Privacy Policy',
@@ -1925,14 +2018,14 @@ class _Footer extends StatelessWidget {
         "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.grey[600],
           height: 1.6,
         ),
       ),
       const SizedBox(height: 24),
-      _FooterColumn(
+      const _FooterColumn(
         title: 'For Patients',
-        items: const [
+        items: [
           'Find a Doctor',
           'Book Lab Tests',
           'Order Medicines',
@@ -1941,19 +2034,9 @@ class _Footer extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 20),
-      _FooterColumn(
-        title: 'For Doctors',
-        items: const [
-          'Join iCare',
-          'Doctor Login',
-          'Practice Management',
-          'Analytics',
-        ],
-      ),
-      const SizedBox(height: 20),
-      _FooterColumn(
+      const _FooterColumn(
         title: 'Company',
-        items: const [
+        items: [
           'About Us',
           'Careers',
           'Privacy Policy',
@@ -1972,7 +2055,7 @@ class _Footer extends StatelessWidget {
             '© 2026 iCare. All rights reserved.',
             style: TextStyle(
               fontSize: 11,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.grey[500],
             ),
             textAlign: TextAlign.center,
           ),
@@ -1986,7 +2069,7 @@ class _Footer extends StatelessWidget {
           '© 2026 iCare. All rights reserved.',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.grey[500],
           ),
         ),
       ],
@@ -2013,7 +2096,7 @@ class _FooterColumn extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: Color(0xFF0036BC),
             fontFamily: 'Gilroy-Bold',
           ),
         ),
@@ -2024,7 +2107,7 @@ class _FooterColumn extends StatelessWidget {
             item,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.grey[600],
             ),
           ),
         )),
@@ -2063,41 +2146,7 @@ class PublicHomeBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 60),
-        // 2. Pharmacies
-        _CenteredSection(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _SectionHeader(
-                title: 'Pharmacies',
-                subtitle: 'Order medicines from trusted pharmacies near you',
-              ),
-              const SizedBox(height: 24),
-              _PharmaciesGrid(),
-            ],
-          ),
-        ),
-        const SizedBox(height: 60),
-        // 3. Laboratories
-        Container(
-          color: const Color(0xFFF4F8FF),
-          padding: const EdgeInsets.symmetric(vertical: 60),
-          child: _CenteredSection(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _SectionHeader(
-                  title: 'Laboratories',
-                  subtitle: 'Book lab tests and get results delivered at home',
-                ),
-                const SizedBox(height: 24),
-                _LaboratoriesGrid(),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 60),
-        // 4. Browse by Specialty
+        // 2. Browse by Specialty (before pharmacy/labs)
         _CenteredSection(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -2106,13 +2155,89 @@ class PublicHomeBody extends StatelessWidget {
                 title: 'Browse by Specialty',
                 subtitle: 'Find the right specialist for your health needs',
               ),
+              const SizedBox(height: 16),
+              _ConditionSearchBar(),
               const SizedBox(height: 24),
               _SpecialtyGrid(),
+              const SizedBox(height: 24),
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DoctorsList()),
+                  ),
+                  icon: const Icon(Icons.grid_view_rounded, size: 18),
+                  label: const Text('See All Speciality'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF0036BC),
+                    side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 60),
-        // 5. How iCare Works
+        // 3. Order Medicines
+        _CenteredSection(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _SectionHeader(
+                title: 'Order Medicines',
+                subtitle: 'Order medicines from trusted pharmacies near you',
+              ),
+              const SizedBox(height: 16),
+              _MedicineSearchBar(),
+              const SizedBox(height: 24),
+              _PharmaciesGrid(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 60),
+        // 4. Book a Lab Test
+        Container(
+          color: const Color(0xFFF4F8FF),
+          padding: const EdgeInsets.symmetric(vertical: 60),
+          child: _CenteredSection(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _SectionHeader(
+                  title: 'Book a Lab Test',
+                  subtitle: 'Book lab tests and get results delivered at home',
+                ),
+                const SizedBox(height: 16),
+                _LabSearchBar(),
+                const SizedBox(height: 24),
+                _LaboratoriesGrid(),
+                const SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.biotech_rounded, size: 18),
+                    label: const Text('Book Lab'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 60),
+        // 5. Courses Section
+        _CoursesSection(),
+        const SizedBox(height: 60),
+        // 6. How iCare Works
         Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 60),
