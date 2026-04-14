@@ -10,6 +10,7 @@ import 'package:icare/screens/patient_profile_view.dart';
 import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/screens/tabs.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -42,12 +43,30 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
         : appointment.doctor;
     final formattedDate = DateFormat('MMMM dd, yyyy').format(appointment.date);
 
+    final statusColor = appointment.status.toLowerCase() == 'confirmed'
+        ? const Color(0xFF10B981)
+        : appointment.status.toLowerCase() == 'pending'
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF94A3B8);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: CustomBackButton(),
+        leading: GestureDetector(
+          onTap: () {
+            if (selectedRole == 'Patient') {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (ctx) => const TabsScreen()),
+                (route) => false,
+              );
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+        ),
         title: CustomText(
-          text: "View Profile",
+          text: "Appointment Details",
           letterSpacing: -0.31,
           lineHeight: 1.0,
           fontSize: 16.78,
@@ -65,23 +84,49 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
               appointmentId: appointment.id,
               patient: appointment.patient,
             ),
+            // Status badge
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  const Text('Status:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      appointment.status.toUpperCase(),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             DetailsInfoWidget(
               title: "Scheduled Appointment",
               data: {
                 "Date": formattedDate,
                 "Time": appointment.timeSlot,
                 "Booking for": "Self",
-                "Status": appointment.status.toUpperCase(),
               },
             ),
             DetailsInfoWidget(
               title: selectedRole == 'Doctor' ? "Patient Info" : "Doctor Info",
-              data: {
-                "Name": otherPerson?.name ?? 'N/A',
-                "Email": otherPerson?.email ?? 'N/A',
-                "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                "Reason": appointment.reason ?? 'N/A',
-              },
+              data: selectedRole == 'Patient'
+                  ? {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    }
+                  : {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Email": otherPerson?.email ?? 'N/A',
+                      "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    },
             ),
             if (selectedRole == "lab_technician") ...[Tests()],
 
@@ -635,7 +680,9 @@ class _WebPatientProfileView extends StatelessWidget {
                       _buildWebDetailsCard(
                         "Scheduled Appointment",
                         Icons.calendar_today_rounded,
-                        const Color(0xFF6366F1),
+                        appointment.status.toLowerCase() == 'confirmed'
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF6366F1),
                         {
                           "Date": formattedDate,
                           "Time": appointment.timeSlot,
@@ -651,12 +698,17 @@ class _WebPatientProfileView extends StatelessWidget {
                             : "Doctor Info",
                         Icons.person_outline_rounded,
                         const Color(0xFF3B82F6),
-                        {
-                          "Name": otherPerson?.name ?? 'N/A',
-                          "Email": otherPerson?.email ?? 'N/A',
-                          "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                          "Reason": appointment.reason ?? 'N/A',
-                        },
+                        selectedRole == 'Patient'
+                            ? {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              }
+                            : {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Email": otherPerson?.email ?? 'N/A',
+                                "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              },
                       ),
                       if (selectedRole == "lab_technician") ...[
                         const SizedBox(height: 24),
