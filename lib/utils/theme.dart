@@ -37,6 +37,7 @@ class AppColors {
 
 class AppTheme {
   static final mainTheme = ThemeData(
+    useMaterial3: false,
     fontFamily: "Gilroy",
     scaffoldBackgroundColor: AppColors.bgColor,
     textTheme: const TextTheme(),
