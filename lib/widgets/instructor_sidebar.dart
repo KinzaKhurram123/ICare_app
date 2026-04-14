@@ -96,13 +96,13 @@ class InstructorSidebar extends StatelessWidget {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-      color: AppColors.primaryColor,
+      color: Colors.white,
       child: const Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.primaryColor,
             radius: 24,
-            child: Icon(Icons.person_rounded, color: AppColors.primaryColor),
+            child: Icon(Icons.person_rounded, color: Colors.white),
           ),
           SizedBox(width: 16),
           Expanded(
@@ -112,14 +112,14 @@ class InstructorSidebar extends StatelessWidget {
                 Text(
                   'Instructor Panel',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.primaryColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
                 ),
                 Text(
                   'Program Manager',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: AppColors.primaryColor, fontSize: 13),
                 ),
               ],
             ),
