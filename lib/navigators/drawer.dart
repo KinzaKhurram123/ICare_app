@@ -508,10 +508,14 @@ class CustomDrawer extends ConsumerWidget {
       child: Drawer(
         width: MediaQuery.of(context).size.width * 0.75,
         backgroundColor: Colors.white,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        child: Container(
+          color: Colors.white,
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
               // Header with user info
               _buildHeader(ref),
 
