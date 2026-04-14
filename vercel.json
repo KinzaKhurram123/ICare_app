@@ -1,18 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "bash build.sh",
   "outputDirectory": "build/web",
+  "buildCommand": "bash build.sh",
+  "installCommand": "echo 'Dependencies handled in build script'",
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Cross-Origin-Resource-Policy",
-          "value": "cross-origin"
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     }
