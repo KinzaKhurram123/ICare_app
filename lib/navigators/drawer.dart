@@ -763,7 +763,8 @@ class CustomDrawer extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildHeader(WidgetRef ref) {
