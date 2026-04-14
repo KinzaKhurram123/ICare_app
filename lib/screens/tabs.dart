@@ -353,9 +353,6 @@ class _WebSidebar extends ConsumerWidget {
   final String role;
   final void Function(int) onSelect;
 
-  static const _sidebarBg = Colors.white;
-  static const _sidebarAccent = AppColors.primaryColor;
-  static const _sidebarBorder = Color(0xFFE8ECF5);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -441,10 +438,7 @@ class _WebSidebar extends ConsumerWidget {
     return Container(
       width: 260,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        color: _sidebarBg,
-        border: Border(right: BorderSide(color: _sidebarBorder, width: 1)),
-      ),
+      color: Colors.white,
       child: Column(
         children: [
           const SizedBox(height: 30),
