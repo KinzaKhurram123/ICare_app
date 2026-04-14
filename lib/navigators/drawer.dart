@@ -632,7 +632,7 @@ class CustomDrawer extends ConsumerWidget {
                           text: "MY ACCOUNT",
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF94A3B8),
+                          color: AppColors.primaryColor,
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -648,7 +648,7 @@ class CustomDrawer extends ConsumerWidget {
                           text: "ADMIN MANAGEMENT",
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF94A3B8),
+                          color: AppColors.primaryColor,
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -775,8 +775,13 @@ class CustomDrawer extends ConsumerWidget {
         : 'User';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
-      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1),
+        ),
+      ),
       child: Row(
         children: [
           CircleAvatar(
@@ -827,20 +832,20 @@ class CustomDrawer extends ConsumerWidget {
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         tileColor: isActive
-            ? AppColors.primaryColor.withValues(alpha: 0.08)
+            ? AppColors.primaryColor.withValues(alpha: 0.10)
             : null,
         dense: true,
         leading: Icon(
           icon,
           size: 20,
-          color: isActive ? AppColors.primaryColor : const Color(0xFF64748B),
+          color: AppColors.primaryColor,
         ),
         title: CustomText(
           text: title,
           fontFamily: "Gilroy-Bold",
           fontSize: 14,
           fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
-          color: isActive ? AppColors.primaryColor : const Color(0xFF0F172A),
+          color: AppColors.primaryColor,
         ),
         onTap: onTap,
       ),
