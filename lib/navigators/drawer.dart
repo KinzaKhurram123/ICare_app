@@ -512,14 +512,8 @@ class CustomDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Logo only at top
-              Center(
-                child: Image.asset(
-                  ImagePaths.logo,
-                  width: 100,
-                  height: 100,
-                ),
-              ),
+              // Header with user info
+              _buildHeader(ref),
 
               // Menu list (exact items)
               Expanded(
@@ -778,6 +772,60 @@ class CustomDrawer extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(WidgetRef ref) {
+    final selectedRole = ref.watch(authProvider).userRole;
+    final userName = ref.watch(authProvider).user?.name ?? 'User';
+    
+    String roleDisplay = selectedRole == 'Laboratory'
+        ? 'Lab Technician'
+        : selectedRole == 'Pharmacy'
+        ? 'Pharmacist'
+        : selectedRole.isNotEmpty
+        ? selectedRole[0].toUpperCase() + selectedRole.substring(1)
+        : 'User';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
+      color: Colors.white,
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.primaryColor,
+            radius: 24,
+            child: const Icon(Icons.person_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  roleDisplay,
+                  style: const TextStyle(
+                    color: AppColors.primaryColor,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

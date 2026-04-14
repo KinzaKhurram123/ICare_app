@@ -1847,8 +1847,7 @@ class _WebTopBar extends ConsumerWidget {
           ),
           const SizedBox(width: 16),
           // Avatar + greeting (with dropdown for Patient)
-          if (role == 'Patient')
-            PopupMenuButton<String>(
+          PopupMenuButton<String>(
               offset: const Offset(0, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               color: Colors.white,
@@ -1887,52 +1886,6 @@ class _WebTopBar extends ConsumerWidget {
                   ),
                 ),
               ],
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Consumer(
-                        builder: (context, ref, child) {
-                          final userName =
-                              ref.watch(authProvider).user?.name ?? 'User';
-                          return Text(
-                            userName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          );
-                        },
-                      ),
-                      Text(
-                        role.isNotEmpty
-                            ? role[0].toUpperCase() + role.substring(1)
-                            : role,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF888888),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 10),
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundImage: AssetImage(ImagePaths.user7),
-                  ),
-                ],
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-                );
-              },
               child: Row(
                 children: [
                   Column(
