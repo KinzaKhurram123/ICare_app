@@ -17,6 +17,7 @@ import 'package:icare/screens/doctor_availability.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/my_learning.dart';
 import 'package:icare/screens/clinical_audit_screen.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/doctor_revenue_analytics_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
