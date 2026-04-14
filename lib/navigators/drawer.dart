@@ -754,21 +754,7 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
 
-              // Logout button - only for non-Patient, non-Doctor roles
-              if (selectedRole != 'Patient' && selectedRole != 'Doctor' && selectedRole != 'Admin')
-              Padding(
-                padding: EdgeInsets.only(bottom: 30),
-                child: CustomButton(
-                  onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (ctx) => LoginScreen()));
-                  },
-                  width: Utils.windowWidth(context) * 0.6,
-                  borderRadius: 30,
-                  label: "Logout",
-                ),
-              ),
+              // Logout button removed - use dropdown on profile icon instead
             ],
           ),
         ),
