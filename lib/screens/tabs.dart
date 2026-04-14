@@ -353,11 +353,9 @@ class _WebSidebar extends ConsumerWidget {
   final String role;
   final void Function(int) onSelect;
 
-  static const _gradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF0B2D6E), Color(0xFF1565C0)],
-  );
+  static const _sidebarBg = Colors.white;
+  static const _sidebarAccent = AppColors.primaryColor;
+  static const _sidebarBorder = Color(0xFFE8ECF5);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -443,7 +441,10 @@ class _WebSidebar extends ConsumerWidget {
     return Container(
       width: 260,
       height: double.infinity,
-      decoration: const BoxDecoration(gradient: _gradient),
+      decoration: const BoxDecoration(
+        color: _sidebarBg,
+        border: Border(right: BorderSide(color: _sidebarBorder, width: 1)),
+      ),
       child: Column(
         children: [
           const SizedBox(height: 30),
@@ -470,16 +471,16 @@ class _WebSidebar extends ConsumerWidget {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: AppColors.primaryColor.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.15)),
               ),
               child: Row(
                 children: [
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: AppColors.primaryColor, width: 2),
                     ),
                     child: const CircleAvatar(
                       radius: 24,
@@ -500,7 +501,7 @@ class _WebSidebar extends ConsumerWidget {
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
-                                color: Colors.white,
+                                color: AppColors.primaryColor,
                               ),
                               overflow: TextOverflow.ellipsis,
                             );
@@ -513,7 +514,7 @@ class _WebSidebar extends ConsumerWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppColors.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -527,7 +528,7 @@ class _WebSidebar extends ConsumerWidget {
                                 : role,
                             style: const TextStyle(
                               fontSize: 10,
-                              color: Colors.white70,
+                              color: AppColors.primaryColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -537,7 +538,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   const Icon(
                     Icons.chevron_right_rounded,
-                    color: Colors.white54,
+                    color: AppColors.primaryColor,
                     size: 18,
                   ),
                 ],
@@ -650,7 +651,7 @@ class _WebSidebar extends ConsumerWidget {
               child: Text(
                 'MY ACCOUNT',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: AppColors.primaryColor.withValues(alpha: 0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
@@ -678,12 +679,12 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.white.withValues(alpha: 0.18)
+                            ? AppColors.primaryColor.withValues(alpha: 0.10)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(14),
                         border: isSelected
                             ? Border.all(
-                                color: Colors.white.withValues(alpha: 0.25),
+                                color: AppColors.primaryColor.withValues(alpha: 0.20),
                               )
                             : null,
                       ),
@@ -693,8 +694,8 @@ class _WebSidebar extends ConsumerWidget {
                             item.icon,
                             size: 20,
                             color: isSelected
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.55),
+                                ? AppColors.primaryColor
+                                : AppColors.primaryColor.withValues(alpha: 0.55),
                           ),
                           const SizedBox(width: 14),
                           Text(
@@ -705,8 +706,8 @@ class _WebSidebar extends ConsumerWidget {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: isSelected
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.6),
+                                  ? AppColors.primaryColor
+                                  : AppColors.primaryColor.withValues(alpha: 0.65),
                             ),
                           ),
                           if (isSelected) ...[
@@ -715,7 +716,7 @@ class _WebSidebar extends ConsumerWidget {
                               width: 6,
                               height: 6,
                               decoration: const BoxDecoration(
-                                color: Colors.white,
+                                color: AppColors.primaryColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -735,7 +736,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -893,7 +894,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -1051,7 +1052,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -1137,7 +1138,7 @@ class _WebSidebar extends ConsumerWidget {
                     child: Text(
                       'PROFESSIONAL',
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: AppColors.primaryColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -1231,7 +1232,7 @@ class _WebSidebar extends ConsumerWidget {
                     child: Text(
                       'PERSONAL',
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: AppColors.primaryColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -1308,7 +1309,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -1416,7 +1417,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -1500,7 +1501,7 @@ class _WebSidebar extends ConsumerWidget {
                       vertical: 8,
                     ),
                     child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE8ECF5),
                       height: 1,
                     ),
                   ),
@@ -1669,48 +1670,7 @@ class _WebSidebar extends ConsumerWidget {
             ),
           ),
 
-          if (role != 'Patient') ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(color: Colors.white.withValues(alpha: 0.15)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Logout',
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ] else
-            const SizedBox(height: 28),
+          const SizedBox(height: 28),
         ],
       ),
     );
@@ -1733,14 +1693,14 @@ class _WebSidebar extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.55)),
+            Icon(icon, size: 20, color: AppColors.primaryColor.withValues(alpha: 0.65)),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: Colors.white.withValues(alpha: 0.6),
+                color: AppColors.primaryColor.withValues(alpha: 0.75),
               ),
             ),
           ],
