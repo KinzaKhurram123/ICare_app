@@ -139,24 +139,24 @@ class CustomDrawer extends ConsumerWidget {
       ];
     } else if (selectedRole == "Patient") {
       drawerItems = [
+        _drawerItem('My Appointments', Icons.calendar_month_rounded, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => const MyAppointmentsListScreen(),
+            ),
+          );
+        }),
         _drawerItem('Dashboard', Icons.dashboard_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const TabsScreen()));
-        }),
-        _drawerItem('Your Care Plans', Icons.medical_services_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => const Courses(myPurchased: true),
-            ),
-          );
         }),
         _drawerItem('Health Community', Icons.people_outline_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const HealthCommunityScreen()),
           );
         }),
-        _drawerItem('Bookings History', Icons.history_rounded, () {
+        _drawerItem('Booking History', Icons.history_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const BookingsHistoryScreen()),
           );
@@ -166,19 +166,12 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
         }),
-        _drawerItem('Laboratories', Icons.science_rounded, () {
+        _drawerItem('Book a Lab Test', Icons.science_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabsListScreen()));
         }),
-        _drawerItem('My Appointment', Icons.calendar_month_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => const MyAppointmentsListScreen(),
-            ),
-          );
-        }),
-        _drawerItem('Pharmacies', Icons.medication_rounded, () {
+        _drawerItem('Order Medicines', Icons.medication_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()));
@@ -198,7 +191,7 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
         }),
-        _drawerItem('Explore Programs', Icons.health_and_safety_outlined, () {
+        _drawerItem('Health Programs', Icons.health_and_safety_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
@@ -250,11 +243,7 @@ class CustomDrawer extends ConsumerWidget {
             MaterialPageRoute(builder: (ctx) => const DoctorNotifications()),
           );
         }),
-        _drawerItem('My Profile', Icons.person_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
-          );
-        }),
+        _drawerProfileDropdown(context),
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {
           Navigator.of(
             context,
@@ -777,7 +766,7 @@ class CustomDrawer extends ConsumerWidget {
               ),
 
               // Logout button - only for non-Patient, non-Doctor roles
-              if (selectedRole != 'Patient' && selectedRole != 'Doctor')
+              if (selectedRole != 'Patient' && selectedRole != 'Doctor' && selectedRole != 'Admin')
               Padding(
                 padding: EdgeInsets.only(bottom: 30),
                 child: CustomButton(
@@ -825,6 +814,62 @@ class CustomDrawer extends ConsumerWidget {
           color: isActive ? AppColors.primaryColor : const Color(0xFF0F172A),
         ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  Widget _drawerProfileDropdown(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: PopupMenuButton<String>(
+        offset: const Offset(0, 48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        color: Colors.white,
+        elevation: 4,
+        onSelected: (value) {
+          if (value == 'edit') {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
+            );
+          } else if (value == 'logout') {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (ctx) => LoginScreen()),
+              (route) => false,
+            );
+          }
+        },
+        itemBuilder: (ctx) => [
+          PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: const [
+                Icon(Icons.edit_rounded, size: 18, color: Color(0xFF64748B)),
+                SizedBox(width: 10),
+                Text('Edit Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'logout',
+            child: Row(
+              children: const [
+                Icon(Icons.logout_rounded, size: 18, color: Colors.redAccent),
+                SizedBox(width: 10),
+                Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+              ],
+            ),
+          ),
+        ],
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          dense: true,
+          leading: const Icon(Icons.person_rounded, size: 20, color: Color(0xFF64748B)),
+          title: const Text(
+            'Edit Profile',
+            style: TextStyle(fontFamily: 'Gilroy-Bold', fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+          ),
+          trailing: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+        ),
       ),
     );
   }

@@ -131,18 +131,20 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTrustIndicator(),
-                        const SizedBox(height: 24),
-                        // Welcome Header
+                        // 1. Welcome Header with rating + satisfaction
                         _buildWelcomeHeader(userName),
                         const SizedBox(height: 24),
 
-                        // Statistics Cards
-                        _buildStatisticsCards(isDesktop, isTablet),
+                        // 2. Appointment Requests (pending — Accept/Decline)
+                        _buildAppointmentRequests(),
                         const SizedBox(height: 24),
 
-                        // Today's Appointments
+                        // 3. Today's Appointments
                         _buildTodayAppointments(),
+                        const SizedBox(height: 24),
+
+                        // 4. Stats (consultations, rating, satisfaction — NO revenue)
+                        _buildStatisticsCards(isDesktop, isTablet),
                         const SizedBox(height: 24),
 
                         // Quick Actions
@@ -160,90 +162,10 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
-  Widget _buildTrustIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.shield_rounded, color: Colors.greenAccent, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'secure_platform'.tr(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  'data_protected'.tr(),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          _buildLanguageToggle(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageToggle() {
-    final isUrdu = context.locale.languageCode == 'ur';
-    return TextButton(
-      onPressed: () {
-        context.setLocale(isUrdu ? const Locale('en') : const Locale('ur'));
-      },
-      child: Text(
-        isUrdu ? 'English' : 'اردو',
-        style: const TextStyle(
-          color: Colors.greenAccent,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerificationBadge() {
-    // Simulated check for verified status (Req 29.14)
-    final isVerified = _stats['isVerified'] ?? true;
-    if (!isVerified) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.blue.withOpacity(0.5)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified_rounded, color: Colors.blue, size: 14),
-          SizedBox(width: 4),
-          Text(
-            'Verified',
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildWelcomeHeader(String userName) {
+    final avgRating = _stats['avgRating'] ?? '0.0';
+    final satisfaction = _stats['satisfaction'] ?? '0%';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -290,6 +212,21 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     color: Color(0xFF0F172A),
                   ),
                 ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$avgRating  •  $satisfaction satisfaction',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -299,98 +236,60 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   }
 
   Widget _buildStatisticsCards(bool isDesktop, bool isTablet) {
-    final totalPatients = _stats['totalPatients'] ?? 0;
-    final revenue = _stats['revenue'] ?? 0;
+    final totalConsultations = _stats['totalPatients'] ?? _completedCount;
     final avgRating = _stats['avgRating'] ?? '0.0';
     final satisfaction = _stats['satisfaction'] ?? '0%';
 
+    final cards = [
+      _buildStatCard(
+        'Consultations',
+        totalConsultations,
+        Icons.medical_services_rounded,
+        const Color(0xFF3B82F6),
+      ),
+      _buildStatCard(
+        'Pending',
+        _pendingCount,
+        Icons.pending_actions_rounded,
+        const Color(0xFFF59E0B),
+      ),
+      _buildStatCard(
+        'rating'.tr(),
+        avgRating,
+        Icons.star_rounded,
+        const Color(0xFFF59E0B),
+      ),
+      _buildStatCard(
+        'satisfaction'.tr(),
+        satisfaction,
+        Icons.sentiment_very_satisfied_rounded,
+        const Color(0xFF8B5CF6),
+      ),
+    ];
+
     if (isDesktop || isTablet) {
       return Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'patients'.tr(),
-              totalPatients,
-              Icons.people_rounded,
-              const Color(0xFF3B82F6),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'revenue'.tr(),
-              'PKR $revenue',
-              Icons.payments_rounded,
-              const Color(0xFF10B981),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'rating'.tr(),
-              avgRating,
-              Icons.star_rounded,
-              const Color(0xFFF59E0B),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'satisfaction'.tr(),
-              satisfaction,
-              Icons.sentiment_very_satisfied_rounded,
-              const Color(0xFF8B5CF6),
-            ),
-          ),
-        ],
+        children: cards
+            .map((c) => Expanded(child: c))
+            .expand((w) => [w, const SizedBox(width: 16)])
+            .toList()
+          ..removeLast(),
       );
     }
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'patients'.tr(),
-                totalPatients,
-                Icons.people_rounded,
-                const Color(0xFF3B82F6),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'revenue'.tr(),
-                'PKR $revenue',
-                Icons.payments_rounded,
-                const Color(0xFF10B981),
-              ),
-            ),
-          ],
-        ),
+        Row(children: [
+          Expanded(child: cards[0]),
+          const SizedBox(width: 12),
+          Expanded(child: cards[1]),
+        ]),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'rating'.tr(),
-                avgRating,
-                Icons.star_rounded,
-                const Color(0xFFF59E0B),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'satisfaction'.tr(),
-                satisfaction,
-                Icons.sentiment_very_satisfied_rounded,
-                const Color(0xFF8B5CF6),
-              ),
-            ),
-          ],
-        ),
+        Row(children: [
+          Expanded(child: cards[2]),
+          const SizedBox(width: 12),
+          Expanded(child: cards[3]),
+        ]),
       ],
     );
   }
@@ -454,36 +353,184 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
-  Widget _buildTodayAppointments() {
+  Future<void> _updateAppointmentStatus(String appointmentId, String status) async {
+    try {
+      final result = await _appointmentService.updateAppointmentStatus(
+        appointmentId: appointmentId,
+        status: status,
+      );
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(status == 'confirmed' ? 'Appointment accepted.' : 'Appointment declined.'),
+            backgroundColor: status == 'confirmed' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+          ));
+          _loadData();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message'] ?? 'Failed to update appointment.'),
+            backgroundColor: const Color(0xFFEF4444),
+          ));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: Color(0xFFEF4444),
+        ));
+      }
+    }
+  }
+
+  Widget _buildAppointmentRequests() {
+    final pendingAppointments = _appointments
+        .where((a) => a.status == 'pending')
+        .take(5)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "today_appointments".tr(),
-              style: const TextStyle(
+            const Text(
+              'Appointment Requests',
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF0F172A),
               ),
             ),
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
+            if (_pendingCount > 5)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
                     builder: (ctx) => const DoctorAppointmentsScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: Text('view_all'.tr()),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryColor,
+                  ));
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+                child: const Text('View All'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (pendingAppointments.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Center(
+              child: Text(
+                'No pending appointment requests.',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
               ),
             ),
-          ],
+          )
+        else
+          ...pendingAppointments.map((appt) => _buildRequestCard(appt)),
+      ],
+    );
+  }
+
+  Widget _buildRequestCard(AppointmentDetail appointment) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+            child: Text(
+              appointment.patient?.name.substring(0, 1).toUpperCase() ?? 'P',
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appointment.patient?.name ?? 'Patient',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${appointment.timeSlot}  •  ${DateFormat('dd MMM').format(appointment.date)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Decline button
+          GestureDetector(
+            onTap: () => _updateAppointmentStatus(appointment.id, 'cancelled'),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 18),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Accept button
+          GestureDetector(
+            onTap: () => _updateAppointmentStatus(appointment.id, 'confirmed'),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodayAppointments() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "today_appointments".tr(),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
         ),
         const SizedBox(height: 16),
         _todayAppointments.isEmpty

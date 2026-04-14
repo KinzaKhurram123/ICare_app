@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
@@ -174,50 +176,94 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                           child: ListView(
                             padding: EdgeInsets.all(isDesktop ? 32 : 20),
                             children: [
-                              _buildCategoryCard(
-                                'In Progress Bookings',
-                                'Currently active appointments',
-                                _getCountByStatus('confirmed'),
-                                const Color(0xFF3B82F6),
-                                Icons.schedule_rounded,
-                                _getAppointmentsByStatus('confirmed'),
+                              // Book Appointment Now — large button at top
+                              SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (ctx) => const DoctorsList(),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  icon: const Icon(Icons.add_rounded, size: 22),
+                                  label: const Text(
+                                    'Book Appointment Now',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              const SizedBox(height: 16),
-                              _buildCategoryCard(
-                                'Upcoming Bookings',
-                                'Scheduled for later',
-                                _upcomingAppointments.length,
-                                const Color(0xFF0EA5E9),
-                                Icons.event_rounded,
-                                _upcomingAppointments,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildCategoryCard(
-                                'Cancelled Bookings',
-                                'Appointments you cancelled',
-                                _getCountByStatus('cancelled'),
-                                const Color(0xFFEF4444),
-                                Icons.cancel_rounded,
-                                _getAppointmentsByStatus('cancelled'),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildCategoryCard(
-                                'Completed Bookings',
-                                'Past successful visits',
-                                _getCountByStatus('completed'),
-                                const Color(0xFF10B981),
-                                Icons.check_circle_rounded,
-                                _getAppointmentsByStatus('completed'),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildCategoryCard(
-                                'Pending Bookings',
-                                'Awaiting confirmation',
-                                _getCountByStatus('pending'),
-                                const Color(0xFFF59E0B),
-                                Icons.hourglass_empty_rounded,
-                                _getAppointmentsByStatus('pending'),
-                              ),
+                              const SizedBox(height: 24),
+
+                              // Pending first
+                              if (_getAppointmentsByStatus('pending').isNotEmpty) ...[
+                                _buildSectionHeader('Pending Requests', const Color(0xFFF59E0B), Icons.hourglass_empty_rounded),
+                                const SizedBox(height: 12),
+                                ..._getAppointmentsByStatus('pending').map(
+                                  (a) => _buildBookingCard(a, const Color(0xFFF59E0B), showCancel: true),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Confirmed / upcoming
+                              if (_getAppointmentsByStatus('confirmed').isNotEmpty) ...[
+                                _buildSectionHeader('Confirmed Appointments', const Color(0xFF10B981), Icons.check_circle_rounded),
+                                const SizedBox(height: 12),
+                                ..._getAppointmentsByStatus('confirmed').map(
+                                  (a) => _buildBookingCard(a, const Color(0xFF10B981), showCancel: true),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Completed — show prescription / notes
+                              if (_getAppointmentsByStatus('completed').isNotEmpty) ...[
+                                _buildSectionHeader('Completed', const Color(0xFF3B82F6), Icons.task_alt_rounded),
+                                const SizedBox(height: 12),
+                                ..._getAppointmentsByStatus('completed').map(
+                                  (a) => _buildBookingCard(a, const Color(0xFF3B82F6), showNotes: true),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Cancelled
+                              if (_getAppointmentsByStatus('cancelled').isNotEmpty) ...[
+                                _buildSectionHeader('Cancelled', const Color(0xFFEF4444), Icons.cancel_rounded),
+                                const SizedBox(height: 12),
+                                ..._getAppointmentsByStatus('cancelled').map(
+                                  (a) => _buildBookingCard(a, const Color(0xFFEF4444)),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+
+                              if (_appointments.isEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(40),
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.calendar_today_rounded, size: 60, color: Colors.grey.shade300),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          'No bookings yet',
+                                          style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -226,6 +272,181 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color color, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBookingCard(
+    AppointmentDetail appointment,
+    Color color, {
+    bool showCancel = false,
+    bool showNotes = false,
+  }) {
+    final statusLabel = appointment.status[0].toUpperCase() + appointment.status.substring(1);
+    final isConfirmed = appointment.status == 'confirmed';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    appointment.doctor?.name.substring(0, 1).toUpperCase() ?? 'D',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment.doctor?.name ?? 'Doctor',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today_rounded, size: 12, color: color),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('dd MMM yyyy').format(appointment.date),
+                          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.access_time_rounded, size: 12, color: color),
+                        const SizedBox(width: 4),
+                        Text(
+                          appointment.timeSlot,
+                          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isConfirmed ? const Color(0xFF10B981).withValues(alpha: 0.1) : color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  isConfirmed ? 'Confirmed' : statusLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isConfirmed ? const Color(0xFF10B981) : color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Notes/prescription for completed appointments
+          if (showNotes) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                const Text(
+                  'Doctor\'s prescription and notes from this visit are on file.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ],
+
+          // Cancel button at bottom for pending/confirmed
+          if (showCancel) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Cancel Appointment?'),
+                      content: const Text('Are you sure you want to cancel this appointment?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    final svc = AppointmentService();
+                    await svc.updateAppointmentStatus(
+                      appointmentId: appointment.id,
+                      status: 'cancelled',
+                    );
+                    _loadAppointments();
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFEF4444),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                ),
+                child: const Text('Cancel Appointment', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
