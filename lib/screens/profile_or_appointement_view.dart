@@ -698,38 +698,39 @@ class _WebPatientProfileView extends StatelessWidget {
                             "Reason": appointment.reason ?? 'N/A',
                           },
                         ),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) => IntakeNotesScreen(
-                                        appointment: appointment,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.description_outlined,
-                                  size: 20,
-                                ),
-                                label: const Text("Intake Notes"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 20,
-                                  ),
-                                  side: const BorderSide(
-                                    color: AppColors.primaryColor,
-                                    width: 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => IntakeNotesScreen(
+                                    appointment: appointment,
                                   ),
                                 ),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.description_outlined,
+                              size: 20,
+                            ),
+                            label: const Text("Intake Notes"),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 20,
+                              ),
+                              side: const BorderSide(
+                                color: AppColors.primaryColor,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                          ],
+                          ),
                         ),
+                      ],
                       ],
                       if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),

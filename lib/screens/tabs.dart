@@ -2032,8 +2032,8 @@ class _WebTopBar extends ConsumerWidget {
                         fontSize: 11,
                         color: Color(0xFF888888),
                       ),
-                    ),
-                  ],
+                      ),
+                    ],
                 ),
                 const SizedBox(width: 10),
                 const CircleAvatar(
