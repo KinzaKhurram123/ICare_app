@@ -1846,42 +1846,189 @@ class _WebTopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Avatar + greeting
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Row(
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final userName =
-                            ref.watch(authProvider).user?.name ?? 'User';
-                        return Text(
-                          userName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: Color(0xFF1A1A2E),
-                          ),
-                        );
-                      },
-                    ),
-                    Text(
-                      role.isNotEmpty
-                          ? role == 'Laboratory'
-                                ? 'Lab Technician'
-                                : role == 'Pharmacy'
-                                ? 'Pharmacist'
-                                : role[0].toUpperCase() + role.substring(1)
-                          : role,
-                      style: const TextStyle(
+          // Avatar + greeting (with dropdown for Patient)
+          if (role == 'Patient')
+            PopupMenuButton<String>(
+              offset: const Offset(0, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              color: Colors.white,
+              elevation: 4,
+              onSelected: (value) {
+                if (value == 'edit') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
+                  );
+                } else if (value == 'logout') {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
+                    (route) => false,
+                  );
+                }
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.edit_rounded, size: 18, color: Color(0xFF64748B)),
+                      SizedBox(width: 10),
+                      Text('Edit Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.logout_rounded, size: 18, color: Colors.redAccent),
+                      SizedBox(width: 10),
+                      Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Row(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final userName =
+                              ref.watch(authProvider).user?.name ?? 'User';
+                          return Text(
+                            userName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          );
+                        },
+                      ),
+                      Text(
+                        role.isNotEmpty
+                            ? role[0].toUpperCase() + role.substring(1)
+                            : role,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(ImagePaths.user7),
+                  ),
+                ],
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
+                );
+              },
+              child: Row(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final userName =
+                              ref.watch(authProvider).user?.name ?? 'User';
+                          return Text(
+                            userName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          );
+                        },
+                      ),
+                      Text(
+                        role.isNotEmpty
+                            ? role == 'Laboratory'
+                                  ? 'Lab Technician'
+                                  : role == 'Pharmacy'
+                                  ? 'Pharmacist'
+                                  : role[0].toUpperCase() + role.substring(1)
+                            : role,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(ImagePaths.user7),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.edit_rounded, size: 18, color: Color(0xFF64748B)),
+                      SizedBox(width: 10),
+                      Text('Edit Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.logout_rounded, size: 18, color: Colors.redAccent),
+                      SizedBox(width: 10),
+                      Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Row(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final userName =
+                              ref.watch(authProvider).user?.name ?? 'User';
+                          return Text(
+                            userName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          );
+                        },
+                      ),
+                      Text(
+                        role.isNotEmpty
+                            ? role[0].toUpperCase() + role.substring(1)
+                            : role,
+                        style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF888888),
                       ),

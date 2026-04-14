@@ -132,7 +132,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.read(authProvider).userRole ?? '';
-    final isStudent = role == 'Student';
+    final isPatient = role == 'Patient';
     final List<Map<String, dynamic>> _settingsList = [
       {
         "id": "1",
@@ -166,34 +166,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         "value": _isBiometricEnabled,
         "onChanged": (val) => _toggleBiometrics(val),
       },
-      {
-        "id": "6",
-        "title": "Privacy Policy",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => PrivacyPolicy()));
-        },
-      },
-      {
-        "id": "7",
-        "title": "About Us",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => AboutUs()));
-        },
-      },
-      {
-        "id": "8",
-        "title": "Terms & Conditions",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => TermsAndConditions()));
-        },
-      },
     ];
+
+    if (!isPatient) {
+      _settingsList.addAll([
+        {
+          "id": "6",
+          "title": "Privacy Policy",
+          "onPress": () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (ctx) => PrivacyPolicy()));
+          },
+        },
+        {
+          "id": "7",
+          "title": "About Us",
+          "onPress": () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (ctx) => AboutUs()));
+          },
+        },
+        {
+          "id": "8",
+          "title": "Terms & Conditions",
+          "onPress": () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (ctx) => TermsAndConditions()));
+          },
+        },
+      ]);
+    }
 
     if (MediaQuery.of(context).size.width > 600) {
       return _WebSettingsScreen(settingsList: _settingsList);

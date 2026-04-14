@@ -1,6 +1,7 @@
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -61,14 +62,24 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         elevation: 0,
         centerTitle: false,
         leading: const CustomBackButton(),
-        title: const Text(
-          'Health Community',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              ImagePaths.logo,
+              width: 32,
+              height: 32,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Health Community',
+              style: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
         ),
       ),
       body: Column(

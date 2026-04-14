@@ -21,6 +21,7 @@ class _DoctorsListState extends State<DoctorsList> {
   List<Doctor> _filteredDoctors = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  String _searchMode = 'name'; // name, specialty, condition
   String? _selectedSpecialization;
   Set<String> _specializations = {};
 
@@ -58,6 +59,11 @@ class _DoctorsListState extends State<DoctorsList> {
         _doctors = doctorsList;
         _filteredDoctors = doctorsList;
         _specializations = specs;
+        // Set General Practitioner as default
+        if (specs.contains('General Practitioner')) {
+          _selectedSpecialization = 'General Practitioner';
+          _filterDoctors();
+        }
         _isLoading = false;
       });
     } else {
@@ -75,19 +81,30 @@ class _DoctorsListState extends State<DoctorsList> {
 
   void _filterDoctors() {
     debugPrint(
-      '🔍 Filtering doctors: query="$_searchQuery", spec=$_selectedSpecialization',
+      '🔍 Filtering doctors: query="$_searchQuery", mode=$_searchMode, spec=$_selectedSpecialization',
     );
     setState(() {
       _filteredDoctors = _doctors.where((doctor) {
-        final matchesSearch =
-            _searchQuery.isEmpty ||
-            doctor.user.name.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ) ||
-            (doctor.specialization?.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                ) ??
-                false);
+        bool matchesSearch = false;
+        
+        if (_searchMode == 'name') {
+          matchesSearch = _searchQuery.isEmpty ||
+              doctor.user.name.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+        } else if (_searchMode == 'specialty') {
+          matchesSearch = _searchQuery.isEmpty ||
+              (doctor.specialization?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ?? false);
+        } else if (_searchMode == 'condition') {
+          // Search by condition - would need backend support for this
+          // For now, search in specialization
+          matchesSearch = _searchQuery.isEmpty ||
+              (doctor.specialization?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ?? false);
+        }
 
         final matchesSpecialization =
             _selectedSpecialization == null ||
@@ -97,6 +114,10 @@ class _DoctorsListState extends State<DoctorsList> {
       }).toList();
       debugPrint('✅ Filtered to ${_filteredDoctors.length} doctors');
     });
+  }
+
+  int get _onlineDoctorsCount {
+    return _doctors.where((d) => d.isOnline).length;
   }
 
   @override
@@ -128,7 +149,52 @@ class _DoctorsListState extends State<DoctorsList> {
                   color: Colors.white,
                   padding: EdgeInsets.all(isDesktop ? 24 : 16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Online doctors count
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${_onlineDoctorsCount} doctors online right now',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Search Mode Tabs
+                      Row(
+                        children: [
+                          _buildSearchModeTab('name', 'By Name'),
+                          const SizedBox(width: 8),
+                          _buildSearchModeTab('specialty', 'By Speciality'),
+                          const SizedBox(width: 8),
+                          _buildSearchModeTab('condition', 'By Condition'),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
                       // Search Bar
                       TextField(
                         onChanged: (value) {
@@ -136,7 +202,11 @@ class _DoctorsListState extends State<DoctorsList> {
                           _filterDoctors();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search doctors by name or specialization',
+                          hintText: _searchMode == 'name' 
+                            ? 'Search doctors by name' 
+                            : _searchMode == 'specialty'
+                            ? 'Search by specialization'
+                            : 'Search by condition (e.g., diabetes)',
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -148,7 +218,7 @@ class _DoctorsListState extends State<DoctorsList> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
+                            borderSide: const BorderSide(
                               color: AppColors.primaryColor,
                             ),
                           ),
@@ -158,41 +228,32 @@ class _DoctorsListState extends State<DoctorsList> {
                       ),
                       if (_specializations.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        // Specialization Filter
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              FilterChip(
-                                label: const Text('All'),
-                                selected: _selectedSpecialization == null,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _selectedSpecialization = null;
-                                    _filterDoctors();
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              ..._specializations.map(
-                                (spec) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: FilterChip(
-                                    label: Text(spec),
-                                    selected: _selectedSpecialization == spec,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        _selectedSpecialization = selected
-                                            ? spec
-                                            : null;
-                                        _filterDoctors();
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
+                        // Specialization Filter (dropdown instead of chips)
+                        DropdownButtonFormField<String>(
+                          value: _selectedSpecialization,
+                          decoration: InputDecoration(
+                            labelText: 'Filter by Specialization',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('All Specializations'),
+                            ),
+                            ..._specializations.map((spec) => DropdownMenuItem(
+                              value: spec,
+                              child: Text(spec),
+                            )),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedSpecialization = value;
+                              _filterDoctors();
+                            });
+                          },
                         ),
                       ],
                     ],
@@ -241,6 +302,36 @@ class _DoctorsListState extends State<DoctorsList> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildSearchModeTab(String mode, String label) {
+    final isSelected = _searchMode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _searchMode = mode;
+          _filterDoctors();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -377,6 +468,81 @@ class DoctorProfileCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 8),
+                  
+                  // PMDC Number (if available)
+                  if (displayDoctor.pmdcNumber != null && displayDoctor.pmdcNumber!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'PMDC: ${displayDoctor.pmdcNumber}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0369A1),
+                        ),
+                      ),
+                    ),
+                  
+                  // Years of Experience (if available)
+                  if (displayDoctor.experience != null && displayDoctor.experience!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.work_outline_rounded,
+                          size: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          displayDoctor.experience!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  
+                  // Online indicator
+                  if (displayDoctor.isOnline) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Online',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
                   const SizedBox(height: 16),
 
                   // Rating Badge

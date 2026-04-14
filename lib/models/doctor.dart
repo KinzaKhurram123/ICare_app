@@ -4,6 +4,7 @@ class Doctor {
   final String id;
   final User user;
   final String? specialization;
+  final String? pmdcNumber;
   final List<String> consultationType;
   final List<String> languages;
   final List<String> degrees;
@@ -14,6 +15,7 @@ class Doctor {
   final List<String> availableDays;
   final AvailableTime? availableTime;
   final bool isApproved;
+  final bool isOnline;
   final List<double> ratings;
   final List<String> reviews;
 
@@ -21,6 +23,7 @@ class Doctor {
     required this.id,
     required this.user,
     this.specialization,
+    this.pmdcNumber,
     this.consultationType = const [],
     this.languages = const [],
     this.degrees = const [],
@@ -31,6 +34,7 @@ class Doctor {
     this.availableDays = const [],
     this.availableTime,
     this.isApproved = false,
+    this.isOnline = false,
     this.ratings = const [],
     this.reviews = const [],
   });
@@ -48,6 +52,7 @@ class Doctor {
       id: json['_id'] ?? '',
       user: User.fromJson(json['user'] ?? {}),
       specialization: json['specialization'],
+      pmdcNumber: json['pmdcNumber'],
       consultationType: parseConsultationType(json['consultationType']),
       languages: json['languages'] != null
           ? List<String>.from(json['languages'])
@@ -66,6 +71,7 @@ class Doctor {
           ? AvailableTime.fromJson(json['availableTime'])
           : null,
       isApproved: json['isApproved'] ?? false,
+      isOnline: json['isOnline'] ?? false,
       ratings: json['ratings'] != null
           ? List<double>.from(json['ratings'].map((r) => r.toDouble()))
           : [],

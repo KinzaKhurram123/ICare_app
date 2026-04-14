@@ -85,21 +85,7 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
             ),
             if (selectedRole == "lab_technician") ...[Tests()],
 
-            ConsultationTypeCard(
-              chat: true,
-              title: "Messaging",
-              description: "Chat With Doctor",
-              duration: "30 Minutes",
-            ),
-            SizedBox(height: ScallingConfig.scale(10)),
-            ConsultationTypeCard(
-              call: true,
-              title: "Voice Call",
-              description: "Voice call With Doctor",
-              duration: "30 Minutes",
-            ),
-
-            if (selectedRole == "Patient" || selectedRole == "Doctor") ...[
+            if (selectedRole == "Doctor") ...[
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: ScallingConfig.scale(20),
@@ -627,7 +613,7 @@ class _WebPatientProfileView extends StatelessWidget {
                             );
                           },
                           child: const Text(
-                            "View Full Profile →",
+                            "View Full Details →",
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -684,64 +670,34 @@ class _WebPatientProfileView extends StatelessWidget {
                           },
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      // Consultation Options
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Messaging",
-                              "Chat With Doctor",
-                              "30 Minutes",
-                              Icons.chat_bubble_outline_rounded,
-                              const Color(0xFF10B981),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Voice Call",
-                              "Voice call With Doctor",
-                              "30 Minutes",
-                              Icons.phone_outlined,
-                              const Color(0xFF0EA5E9),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (selectedRole == "Patient" ||
-                          selectedRole == "Doctor") ...[
+                      if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) => SoapNotesScreen(
-                                        appointment: appointment,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.note_outlined, size: 20),
-                                label: const Text("Soap Notes"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 20,
-                                  ),
-                                  side: const BorderSide(
-                                    color: AppColors.primaryColor,
-                                    width: 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
+                        _buildWebDetailsCard(
+                          "Scheduled Appointment",
+                          Icons.calendar_today_rounded,
+                          const Color(0xFF6366F1),
+                          {
+                            "Date": formattedDate,
+                            "Time": appointment.timeSlot,
+                            "Status": appointment.status.toUpperCase(),
+                            "Booking for": "Self",
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        // Patient/Doctor Info
+                        _buildWebDetailsCard(
+                          selectedRole == 'Doctor'
+                              ? "Patient Info"
+                              : "Doctor Info",
+                          Icons.person_outline_rounded,
+                          const Color(0xFF3B82F6),
+                          {
+                            "Name": otherPerson?.name ?? 'N/A',
+                            "Email": otherPerson?.email ?? 'N/A',
+                            "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                            "Reason": appointment.reason ?? 'N/A',
+                          },
+                        ),
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: () {

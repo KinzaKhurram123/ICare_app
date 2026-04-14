@@ -161,11 +161,6 @@ class CustomDrawer extends ConsumerWidget {
             MaterialPageRoute(builder: (ctx) => const BookingsHistoryScreen()),
           );
         }),
-        _drawerItem('Tasks', Icons.task_alt_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
-        }),
         _drawerItem('Book a Lab Test', Icons.science_rounded, () {
           Navigator.of(
             context,

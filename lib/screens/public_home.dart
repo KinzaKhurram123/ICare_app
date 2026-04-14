@@ -331,10 +331,10 @@ class _LabSearchBar extends StatelessWidget {
 // ── Courses Section ───────────────────────────────────────────────────────────
 class _CoursesSection extends StatelessWidget {
   static const _courses = [
-    {'title': 'Nutrition & Diet', 'desc': 'Learn healthy eating habits for a better lifestyle', 'icon': Icons.restaurant_menu_rounded, 'color': 0xFF10B981},
-    {'title': 'Mental Wellness', 'desc': 'Manage stress, anxiety and build emotional resilience', 'icon': Icons.self_improvement_rounded, 'color': 0xFF6366F1},
-    {'title': 'Fitness & Exercise', 'desc': 'Home workouts and fitness plans for all levels', 'icon': Icons.fitness_center_rounded, 'color': 0xFFEF4444},
-    {'title': 'Chronic Disease Care', 'desc': 'Expert guidance for diabetes, hypertension & more', 'icon': Icons.monitor_heart_rounded, 'color': 0xFFF59E0B},
+    {'title': 'Diet Plan & Health Courses', 'desc': 'For Patients - Learn healthy eating habits', 'icon': Icons.restaurant_menu_rounded, 'color': 0xFF10B981, 'audience': 'patient'},
+    {'title': 'Health Programs', 'desc': 'For Patients - Manage your health', 'icon': Icons.health_and_safety_rounded, 'color': 0xFF6366F1, 'audience': 'patient'},
+    {'title': 'General Courses', 'desc': 'For Doctors - Medical education', 'icon': Icons.school_rounded, 'color': 0xFFEF4444, 'audience': 'doctor'},
+    {'title': 'Training Programs', 'desc': 'For Healthcare - Professional training', 'icon': Icons.medical_services_rounded, 'color': 0xFFF59E0B, 'audience': 'doctor'},
   ];
 
   @override
@@ -348,7 +348,7 @@ class _CoursesSection extends StatelessWidget {
           children: [
             _SectionHeader(
               title: "Join Pakistan's First 360° Health Care Platform",
-              subtitle: 'Access courses, guides and wellness programs designed for you',
+              subtitle: 'Open for Everyone • Live Skill Academy for Everyone',
             ),
             const SizedBox(height: 32),
             Padding(

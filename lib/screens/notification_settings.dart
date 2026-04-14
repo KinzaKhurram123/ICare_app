@@ -15,20 +15,34 @@ class NotificationSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.read(authProvider).userRole ?? '';
+    final isPatient = role == 'Patient';
     final isStudent = role == 'Student';
-    final List<Map<String, dynamic>> _settingsList = isStudent
-        ? [
-            {"id": "1", "title": "New Course Updates", "onPress": () {}},
-            {"id": "2", "title": "Assignment Reminders", "onPress": () {}},
-            {"id": "3", "title": "Certificate Earned", "onPress": () {}},
-            {"id": "4", "title": "Admin Announcements", "onPress": () {}},
-          ]
-        : [
-            {"id": "2", "title": "Booking Updates", "onPress": () {}},
-            {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
-            {"id": "4", "title": "Patient Messages", "onPress": () {}},
-            {"id": "5", "title": "Admin Announcements", "onPress": () {}},
-          ];
+    
+    List<Map<String, dynamic>> settingsList;
+    
+    if (isPatient) {
+      settingsList = [
+        {"id": "1", "title": "Booking Updates", "onPress": () {}},
+        {"id": "2", "title": "Doctor Messages", "onPress": () {}},
+        {"id": "3", "title": "Promotions", "onPress": () {}},
+        {"id": "4", "title": "Notification Sound", "onPress": () {}, "isToggle": true, "value": true},
+        {"id": "5", "title": "Send prescription to email automatically", "onPress": () {}, "isToggle": true, "value": false},
+      ];
+    } else if (isStudent) {
+      settingsList = [
+        {"id": "1", "title": "New Course Updates", "onPress": () {}},
+        {"id": "2", "title": "Assignment Reminders", "onPress": () {}},
+        {"id": "3", "title": "Certificate Earned", "onPress": () {}},
+        {"id": "4", "title": "Admin Announcements", "onPress": () {}},
+      ];
+    } else {
+      settingsList = [
+        {"id": "2", "title": "Booking Updates", "onPress": () {}},
+        {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
+        {"id": "4", "title": "Patient Messages", "onPress": () {}},
+        {"id": "5", "title": "Admin Announcements", "onPress": () {}},
+      ];
+    }
     if (MediaQuery.of(context).size.width > 600) {
       return _WebNotificationSettingsScreen(isStudent: isStudent);
     }
@@ -38,7 +52,7 @@ class NotificationSettings extends ConsumerWidget {
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
-          text: "Notifications Settings",
+          text: "Notification Settings",
           fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
           color: AppColors.primary500,
@@ -59,48 +73,58 @@ class NotificationSettings extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
-                children: _settingsList.map((item) {
+                children: settingsList.map((item) {
+                  final bool isToggle = item['isToggle'] ?? false;
                   return GestureDetector(
-                    onTap: item["onPress"],
+                    onTap: isToggle ? null : item["onPress"],
                     child: Column(
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            // vertical: 12.0,
                             horizontal: 18.0,
                             vertical: 10,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              CustomText(
-                                text: item["title"],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.primary500,
-                                fontFamily: "Gilroy-SemiBold",
+                              Expanded(
+                                child: CustomText(
+                                  text: item["title"],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppColors.primary500,
+                                  fontFamily: "Gilroy-SemiBold",
+                                ),
                               ),
-                              FlutterSwitch(
-                                width: 50.0,
-                                height: 20.0,
-
-                                toggleSize: 15.0,
-                                value: true,
-                                borderRadius: 30.0,
-                                padding: 2.0,
-                                toggleColor: Color.fromRGBO(225, 225, 225, 1),
-                                activeColor: AppColors.themeBlack,
-                                inactiveColor: AppColors.darkGreyColor,
-                                onToggle: (val) {
-                                  // setState(() {
-                                  // status2 = val;
-                                  // });
-                                },
-                              ),
+                              isToggle 
+                                ? FlutterSwitch(
+                                    width: 50.0,
+                                    height: 20.0,
+                                    toggleSize: 15.0,
+                                    value: item['value'] ?? false,
+                                    borderRadius: 30.0,
+                                    padding: 2.0,
+                                    toggleColor: Color.fromRGBO(225, 225, 225, 1),
+                                    activeColor: AppColors.themeBlack,
+                                    inactiveColor: AppColors.darkGreyColor,
+                                    onToggle: (val) {
+                                      // setState(() {
+                                      // status2 = val;
+                                      // });
+                                    },
+                                  )
+                                : IconButton(
+                                    onPressed: item["onPress"],
+                                    icon: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: AppColors.primaryColor,
+                                      size: 16,
+                                    ),
+                                  ),
                             ],
                           ),
                         ),
-                        if (item['id'] != "5")
+                        if (item['id'] != settingsList.last['id'])
                           const Divider(
                             color: AppColors.darkGreyColor,
                             thickness: 0.2,
@@ -112,11 +136,12 @@ class NotificationSettings extends ConsumerWidget {
               ),
             ),
             SizedBox(height: Utils.windowHeight(context) * 0.5),
-            CustomButton(
-              borderRadius: 30,
-              onPressed: () {},
-              label: "Delete Account",
-            ),
+            if (!isPatient)
+              CustomButton(
+                borderRadius: 30,
+                onPressed: () {},
+                label: "Delete Account",
+              ),
           ],
         ),
       ),
