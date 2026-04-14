@@ -731,7 +731,6 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ),
                       ],
-                      ],
                       if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
                         SizedBox(
