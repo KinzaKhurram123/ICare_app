@@ -6,6 +6,7 @@ import 'package:icare/screens/work_with_us_signup.dart';
 import 'package:icare/screens/signup.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/whatsapp_button.dart';
 
 class PublicHome extends StatelessWidget {
   const PublicHome({super.key});
@@ -15,9 +16,9 @@ class PublicHome extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 700;
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: _WhatsAppFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
           SliverAppBar(
             backgroundColor: Colors.white,
@@ -230,36 +231,14 @@ class PublicHome extends StatelessWidget {
             ),
           ),
         ],
+        ),
+          const WhatsAppFloatingButton(),
+        ],
       ),
     );
   }
 }
 
-// ── WhatsApp FAB ──────────────────────────────────────────────────────────────
-class _WhatsAppFAB extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF25D366),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF25D366).withOpacity(0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: const Icon(Icons.chat_rounded, color: Colors.white, size: 28),
-      ),
-    );
-  }
-}
 
 // ── Search Bars ───────────────────────────────────────────────────────────────
 class _ConditionSearchBar extends StatelessWidget {
