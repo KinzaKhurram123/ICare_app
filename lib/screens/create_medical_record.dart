@@ -796,13 +796,23 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
     };
 
     if (symptoms.isNotEmpty) data['symptoms'] = symptoms;
-    if (cleanPrescription.isNotEmpty) data['prescription'] = cleanPrescription;
+
+    // Build prescription object with medicines + referral together
+    final Map<String, dynamic> prescriptionObj = {};
+    if (cleanPrescription.isNotEmpty) prescriptionObj['medicines'] = cleanPrescription;
+    if (_referSpecialty != null) {
+      prescriptionObj['referral'] = {
+        'specialty': _referSpecialty,
+        if (_referReasonController.text.trim().isNotEmpty)
+          'reason': _referReasonController.text.trim(),
+      };
+    }
+    if (prescriptionObj.isNotEmpty) data['prescription'] = prescriptionObj;
+
     if (_labTests.isNotEmpty) data['labTests'] = _labTests;
     if (_notesController.text.trim().isNotEmpty) data['notes'] = _notesController.text.trim();
     if (vitalSigns.isNotEmpty) data['vitalSigns'] = vitalSigns;
     if (_followUpDate != null) data['followUpDate'] = _followUpDate!.toIso8601String();
-    if (_referSpecialty != null) data['referToSpecialty'] = _referSpecialty;
-    if (_referReasonController.text.trim().isNotEmpty) data['referralReason'] = _referReasonController.text.trim();
     if (_followUpDays > 0 || _followUpMonths > 0) {
       final followUpAfter = DateTime.now()
           .add(Duration(days: _followUpDays + (_followUpMonths * 30)));

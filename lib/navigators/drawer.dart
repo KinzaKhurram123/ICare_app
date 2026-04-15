@@ -70,7 +70,8 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRole = ref.watch(authProvider).userRole;
 
-    var drawerItems = [
+    debugPrint('🗂️ DRAWER OPENED — Role: $selectedRole');
+
       _drawerItem('Tasks', Icons.task_alt_rounded, () {
         Navigator.of(
           context,
@@ -581,14 +582,6 @@ class CustomDrawer extends ConsumerWidget {
                           'My Learners',
                           const Color(0xFF0EA5E9),
                           Icons.people_rounded,
-                          () {},
-                        ),
-                      ] else if (selectedRole == 'Doctor') ...[
-                        _drawerActionItem(
-                          context,
-                          'Patient Records',
-                          const Color(0xFF0EA5E9),
-                          Icons.folder_shared_rounded,
                           () {},
                         ),
                       ],

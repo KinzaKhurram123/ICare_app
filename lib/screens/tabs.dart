@@ -967,42 +967,6 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.person_rounded,
-                    'My Profile',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorProfileSetup(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.calendar_month_rounded,
-                    'My Appointments',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorAppointmentsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.folder_rounded,
-                    'Patient Records',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PatientRecordsListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.help_outline_rounded,
                     'Help & Support',
                     () {

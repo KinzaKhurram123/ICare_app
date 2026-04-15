@@ -35,7 +35,8 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
           final prescriptionObj = r['prescription'];
           if (prescriptionObj is Map) {
             final meds = prescriptionObj['medicines'] as List?;
-            return meds != null && meds.isNotEmpty;
+            final hasReferral = prescriptionObj['referral'] != null;
+            return (meds != null && meds.isNotEmpty) || hasReferral;
           }
           return false;
         }).toList();
