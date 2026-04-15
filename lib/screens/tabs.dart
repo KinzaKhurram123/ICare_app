@@ -1812,7 +1812,7 @@ class _WebTopBar extends ConsumerWidget {
                   );
                 } else if (value == 'logout') {
                   ref.read(authProvider.notifier).setUserLogout();
-                  context.go('/home');
+                  context.go('/login');
                 }
               },
               itemBuilder: (ctx) => [

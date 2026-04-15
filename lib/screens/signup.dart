@@ -466,6 +466,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
 
   Widget _trust(IconData icon, String text) => Row(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
