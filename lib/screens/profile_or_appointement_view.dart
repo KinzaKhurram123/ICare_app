@@ -615,16 +615,18 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildInfoRow(
-                          Icons.email_outlined,
-                          otherPerson?.email ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          Icons.phone_outlined,
-                          otherPerson?.phoneNumber ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
+                        if (selectedRole == 'Doctor') ...[
+                          _buildInfoRow(
+                            Icons.email_outlined,
+                            otherPerson?.email ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.phone_outlined,
+                            otherPerson?.phoneNumber ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         _buildInfoRow(
                           Icons.qr_code_rounded,
                           "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",

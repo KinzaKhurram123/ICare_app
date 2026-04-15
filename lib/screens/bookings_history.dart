@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/doctors_list.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -396,13 +397,53 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
             const SizedBox(height: 12),
             const Divider(height: 1, color: Color(0xFFE2E8F0)),
             const SizedBox(height: 12),
+            if (appointment.reason != null && appointment.reason!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.medical_information_outlined, size: 14, color: Color(0xFF64748B)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Reason: ${appointment.reason}',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF64748B)),
-                const SizedBox(width: 6),
-                const Text(
-                  'Doctor\'s prescription and notes from this visit are on file.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                const Row(
+                  children: [
+                    Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF64748B)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Prescription & SOAP notes available',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileOrAppointmentViewScreen(appointment: appointment),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'View Details',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                    ),
+                  ),
                 ),
               ],
             ),

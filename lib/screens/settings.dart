@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/about_us.dart';
 import 'package:icare/screens/change_password.dart';
+import 'package:icare/screens/courses.dart' show Courses;
+import 'package:icare/screens/help_and_support.dart';
 import 'package:icare/screens/notification_settings.dart';
 import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/screens/profile_edit.dart';
@@ -112,6 +114,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _handleLogout() {
     ref.read(authProvider.notifier).setUserLogout();
     context.go('/login');
+  }
+
+  void _comingSoon(BuildContext ctx, String feature) {
+    showDialog(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.access_time_rounded, color: Color(0xFFF59E0B), size: 22),
+            const SizedBox(width: 10),
+            Text(feature, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          ],
+        ),
+        content: const Text('This feature is coming soon. Stay tuned for updates!'),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -223,6 +253,195 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => TermsAndConditions()),
             ),
+          ),
+        ],
+      ),
+
+      // Health Profile
+      _SettingsSection(
+        title: 'Health Profile',
+        icon: Icons.favorite_rounded,
+        iconColor: const Color(0xFFEF4444),
+        iconBg: const Color(0xFFFEF2F2),
+        items: [
+          _SettingsItem(
+            title: 'Medical Conditions',
+            icon: Icons.medical_information_outlined,
+            onTap: () => _comingSoon(context, 'Medical Conditions'),
+          ),
+          _SettingsItem(
+            title: 'Allergies',
+            icon: Icons.warning_amber_rounded,
+            onTap: () => _comingSoon(context, 'Allergies'),
+          ),
+          _SettingsItem(
+            title: 'Current Medications',
+            icon: Icons.medication_outlined,
+            onTap: () => _comingSoon(context, 'Current Medications'),
+          ),
+          _SettingsItem(
+            title: 'Health Goals',
+            icon: Icons.flag_outlined,
+            onTap: () => _comingSoon(context, 'Health Goals'),
+          ),
+        ],
+      ),
+
+      // Support & Help
+      _SettingsSection(
+        title: 'Support & Help',
+        icon: Icons.support_agent_rounded,
+        iconColor: const Color(0xFF0EA5E9),
+        iconBg: const Color(0xFFE0F2FE),
+        items: [
+          _SettingsItem(
+            title: 'Contact Support',
+            icon: Icons.headset_mic_outlined,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => HelpAndSupport()),
+            ),
+          ),
+          _SettingsItem(
+            title: 'FAQs',
+            icon: Icons.help_outline_rounded,
+            onTap: () => _comingSoon(context, 'FAQs'),
+          ),
+          _SettingsItem(
+            title: 'Report an Issue',
+            icon: Icons.bug_report_outlined,
+            onTap: () => _comingSoon(context, 'Report an Issue'),
+          ),
+        ],
+      ),
+
+      // Consultation Settings
+      _SettingsSection(
+        title: 'Consultation Settings',
+        icon: Icons.video_call_rounded,
+        iconColor: const Color(0xFF8B5CF6),
+        iconBg: const Color(0xFFF5F3FF),
+        items: [
+          _SettingsItem(
+            title: 'Preferred Doctor Type',
+            icon: Icons.person_search_outlined,
+            onTap: () => _comingSoon(context, 'Preferred Doctor Type'),
+          ),
+          _SettingsItem(
+            title: 'Consultation History Access',
+            icon: Icons.history_outlined,
+            onTap: () => _comingSoon(context, 'Consultation History Access'),
+          ),
+          _SettingsItem(
+            title: 'Medical Records Upload',
+            icon: Icons.upload_file_outlined,
+            onTap: () => _comingSoon(context, 'Medical Records Upload'),
+          ),
+          _SettingsItem(
+            title: 'Video/Audio Preferences',
+            icon: Icons.settings_outlined,
+            onTap: () => _comingSoon(context, 'Video/Audio Preferences'),
+          ),
+        ],
+      ),
+
+      // Pharmacy Settings
+      _SettingsSection(
+        title: 'Pharmacy Settings',
+        icon: Icons.local_pharmacy_rounded,
+        iconColor: const Color(0xFF10B981),
+        iconBg: const Color(0xFFECFDF5),
+        items: [
+          _SettingsItem(
+            title: 'Saved Delivery Addresses',
+            icon: Icons.location_on_outlined,
+            onTap: () => _comingSoon(context, 'Saved Delivery Addresses'),
+          ),
+          _SettingsItem(
+            title: 'Preferred Pharmacy',
+            icon: Icons.store_outlined,
+            onTap: () => _comingSoon(context, 'Preferred Pharmacy'),
+          ),
+          _SettingsItem(
+            title: 'Order History',
+            icon: Icons.receipt_long_outlined,
+            onTap: () => _comingSoon(context, 'Order History'),
+          ),
+          _SettingsItem(
+            title: 'Delivery Preferences',
+            icon: Icons.delivery_dining_outlined,
+            onTap: () => _comingSoon(context, 'Delivery Preferences'),
+          ),
+        ],
+      ),
+
+      // Diagnostics Settings
+      _SettingsSection(
+        title: 'Diagnostics Settings',
+        icon: Icons.biotech_rounded,
+        iconColor: const Color(0xFF06B6D4),
+        iconBg: const Color(0xFFECFEFF),
+        items: [
+          _SettingsItem(
+            title: 'Test History',
+            icon: Icons.science_outlined,
+            onTap: () => _comingSoon(context, 'Test History'),
+          ),
+          _SettingsItem(
+            title: 'Home Sample Preferences',
+            icon: Icons.home_outlined,
+            onTap: () => _comingSoon(context, 'Home Sample Preferences'),
+          ),
+          _SettingsItem(
+            title: 'Report Delivery Method',
+            icon: Icons.send_outlined,
+            onTap: () => _comingSoon(context, 'Report Delivery Method'),
+          ),
+        ],
+      ),
+
+      // Learning Settings
+      _SettingsSection(
+        title: 'Learning Settings',
+        icon: Icons.school_rounded,
+        iconColor: const Color(0xFFF97316),
+        iconBg: const Color(0xFFFFF7ED),
+        items: [
+          _SettingsItem(
+            title: 'My Courses',
+            icon: Icons.menu_book_outlined,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const Courses()),
+            ),
+          ),
+          _SettingsItem(
+            title: 'Certificates',
+            icon: Icons.workspace_premium_outlined,
+            onTap: () => _comingSoon(context, 'Certificates'),
+          ),
+          _SettingsItem(
+            title: 'Course Notifications',
+            icon: Icons.notifications_outlined,
+            onTap: () => _comingSoon(context, 'Course Notifications'),
+          ),
+        ],
+      ),
+
+      // Language & Region
+      _SettingsSection(
+        title: 'Language & Region',
+        icon: Icons.language_rounded,
+        iconColor: const Color(0xFF64748B),
+        iconBg: const Color(0xFFF1F5F9),
+        items: [
+          _SettingsItem(
+            title: 'Language',
+            icon: Icons.translate_rounded,
+            onTap: () => _comingSoon(context, 'Language Selection'),
+          ),
+          _SettingsItem(
+            title: 'Country / Region',
+            icon: Icons.public_rounded,
+            onTap: () => _comingSoon(context, 'Country / Region'),
           ),
         ],
       ),
