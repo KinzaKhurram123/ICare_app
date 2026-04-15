@@ -17,7 +17,7 @@ import 'package:icare/screens/doctor_availability.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/my_learning.dart';
 import 'package:icare/screens/clinical_audit_screen.dart';
-import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
 import 'package:intl/intl.dart';
@@ -148,6 +148,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
 
                         // 5. Clinical & Professional Features
                         _buildFeatureGrid(isDesktop, isTablet),
+                        // Quick Actions intentionally removed per meeting notes
                       ],
                     ),
                   ),
@@ -207,21 +208,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     color: Color(0xFF0F172A),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$avgRating  •  $satisfaction satisfaction',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+
               ],
             ),
           ),
@@ -491,7 +478,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                color: const Color(0xFFEF4444),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -499,7 +486,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFEF4444),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -511,7 +498,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                color: const Color(0xFF059669),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -519,7 +506,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF10B981),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -819,7 +806,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (ctx) => ProfileOrAppointmentViewScreen(
+                                  builder: (ctx) => SoapNotesScreen(
                                     appointment: appt,
                                   ),
                                 ),
@@ -1136,6 +1123,18 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           mainAxisSpacing: 16,
           childAspectRatio: clinicalRatio,
           children: [
+            _buildFeatureCard(
+              'My Appointments',
+              Icons.calendar_month_rounded,
+              const Color(0xFF3B82F6),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const DoctorAppointmentsScreen(),
+                  ),
+                );
+              },
+            ),
             _buildFeatureCard(
               'Quality Score',
               Icons.rule_folder_rounded,

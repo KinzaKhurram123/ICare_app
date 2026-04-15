@@ -36,6 +36,11 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
 
+  String? _referSpecialty;
+  final _referReasonController = TextEditingController();
+  int _followUpDays = 0;
+  int _followUpMonths = 0;
+
   // Prescription list
   List<Map<String, String>> _prescriptions = [];
 
@@ -121,6 +126,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
     _heartRateController.dispose();
     _weightController.dispose();
     _heightController.dispose();
+    _referReasonController.dispose();
     super.dispose();
   }
 
@@ -795,6 +801,15 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
     if (_notesController.text.trim().isNotEmpty) data['notes'] = _notesController.text.trim();
     if (vitalSigns.isNotEmpty) data['vitalSigns'] = vitalSigns;
     if (_followUpDate != null) data['followUpDate'] = _followUpDate!.toIso8601String();
+    if (_referSpecialty != null) data['referToSpecialty'] = _referSpecialty;
+    if (_referReasonController.text.trim().isNotEmpty) data['referralReason'] = _referReasonController.text.trim();
+    if (_followUpDays > 0 || _followUpMonths > 0) {
+      final followUpAfter = DateTime.now()
+          .add(Duration(days: _followUpDays + (_followUpMonths * 30)));
+      data['followUpDate'] ??= followUpAfter.toIso8601String();
+      data['followUpDays'] = _followUpDays;
+      data['followUpMonths'] = _followUpMonths;
+    }
     if (_selectedProgramIds.isNotEmpty) data['assignedCourses'] = _selectedProgramIds;
     if (_selectedLabId != null) data['referredLaboratory'] = _selectedLabId;
     if (_selectedPharmacyId != null) data['selectedPharmacy'] = _selectedPharmacyId;
@@ -1169,8 +1184,149 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Follow-up Date
-                  _buildSectionTitle('Follow-up Date (Optional)'),
+                  // Refer to Specialist
+                  _buildModernSectionCard(
+                    'Refer to Specialist',
+                    Icons.person_search_rounded,
+                    const Color(0xFFF59E0B),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: _referSpecialty,
+                          isExpanded: true,
+                          decoration: _modernInputDecoration(
+                            'Select Specialty',
+                            Icons.medical_services_rounded,
+                          ),
+                          dropdownColor: Colors.white,
+                          items: [
+                            'Cardiology', 'Dermatology', 'Neurology',
+                            'Orthopedics', 'Pediatrics', 'Gynecology',
+                            'Ophthalmology', 'ENT', 'Psychiatry',
+                            'Endocrinology', 'Gastroenterology', 'Urology',
+                          ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          onChanged: (val) => setState(() => _referSpecialty = val),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _referReasonController,
+                          maxLines: 3,
+                          decoration: _modernInputDecoration(
+                            'Reason for referral (optional)',
+                            Icons.note_alt_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Follow-up
+                  _buildModernSectionCard(
+                    'Follow-up Schedule',
+                    Icons.event_repeat_rounded,
+                    const Color(0xFF3B82F6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Follow up after:',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Days', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    child: ListWheelScrollView(
+                                      itemExtent: 36,
+                                      physics: const FixedExtentScrollPhysics(),
+                                      onSelectedItemChanged: (i) => setState(() => _followUpDays = i),
+                                      children: List.generate(31, (i) => Center(
+                                        child: Text('$i', style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: _followUpDays == i ? FontWeight.w900 : FontWeight.w400,
+                                          color: _followUpDays == i ? AppColors.primaryColor : const Color(0xFF64748B),
+                                        )),
+                                      )),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Months', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    ),
+                                    child: ListWheelScrollView(
+                                      itemExtent: 36,
+                                      physics: const FixedExtentScrollPhysics(),
+                                      onSelectedItemChanged: (i) => setState(() => _followUpMonths = i),
+                                      children: List.generate(13, (i) => Center(
+                                        child: Text('$i', style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: _followUpMonths == i ? FontWeight.w900 : FontWeight.w400,
+                                          color: _followUpMonths == i ? AppColors.primaryColor : const Color(0xFF64748B),
+                                        )),
+                                      )),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_followUpDays > 0 || _followUpMonths > 0) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle_rounded, color: AppColors.primaryColor, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Follow up in${_followUpMonths > 0 ? ' $_followUpMonths month${_followUpMonths > 1 ? 's' : ''}' : ''}${_followUpDays > 0 ? ' $_followUpDays day${_followUpDays > 1 ? 's' : ''}' : ''}',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Follow-up Date (calendar picker — kept for exact date)
+                  _buildSectionTitle('Or pick exact Follow-up Date'),
                   InkWell(
                     onTap: () async {
                       final date = await showDatePicker(

@@ -195,34 +195,15 @@ class CustomDrawer extends ConsumerWidget {
       ];
     } else if (selectedRole == "Doctor") {
       drawerItems = [
-        _drawerItem('My Appointments', Icons.calendar_month_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => const DoctorAppointmentsScreen(),
-            ),
-          );
-        }),
         _drawerItem('My Schedule', Icons.schedule_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const DoctorScheduleCalendar()),
           );
         }),
-        _drawerItem('Patient Records', Icons.folder_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => const PatientRecordsListScreen(),
-            ),
-          );
-        }),
-        _drawerItem('Analytics', Icons.analytics_rounded, () {
+        _drawerItem('Revenue & Analytics', Icons.analytics_rounded, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const DoctorAnalytics()));
-        }),
-        _drawerItem('Reviews', Icons.star_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const DoctorReviews()));
         }),
         _drawerItem('Health Community', Icons.people_outline_rounded, () {
           Navigator.of(context).push(
@@ -239,7 +220,6 @@ class CustomDrawer extends ConsumerWidget {
             MaterialPageRoute(builder: (ctx) => const DoctorNotifications()),
           );
         }),
-        _drawerProfileDropdown(context),
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {
           Navigator.of(
             context,
@@ -604,13 +584,6 @@ class CustomDrawer extends ConsumerWidget {
                           () {},
                         ),
                       ] else if (selectedRole == 'Doctor') ...[
-                        _drawerActionItem(
-                          context,
-                          'My Appointments',
-                          const Color(0xFF6366F1),
-                          Icons.calendar_month_rounded,
-                          () {},
-                        ),
                         _drawerActionItem(
                           context,
                           'Patient Records',
