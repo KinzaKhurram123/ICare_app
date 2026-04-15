@@ -63,6 +63,7 @@ import 'package:icare/screens/tasks.dart';
 import 'package:icare/screens/health_community.dart';
 import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/lab_list.dart';
+import 'package:icare/screens/patient_book_lab_flow.dart';
 import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/my_appointment.dart';
 import 'package:icare/screens/my_appointments_list.dart';
@@ -786,7 +787,7 @@ class _WebSidebar extends ConsumerWidget {
                     'Book a Lab Test',
                     () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => LabsListScreen()),
+                        MaterialPageRoute(builder: (ctx) => const PatientBookLabFlow()),
                       );
                     },
                   ),
