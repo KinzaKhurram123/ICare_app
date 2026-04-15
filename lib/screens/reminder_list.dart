@@ -5,9 +5,7 @@ import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
-import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/services/reminder_service.dart';
 
@@ -22,8 +20,12 @@ class _ReminderListState extends State<ReminderList> {
   final ReminderService _reminderService = ReminderService();
   List<dynamic> _remindersList = [];
   bool _isLoading = true;
-  var _selectedTime = '';
-  var _selectedDate = '';
+
+  List<dynamic> get _doctorAssigned =>
+      _remindersList.where((r) => r['doctor'] != null).toList();
+
+  List<dynamic> get _selfCreated =>
+      _remindersList.where((r) => r['doctor'] == null).toList();
 
   @override
   void initState() {
@@ -81,47 +83,21 @@ class _ReminderListState extends State<ReminderList> {
                             fontFamily: "Gilroy-Bold",
                           ),
                         ),
-                        Row(
-                          children: [
-                            _buildWebFilterBtn(
-                              context: context,
-                              icon: Icons.access_time_filled_rounded,
-                              label: _selectedTime.isNotEmpty
-                                  ? _selectedTime
-                                  : 'Select Time',
-                              onTap: () async {
-                                final time = await showTimePicker(
-                                  context: context,
-                                  initialTime: TimeOfDay.now(),
-                                );
-                                if (time != null)
-                                  setState(
-                                    () => _selectedTime = time.format(context),
-                                  );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            _buildWebFilterBtn(
-                              context: context,
-                              icon: Icons.calendar_today_rounded,
-                              label: _selectedDate.isNotEmpty
-                                  ? _selectedDate
-                                  : "Select Date",
-                              onTap: () async {
-                                final date = await showDatePicker(
-                                  context: context,
-                                  firstDate: DateTime.now(),
-                                  lastDate: DateTime(2030),
-                                );
-                                if (date != null)
-                                  setState(
-                                    () => _selectedDate = DateFormat(
-                                      "yyyy/MM/dd",
-                                    ).format(date),
-                                  );
-                              },
-                            ),
-                          ],
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const CreateReminder()),
+                            );
+                            if (result == true) _loadReminders();
+                          },
+                          icon: const Icon(Icons.add_rounded, size: 18),
+                          label: const Text('Add Reminder'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
                         ),
                       ],
                     ),
@@ -131,26 +107,40 @@ class _ReminderListState extends State<ReminderList> {
                           ? const Center(child: Text("No reminders found"))
                           : RefreshIndicator(
                               onRefresh: _loadReminders,
-                              child: ListView.builder(
+                              child: ListView(
                                 padding: const EdgeInsets.only(bottom: 40),
-                                itemCount: _remindersList.length,
-                                itemBuilder: (ctx, i) {
-                                  final item = _remindersList[i];
-                                  return WebReminderWidget(
-                                    title: item["title"],
-                                    patientName:
-                                        item["patientName"] ??
-                                        item["patient"]?["name"],
-                                    date: item["date"] != null
-                                        ? DateFormat(
-                                            'MMMM, dd, yyyy',
-                                          ).format(DateTime.parse(item["date"]))
-                                        : "N/A",
-                                    time: item["time"] ?? "N/A",
-                                    description: item["instructions"],
-                                    description2: item["disease"],
-                                  );
-                                },
+                                children: [
+                                  if (_doctorAssigned.isNotEmpty) ...[
+                                    _buildSectionHeader('Doctor-Assigned Reminders', Icons.medical_services_rounded, const Color(0xFF3B82F6)),
+                                    const SizedBox(height: 12),
+                                    ..._doctorAssigned.map((item) => WebReminderWidget(
+                                      title: item["title"],
+                                      patientName: item["patientName"] ?? item["patient"]?["name"],
+                                      date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                                      time: item["time"] ?? "N/A",
+                                      description: item["instructions"],
+                                      description2: item["disease"],
+                                      isAssigned: true,
+                                    )),
+                                    const SizedBox(height: 20),
+                                  ],
+                                  _buildSectionHeader('My Reminders', Icons.person_rounded, AppColors.primaryColor),
+                                  const SizedBox(height: 12),
+                                  if (_selfCreated.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 20),
+                                      child: Center(child: Text('No self-created reminders yet.', style: TextStyle(color: Color(0xFF64748B)))),
+                                    )
+                                  else
+                                    ..._selfCreated.map((item) => WebReminderWidget(
+                                      title: item["title"],
+                                      patientName: item["patientName"] ?? item["patient"]?["name"],
+                                      date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                                      time: item["time"] ?? "N/A",
+                                      description: item["instructions"],
+                                      description2: item["disease"],
+                                    )),
+                                ],
                               ),
                             ),
                     ),
@@ -171,37 +161,28 @@ class _ReminderListState extends State<ReminderList> {
     );
   }
 
-  Widget _buildWebFilterBtn({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: color),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: AppColors.primaryColor),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF475569),
-              ),
-            ),
-          ],
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: color,
+            fontFamily: 'Gilroy-Bold',
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -227,109 +208,60 @@ class _ReminderListState extends State<ReminderList> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CustomButton(
-                      boxShadow: BoxShadow(offset: Offset(0, 0)),
-                      labelWidth: Utils.windowWidth(context) * 0.35,
-                      borderRadius: 35,
-                      borderColor: AppColors.veryLightGrey,
-                      height: Utils.windowHeight(context) * 0.045,
-                      width: Utils.windowWidth(context) * 0.45,
-                      bgColor: AppColors.veryLightGrey,
-                      label: _selectedTime.isNotEmpty
-                          ? _selectedTime
-                          : 'Select Time',
-                      labelColor: AppColors.primaryColor,
-                      labelSize: 11,
-                      onPressed: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                        );
-                        if (time != null)
-                          setState(() => _selectedTime = time.format(context));
-                      },
-                      trailingIcon: SvgWrapper(assetPath: ImagePaths.clock),
+          : RefreshIndicator(
+              onRefresh: _loadReminders,
+              child: _remindersList.isEmpty
+                  ? const Center(child: Text("No reminders found"))
+                  : ListView(
+                      padding: EdgeInsets.only(
+                        bottom: ScallingConfig.verticalScale(80),
+                        left: ScallingConfig.scale(20),
+                        right: ScallingConfig.scale(20),
+                        top: 12,
+                      ),
+                      children: [
+                        if (_doctorAssigned.isNotEmpty) ...[
+                          _buildSectionHeader('Doctor-Assigned Reminders', Icons.medical_services_rounded, const Color(0xFF3B82F6)),
+                          const SizedBox(height: 8),
+                          ..._doctorAssigned.map((item) => ReminderWidget(
+                            title: item["title"],
+                            patientName: item["patientName"] ?? item["patient"]?["name"],
+                            date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                            time: item["time"] ?? "N/A",
+                            description2: item["disease"],
+                            description: item["instructions"],
+                          )),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildSectionHeader('My Reminders', Icons.person_rounded, AppColors.primaryColor),
+                        const SizedBox(height: 8),
+                        if (_selfCreated.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: Text('No self-created reminders yet.', style: TextStyle(color: Color(0xFF64748B)))),
+                          )
+                        else
+                          ..._selfCreated.map((item) => ReminderWidget(
+                            title: item["title"],
+                            patientName: item["patientName"] ?? item["patient"]?["name"],
+                            date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                            time: item["time"] ?? "N/A",
+                            description2: item["disease"],
+                            description: item["instructions"],
+                          )),
+                      ],
                     ),
-                    SizedBox(width: ScallingConfig.scale(10)),
-                    CustomButton(
-                      boxShadow: BoxShadow(offset: Offset(0, 0)),
-                      borderRadius: 35,
-                      labelWidth: Utils.windowWidth(context) * 0.35,
-                      borderColor: AppColors.veryLightGrey,
-                      height: Utils.windowHeight(context) * 0.045,
-                      width: Utils.windowWidth(context) * 0.45,
-                      bgColor: AppColors.veryLightGrey,
-                      label: _selectedDate.isNotEmpty
-                          ? _selectedDate
-                          : "Select Date",
-                      labelColor: AppColors.primaryColor,
-                      labelSize: 11,
-                      onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2030),
-                        );
-                        if (date != null)
-                          setState(
-                            () => _selectedDate = DateFormat(
-                              "yyyy/MM/dd",
-                            ).format(date),
-                          );
-                      },
-                      trailingIcon: SvgWrapper(assetPath: ImagePaths.calendar),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Expanded(
-                  child: _remindersList.isEmpty
-                      ? const Center(child: Text("No reminders found"))
-                      : RefreshIndicator(
-                          onRefresh: _loadReminders,
-                          child: ListView.builder(
-                            padding: EdgeInsets.only(
-                              bottom: ScallingConfig.verticalScale(60),
-                              left: ScallingConfig.scale(20),
-                              right: ScallingConfig.scale(20),
-                            ),
-                            itemCount: _remindersList.length,
-                            itemBuilder: (ctx, i) {
-                              final item = _remindersList[i];
-                              return ReminderWidget(
-                                title: item["title"],
-                                patientName:
-                                    item["patientName"] ??
-                                    item["patient"]?["name"],
-                                date: item["date"] != null
-                                    ? DateFormat(
-                                        'MMMM, dd, yyyy',
-                                      ).format(DateTime.parse(item["date"]))
-                                    : "N/A",
-                                time: item["time"] ?? "N/A",
-                                description2: item["disease"],
-                                description: item["instructions"],
-                              );
-                            },
-                          ),
-                        ),
-                ),
-              ],
             ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final result = await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const CreateReminder()));
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const CreateReminder()),
+          );
           if (result == true) _loadReminders();
         },
         backgroundColor: AppColors.primaryColor,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('Add Reminder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -342,6 +274,7 @@ class WebReminderWidget extends StatelessWidget {
   final String? time;
   final String? description;
   final String? description2;
+  final bool isAssigned;
 
   const WebReminderWidget({
     super.key,
@@ -351,6 +284,7 @@ class WebReminderWidget extends StatelessWidget {
     this.time,
     this.description,
     this.description2,
+    this.isAssigned = false,
   });
 
   @override
@@ -388,8 +322,8 @@ class WebReminderWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          Icons.notifications_active_rounded,
-                          color: AppColors.primaryColor,
+                          isAssigned ? Icons.medical_services_rounded : Icons.notifications_active_rounded,
+                          color: isAssigned ? const Color(0xFF3B82F6) : AppColors.primaryColor,
                           size: 20,
                         ),
                       ),
