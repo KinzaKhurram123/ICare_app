@@ -4,7 +4,6 @@ import 'package:icare/screens/book_lab.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:icare/widgets/back_button.dart';
 
 // Common lab tests list (static — backend will add more later)
 const List<Map<String, dynamic>> _allTests = [
