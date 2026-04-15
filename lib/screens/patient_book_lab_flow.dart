@@ -618,7 +618,7 @@ class _PatientBookLabFlowState extends State<PatientBookLabFlow> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => BookLabScreen(labId: lab.id, labTitle: lab.title),
+          builder: (_) => BookLabScreen(labId: lab.id ?? '', labTitle: lab.title),
         )),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -639,7 +639,7 @@ class _PatientBookLabFlowState extends State<PatientBookLabFlow> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      lab.title,
+                      lab.title ?? 'Laboratory',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 4),
