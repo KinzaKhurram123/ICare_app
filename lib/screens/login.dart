@@ -351,18 +351,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 44),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
-                              const SizedBox(height: 14),
-                              _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
-                              const SizedBox(height: 14),
-                              _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
-                              const SizedBox(height: 14),
-                              _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
-                            ],
+                          IntrinsicWidth(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
+                                const SizedBox(height: 14),
+                                _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
+                                const SizedBox(height: 14),
+                                _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
+                                const SizedBox(height: 14),
+                                _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                              ],
+                            ),
                           ),
                         ],
                       ),

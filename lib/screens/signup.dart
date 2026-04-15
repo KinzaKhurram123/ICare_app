@@ -436,18 +436,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7), height: 1.6),
                     ),
                     const SizedBox(height: 44),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _trust(Icons.shield_rounded, 'Data Protected & Secure'),
-                        const SizedBox(height: 14),
-                        _trust(Icons.verified_user_rounded, 'Verified Doctors Only'),
-                        const SizedBox(height: 14),
-                        _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital'),
-                        const SizedBox(height: 14),
-                        _trust(Icons.people_rounded, 'Trusted by Patients Nationwide'),
-                      ],
+                    IntrinsicWidth(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _trust(Icons.shield_rounded, 'Data Protected & Secure'),
+                          const SizedBox(height: 14),
+                          _trust(Icons.verified_user_rounded, 'Verified Doctors Only'),
+                          const SizedBox(height: 14),
+                          _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital'),
+                          const SizedBox(height: 14),
+                          _trust(Icons.people_rounded, 'Trusted by Patients Nationwide'),
+                        ],
+                      ),
                     ),
                   ],
                 ),
