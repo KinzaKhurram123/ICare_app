@@ -17,7 +17,7 @@ class DoctorDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
     final averageRating = doctor.averageRating;
-    final selectedRole = ref.watch(authProvider).selectedRole;
+    final selectedRole = ref.watch(authProvider).userRole;
 
     // Mobile view with standard AppBar
     if (!isDesktop) {
