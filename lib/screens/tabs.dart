@@ -3,7 +3,6 @@ import 'package:icare/widgets/whatsapp_button.dart';
 import 'package:icare/screens/admin_dashboard.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
-import 'package:icare/app.dart';
 import 'package:icare/models/app_enums.dart';
 import 'package:icare/navigators/bottom_tab_bar.dart';
 import 'package:icare/navigators/bottom_tabs.dart';
@@ -15,7 +14,7 @@ import 'package:icare/screens/home.dart';
 import 'package:icare/screens/my_cart.dart';
 import 'package:icare/screens/notifications.dart';
 import 'package:icare/screens/order_tracking.dart';
-import 'package:icare/screens/login.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/screens/profile.dart';
 import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/screens/upload_prescription.dart';
@@ -1812,10 +1811,8 @@ class _WebTopBar extends ConsumerWidget {
                     MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
                   );
                 } else if (value == 'logout') {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                    (route) => false,
-                  );
+                  ref.read(authProvider.notifier).setUserLogout();
+                  context.go('/home');
                 }
               },
               itemBuilder: (ctx) => [

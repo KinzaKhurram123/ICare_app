@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/screens/doctors_list.dart';
-import 'package:icare/screens/login.dart';
-import 'package:icare/screens/select_user_type.dart';
-import 'package:icare/screens/work_with_us_signup.dart';
-import 'package:icare/screens/signup.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
@@ -46,26 +43,20 @@ class PublicHome extends StatelessWidget {
                       _NavButton(
                         label: 'Sign In',
                         filled: true,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        ),
+                        onTap: () => context.go('/login'),
                       ),
                       const SizedBox(width: 6),
                       _NavButton(
                         label: 'Sign Up',
                         filled: false,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SignupScreen()),
-                        ),
+                        onTap: () => context.go('/signup'),
                       ),
                       const SizedBox(width: 6),
                       _NavButton(
                         label: 'Work With Us',
                         filled: false,
                         accent: true,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const WorkWithUsSignup()),
-                        ),
+                        onTap: () => context.go('/work-with-us'),
                       ),
                     ],
                   ),
@@ -646,40 +637,40 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         bottom: isMobile ? 20 : 40,
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             isMobile
                                 ? 'Talk to a verified\nSpecialist Doctor'
-                                : 'Talk to a verified Specialist Doctor',
-                            textAlign: TextAlign.center,
+                                : 'Talk to a verified\nSpecialist Doctor',
+                            textAlign: TextAlign.left,
                             style: TextStyle(
-                              fontSize: isMobile ? 22 : 36,
+                              fontSize: isMobile ? 24 : 38,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
                               fontFamily: 'Gilroy-Bold',
-                              height: 1.25,
+                              height: 1.2,
                             ),
                           ),
-                          SizedBox(height: isMobile ? 8 : 12),
+                          SizedBox(height: isMobile ? 10 : 14),
                           Text(
                             isMobile
                                 ? 'Book appointments & consult\ntrusted doctors from home.'
                                 : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.left,
                             style: TextStyle(
-                              fontSize: isMobile ? 11 : 16,
-                              color: Colors.white.withOpacity(0.9),
+                              fontSize: isMobile ? 12 : 16,
+                              color: Colors.white.withOpacity(0.88),
                               height: 1.5,
                             ),
                           ),
-                          SizedBox(height: isMobile ? 16 : 24),
-                          // Two CTA buttons
+                          SizedBox(height: isMobile ? 20 : 28),
+                          // Two CTA buttons — left aligned
                           Wrap(
-                            alignment: WrapAlignment.center,
+                            alignment: WrapAlignment.start,
                             spacing: 12,
-                            runSpacing: 10,
+                            runSpacing: 12,
                             children: [
                               // Pulsing Connect button
                               AnimatedBuilder(
@@ -695,18 +686,18 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: const Color(0xFF0036BC),
+                                    minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: isMobile ? 20 : 28,
-                                      vertical: isMobile ? 11 : 14,
+                                      horizontal: isMobile ? 22 : 32,
                                     ),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     elevation: 0,
                                   ),
                                   child: Text(
                                     'Connect to a Doctor',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: isMobile ? 12 : 14,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: isMobile ? 13 : 15,
                                       fontFamily: 'Gilroy-Bold',
                                     ),
                                   ),
@@ -719,47 +710,46 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white70, width: 1.5),
+                                  side: const BorderSide(color: Colors.white, width: 2),
+                                  minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 20 : 28,
-                                    vertical: isMobile ? 11 : 14,
+                                    horizontal: isMobile ? 22 : 32,
                                   ),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                                 child: Text(
                                   'Book Appointment',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: isMobile ? 12 : 14,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: isMobile ? 13 : 15,
                                     fontFamily: 'Gilroy-Bold',
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: isMobile ? 12 : 18),
-                          // Search bar below buttons
+                          SizedBox(height: isMobile ? 16 : 22),
+                          // Search bar below buttons — full width of left column
                           Container(
-                            height: 44,
-                            margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 16),
+                            height: isMobile ? 46 : 50,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                             child: TextField(
                               decoration: InputDecoration(
-                                hintText: 'Search doctors, specialties...',
-                                hintStyle: TextStyle(fontSize: isMobile ? 11 : 13, color: Colors.grey[400]),
-                                prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 18 : 20),
+                                hintText: 'Search doctors, specialties, conditions...',
+                                hintStyle: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.grey[400]),
+                                prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 20 : 22),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                                contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                               ),
                             ),
                           ),

@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/forget_password.dart';
 import 'package:icare/screens/privacy_policy.dart';
@@ -327,13 +328,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 44),
-                          _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
+                              const SizedBox(height: 14),
+                              _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
+                              const SizedBox(height: 14),
+                              _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
+                              const SizedBox(height: 14),
+                              _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -1329,10 +1336,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildHeroTrust(IconData icon, String text) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
@@ -1520,9 +1529,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               "✅ Logged in as: ${user.name} (${user.email}) - Role: ${user.role}",
             );
 
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (ctx) => const TabsScreen()),
-            );
+            context.go('/dashboard');
           } else {
             debugPrint("❌ Failed to fetch profile: ${profileResult['message']}");
             _showError(
@@ -1587,9 +1594,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               );
             } else {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (ctx) => const TabsScreen()),
-              );
+              context.go('/dashboard');
             }
           }
         } else {

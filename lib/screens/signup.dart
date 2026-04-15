@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/login.dart';
-import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
 import 'package:icare/screens/pharmacy_profile_setup.dart';
 import 'package:icare/services/auth_service.dart';
@@ -118,9 +117,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           final user = app_user.User.fromJson(profileResult['user']);
           ref.read(authProvider.notifier).setUser(user);
 
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const TabsScreen()),
-          );
+          context.go('/dashboard');
         } else {
           _showError(profileResult['message']);
         }
@@ -156,9 +153,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
+              context.go('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
@@ -379,9 +374,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Widget _signInLink() => Center(
         child: GestureDetector(
-          onTap: () => Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          ),
+          onTap: () => context.go('/login'),
           child: RichText(
             text: TextSpan(
               text: 'Already have an account? ',
@@ -443,13 +436,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7), height: 1.6),
                     ),
                     const SizedBox(height: 44),
-                    _trust(Icons.shield_rounded, 'Data Protected & Secure'),
-                    const SizedBox(height: 14),
-                    _trust(Icons.verified_user_rounded, 'Verified Doctors Only'),
-                    const SizedBox(height: 14),
-                    _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital'),
-                    const SizedBox(height: 14),
-                    _trust(Icons.people_rounded, 'Trusted by Patients Nationwide'),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _trust(Icons.shield_rounded, 'Data Protected & Secure'),
+                        const SizedBox(height: 14),
+                        _trust(Icons.verified_user_rounded, 'Verified Doctors Only'),
+                        const SizedBox(height: 14),
+                        _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital'),
+                        const SizedBox(height: 14),
+                        _trust(Icons.people_rounded, 'Trusted by Patients Nationwide'),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -467,9 +466,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
 
   Widget _trust(IconData icon, String text) => Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+          ),
           const SizedBox(width: 12),
           Text(text, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w600)),
         ],
