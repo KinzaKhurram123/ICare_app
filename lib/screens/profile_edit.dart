@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/login.dart';
 import 'package:icare/services/user_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_text_input.dart';
@@ -18,6 +18,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController cnicController = TextEditingController();
   final UserService _userService = UserService();
   bool isLoading = false;
 
@@ -35,6 +36,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
+    cnicController.dispose();
     super.dispose();
   }
 
@@ -47,6 +49,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final result = await _userService.updateProfile(
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
+        cnic: cnicController.text.trim().isEmpty ? null : cnicController.text.trim(),
       );
 
       if (result['success']) {
@@ -248,35 +251,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             color: Color(0xFF64748B),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        // Role Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'CNIC Number (e.g. 42101-1234567-1)',
+                          leadingIcon: const Icon(
+                            Icons.credit_card_outlined,
+                            color: Color(0xFF94A3B8),
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.badge_outlined,
-                                color: AppColors.primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Role: ${user?.role ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
+                          controller: cnicController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
                         ),
                         const SizedBox(height: 32),
                         // Update Button
@@ -318,10 +304,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           height: 54,
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                                (route) => false,
-                              );
+                              ref.read(authProvider.notifier).setUserLogout();
+                              context.go('/login');
                             },
                             icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
                             label: const Text(

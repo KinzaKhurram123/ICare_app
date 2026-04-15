@@ -41,12 +41,14 @@ class UserService {
     required String name,
     required String phoneNumber,
     String? profilePicture,
+    String? cnic,
   }) async {
     try {
       final response = await _apiService.put('/users/profile', {
         'name': name,
         'phoneNumber': phoneNumber,
         if (profilePicture != null) 'profilePicture': profilePicture,
+        if (cnic != null) 'cnic': cnic,
       });
 
       if (response.statusCode == 200) {

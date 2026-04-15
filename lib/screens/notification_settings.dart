@@ -39,12 +39,11 @@ class NotificationSettings extends ConsumerWidget {
       settingsList = [
         {"id": "2", "title": "Booking Updates", "onPress": () {}},
         {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
-        {"id": "4", "title": "Patient Messages", "onPress": () {}},
-        {"id": "5", "title": "Admin Announcements", "onPress": () {}},
+        {"id": "4", "title": "Promotions", "onPress": () {}},
       ];
     }
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebNotificationSettingsScreen(isStudent: isStudent);
+      return _WebNotificationSettingsScreen(isStudent: isStudent, isPatient: isPatient);
     }
 
     return Scaffold(
@@ -155,7 +154,8 @@ class NotificationSettings extends ConsumerWidget {
 
 class _WebNotificationSettingsScreen extends StatefulWidget {
   final bool isStudent;
-  const _WebNotificationSettingsScreen({this.isStudent = false});
+  final bool isPatient;
+  const _WebNotificationSettingsScreen({this.isStudent = false, this.isPatient = false});
 
   @override
   State<_WebNotificationSettingsScreen> createState() =>
@@ -169,56 +169,91 @@ class _WebNotificationSettingsScreenState
   @override
   void initState() {
     super.initState();
-    settingsState = widget.isStudent
-        ? {
-            "New Course Updates": true,
-            "Assignment Reminders": true,
-            "Certificate Earned": true,
-            "Admin Announcements": false,
-          }
-        : {
-            "Booking Updates": true,
-            "Customer Support Messages": true,
-            "Patient Messages": false,
-            "Admin Announcements": true,
-          };
+    if (widget.isStudent) {
+      settingsState = {
+        "New Course Updates": true,
+        "Assignment Reminders": true,
+        "Certificate Earned": true,
+        "Admin Announcements": false,
+      };
+    } else if (widget.isPatient) {
+      settingsState = {
+        "Booking Updates": true,
+        "Doctor Messages": true,
+        "Promotions": false,
+        "Notification Sound": true,
+        "Send prescription to email automatically": false,
+      };
+    } else {
+      settingsState = {
+        "Booking Updates": true,
+        "Customer Support Messages": true,
+        "Promotions": true,
+      };
+    }
   }
 
-  Map<String, String> get settingDescriptions => widget.isStudent
-      ? {
-          "New Course Updates":
-              "Get notified when instructors publish new lessons or update course materials.",
-          "Assignment Reminders":
-              "Receive reminders before quiz deadlines and assignment due dates.",
-          "Certificate Earned":
-              "Be the first to know when you earn a new completion certificate.",
-          "Admin Announcements":
-              "Important platform updates and broadcast messages from administrators.",
-        }
-      : {
-          "Booking Updates":
-              "Get notified when new appointments are booked, rescheduled, or canceled.",
-          "Customer Support Messages":
-              "Receive instant alerts when the support team responds to your queries.",
-          "Patient Messages":
-              "Stay updated when your patients send you direct messages.",
-          "Admin Announcements":
-              "Important system updates and broadcast messages from administrators.",
-        };
+  Map<String, String> get settingDescriptions {
+    if (widget.isStudent) {
+      return {
+        "New Course Updates":
+            "Get notified when instructors publish new lessons or update course materials.",
+        "Assignment Reminders":
+            "Receive reminders before quiz deadlines and assignment due dates.",
+        "Certificate Earned":
+            "Be the first to know when you earn a new completion certificate.",
+        "Admin Announcements":
+            "Important platform updates and broadcast messages from administrators.",
+      };
+    } else if (widget.isPatient) {
+      return {
+        "Booking Updates":
+            "Get notified when your appointments are confirmed, rescheduled, or canceled.",
+        "Doctor Messages":
+            "Receive alerts when your doctor sends you a message or update.",
+        "Promotions":
+            "Stay informed about health campaigns, offers, and platform updates.",
+        "Notification Sound":
+            "Play a sound when you receive a new notification.",
+        "Send prescription to email automatically":
+            "Automatically email your prescription after every completed consultation.",
+      };
+    } else {
+      return {
+        "Booking Updates":
+            "Get notified when new appointments are booked, rescheduled, or canceled.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
+        "Promotions":
+            "Important system updates and broadcast messages from the iCare team.",
+      };
+    }
+  }
 
-  Map<String, IconData> get settingIcons => widget.isStudent
-      ? {
-          "New Course Updates": Icons.library_books_rounded,
-          "Assignment Reminders": Icons.assignment_late_rounded,
-          "Certificate Earned": Icons.workspace_premium_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
-        }
-      : {
-          "Booking Updates": Icons.event_available_rounded,
-          "Customer Support Messages": Icons.support_agent_rounded,
-          "Patient Messages": Icons.chat_bubble_outline_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
-        };
+  Map<String, IconData> get settingIcons {
+    if (widget.isStudent) {
+      return {
+        "New Course Updates": Icons.library_books_rounded,
+        "Assignment Reminders": Icons.assignment_late_rounded,
+        "Certificate Earned": Icons.workspace_premium_rounded,
+        "Admin Announcements": Icons.campaign_rounded,
+      };
+    } else if (widget.isPatient) {
+      return {
+        "Booking Updates": Icons.event_available_rounded,
+        "Doctor Messages": Icons.chat_bubble_outline_rounded,
+        "Promotions": Icons.campaign_rounded,
+        "Notification Sound": Icons.volume_up_rounded,
+        "Send prescription to email automatically": Icons.email_outlined,
+      };
+    } else {
+      return {
+        "Booking Updates": Icons.event_available_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+        "Promotions": Icons.campaign_rounded,
+      };
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/create_profile.dart';
-import 'package:icare/screens/login.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
 
     if (isDesktop) {
-      return const _WebProfileInitial();
+      return _WebProfileInitial(ref: ref);
     }
 
     return Center(
@@ -31,7 +33,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _WebProfileInitial extends StatelessWidget {
-  const _WebProfileInitial();
+  final WidgetRef ref;
+  const _WebProfileInitial({required this.ref});
 
   @override
   Widget build(BuildContext context) {
@@ -125,10 +128,8 @@ class _WebProfileInitial extends StatelessWidget {
                 height: 56,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                      (route) => false,
-                    );
+                    ref.read(authProvider.notifier).setUserLogout();
+                    context.go('/login');
                   },
                   icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
                   label: const Text(

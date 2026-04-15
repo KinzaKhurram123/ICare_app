@@ -39,6 +39,7 @@ import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
 import 'package:icare/screens/prescriptions.dart';
 import 'package:icare/screens/reminder_list.dart';
+import 'package:icare/screens/emergency_contacts_screen.dart';
 import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/tasks.dart';
@@ -184,7 +185,7 @@ class CustomDrawer extends ConsumerWidget {
         _drawerItem('Emergency Contacts', Icons.contact_emergency_rounded, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
+          ).push(MaterialPageRoute(builder: (ctx) => const EmergencyContactsScreen()));
         }),
         _drawerItem('Health Programs', Icons.health_and_safety_outlined, () {
           Navigator.of(
