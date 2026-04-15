@@ -20,6 +20,7 @@ import 'package:icare/screens/clinical_audit_screen.dart';
 import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
 
