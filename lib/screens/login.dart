@@ -316,9 +316,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             width: 90, height: 90,
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
+                              color: Colors.white.withOpacity(0.20),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.0),
+                                  blurRadius: 40,
+                                  spreadRadius: 0,
+                                ),
+                              ],
                             ),
                             child: Image.asset(ImagePaths.logo, fit: BoxFit.contain),
                           ),
