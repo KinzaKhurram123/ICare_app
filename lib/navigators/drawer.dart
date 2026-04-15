@@ -72,6 +72,7 @@ class CustomDrawer extends ConsumerWidget {
 
     debugPrint('🗂️ DRAWER OPENED — Role: $selectedRole');
 
+    var drawerItems = [
       _drawerItem('Tasks', Icons.task_alt_rounded, () {
         Navigator.of(
           context,

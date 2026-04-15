@@ -48,7 +48,6 @@ import 'package:icare/screens/pharmacy_profile_setup.dart';
 import 'package:icare/screens/doctor_notifications.dart';
 import 'package:icare/screens/doctor_profile_setup.dart';
 import 'package:icare/screens/help_and_support.dart';
-import 'package:icare/screens/patient_records_list.dart';
 import 'package:icare/screens/analytics_dashboard_screen.dart';
 import 'package:icare/screens/community_forum_screen.dart';
 import 'package:icare/screens/health_journey_screen.dart';
