@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/screens/doctors_list.dart';
 import 'package:intl/intl.dart';
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
@@ -205,6 +206,85 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                 ),
                 const SizedBox(height: 12),
                 ...medicines.map((med) => _buildMedicineItem(med)),
+
+                // ── REFERRAL TO SPECIALIST ──────────────────────────────
+                if (record['prescription']?['referral'] != null) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Specialist Referral',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      final specialty = record['prescription']['referral']['specialty'];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => DoctorsListWithSpecialty(specialty: specialty),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person_search_rounded,
+                              color: Color(0xFFF59E0B),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  record['prescription']['referral']['specialty'] ?? 'Specialist',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                if (record['prescription']['referral']['reason'] != null)
+                                  Text(
+                                    record['prescription']['referral']['reason'],
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFFF59E0B),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
                 if (pharmacyOrder != null) ...[
                   const SizedBox(height: 16),
                   _buildStatusTimeline(orderStatus),

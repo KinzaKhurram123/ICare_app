@@ -336,6 +336,214 @@ class _DoctorsListState extends State<DoctorsList> {
   }
 }
 
+class DoctorsListWithSpecialty extends StatefulWidget {
+  final String specialty;
+  const DoctorsListWithSpecialty({super.key, required this.specialty});
+
+  @override
+  State<DoctorsListWithSpecialty> createState() => _DoctorsListWithSpecialtyState();
+}
+
+class _DoctorsListWithSpecialtyState extends State<DoctorsListWithSpecialty> {
+  final DoctorService _doctorService = DoctorService();
+  List<Doctor> _doctors = [];
+  List<Doctor> _filteredDoctors = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctors();
+  }
+
+  Future<void> _loadDoctors() async {
+    setState(() => _isLoading = true);
+
+    final result = await _doctorService.getAllDoctors();
+
+    if (result['success']) {
+      final doctorsList = (result['doctors'] as List)
+          .map((json) => Doctor.fromJson(json))
+          .toList();
+
+      // Filter by specialty immediately
+      final filtered = doctorsList
+          .where((d) => d.specialization == widget.specialty)
+          .toList();
+
+      setState(() {
+        _doctors = doctorsList;
+        _filteredDoctors = filtered;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to load doctors'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _filterDoctors() {
+    setState(() {
+      _filteredDoctors = _doctors.where((doctor) {
+        final matchesSearch = _searchQuery.isEmpty ||
+            doctor.user.name.toLowerCase().contains(_searchQuery.toLowerCase());
+        final matchesSpecialty = doctor.specialization == widget.specialty;
+        return matchesSearch && matchesSpecialty;
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDesktop = Utils.windowWidth(context) > 600;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        leading: const CustomBackButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: CustomText(
+          text: widget.specialty,
+          fontFamily: "Gilroy-Bold",
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: const Color(0xFF0F172A),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: Color(0xFFF59E0B),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Showing ${widget.specialty} specialists based on your referral',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF92400E),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        onChanged: (value) {
+                          _searchQuery = value;
+                          _filterDoctors();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search by doctor name',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _filteredDoctors.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_search_rounded,
+                                size: 64,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomText(
+                                text: 'No ${widget.specialty} specialists found',
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossAxisCount = 2;
+                            if (constraints.maxWidth > 1200) {
+                              crossAxisCount = 4;
+                            } else if (constraints.maxWidth > 800) {
+                              crossAxisCount = 3;
+                            }
+
+                            return GridView.builder(
+                              itemCount: _filteredDoctors.length,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isDesktop ? 40 : 20,
+                                vertical: 24,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    mainAxisExtent: isDesktop ? 340 : 280,
+                                    crossAxisSpacing: 24,
+                                    mainAxisSpacing: 24,
+                                  ),
+                              itemBuilder: (ctx, i) {
+                                return DoctorProfileCard(
+                                  doctor: _filteredDoctors[i],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
 class DoctorProfileCard extends StatelessWidget {
   const DoctorProfileCard({super.key, this.doctor, this.width, this.padding});
 
