@@ -54,6 +54,7 @@ import 'package:icare/screens/community_forum_screen.dart';
 import 'package:icare/screens/health_journey_screen.dart';
 import 'package:icare/screens/lifestyle_tracker_screen.dart';
 import 'package:icare/screens/manage_dependents_screen.dart';
+import 'package:icare/screens/emergency_contacts_screen.dart';
 import 'package:icare/screens/prescription_templates_screen.dart';
 import 'package:icare/screens/security_audit_log_screen.dart';
 import 'package:icare/screens/certificates_screen.dart';
@@ -759,12 +760,12 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.family_restroom_rounded,
+                    Icons.contact_emergency_rounded,
                     'Emergency Contacts',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const ManageDependentsScreen(),
+                          builder: (ctx) => const EmergencyContactsScreen(),
                         ),
                       );
                     },
@@ -782,7 +783,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.science_rounded,
-                    'Laboratories',
+                    'Book a Lab Test',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -808,7 +809,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.calendar_month_rounded,
-                    'My Appointment',
+                    'My Appointments',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -820,7 +821,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.medication_rounded,
-                    'Pharmacies',
+                    'Order Medicines',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -849,18 +850,6 @@ class _WebSidebar extends ConsumerWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const HealthCommunityScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.health_and_safety_outlined,
-                    'My Care Plans',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
                         ),
                       );
                     },

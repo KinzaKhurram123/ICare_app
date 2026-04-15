@@ -19,6 +19,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
   final UserService _userService = UserService();
   bool isLoading = false;
 
@@ -37,6 +41,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     nameController.dispose();
     phoneController.dispose();
     cnicController.dispose();
+    ageController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    addressController.dispose();
     super.dispose();
   }
 
@@ -50,6 +58,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
         cnic: cnicController.text.trim().isEmpty ? null : cnicController.text.trim(),
+        age: ageController.text.trim().isEmpty ? null : ageController.text.trim(),
+        height: heightController.text.trim().isEmpty ? null : heightController.text.trim(),
+        weight: weightController.text.trim().isEmpty ? null : weightController.text.trim(),
+        address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
       );
 
       if (result['success']) {
@@ -259,6 +271,77 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             color: Color(0xFF94A3B8),
                           ),
                           controller: cnicController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Health Details',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Age',
+                                leadingIcon: const Icon(
+                                  Icons.cake_outlined,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                controller: ageController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Height (cm)',
+                                leadingIcon: const Icon(
+                                  Icons.height_rounded,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                controller: heightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Weight (kg)',
+                                leadingIcon: const Icon(
+                                  Icons.monitor_weight_outlined,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                controller: weightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Address',
+                          leadingIcon: const Icon(
+                            Icons.location_on_outlined,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          controller: addressController,
                           bgColor: const Color(0xFFF8FAFC),
                           borderRadius: 14,
                           borderColor: const Color(0xFFE2E8F0),

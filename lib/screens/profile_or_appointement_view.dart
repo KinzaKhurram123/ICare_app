@@ -304,7 +304,7 @@ class ProfileInfoWidget extends StatelessWidget {
                     ),
                     SizedBox(width: ScallingConfig.scale(10)),
                     CustomText(
-                      text: "View Profile",
+                      text: "View Full Details",
                       underline: true,
                       onTap: () {
                         if (patient != null) {
@@ -321,23 +321,6 @@ class ProfileInfoWidget extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: ScallingConfig.scale(10)),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.email_outlined,
-                      size: 16,
-                      color: AppColors.darkGreyColor,
-                    ),
-                    SizedBox(width: Utils.windowWidth(context) * 0.025),
-                    Expanded(
-                      child: CustomText(
-                        text: email,
-                        fontSize: 12,
-                        color: AppColors.darkGreyColor,
-                      ),
-                    ),
-                  ],
-                ),
                 Row(
                   children: [
                     SvgWrapper(assetPath: ImagePaths.scan),
@@ -558,7 +541,7 @@ class _WebPatientProfileView extends StatelessWidget {
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          "View Profile",
+          "Appointment Details",
           style: TextStyle(
             fontSize: 18,
             fontFamily: "Gilroy-Bold",

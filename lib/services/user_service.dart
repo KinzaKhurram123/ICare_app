@@ -42,6 +42,10 @@ class UserService {
     required String phoneNumber,
     String? profilePicture,
     String? cnic,
+    String? age,
+    String? height,
+    String? weight,
+    String? address,
   }) async {
     try {
       final response = await _apiService.put('/users/profile', {
@@ -49,6 +53,10 @@ class UserService {
         'phoneNumber': phoneNumber,
         if (profilePicture != null) 'profilePicture': profilePicture,
         if (cnic != null) 'cnic': cnic,
+        if (age != null) 'age': age,
+        if (height != null) 'height': height,
+        if (weight != null) 'weight': weight,
+        if (address != null) 'address': address,
       });
 
       if (response.statusCode == 200) {
