@@ -649,7 +649,7 @@ class _PatientBookLabFlowState extends State<PatientBookLabFlow> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            lab.address,
+                            lab.address ?? 'Location not available',
                             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -663,24 +663,24 @@ class _PatientBookLabFlowState extends State<PatientBookLabFlow> {
                         const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
                         const SizedBox(width: 4),
                         Text(
-                          lab.rating,
+                          lab.rating ?? '4.5',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
                         ),
                         const SizedBox(width: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: lab.delivery.contains('Home')
+                            color: (lab.delivery ?? '').contains('Home')
                                 ? const Color(0xFFECFDF5)
                                 : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            lab.delivery,
+                            lab.delivery ?? 'Walk-in',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: lab.delivery.contains('Home')
+                              color: (lab.delivery ?? '').contains('Home')
                                   ? const Color(0xFF059669)
                                   : const Color(0xFF64748B),
                             ),
