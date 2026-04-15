@@ -694,7 +694,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                     elevation: 0,
                                   ),
                                   child: Text(
-                                    'Connect to a Doctor',
+                                    'Connect to a Doctor Now',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: isMobile ? 13 : 15,

@@ -18,10 +18,8 @@ import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/my_learning.dart';
 import 'package:icare/screens/clinical_audit_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
-import 'package:icare/screens/doctor_revenue_analytics_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
-import 'package:icare/screens/subscription_chronic_care_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -944,18 +942,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           mainAxisSpacing: 16,
           childAspectRatio: clinicalRatio,
           children: [
-            _buildFeatureCard(
-              'revenue_usage'.tr(),
-              Icons.bar_chart_rounded,
-              const Color(0xFF3B82F6),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorRevenueAnalyticsScreen(),
-                  ),
-                );
-              },
-            ),
             _buildFeatureCard(
               'Quality Score',
               Icons.rule_folder_rounded,
