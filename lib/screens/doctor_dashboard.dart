@@ -142,15 +142,11 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildTodayAppointments(),
                         const SizedBox(height: 24),
 
-                        // 4. Stats (consultations, rating, satisfaction — NO revenue)
-                        _buildStatisticsCards(isDesktop, isTablet),
+                        // 4. Clinical Flags (SOAP notes alerts)
+                        _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
-                        // Quick Actions
-                        _buildQuickActions(isDesktop, isTablet),
-                        const SizedBox(height: 24),
-
-                        // Clinical & Professional Features
+                        // 5. Clinical & Professional Features
                         _buildFeatureGrid(isDesktop, isTablet),
                       ],
                     ),
@@ -399,7 +395,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+                color: Color(0xFF065F46),
               ),
             ),
             if (_pendingCount > 5)
@@ -688,6 +684,190 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildClinicalFlags() {
+    // Completed appointments that likely need SOAP notes
+    final flagged = _appointments
+        .where((a) => a.status == 'completed')
+        .take(5)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.flag_rounded, color: Color(0xFFDC2626), size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Clinical Flags',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (flagged.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${flagged.length} pending',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFDC2626),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: flagged.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: const Color(0xFF10B981),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'All SOAP notes are up to date.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF10B981),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    // Info banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded,
+                              color: Color(0xFFDC2626), size: 16),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'These appointments are missing SOAP notes. Tap to complete.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFDC2626),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...flagged.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final appt = entry.value;
+                      return Column(
+                        children: [
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => ProfileOrAppointmentViewScreen(
+                                    appointment: appt,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.assignment_late_rounded,
+                                      color: Color(0xFFDC2626),
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          appt.patient?.name ?? 'Patient',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${DateFormat('dd MMM yyyy').format(appt.date)}  •  ${appt.timeSlot}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 
