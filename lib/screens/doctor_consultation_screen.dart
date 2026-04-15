@@ -65,6 +65,8 @@ class _DoctorConsultationScreenState
   // Step 4: Plan
   final _instructionsController = TextEditingController();
   final _followUpInstructionsController = TextEditingController();
+  final _followUpDurationController = TextEditingController();
+  String _followUpUnit = 'Days';
   DateTime? _followUpDate;
 
   // Plan items (will be managed through dialogs)
@@ -99,6 +101,7 @@ class _DoctorConsultationScreenState
     _clinicalNotesController.dispose();
     _instructionsController.dispose();
     _followUpInstructionsController.dispose();
+    _followUpDurationController.dispose();
     super.dispose();
   }
 
@@ -814,6 +817,75 @@ class _DoctorConsultationScreenState
             fillColor: Colors.white,
           ),
           maxLines: 2,
+        ),
+        const SizedBox(height: 20),
+
+        // ── FOLLOW UP AFTER ──────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.event_repeat_rounded, color: Color(0xFF6366F1), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Follow Up After', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _followUpDurationController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Duration',
+                        hintText: 'e.g. 7',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<String>(
+                      value: _followUpUnit,
+                      decoration: InputDecoration(
+                        labelText: 'Unit',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                      ),
+                      items: ['Days', 'Weeks', 'Months'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                      onChanged: (v) => setState(() => _followUpUnit = v!),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Patient will be prompted to schedule a follow-up appointment',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
       ],
     );
