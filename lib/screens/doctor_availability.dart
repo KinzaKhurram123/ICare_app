@@ -152,6 +152,7 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
 
   void _addSlot(String day) {
     final slots = _weeklySlots[day]!;
+    if (slots.length >= 3) return;
     setState(() {
       slots.add({
         'name': 'Slot ${slots.length + 1}',
@@ -509,11 +510,13 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () => _addSlot(currentDay),
+                onPressed: slots.length < 3 ? () => _addSlot(currentDay) : null,
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add Slot'),
+                label: Text(slots.length >= 3 ? 'Max 3 slots' : 'Add Slot'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryColor,
+                  foregroundColor: slots.length < 3
+                      ? AppColors.primaryColor
+                      : const Color(0xFF94A3B8),
                 ),
               ),
             ],

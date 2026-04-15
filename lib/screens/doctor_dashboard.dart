@@ -485,16 +485,23 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               ],
             ),
           ),
-          // Decline button
+          // Reject button
           GestureDetector(
             onTap: () => _updateAppointmentStatus(appointment.id, 'cancelled'),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 18),
+              child: const Text(
+                'Reject',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -502,12 +509,19 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           GestureDetector(
             onTap: () => _updateAppointmentStatus(appointment.id, 'confirmed'),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 18),
+              child: const Text(
+                'Accept',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF10B981),
+                ),
+              ),
             ),
           ),
         ],
@@ -834,18 +848,18 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          appt.patient?.name ?? 'Patient',
+                                          'This appointment with ${appt.patient?.name ?? 'Patient'}',
                                           style: const TextStyle(
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w700,
                                             color: Color(0xFF0F172A),
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: 3),
                                         Text(
-                                          '${DateFormat('dd MMM yyyy').format(appt.date)}  •  ${appt.timeSlot}',
+                                          '#${appt.id.length > 8 ? appt.id.substring(appt.id.length - 8).toUpperCase() : appt.id.toUpperCase()}  ·  ${DateFormat('dd MMM yyyy, hh:mm a').format(appt.date)}',
                                           style: const TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 11,
                                             color: Color(0xFF64748B),
                                           ),
                                         ),
@@ -1166,6 +1180,18 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const DoctorAvailability(),
+                  ),
+                );
+              },
+            ),
+            _buildFeatureCard(
+              'Revenue & Analytics',
+              Icons.bar_chart_rounded,
+              const Color(0xFF10B981),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const DoctorAnalytics(),
                   ),
                 );
               },
