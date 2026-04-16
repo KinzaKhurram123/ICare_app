@@ -169,7 +169,7 @@ class PublicHome extends StatelessWidget {
                 // 4. Book a Lab Test Section (renamed from Laboratories)
                 Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  padding: const EdgeInsets.only(top: 60, bottom: 32),
                   child: _CenteredSection(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -210,17 +210,17 @@ class PublicHome extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 24),
 
                 // 5. Courses Section (new — above How iCare Works)
                 _CoursesSection(),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 24),
 
                 // 6. How iCare Works Section
                 Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  padding: const EdgeInsets.only(top: 36, bottom: 60),
                   child: _CenteredSection(
                     child: Column(
                       children: [
@@ -2220,7 +2220,7 @@ class PublicHomeBody extends StatelessWidget {
         // 4. Book a Lab Test
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 60),
+          padding: const EdgeInsets.only(top: 60, bottom: 32),
           child: _CenteredSection(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -2260,14 +2260,14 @@ class PublicHomeBody extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 60),
+        const SizedBox(height: 24),
         // 5. Courses Section
         _CoursesSection(),
-        const SizedBox(height: 60),
+        const SizedBox(height: 24),
         // 6. How iCare Works
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 60),
+          padding: const EdgeInsets.only(top: 36, bottom: 60),
           child: _CenteredSection(
             child: Column(
               children: [

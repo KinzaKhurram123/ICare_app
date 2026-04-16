@@ -223,16 +223,16 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 100,
-                            height: 100,
-                            padding: const EdgeInsets.all(16),
+                            width: 110,
+                            height: 110,
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1.5,
-                              ),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 32, spreadRadius: 0, offset: Offset(0, 8)),
+                                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, spreadRadius: 0, offset: Offset(0, 2)),
+                              ],
                             ),
                             child: SvgPicture.asset(
                               ImagePaths.logo,

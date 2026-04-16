@@ -412,12 +412,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 90, height: 90,
-                      padding: const EdgeInsets.all(14),
+                      width: 110, height: 110,
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 32, spreadRadius: 0, offset: Offset(0, 8)),
+                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, spreadRadius: 0, offset: Offset(0, 2)),
+                        ],
                       ),
                       child: SvgPicture.asset(ImagePaths.logo, fit: BoxFit.contain, colorFilter: null),
                     ),
