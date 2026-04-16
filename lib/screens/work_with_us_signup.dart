@@ -58,7 +58,7 @@ class WorkWithUsSignup extends StatelessWidget {
         ),
         title: Row(
           children: [
-            SvgPicture.asset(ImagePaths.logo, width: 32, height: 32),
+            SvgPicture.asset(ImagePaths.logo, width: 32, height: 32, colorFilter: null),
             const SizedBox(width: 8),
             const Text(
               'Work With Us',

@@ -477,6 +477,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
               ImagePaths.logo,
               height: 70,
               fit: BoxFit.contain,
+              colorFilter: null,
             ),
           ),
 

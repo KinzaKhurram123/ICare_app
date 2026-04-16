@@ -147,7 +147,7 @@ class _ProfessionalSignupState extends State<ProfessionalSignup> {
         ),
         title: Row(
           children: [
-            SvgPicture.asset(ImagePaths.logo, width: 30, height: 30),
+            SvgPicture.asset(ImagePaths.logo, width: 30, height: 30, colorFilter: null),
             const SizedBox(width: 8),
             Text(
               '${widget.role} Sign Up',

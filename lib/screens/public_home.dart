@@ -41,7 +41,7 @@ class PublicHome extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      SvgPicture.asset(ImagePaths.logo, width: isMobile ? 32 : 44, height: isMobile ? 32 : 44),
+                      SvgPicture.asset(ImagePaths.logo, width: isMobile ? 32 : 44, height: isMobile ? 32 : 44, colorFilter: null),
                       const Spacer(),
                       _NavButton(
                         label: 'Sign In',
@@ -1968,7 +1968,7 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SvgPicture.asset(ImagePaths.logo, width: 64, height: 64),
+                SvgPicture.asset(ImagePaths.logo, width: 64, height: 64, colorFilter: null),
                 const SizedBox(height: 12),
                 Text(
                   "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
@@ -2016,7 +2016,7 @@ class _Footer extends StatelessWidget {
     return [
       Row(
         children: [
-          SvgPicture.asset(ImagePaths.logo, width: 56, height: 56),
+          SvgPicture.asset(ImagePaths.logo, width: 56, height: 56, colorFilter: null),
         ],
       ),
       const SizedBox(height: 12),

@@ -237,6 +237,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                             child: SvgPicture.asset(
                               ImagePaths.logo,
                               fit: BoxFit.contain,
+                              colorFilter: null,
                             ),
                           ),
                           const SizedBox(height: 32),

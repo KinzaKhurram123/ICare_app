@@ -69,6 +69,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
               ImagePaths.logo,
               width: 32,
               height: 32,
+              colorFilter: null,
             ),
             const SizedBox(width: 10),
             const Text(
