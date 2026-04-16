@@ -380,7 +380,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final role = widget.role;
     final currentIndex = widget.currentIndex;
     final onSelect = widget.onSelect;
