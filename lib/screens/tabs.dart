@@ -542,100 +542,7 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ── Quick Action Buttons (Show for non-Patient, non-Admin, non-Doctor roles) ───
-          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (role == 'Student') {
-                        onSelect(1);
-                      } else if (role == 'Laboratory') {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => LabBookingsManagement(
-                              title: 'Test Requests',
-                              initialFilter: 'pending',
-                            ),
-                          ),
-                        );
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => LabBookingsManagement(),
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (role == 'Student'
-                                ? AppColors.secondaryColor
-                                : const Color(0xFF0EA5E9))
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: (role == 'Student'
-                                  ? AppColors.secondaryColor
-                                  : const Color(0xFF0EA5E9))
-                              .withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: role == 'Student'
-                                  ? AppColors.secondaryColor
-                                  : const Color(0xFF0EA5E9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              role == 'Student'
-                                  ? Icons.explore_rounded
-                                  : role == 'Laboratory'
-                                  ? Icons.list_alt_rounded
-                                  : Icons.biotech_rounded,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              role == 'Student'
-                                  ? 'Browse Programs'
-                                  : role == 'Laboratory'
-                                  ? 'Manage Test Requests'
-                                  : 'Manage Bookings',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+
 
           // ── Section label ──────────────────────────────────────────────
           Padding(
@@ -1078,17 +985,15 @@ class _WebSidebar extends ConsumerWidget {
                 ],
 
                 if (role == 'Laboratory') ...[
-                  const SizedBox(height: 16),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Text(
-                      'PROFESSIONAL',
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                    child: Divider(
+                      color: const Color(0xFFE8ECF5),
+                      height: 1,
                     ),
                   ),
                   _buildExtraNavItem(
@@ -1171,19 +1076,6 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Text(
-                      'PERSONAL',
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
                   ),
                   _buildExtraNavItem(
                     context,
