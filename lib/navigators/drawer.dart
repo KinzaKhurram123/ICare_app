@@ -62,12 +62,38 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:icare/services/appointment_service.dart';
+import 'package:icare/models/appointment_detail.dart';
 
-class CustomDrawer extends ConsumerWidget {
+class CustomDrawer extends ConsumerStatefulWidget {
   const CustomDrawer({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CustomDrawer> createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends ConsumerState<CustomDrawer> {
+  int _pendingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingCount();
+  }
+
+  Future<void> _loadPendingCount() async {
+    final result = await AppointmentService().getMyAppointmentsDetailed();
+    if (result['success'] && mounted) {
+      final appointments = result['appointments'] as List<AppointmentDetail>;
+      final pending = appointments
+          .where((a) => a.status.toLowerCase() == 'pending')
+          .length;
+      setState(() => _pendingCount = pending);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedRole = ref.watch(authProvider).userRole;
 
     debugPrint('🗂️ DRAWER OPENED — Role: $selectedRole');
@@ -123,7 +149,7 @@ class CustomDrawer extends ConsumerWidget {
               builder: (ctx) => const MyAppointmentsListScreen(),
             ),
           );
-        }),
+        }, badgeCount: _pendingCount),
         _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(
             context,
@@ -148,7 +174,7 @@ class CustomDrawer extends ConsumerWidget {
               builder: (ctx) => const MyAppointmentsListScreen(),
             ),
           );
-        }),
+        }, badgeCount: _pendingCount),
         _drawerItem('Dashboard', Icons.dashboard_outlined, () {
           Navigator.of(
             context,
@@ -274,7 +300,7 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }),
+        }, badgeCount: _pendingCount),
         _drawerItem('Notifications', Icons.notifications_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
@@ -363,7 +389,7 @@ class CustomDrawer extends ConsumerWidget {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }),
+        }, badgeCount: _pendingCount),
         _drawerItem('Notifications', Icons.notifications_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
@@ -495,7 +521,7 @@ class CustomDrawer extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
               // Header with user info
-              _buildHeader(ref),
+              _buildHeader(),
 
               // Menu list (exact items)
               Expanded(
@@ -730,7 +756,7 @@ class CustomDrawer extends ConsumerWidget {
   );
   }
 
-  Widget _buildHeader(WidgetRef ref) {
+  Widget _buildHeader() {
     final selectedRole = ref.watch(authProvider).userRole;
     final userName = ref.watch(authProvider).user?.name ?? 'User';
     
@@ -794,6 +820,7 @@ class CustomDrawer extends ConsumerWidget {
     IconData icon,
     VoidCallback onTap, {
     bool isActive = false,
+    int badgeCount = 0,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -815,6 +842,24 @@ class CustomDrawer extends ConsumerWidget {
           fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
           color: isActive ? AppColors.primaryColor : const Color(0xFF64748B),
         ),
+        trailing: badgeCount > 0
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'New ${badgeCount.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Gilroy-Bold',
+                  ),
+                ),
+              )
+            : null,
         onTap: onTap,
       ),
     );

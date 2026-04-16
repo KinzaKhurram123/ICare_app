@@ -665,8 +665,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         children: [
                           Text(
                             isMobile
-                                ? 'Talk to a verified\nSpecialist Doctor'
-                                : 'Talk to a verified\nSpecialist Doctor',
+                                ? 'Talk to a Verified\nSpecialist Doctor'
+                                : 'Talk to a Verified\nSpecialist Doctor',
                             textAlign: TextAlign.left,
                             style: TextStyle(
                               fontSize: isMobile ? 24 : 38,

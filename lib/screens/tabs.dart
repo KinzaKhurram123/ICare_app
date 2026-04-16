@@ -83,6 +83,8 @@ import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
 import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
+import 'package:icare/services/appointment_service.dart';
+import 'package:icare/models/appointment_detail.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   final String? initialAdminTab;
@@ -343,7 +345,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 // ═══════════════════════════════════════════════════════════════════════════
 // Web Sidebar
 // ═══════════════════════════════════════════════════════════════════════════
-class _WebSidebar extends ConsumerWidget {
+class _WebSidebar extends ConsumerStatefulWidget {
   const _WebSidebar({
     required this.currentIndex,
     required this.role,
@@ -353,9 +355,35 @@ class _WebSidebar extends ConsumerWidget {
   final String role;
   final void Function(int) onSelect;
 
+  @override
+  ConsumerState<_WebSidebar> createState() => _WebSidebarState();
+}
+
+class _WebSidebarState extends ConsumerState<_WebSidebar> {
+  int _pendingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingCount();
+  }
+
+  Future<void> _loadPendingCount() async {
+    final result = await AppointmentService().getMyAppointmentsDetailed();
+    if (result['success'] && mounted) {
+      final appointments = result['appointments'] as List<AppointmentDetail>;
+      final pending = appointments
+          .where((a) => a.status.toLowerCase() == 'pending')
+          .length;
+      setState(() => _pendingCount = pending);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final role = widget.role;
+    final currentIndex = widget.currentIndex;
+    final onSelect = widget.onSelect;
     final List<_SidebarItem> items;
     if (role == 'Admin') {
       items = <_SidebarItem>[];
@@ -724,6 +752,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    badgeCount: _pendingCount,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1088,6 +1117,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    badgeCount: _pendingCount,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1518,12 +1548,14 @@ class _WebSidebar extends ConsumerWidget {
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    int badgeCount = 0,
+  }) {
     return _HoverableNavItem(
       icon: icon,
       label: label,
       onTap: onTap,
+      badgeCount: badgeCount,
     );
   }
 }
@@ -1532,11 +1564,13 @@ class _HoverableNavItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final int badgeCount;
 
   const _HoverableNavItem({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   @override
@@ -1579,16 +1613,35 @@ class _HoverableNavItemState extends State<_HoverableNavItem> {
                     : const Color(0xFF64748B),
               ),
               const SizedBox(width: 14),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
-                  color: _isHovered
-                      ? AppColors.primaryColor
-                      : const Color(0xFF64748B),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
+                    color: _isHovered
+                        ? AppColors.primaryColor
+                        : const Color(0xFF64748B),
+                  ),
                 ),
               ),
+              if (widget.badgeCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'New ${widget.badgeCount.toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Gilroy-Bold',
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
