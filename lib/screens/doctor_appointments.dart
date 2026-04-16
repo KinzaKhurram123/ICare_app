@@ -514,15 +514,10 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          flex: 1,
-                          child: ElevatedButton.icon(
+                          child: ElevatedButton(
                             onPressed: () =>
                                 _updateStatus(appointment.id, 'confirmed'),
-                            icon: const Icon(
-                              Icons.check_circle_rounded,
-                              size: 20,
-                            ),
-                            label: const Text('Accept'),
+                            child: const Text('Accept'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF10B981),
                               foregroundColor: Colors.white,
@@ -539,12 +534,10 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          flex: 1,
-                          child: OutlinedButton.icon(
+                          child: OutlinedButton(
                             onPressed: () =>
                                 _updateStatus(appointment.id, 'cancelled'),
-                            icon: const Icon(Icons.cancel_rounded, size: 20),
-                            label: const Text('Reject'),
+                            child: const Text('Reject'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFFEF4444),
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -565,7 +558,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
+                          child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -575,11 +568,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 22,
-                            ),
-                            label: const Text('Start Consultation'),
+                            child: const Text('Start Consultation'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF3B82F6),
                               foregroundColor: Colors.white,
