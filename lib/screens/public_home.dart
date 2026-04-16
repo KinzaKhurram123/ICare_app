@@ -108,19 +108,32 @@ class PublicHome extends StatelessWidget {
                       _SpecialtyGrid(),
                       const SizedBox(height: 24),
                       // See All Speciality centered button
-                      Center(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const DoctorsList()),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const DoctorsList()),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
                           ),
-                          icon: const Icon(Icons.grid_view_rounded, size: 18),
-                          label: const Text('See All Speciality'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0036BC),
-                            side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.grid_view_rounded, color: Color(0xFF0036BC), size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'See All Speciality',
+                                style: TextStyle(
+                                  color: Color(0xFF0036BC),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -672,13 +685,25 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                             spacing: 12,
                             runSpacing: 12,
                             children: [
-                              // Pulsing Connect button
+                              // Pulsing Connect button — glow only, no scale on text
                               AnimatedBuilder(
                                 animation: _pulseAnimation,
-                                builder: (context, child) => Transform.scale(
-                                  scale: _pulseAnimation.value,
-                                  child: child,
-                                ),
+                                builder: (context, child) {
+                                  final glow = (_pulseAnimation.value - 1.0) / 0.06;
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.45 * glow),
+                                          blurRadius: 18,
+                                          spreadRadius: 3 * glow,
+                                        ),
+                                      ],
+                                    ),
+                                    child: child,
+                                  );
+                                },
                                 child: ElevatedButton(
                                   onPressed: () => Navigator.of(context).push(
                                     MaterialPageRoute(builder: (_) => const DoctorsList()),
@@ -757,12 +782,12 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  // Right: doctor image (45%)
+                  // Right: banner image (45%)
                   Expanded(
                     flex: 45,
                     child: Image.asset(
-                      'assets/images/new.png',
-                      fit: BoxFit.contain,
+                      'assets/images/icarebanner.png',
+                      fit: BoxFit.cover,
                       alignment: isMobile ? Alignment.centerRight : const Alignment(0.3, 0.0),
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
