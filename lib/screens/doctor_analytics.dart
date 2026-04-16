@@ -149,8 +149,6 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
                       _buildPerformanceMetrics(stats),
                       const SizedBox(height: 24),
                       _buildAppointmentBreakdown(stats),
-                      const SizedBox(height: 24),
-                      _buildHealthProgramAnalytics(stats),
                     ],
                   ),
                 ),
@@ -164,6 +162,15 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     final num totalRevenue = stats['revenue'] ?? 0;
     final num platformFees = (totalRevenue * commissionRate);
     final num netRevenue = totalRevenue - platformFees;
+    
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1);
+    final lastMonthEarnings = _appointments
+        .where((a) => a.status == 'completed' && 
+                      a.date.year == lastMonth.year && 
+                      a.date.month == lastMonth.month)
+        .length * 500;
+    final lastMonthNet = lastMonthEarnings * 0.75;
 
     String fmt(num v) => 'PKR ${v.toStringAsFixed(0)}';
 
@@ -222,6 +229,30 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
             children: [
               Expanded(
                 child: _buildRevenueCard(
+                  'Last Month Earnings',
+                  fmt(lastMonthNet),
+                  Icons.calendar_today_rounded,
+                  const Color(0xFF8B5CF6),
+                  'Previous month net',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildRevenueCard(
+                  'Total Net Earnings',
+                  fmt(netRevenue),
+                  Icons.savings_rounded,
+                  const Color(0xFF10B981),
+                  'Cumulative to date (75%)',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildRevenueCard(
                   'Total Revenue',
                   fmt(totalRevenue),
                   Icons.account_balance_wallet_rounded,
@@ -237,16 +268,6 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
                   Icons.corporate_fare_rounded,
                   const Color(0xFFEF4444),
                   '25% iCare commission',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildRevenueCard(
-                  'Net Revenue',
-                  fmt(netRevenue),
-                  Icons.savings_rounded,
-                  const Color(0xFF10B981),
-                  'Your earnings (75%)',
                 ),
               ),
             ],
