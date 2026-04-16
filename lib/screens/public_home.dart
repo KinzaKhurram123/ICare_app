@@ -108,32 +108,19 @@ class PublicHome extends StatelessWidget {
                       _SpecialtyGrid(),
                       const SizedBox(height: 24),
                       // See All Speciality centered button
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const DoctorsList()),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 11),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
+                      Center(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const DoctorsList()),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.grid_view_rounded, color: Color(0xFF0036BC), size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'See All Speciality',
-                                style: TextStyle(
-                                  color: Color(0xFF0036BC),
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  fontFamily: 'Gilroy-Bold',
-                                ),
-                              ),
-                            ],
+                          icon: const Icon(Icons.grid_view_rounded, size: 18),
+                          label: const Text('See All Speciality'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF0036BC),
+                            side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
                           ),
                         ),
                       ),
@@ -602,177 +589,197 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Full background image — fitHeight keeps full height, face visible
-              Image.asset(
-                'assets/images/icarebanner.png',
-                fit: BoxFit.fitHeight,
-                alignment: Alignment.topRight,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0036BC), Color(0xFF0554D4)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+              // 1. Background gradient
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0036BC), Color(0xFF0554D4), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
               ),
-              // 2. Blue overlay on left for text readability
-              Positioned(
-                left: 0, top: 0, bottom: 0,
-                width: isMobile
-                    ? double.infinity
-                    : MediaQuery.of(context).size.width * 0.60,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF0036BC).withOpacity(0.92),
-                        const Color(0xFF0036BC).withOpacity(0.78),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+              // 2. Decorative circles (desktop only)
+              if (!isMobile) ...[
+                Positioned(
+                  right: -30, top: 20,
+                  child: Container(
+                    width: 160, height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.07),
                     ),
                   ),
                 ),
-              ),
-              // 3. Text + buttons on left
-              Positioned(
-                left: 0, top: 0, bottom: 0,
-                right: isMobile ? 0 : MediaQuery.of(context).size.width * 0.40,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: isMobile ? 20 : 52,
-                    right: isMobile ? 20 : 24,
-                    top: isMobile ? 24 : 40,
-                    bottom: isMobile ? 24 : 40,
+                Positioned(
+                  right: 50, bottom: 20,
+                  child: Container(
+                    width: 90, height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.05),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Talk to a verified\nSpecialist Doctor',
-                        style: TextStyle(
-                          fontSize: isMobile ? 24 : 38,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          fontFamily: 'Gilroy-Bold',
-                          height: 1.2,
-                        ),
+                ),
+              ],
+              // 3. Row layout: text left | image right
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left: text + buttons
+                  Expanded(
+                    flex: 55,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: isMobile ? 16 : 52,
+                        right: isMobile ? 8 : 4,
+                        top: isMobile ? 20 : 40,
+                        bottom: isMobile ? 20 : 40,
                       ),
-                      SizedBox(height: isMobile ? 10 : 14),
-                      Text(
-                        isMobile
-                            ? 'Book appointments & consult\ntrusted doctors from home.'
-                            : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
-                        style: TextStyle(
-                          fontSize: isMobile ? 12 : 16,
-                          color: Colors.white.withOpacity(0.88),
-                          height: 1.5,
-                        ),
-                      ),
-                      SizedBox(height: isMobile ? 20 : 28),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Connect button — glow pulse only on shadow
-                          AnimatedBuilder(
-                            animation: _pulseAnimation,
-                            builder: (context, child) {
-                              final glow = (_pulseAnimation.value - 1.0) / 0.06;
-                              return Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.white.withOpacity(0.45 * glow),
-                                      blurRadius: 18,
-                                      spreadRadius: 3 * glow,
-                                    ),
-                                  ],
-                                ),
-                                child: child,
-                              );
-                            },
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const DoctorsList()),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF0036BC),
-                                minimumSize: Size(isMobile ? 150 : 190, isMobile ? 46 : 52),
-                                padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 30),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                'Connect to a Doctor Now',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: isMobile ? 13 : 15,
-                                  fontFamily: 'Gilroy-Bold',
-                                ),
-                              ),
+                          Text(
+                            isMobile
+                                ? 'Talk to a verified\nSpecialist Doctor'
+                                : 'Talk to a verified\nSpecialist Doctor',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: isMobile ? 24 : 38,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              fontFamily: 'Gilroy-Bold',
+                              height: 1.2,
                             ),
                           ),
-                          // Book Appointment — same size
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const DoctorsList()),
+                          SizedBox(height: isMobile ? 10 : 14),
+                          Text(
+                            isMobile
+                                ? 'Book appointments & consult\ntrusted doctors from home.'
+                                : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: isMobile ? 12 : 16,
+                              color: Colors.white.withOpacity(0.88),
+                              height: 1.5,
                             ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white, width: 2),
-                              minimumSize: Size(isMobile ? 150 : 190, isMobile ? 46 : 52),
-                              padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 30),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          SizedBox(height: isMobile ? 20 : 28),
+                          // Two CTA buttons — left aligned
+                          Wrap(
+                            alignment: WrapAlignment.start,
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              // Pulsing Connect button (glow only — text never jerks)
+                              AnimatedBuilder(
+                                animation: _pulseAnimation,
+                                builder: (context, child) {
+                                  final g = (_pulseAnimation.value - 1.0) / 0.06;
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.5 * g),
+                                          blurRadius: 20,
+                                          spreadRadius: 4 * g,
+                                        ),
+                                      ],
+                                    ),
+                                    child: child,
+                                  );
+                                },
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF0036BC),
+                                    minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isMobile ? 22 : 32,
+                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Connect to a Doctor Now',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: isMobile ? 13 : 15,
+                                      fontFamily: 'Gilroy-Bold',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Book Appointment button
+                              OutlinedButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white, width: 2),
+                                  minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isMobile ? 22 : 32,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text(
+                                  'Book Appointment',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: isMobile ? 13 : 15,
+                                    fontFamily: 'Gilroy-Bold',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: isMobile ? 16 : 22),
+                          // Search bar below buttons — full width of left column
+                          Container(
+                            height: isMobile ? 46 : 50,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              'Book Appointment',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: isMobile ? 13 : 15,
-                                fontFamily: 'Gilroy-Bold',
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search doctors, specialties, conditions...',
+                                hintStyle: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.grey[400]),
+                                prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 20 : 22),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: isMobile ? 16 : 22),
-                      // Search bar — limited width
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 340),
-                        child: Container(
-                          height: isMobile ? 46 : 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.12),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search doctors, specialties...',
-                              hintStyle: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.grey[400]),
-                              prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 20 : 22),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  // Right: doctor image (45%)
+                  Expanded(
+                    flex: 45,
+                    child: Image.asset(
+                      'assets/images/new.png',
+                      fit: BoxFit.contain,
+                      alignment: isMobile ? Alignment.centerRight : const Alignment(0.3, 0.0),
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1069,13 +1076,13 @@ class _DoctorCardState extends State<_DoctorCard> {
             const SizedBox(height: 3),
             Text(
               widget.doctor['spec']!,
-              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 3),
             Text(
               widget.doctor['exp']!,
-              style: TextStyle(fontSize: 10.5, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -1279,7 +1286,7 @@ class _ServiceCardState extends State<_ServiceCard> {
             Text(
               widget.name,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
                 fontFamily: 'Gilroy-Bold',
@@ -1291,7 +1298,7 @@ class _ServiceCardState extends State<_ServiceCard> {
             const SizedBox(height: 3),
             Text(
               widget.subtitle,
-              style: TextStyle(fontSize: 9.5, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 5),
@@ -1419,7 +1426,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               Text(
                 widget.name,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1A1A2E),
                   fontFamily: 'Gilroy-Bold',
@@ -1431,7 +1438,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               const SizedBox(height: 3),
               Text(
                 widget.description,
-                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -2135,18 +2142,33 @@ class PublicHomeBody extends StatelessWidget {
               _SpecialtyGrid(),
               const SizedBox(height: 24),
               Center(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const DoctorsList()),
                   ),
-                  icon: const Icon(Icons.grid_view_rounded, size: 18),
-                  label: const Text('See All Speciality'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF0036BC),
-                    side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.grid_view_rounded, size: 18, color: Color(0xFF0036BC)),
+                        SizedBox(width: 8),
+                        Text(
+                          'See All Speciality',
+                          style: TextStyle(
+                            color: Color(0xFF0036BC),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            fontFamily: 'Gilroy-Bold',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2189,17 +2211,31 @@ class PublicHomeBody extends StatelessWidget {
                 _LaboratoriesGrid(),
                 const SizedBox(height: 20),
                 Center(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.biotech_rounded, size: 18),
-                    label: const Text('Book Lab'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
-                      elevation: 0,
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.biotech_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Book Lab',
+                            style: TextStyle(
+                              color: Color(0xFF8B5CF6),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              fontFamily: 'Gilroy-Bold',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
