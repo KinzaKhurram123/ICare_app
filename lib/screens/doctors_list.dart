@@ -120,8 +120,7 @@ class _DoctorsListState extends State<DoctorsList> {
             (_availabilityFilter == 'online' && doctor.isOnline) ||
             (_availabilityFilter == 'offline' && !doctor.isOnline);
 
-        final matchesFees = (_minFee == null || (doctor.consultationFee ?? 0) >= _minFee!) &&
-            (_maxFee == null || (doctor.consultationFee ?? 0) <= _maxFee!);
+        const matchesFees = true; // consultationFee not available in Doctor model yet
 
         final matchesRating = _minRating == null || doctor.averageRating >= _minRating!;
 
@@ -151,7 +150,7 @@ class _DoctorsListState extends State<DoctorsList> {
           return bExp.compareTo(aExp);
         });
       } else if (_sortBy == 'fees') {
-        _filteredDoctors.sort((a, b) => (a.consultationFee ?? 0).compareTo(b.consultationFee ?? 0));
+        // consultationFee not yet in Doctor model — skip sort
       }
     });
   }

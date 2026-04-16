@@ -103,7 +103,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
             child: TextButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (ctx) => const LabsListScreen()),
+                  MaterialPageRoute(builder: (ctx) => LabsListScreen()),
                 );
               },
               icon: const Icon(Icons.biotech_rounded, size: 18),
