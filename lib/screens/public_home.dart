@@ -606,7 +606,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               Image.asset(
                 'assets/images/icarebanner.png',
                 fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
+                alignment: const Alignment(0.6, -0.3),
                 errorBuilder: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -723,29 +723,24 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          // Book Appointment button
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).push(
+                          // Book Appointment button — same size as Connect button
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => const DoctorsList()),
                             ),
-                            child: Container(
-                              height: isMobile ? 46 : 52,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white, width: 2),
+                              minimumSize: Size(isMobile ? 150 : 190, isMobile ? 46 : 52),
                               padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 30),
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Book Appointment',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: isMobile ? 13 : 15,
-                                    fontFamily: 'Gilroy-Bold',
-                                  ),
-                                ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text(
+                              'Book Appointment',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: isMobile ? 13 : 15,
+                                fontFamily: 'Gilroy-Bold',
                               ),
                             ),
                           ),
