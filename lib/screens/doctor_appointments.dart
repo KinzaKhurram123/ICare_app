@@ -114,7 +114,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
               fontWeight: FontWeight.w900,
               color: const Color(0xFF0F172A),
             ),
-            if (_appointments.where((a) => a.status.toLowerCase() == 'pending').isNotEmpty) ...[
+            if (!_isLoading && _appointments.where((a) => a.status.toLowerCase() == 'pending').isNotEmpty) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -513,7 +513,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF64748B),
+                                  color: Color(0xFF000000),
                                 ),
                               ),
                             ],
@@ -523,7 +523,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                             appointment.reason!,
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF0F172A),
+                              color: Color(0xFF000000),
                               height: 1.5,
                             ),
                           ),
