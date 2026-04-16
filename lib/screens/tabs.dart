@@ -597,6 +597,9 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                 children: [
                   ...items.map((item) {
                     final isSelected = currentIndex == item.index;
+                    final showBadge = item.label == 'Appointments' &&
+                        role == 'Doctor' &&
+                        _pendingCount > 0;
                     return GestureDetector(
                       onTap: () => onSelect(item.index),
                       child: AnimatedContainer(
@@ -627,20 +630,41 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                                 : const Color(0xFF64748B),
                           ),
                           const SizedBox(width: 14),
-                          Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: isSelected
-                                  ? AppColors.primaryColor
-                                  : const Color(0xFF64748B),
+                          Expanded(
+                            child: Text(
+                              item.label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isSelected
+                                    ? AppColors.primaryColor
+                                    : const Color(0xFF64748B),
+                              ),
                             ),
                           ),
-                          if (isSelected) ...[
-                            const Spacer(),
+                          if (showBadge)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'New ${_pendingCount.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
+                            )
+                          else if (isSelected)
                             Container(
                               width: 6,
                               height: 6,
@@ -649,7 +673,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                                 shape: BoxShape.circle,
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ),

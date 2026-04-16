@@ -298,18 +298,20 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         ),
         child: Column(
           children: [
-            // Gradient Header with Date & Status
+            // Header with Date & Status
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [statusColor, statusColor.withValues(alpha: 0.8)],
-                ),
+                color: statusColor.withValues(alpha: 0.08),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(19),
                   topRight: Radius.circular(19),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: statusColor.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
                 ),
               ),
               child: Row(
@@ -317,12 +319,12 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.calendar_today_rounded,
-                      color: Colors.white,
+                      color: statusColor,
                       size: 24,
                     ),
                   ),
@@ -336,25 +338,25 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: Color(0xFF0F172A),
                             letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.access_time_rounded,
-                              color: Colors.white,
+                              color: statusColor,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               appointment.timeSlot,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: Color(0xFF334155),
                               ),
                             ),
                           ],
@@ -368,22 +370,15 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: statusColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Text(
                       appointment.status.toUpperCase(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
-                        color: statusColor,
+                        color: Colors.white,
                         letterSpacing: 0.8,
                       ),
                     ),
