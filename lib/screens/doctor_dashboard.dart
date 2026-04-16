@@ -433,13 +433,36 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Appointment Requests',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF065F46),
-              ),
+            Row(
+              children: [
+                const Text(
+                  'Appointment Requests',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                if (_pendingCount > 0) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'New ${_pendingCount.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontFamily: 'Gilroy-Bold',
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             if (_pendingCount > 5)
               TextButton(

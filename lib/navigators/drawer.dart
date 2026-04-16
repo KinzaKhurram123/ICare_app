@@ -73,25 +73,6 @@ class CustomDrawer extends ConsumerStatefulWidget {
 }
 
 class _CustomDrawerState extends ConsumerState<CustomDrawer> {
-  int _pendingCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPendingCount();
-  }
-
-  Future<void> _loadPendingCount() async {
-    final result = await AppointmentService().getMyAppointmentsDetailed();
-    if (result['success'] && mounted) {
-      final appointments = result['appointments'] as List<AppointmentDetail>;
-      final pending = appointments
-          .where((a) => a.status.toLowerCase() == 'pending')
-          .length;
-      setState(() => _pendingCount = pending);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final selectedRole = ref.watch(authProvider).userRole;
@@ -149,7 +130,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
               builder: (ctx) => const MyAppointmentsListScreen(),
             ),
           );
-        }, badgeCount: _pendingCount),
+        }),
         _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(
             context,
@@ -174,7 +155,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
               builder: (ctx) => const MyAppointmentsListScreen(),
             ),
           );
-        }, badgeCount: _pendingCount),
+        }),
         _drawerItem('Dashboard', Icons.dashboard_outlined, () {
           Navigator.of(
             context,
@@ -300,7 +281,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }, badgeCount: _pendingCount),
+        }),
         _drawerItem('Notifications', Icons.notifications_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
@@ -389,7 +370,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }, badgeCount: _pendingCount),
+        }),
         _drawerItem('Notifications', Icons.notifications_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const NotificationScreen()),

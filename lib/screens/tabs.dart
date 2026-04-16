@@ -361,25 +361,6 @@ class _WebSidebar extends ConsumerStatefulWidget {
 }
 
 class _WebSidebarState extends ConsumerState<_WebSidebar> {
-  int _pendingCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPendingCount();
-  }
-
-  Future<void> _loadPendingCount() async {
-    final result = await AppointmentService().getMyAppointmentsDetailed();
-    if (result['success'] && mounted) {
-      final appointments = result['appointments'] as List<AppointmentDetail>;
-      final pending = appointments
-          .where((a) => a.status.toLowerCase() == 'pending')
-          .length;
-      setState(() => _pendingCount = pending);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final role = widget.role;
@@ -599,9 +580,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                 children: [
                   ...items.map((item) {
                     final isSelected = currentIndex == item.index;
-                    final showBadge = item.label == 'Appointments' &&
-                        role == 'Doctor' &&
-                        _pendingCount > 0;
                     return GestureDetector(
                       onTap: () => onSelect(item.index),
                       child: AnimatedContainer(
@@ -646,27 +624,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                               ),
                             ),
                           ),
-                          if (showBadge)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'New ${_pendingCount.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Gilroy-Bold',
-                                ),
-                              ),
-                            )
-                          else if (isSelected)
+                          if (isSelected)
                             Container(
                               width: 6,
                               height: 6,
@@ -777,7 +735,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         ),
                       );
                     },
-                    badgeCount: _pendingCount,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1142,7 +1099,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         ),
                       );
                     },
-                    badgeCount: _pendingCount,
                   ),
                   _buildExtraNavItem(
                     context,
