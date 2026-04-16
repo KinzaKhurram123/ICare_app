@@ -1353,7 +1353,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           mainAxisSpacing: 16,
           childAspectRatio: clinicalRatio,
           children: [
-
             _buildFeatureCard(
               'Quality Score',
               Icons.rule_folder_rounded,
@@ -1402,7 +1401,18 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 );
               },
             ),
-
+            _buildFeatureCard(
+              'Revenue & Analytics',
+              Icons.bar_chart_rounded,
+              const Color(0xFF10B981),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const DoctorAnalytics(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
         const SizedBox(height: 32),
