@@ -117,7 +117,7 @@ class PatientProfile extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        "Emergency Contact",
+                        "Emergency Contact 1",
                         style: TextStyle(
                           color: Color(0xFF991B1B),
                           fontWeight: FontWeight.bold,
@@ -137,6 +137,56 @@ class PatientProfile extends StatelessWidget {
                   ),
                   const Text(
                     "Phone: +1 987 654 3210",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ScallingConfig.scale(10)),
+            Container(
+              width: Utils.windowWidth(context) * 0.9,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.emergency_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        "Emergency Contact 2",
+                        style: TextStyle(
+                          color: Color(0xFF991B1B),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Name: Sarah Jordan (Mother)",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Text(
+                    "Phone: +1 987 654 3211",
                     style: TextStyle(
                       fontSize: 13,
                       color: Color(0xFF1E293B),
