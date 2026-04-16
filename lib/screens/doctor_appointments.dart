@@ -196,7 +196,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
@@ -514,6 +514,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     Row(
                       children: [
                         Expanded(
+                          flex: 1,
                           child: ElevatedButton.icon(
                             onPressed: () =>
                                 _updateStatus(appointment.id, 'confirmed'),
@@ -538,6 +539,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
+                          flex: 1,
                           child: OutlinedButton.icon(
                             onPressed: () =>
                                 _updateStatus(appointment.id, 'cancelled'),
