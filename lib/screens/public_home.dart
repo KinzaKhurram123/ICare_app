@@ -409,8 +409,8 @@ class _CourseCardState extends State<_CourseCard> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _hovered ? color : const Color(0xFFE8ECF5),
-            width: _hovered ? 2 : 1.5,
+            color: _hovered ? color : const Color(0xFFF3F3F3),
+            width: 2,
           ),
           boxShadow: [
             if (_hovered)
@@ -1027,8 +1027,8 @@ class _DoctorCardState extends State<_DoctorCard> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFE8ECF5),
-            width: _hovered ? 2 : 1.5,
+            color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFF3F3F3),
+            width: 2,
           ),
           boxShadow: [
             if (_hovered)
@@ -1273,8 +1273,8 @@ class _ServiceCardState extends State<_ServiceCard> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _hovered ? widget.iconColor : const Color(0xFFE8ECF5),
-            width: 1.5,
+            color: _hovered ? widget.iconColor : const Color(0xFFF3F3F3),
+            width: 2,
           ),
           boxShadow: [
             if (_hovered)
@@ -1413,8 +1413,8 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFE8ECF5),
-              width: 1.5,
+              color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFF3F3F3),
+              width: 2,
             ),
             boxShadow: [
               if (_hovered)
