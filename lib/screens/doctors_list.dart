@@ -24,6 +24,14 @@ class _DoctorsListState extends State<DoctorsList> {
   String _searchMode = 'name'; // name, specialty, condition
   String? _selectedSpecialization;
   Set<String> _specializations = {};
+  String? _availabilityFilter; // online, offline, all
+  double? _minFee;
+  double? _maxFee;
+  double? _minRating;
+  String? _genderFilter; // male, female, all
+  String? _languageFilter;
+  Set<String> _languages = {};
+  String _sortBy = 'rating'; // rating, experience, fees
 
   @override
   void initState() {
@@ -55,15 +63,17 @@ class _DoctorsListState extends State<DoctorsList> {
           .map((d) => d.specialization!)
           .toSet();
 
+      final langs = doctorsList
+          .where((d) => d.languages != null && d.languages!.isNotEmpty)
+          .expand((d) => d.languages!)
+          .toSet();
+
       setState(() {
         _doctors = doctorsList;
         _filteredDoctors = doctorsList;
         _specializations = specs;
-        // Set General Practitioner as default
-        if (specs.contains('General Practitioner')) {
-          _selectedSpecialization = 'General Practitioner';
-          _filterDoctors();
-        }
+        _languages = langs;
+        _sortDoctors();
         _isLoading = false;
       });
     } else {
@@ -80,9 +90,6 @@ class _DoctorsListState extends State<DoctorsList> {
   }
 
   void _filterDoctors() {
-    debugPrint(
-      '🔍 Filtering doctors: query="$_searchQuery", mode=$_searchMode, spec=$_selectedSpecialization',
-    );
     setState(() {
       _filteredDoctors = _doctors.where((doctor) {
         bool matchesSearch = false;
@@ -98,8 +105,6 @@ class _DoctorsListState extends State<DoctorsList> {
                 _searchQuery.toLowerCase(),
               ) ?? false);
         } else if (_searchMode == 'condition') {
-          // Search by condition - would need backend support for this
-          // For now, search in specialization
           matchesSearch = _searchQuery.isEmpty ||
               (doctor.specialization?.toLowerCase().contains(
                 _searchQuery.toLowerCase(),
@@ -110,9 +115,44 @@ class _DoctorsListState extends State<DoctorsList> {
             _selectedSpecialization == null ||
             doctor.specialization == _selectedSpecialization;
 
-        return matchesSearch && matchesSpecialization;
+        final matchesAvailability = _availabilityFilter == null ||
+            _availabilityFilter == 'all' ||
+            (_availabilityFilter == 'online' && doctor.isOnline) ||
+            (_availabilityFilter == 'offline' && !doctor.isOnline);
+
+        final matchesFees = (_minFee == null || (doctor.consultationFee ?? 0) >= _minFee!) &&
+            (_maxFee == null || (doctor.consultationFee ?? 0) <= _maxFee!);
+
+        final matchesRating = _minRating == null || doctor.averageRating >= _minRating!;
+
+        final matchesGender = _genderFilter == null ||
+            _genderFilter == 'all' ||
+            (doctor.gender?.toLowerCase() == _genderFilter?.toLowerCase());
+
+        final matchesLanguage = _languageFilter == null ||
+            (doctor.languages?.contains(_languageFilter) ?? false);
+
+        return matchesSearch && matchesSpecialization && matchesAvailability &&
+            matchesFees && matchesRating && matchesGender && matchesLanguage;
       }).toList();
-      debugPrint('✅ Filtered to ${_filteredDoctors.length} doctors');
+      
+      _sortDoctors();
+    });
+  }
+
+  void _sortDoctors() {
+    setState(() {
+      if (_sortBy == 'rating') {
+        _filteredDoctors.sort((a, b) => b.averageRating.compareTo(a.averageRating));
+      } else if (_sortBy == 'experience') {
+        _filteredDoctors.sort((a, b) {
+          final aExp = int.tryParse(a.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
+          final bExp = int.tryParse(b.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
+          return bExp.compareTo(aExp);
+        });
+      } else if (_sortBy == 'fees') {
+        _filteredDoctors.sort((a, b) => (a.consultationFee ?? 0).compareTo(b.consultationFee ?? 0));
+      }
     });
   }
 
@@ -226,36 +266,173 @@ class _DoctorsListState extends State<DoctorsList> {
                           fillColor: const Color(0xFFF8FAFC),
                         ),
                       ),
-                      if (_specializations.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        // Specialization Filter (dropdown instead of chips)
-                        DropdownButtonFormField<String>(
-                          value: _selectedSpecialization,
-                          decoration: InputDecoration(
-                            labelText: 'Filter by Specialization',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 16),
+                      
+                      // Filters Row
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          // Specialization
+                          if (_specializations.isNotEmpty)
+                            SizedBox(
+                              width: isDesktop ? 200 : double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedSpecialization,
+                                decoration: InputDecoration(
+                                  labelText: 'Speciality',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  isDense: true,
+                                ),
+                                items: [
+                                  const DropdownMenuItem(value: null, child: Text('All')),
+                                  ..._specializations.map((s) => DropdownMenuItem(value: s, child: Text(s))),
+                                ],
+                                onChanged: (v) {
+                                  setState(() {
+                                    _selectedSpecialization = v;
+                                    _filterDoctors();
+                                  });
+                                },
+                              ),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          
+                          // Availability
+                          SizedBox(
+                            width: isDesktop ? 150 : double.infinity,
+                            child: DropdownButtonFormField<String>(
+                              value: _availabilityFilter,
+                              decoration: InputDecoration(
+                                labelText: 'Availability',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 'online', child: Text('Online')),
+                                DropdownMenuItem(value: 'offline', child: Text('Offline')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _availabilityFilter = v;
+                                  _filterDoctors();
+                                });
+                              },
+                            ),
                           ),
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('All Specializations'),
+                          
+                          // Rating
+                          SizedBox(
+                            width: isDesktop ? 150 : double.infinity,
+                            child: DropdownButtonFormField<double>(
+                              value: _minRating,
+                              decoration: InputDecoration(
+                                labelText: 'Min Rating',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 4.5, child: Text('4.5+')),
+                                DropdownMenuItem(value: 4.0, child: Text('4.0+')),
+                                DropdownMenuItem(value: 3.5, child: Text('3.5+')),
+                                DropdownMenuItem(value: 3.0, child: Text('3.0+')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _minRating = v;
+                                  _filterDoctors();
+                                });
+                              },
                             ),
-                            ..._specializations.map((spec) => DropdownMenuItem(
-                              value: spec,
-                              child: Text(spec),
-                            )),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedSpecialization = value;
-                              _filterDoctors();
-                            });
-                          },
-                        ),
-                      ],
+                          ),
+                          
+                          // Gender
+                          SizedBox(
+                            width: isDesktop ? 130 : double.infinity,
+                            child: DropdownButtonFormField<String>(
+                              value: _genderFilter,
+                              decoration: InputDecoration(
+                                labelText: 'Gender',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 'male', child: Text('Male')),
+                                DropdownMenuItem(value: 'female', child: Text('Female')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _genderFilter = v;
+                                  _filterDoctors();
+                                });
+                              },
+                            ),
+                          ),
+                          
+                          // Language
+                          if (_languages.isNotEmpty)
+                            SizedBox(
+                              width: isDesktop ? 150 : double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                value: _languageFilter,
+                                decoration: InputDecoration(
+                                  labelText: 'Language',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  isDense: true,
+                                ),
+                                items: [
+                                  const DropdownMenuItem(value: null, child: Text('All')),
+                                  ..._languages.map((l) => DropdownMenuItem(value: l, child: Text(l))),
+                                ],
+                                onChanged: (v) {
+                                  setState(() {
+                                    _languageFilter = v;
+                                    _filterDoctors();
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Sort Options
+                      Row(
+                        children: [
+                          const Text(
+                            'Sort by:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _buildSortChip('rating', 'Rating'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('experience', 'Experience'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('fees', 'Fees'),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -327,6 +504,36 @@ class _DoctorsListState extends State<DoctorsList> {
           label,
           style: TextStyle(
             fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortChip(String sort, String label) {
+    final isSelected = _sortBy == sort;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _sortBy = sort;
+          _sortDoctors();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isSelected ? Colors.white : const Color(0xFF64748B),
           ),
