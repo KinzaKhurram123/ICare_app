@@ -361,34 +361,34 @@ class _WebSidebar extends ConsumerWidget {
       items = <_SidebarItem>[];
     } else if (role == 'Instructor') {
       items = [
-        _SidebarItem(icon: Icons.dashboard_rounded, label: 'Dashboard', index: 0),
-        _SidebarItem(icon: Icons.school_rounded, label: 'Courses', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
-        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
+        _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', index: 0),
+        _SidebarItem(icon: Icons.school_outlined, label: 'Courses', index: 1),
+        _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
+        _SidebarItem(icon: Icons.person_outline, label: 'My Profile', index: 3),
       ];
     } else if (role == 'Patient') {
       items = [
-        _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'Appointments', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
-        _SidebarItem(icon: Icons.health_and_safety_rounded, label: 'Health Programs', index: 4),
-        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
+        _SidebarItem(icon: Icons.home_outlined, label: 'Home', index: 0),
+        _SidebarItem(icon: Icons.calendar_month_outlined, label: 'Appointments', index: 1),
+        _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
+        _SidebarItem(icon: Icons.health_and_safety_outlined, label: 'Health Programs', index: 4),
+        _SidebarItem(icon: Icons.person_outline, label: 'My Profile', index: 3),
       ];
     } else {
       items = [
         _SidebarItem(
-          icon: Icons.home_rounded,
+          icon: Icons.home_outlined,
           label: role == 'Student' ? 'Learning Dashboard' : 'Home',
           index: 0,
         ),
         _SidebarItem(
           icon: role == 'Pharmacy'
-              ? Icons.receipt_long_rounded
+              ? Icons.receipt_long_outlined
               : (role == 'Laboratory'
-                    ? Icons.list_alt_rounded
+                    ? Icons.list_alt_outlined
                     : (role == 'Student'
-                          ? Icons.school_rounded
-                          : Icons.calendar_month_rounded)),
+                          ? Icons.school_outlined
+                          : Icons.calendar_month_outlined)),
           label: role == 'Pharmacy'
               ? 'Prescriptions'
               : (role == 'Laboratory'
@@ -398,17 +398,17 @@ class _WebSidebar extends ConsumerWidget {
         ),
         _SidebarItem(
           icon: role == 'Pharmacy'
-              ? Icons.inventory_2_rounded
+              ? Icons.inventory_2_outlined
               : (role == 'Laboratory'
-                    ? Icons.upload_file_rounded
-                    : Icons.chat_bubble_rounded),
+                    ? Icons.upload_file_outlined
+                    : Icons.chat_bubble_outline),
           label: role == 'Pharmacy'
               ? 'Inventory'
               : (role == 'Laboratory' ? 'Upload Reports' : 'Messages'),
           index: 2,
         ),
         _SidebarItem(
-          icon: Icons.person_rounded,
+          icon: Icons.person_outline,
           label: role == 'Student' ? 'My Account' : 'My Profile',
           index: 3,
         ),
@@ -420,14 +420,14 @@ class _WebSidebar extends ConsumerWidget {
       actions = [
         _SidebarAction(
           'My Certificates',
-          Icons.workspace_premium_rounded,
+          Icons.workspace_premium_outlined,
           () => Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const CertificatesScreen()),
           ),
         ),
         _SidebarAction(
           'Resource Library',
-          Icons.library_books_rounded,
+          Icons.library_books_outlined,
           () => Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const ResourceLibraryScreen()),
           ),
@@ -643,7 +643,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.history_rounded,
+                    Icons.history_outlined,
                     'Health Journey',
                     () {
                       Navigator.of(context).push(
@@ -655,7 +655,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.monitor_heart_rounded,
+                    Icons.monitor_heart_outlined,
                     'Lifestyle Tracker',
                     () {
                       Navigator.of(context).push(
@@ -667,7 +667,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.contact_emergency_rounded,
+                    Icons.contact_emergency_outlined,
                     'Emergency Contacts',
                     () {
                       Navigator.of(context).push(
@@ -679,7 +679,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.task_alt_rounded,
+                    Icons.task_alt_outlined,
                     'Wellness Goals',
                     () {
                       Navigator.of(context).push(
@@ -689,7 +689,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.science_rounded,
+                    Icons.science_outlined,
                     'Book a Lab Test',
                     () {
                       Navigator.of(context).push(
@@ -699,7 +699,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.biotech_rounded,
+                    Icons.biotech_outlined,
                     role == 'Patient'
                         ? 'Lab Results/Reports'
                         : 'Management Dashboard',
@@ -715,7 +715,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.calendar_month_rounded,
+                    Icons.calendar_month_outlined,
                     'My Appointments',
                     () {
                       Navigator.of(context).push(
@@ -727,7 +727,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.medication_rounded,
+                    Icons.medication_outlined,
                     'Order Medicines',
                     () {
                       Navigator.of(context).push(
@@ -739,7 +739,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.alarm_rounded,
+                    Icons.alarm_outlined,
                     'Reminders',
                     () {
                       Navigator.of(context).push(
@@ -763,7 +763,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -789,7 +789,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.schedule_rounded,
+                    Icons.schedule_outlined,
                     'My Schedule',
                     () {
                       Navigator.of(context).push(
@@ -801,7 +801,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.analytics_rounded,
+                    Icons.analytics_outlined,
                     'Analytics',
                     () {
                       Navigator.of(context).push(
@@ -813,7 +813,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.description_rounded,
+                    Icons.description_outlined,
                     'Prescription Templates',
                     () {
                       Navigator.of(context).push(
@@ -825,7 +825,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.star_rounded,
+                    Icons.star_outlined,
                     'Reviews',
                     () {
                       Navigator.of(context).push(
@@ -849,7 +849,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.event_available_rounded,
+                    Icons.event_available_outlined,
                     'Availability',
                     () {
                       Navigator.of(context).push(
@@ -861,7 +861,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.notifications_rounded,
+                    Icons.notifications_outlined,
                     'Notifications',
                     () {
                       Navigator.of(context).push(
@@ -885,7 +885,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -911,7 +911,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.library_books_rounded,
+                    Icons.library_books_outlined,
                     'Manage Courses',
                     () {
                       Navigator.of(context).push(
@@ -923,7 +923,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.group_rounded,
+                    Icons.group_outlined,
                     'Assigned Learners',
                     () {
                       Navigator.of(context).push(
@@ -935,7 +935,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.health_and_safety_rounded,
+                    Icons.health_and_safety_outlined,
                     'Health Precautions',
                     () {
                       Navigator.of(context).push(
@@ -948,7 +948,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.analytics_rounded,
+                    Icons.analytics_outlined,
                     'Educational Analytics',
                     () {
                       Navigator.of(context).push(
@@ -960,7 +960,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.person_rounded,
+                    Icons.person_outlined,
                     'Profile Setup',
                     () {
                       Navigator.of(context).push(
@@ -972,7 +972,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -998,7 +998,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.assignment_ind_rounded,
+                    Icons.assignment_ind_outlined,
                     'Diagnostic Queue',
                     () {
                       Navigator.of(context).push(
@@ -1013,7 +1013,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.biotech_rounded,
+                    Icons.biotech_outlined,
                     'Result Entry',
                     () {
                       Navigator.of(context).push(
@@ -1028,7 +1028,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.history_rounded,
+                    Icons.history_outlined,
                     'Clinical Archive',
                     () {
                       Navigator.of(context).push(
@@ -1055,7 +1055,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.inventory_2_rounded,
+                    Icons.inventory_2_outlined,
                     'Supplies Management',
                     () {
                       Navigator.of(context).push(
@@ -1067,7 +1067,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.analytics_rounded,
+                    Icons.analytics_outlined,
                     'Lab Analytics',
                     () {
                       Navigator.of(context).push(
@@ -1079,7 +1079,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.calendar_month_rounded,
+                    Icons.calendar_month_outlined,
                     'My Appointments',
                     () {
                       Navigator.of(context).push(
@@ -1091,7 +1091,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.person_outline_rounded,
+                    Icons.person_outline,
                     'Profile Setup',
                     () {
                       Navigator.of(context).push(
@@ -1103,7 +1103,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.receipt_long_rounded,
+                    Icons.receipt_long_outlined,
                     'Payment Invoices',
                     () {
                       Navigator.of(context).push(
@@ -1127,7 +1127,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -1153,7 +1153,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.edit_rounded,
+                    Icons.edit_outlined,
                     'Profile Setup',
                     () {
                       Navigator.of(context).push(
@@ -1165,7 +1165,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.inventory_rounded,
+                    Icons.inventory_outlined,
                     'Inventory',
                     () {
                       Navigator.of(context).push(
@@ -1177,7 +1177,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.shopping_cart_rounded,
+                    Icons.shopping_cart_outlined,
                     'Orders',
                     () {
                       Navigator.of(context).push(
@@ -1189,7 +1189,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.analytics_rounded,
+                    Icons.analytics_outlined,
                     'Analytics',
                     () {
                       Navigator.of(context).push(
@@ -1201,7 +1201,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.task_alt_rounded,
+                    Icons.task_alt_outlined,
                     'Tasks',
                     () {
                       Navigator.of(context).push(
@@ -1211,7 +1211,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.shopping_basket_rounded,
+                    Icons.shopping_basket_outlined,
                     'My Orders',
                     () {
                       Navigator.of(context).push(
@@ -1235,7 +1235,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -1261,7 +1261,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.medication_rounded,
+                    Icons.medication_outlined,
                     'Pharmacies',
                     () {
                       Navigator.of(context).push(
@@ -1273,7 +1273,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.biotech_rounded,
+                    Icons.biotech_outlined,
                     'Reports/Lab Results',
                     () {
                       Navigator.of(context).push(
@@ -1283,7 +1283,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.favorite_rounded,
+                    Icons.favorite_outlined,
                     'My Health Journey',
                     () {
                       Navigator.of(context).push(
@@ -1295,7 +1295,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.assignment_rounded,
+                    Icons.assignment_outlined,
                     'My Care Plans',
                     () {
                       Navigator.of(context).push(
@@ -1319,7 +1319,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -1345,7 +1345,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.school_rounded,
+                    Icons.school_outlined,
                     role == 'Student' ? 'My Courses' : 'Manage Courses',
                     () {
                       Navigator.of(context).push(
@@ -1357,7 +1357,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.workspace_premium_rounded,
+                    Icons.workspace_premium_outlined,
                     role == 'Student' ? 'My Certificates' : 'Certifications',
                     () {
                       Navigator.of(context).push(
@@ -1369,7 +1369,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.library_books_rounded,
+                    Icons.library_books_outlined,
                     'Resource Library',
                     () {
                       Navigator.of(context).push(
@@ -1381,7 +1381,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.task_alt_rounded,
+                    Icons.task_alt_outlined,
                     'Assessments',
                     () {
                       Navigator.of(context).push(
@@ -1391,7 +1391,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -1407,7 +1407,7 @@ class _WebSidebar extends ConsumerWidget {
                   const SizedBox(height: 8),
                   _buildExtraNavItem(
                     context,
-                    Icons.verified_user_rounded,
+                    Icons.verified_user_outlined,
                     'Verify Applications',
                     () {
                       onSelect(0); // Trigger reload with tab
@@ -1415,7 +1415,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.school_rounded,
+                    Icons.school_outlined,
                     'Manage Students',
                     () {
                       // Logic to set tab and refresh
@@ -1429,7 +1429,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.local_pharmacy_rounded,
+                    Icons.local_pharmacy_outlined,
                     'Manage Pharmacies',
                     () {
                       Navigator.of(context).pushReplacement(
@@ -1442,7 +1442,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.biotech_rounded,
+                    Icons.biotech_outlined,
                     'Manage Laboratories',
                     () {
                       Navigator.of(context).pushReplacement(
@@ -1468,7 +1468,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.analytics_rounded,
+                    Icons.analytics_outlined,
                     'Platform Analytics',
                     () {
                       Navigator.of(context).push(
@@ -1492,7 +1492,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.settings_rounded,
+                    Icons.settings_outlined,
                     'Settings',
                     () {
                       Navigator.of(context).push(
@@ -1672,7 +1672,7 @@ class _WebTopBar extends ConsumerWidget {
                 alignment: Alignment.center,
                 children: [
                   const Icon(
-                    Icons.notifications_rounded,
+                    Icons.notifications_outlined,
                     color: Color(0xFF0B2D6E),
                     size: 20,
                   ),
@@ -1714,7 +1714,7 @@ class _WebTopBar extends ConsumerWidget {
                   value: 'edit',
                   child: Row(
                     children: const [
-                      Icon(Icons.edit_rounded, size: 18, color: Color(0xFF64748B)),
+                      Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
                       SizedBox(width: 10),
                       Text('Edit Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     ],
@@ -1797,3 +1797,4 @@ class _SidebarAction {
   final VoidCallback onTap;
   const _SidebarAction(this.label, this.icon, this.onTap);
 }
+
