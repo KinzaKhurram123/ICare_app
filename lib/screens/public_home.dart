@@ -109,18 +109,26 @@ class PublicHome extends StatelessWidget {
                       const SizedBox(height: 24),
                       // See All Speciality centered button
                       Center(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.of(context).push(
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const DoctorsList()),
                           ),
-                          icon: const Icon(Icons.grid_view_rounded, size: 18),
-                          label: const Text('See All Speciality'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0036BC),
-                            side: const BorderSide(color: Color(0xFF0036BC), width: 1.5),
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
+                            ),
+                            child: const Text(
+                              'See All Speciality',
+                              style: TextStyle(
+                                color: Color(0xFF0036BC),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                fontFamily: 'Gilroy-Bold',
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -167,17 +175,24 @@ class PublicHome extends StatelessWidget {
                         _LaboratoriesGrid(),
                         const SizedBox(height: 20),
                         Center(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.biotech_rounded, size: 18),
-                            label: const Text('Book Lab'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Gilroy-Bold'),
-                              elevation: 0,
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                              ),
+                              child: const Text(
+                                'Book Lab',
+                                style: TextStyle(
+                                  color: Color(0xFF8B5CF6),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1064,7 +1079,7 @@ class _DoctorCardState extends State<_DoctorCard> {
             Text(
               widget.doctor['name']!,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0036BC),
                 fontFamily: 'Gilroy-Bold',
@@ -1076,13 +1091,13 @@ class _DoctorCardState extends State<_DoctorCard> {
             const SizedBox(height: 3),
             Text(
               widget.doctor['spec']!,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 3),
             Text(
               widget.doctor['exp']!,
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -1119,7 +1134,7 @@ class _DoctorCardState extends State<_DoctorCard> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0036BC),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1128,7 +1143,7 @@ class _DoctorCardState extends State<_DoctorCard> {
                 child: const Text(
                   'Consult Now',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'Gilroy-Bold',
                   ),
@@ -1286,7 +1301,7 @@ class _ServiceCardState extends State<_ServiceCard> {
             Text(
               widget.name,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
                 fontFamily: 'Gilroy-Bold',
@@ -1298,18 +1313,18 @@ class _ServiceCardState extends State<_ServiceCard> {
             const SizedBox(height: 3),
             Text(
               widget.subtitle,
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.star_rounded, color: Color(0xFFF5A623), size: 12),
+                const Icon(Icons.star_rounded, color: Color(0xFFF5A623), size: 13),
                 const SizedBox(width: 3),
                 Text(
                   widget.rating,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
                 ),
               ],
             ),
@@ -1426,7 +1441,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               Text(
                 widget.name,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1A1A2E),
                   fontFamily: 'Gilroy-Bold',
@@ -1438,7 +1453,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
               const SizedBox(height: 3),
               Text(
                 widget.description,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
