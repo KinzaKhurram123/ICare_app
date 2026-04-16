@@ -596,7 +596,7 @@ class _WebSidebar extends ConsumerWidget {
                             size: 20,
                             color: isSelected
                                 ? AppColors.primaryColor
-                                : AppColors.primaryColor.withValues(alpha: 0.55),
+                                : const Color(0xFF64748B),
                           ),
                           const SizedBox(width: 14),
                           Text(
@@ -608,7 +608,7 @@ class _WebSidebar extends ConsumerWidget {
                                   : FontWeight.w400,
                               color: isSelected
                                   ? AppColors.primaryColor
-                                  : AppColors.primaryColor.withValues(alpha: 0.65),
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                           if (isSelected) ...[
