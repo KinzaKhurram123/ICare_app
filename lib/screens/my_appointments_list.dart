@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/labs_list.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -90,12 +91,34 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
         elevation: 0,
         centerTitle: true,
         title: CustomText(
-          text: "My Appointments",
+          text: "Patient Bookings",
           fontFamily: "Gilroy-Bold",
           fontSize: 18,
           fontWeight: FontWeight.w900,
           color: const Color(0xFF0F172A),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (ctx) => const LabsListScreen()),
+                );
+              },
+              icon: const Icon(Icons.biotech_rounded, size: 18),
+              label: const Text('Book Lab Test'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryColor,
+                backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

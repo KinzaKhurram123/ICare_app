@@ -179,11 +179,6 @@ class CustomDrawer extends ConsumerWidget {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
         }),
-        _drawerItem('Lifestyle Tracker', Icons.directions_run_outlined, () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Coming Soon!')),
-          );
-        }),
         _drawerItem('Emergency Contacts', Icons.contact_emergency_outlined, () {
           Navigator.of(
             context,

@@ -69,6 +69,17 @@ class PatientProfile extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: ScallingConfig.scale(10)),
+            SizedBox(
+              width: Utils.windowWidth(context) * 0.9,
+              child: Row(
+                children: [
+                  Icon(Icons.badge_outlined, color: AppColors.primaryColor, size: 20),
+                  SizedBox(width: ScallingConfig.scale(10)),
+                  CustomText(text: "CNIC: 12345-1234567-1"),
+                ],
+              ),
+            ),
             SizedBox(height: ScallingConfig.scale(15)),
             CustomText(
               text: "Bio:",
