@@ -2153,21 +2153,14 @@ class PublicHomeBody extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.grid_view_rounded, size: 18, color: Color(0xFF0036BC)),
-                        SizedBox(width: 8),
-                        Text(
-                          'See All Speciality',
-                          style: TextStyle(
-                            color: Color(0xFF0036BC),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            fontFamily: 'Gilroy-Bold',
-                          ),
-                        ),
-                      ],
+                    child: const Text(
+                      'See All Speciality',
+                      style: TextStyle(
+                        color: Color(0xFF0036BC),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontFamily: 'Gilroy-Bold',
+                      ),
                     ),
                   ),
                 ),
@@ -2220,21 +2213,14 @@ class PublicHomeBody extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.biotech_rounded, size: 18, color: Color(0xFF8B5CF6)),
-                          SizedBox(width: 8),
-                          Text(
-                            'Book Lab',
-                            style: TextStyle(
-                              color: Color(0xFF8B5CF6),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              fontFamily: 'Gilroy-Bold',
-                            ),
-                          ),
-                        ],
+                      child: const Text(
+                        'Book Lab',
+                        style: TextStyle(
+                          color: Color(0xFF8B5CF6),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          fontFamily: 'Gilroy-Bold',
+                        ),
                       ),
                     ),
                   ),
