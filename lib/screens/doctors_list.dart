@@ -124,9 +124,8 @@ class _DoctorsListState extends State<DoctorsList> {
 
         final matchesRating = _minRating == null || doctor.averageRating >= _minRating!;
 
-        final matchesGender = _genderFilter == null ||
-            _genderFilter == 'all' ||
-            (doctor.gender?.toLowerCase() == _genderFilter?.toLowerCase());
+        // Gender filter temporarily disabled - gender field not in Doctor model
+        const matchesGender = true;
 
         final matchesLanguage = _languageFilter == null ||
             (doctor.languages?.contains(_languageFilter) ?? false);

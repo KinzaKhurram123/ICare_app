@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
-import 'package:icare/screens/labs_list.dart';
+import 'package:icare/screens/lab_list.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
