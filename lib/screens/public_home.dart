@@ -76,7 +76,7 @@ class PublicHome extends StatelessWidget {
 
                 // 1. Connect to a Doctor Section
                 Container(
-                  color: const Color(0xFFF4F8FF),
+                  color: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 60),
                   child: _CenteredSection(
                     child: Column(
@@ -167,7 +167,7 @@ class PublicHome extends StatelessWidget {
 
                 // 4. Book a Lab Test Section (renamed from Laboratories)
                 Container(
-                  color: const Color(0xFFF4F8FF),
+                  color: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 60),
                   child: _CenteredSection(
                     child: Column(
@@ -355,7 +355,7 @@ class _CoursesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
     return Container(
-      color: const Color(0xFFF4F8FF),
+      color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: _CenteredSection(
         child: Column(
@@ -817,14 +817,14 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   Timer? _autoPlayTimer;
 
   static const _doctors = [
-    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'img': 'assets/images/user1.png'},
-    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'img': 'assets/images/user5.png'},
-    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'img': 'assets/images/user10.png'},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'img': 'assets/images/user7.png'},
+    {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'img': 'assets/images/user1.png'},
+    {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'img': 'assets/images/user7.png'},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'img': 'assets/images/user10.png'},
     {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'img': 'assets/images/user11.png'},
     {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'img': 'assets/images/user12.png'},
-    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'img': 'assets/images/user13.png'},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'img': 'assets/images/user5.png'},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user13.png'},
   ];
 
   @override
@@ -2135,7 +2135,7 @@ class PublicHomeBody extends StatelessWidget {
         const SizedBox(height: 40),
         // 1. Connect to a Doctor
         Container(
-          color: const Color(0xFFF4F8FF),
+          color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 60),
           child: _CenteredSection(
             child: Column(
@@ -2218,7 +2218,7 @@ class PublicHomeBody extends StatelessWidget {
         const SizedBox(height: 60),
         // 4. Book a Lab Test
         Container(
-          color: const Color(0xFFF4F8FF),
+          color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 60),
           child: _CenteredSection(
             child: Column(
