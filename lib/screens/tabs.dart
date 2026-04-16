@@ -849,6 +849,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         ),
                       );
                     },
+                    svgPath: ImagePaths.star,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1535,12 +1536,14 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
     String label,
     VoidCallback onTap, {
     int badgeCount = 0,
+    String? svgPath,
   }) {
     return _HoverableNavItem(
       icon: icon,
       label: label,
       onTap: onTap,
       badgeCount: badgeCount,
+      svgPath: svgPath,
     );
   }
 }
@@ -1550,12 +1553,14 @@ class _HoverableNavItem extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
   final int badgeCount;
+  final String? svgPath;
 
   const _HoverableNavItem({
     required this.icon,
     required this.label,
     required this.onTap,
     this.badgeCount = 0,
+    this.svgPath,
   });
 
   @override
@@ -1590,12 +1595,26 @@ class _HoverableNavItemState extends State<_HoverableNavItem> {
           ),
           child: Row(
             children: [
-              Icon(
-                widget.icon,
-                size: 20,
-                color: _isHovered
-                    ? AppColors.primaryColor
-                    : const Color(0xFF64748B),
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: widget.svgPath != null
+                    ? SvgPicture.asset(
+                        widget.svgPath!,
+                        width: 22,
+                        height: 22,
+                        colorFilter: ColorFilter.mode(
+                          _isHovered ? AppColors.primaryColor : const Color(0xFF64748B),
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Icon(
+                        widget.icon,
+                        size: 22,
+                        color: _isHovered
+                            ? AppColors.primaryColor
+                            : const Color(0xFF64748B),
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
