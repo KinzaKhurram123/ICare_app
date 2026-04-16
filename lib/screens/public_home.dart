@@ -4,6 +4,7 @@ import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
+import 'package:icare/widgets/doctor_search_bar.dart';
 
 class PublicHome extends StatelessWidget {
   const PublicHome({super.key});
@@ -756,30 +757,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                             ],
                           ),
                           SizedBox(height: isMobile ? 16 : 22),
-                          // Search bar below buttons — full width of left column
-                          Container(
-                            height: isMobile ? 46 : 50,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.12),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search doctors, specialties, conditions...',
-                                hintStyle: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.grey[400]),
-                                prefixIcon: Icon(Icons.search_rounded, color: const Color(0xFF0036BC), size: isMobile ? 20 : 22),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
-                              ),
-                            ),
-                          ),
+                          // Search bar with 3 modes
+                          DoctorSearchBar(isMobile: isMobile),
                         ],
                       ),
                     ),
