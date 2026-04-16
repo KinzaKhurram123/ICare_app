@@ -813,7 +813,7 @@ class _DoctorsSlider extends StatefulWidget {
 }
 
 class _DoctorsSliderState extends State<_DoctorsSlider> {
-  final PageController _pageController = PageController();
+  late final PageController _pageController;
   int _currentPage = 0;
   Timer? _autoPlayTimer;
 
@@ -828,9 +828,15 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
     {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user13.png'},
   ];
 
+  // Mobile: 1 card per page → 8 dots
+  // Desktop: 4 cards per page → 2 dots
+  int get _totalPages => _isMobile ? _doctors.length : (_doctors.length / 4).ceil();
+  bool _isMobile = false;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _startAutoPlay();
   }
 
@@ -842,47 +848,56 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   }
 
   void _startAutoPlay() {
-    _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_currentPage < _doctors.length - 4) {
-        _nextPage();
-      } else {
-        setState(() => _currentPage = 0);
-      }
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      final next = (_currentPage + 1) % _totalPages;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+      );
     });
   }
 
-  void _nextPage() {
-    if (_currentPage < _doctors.length - 4) {
-      setState(() => _currentPage++);
-    }
-  }
-
-  void _prevPage() {
-    if (_currentPage > 0) {
-      setState(() => _currentPage--);
-    }
+  void _goTo(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 700;
+    _isMobile = screenWidth < 700;
 
-    if (isMobile) {
-      return SizedBox(
-        height: 270,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          itemCount: _doctors.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 16),
-          itemBuilder: (_, i) => _DoctorCard(doctor: _doctors[i]),
-        ),
+    if (_isMobile) {
+      return Column(
+        children: [
+          SizedBox(
+            height: 270,
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (p) => setState(() => _currentPage = p),
+              itemCount: _doctors.length,
+              itemBuilder: (_, i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _DoctorCard(doctor: _doctors[i]),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SliderDots(
+            total: _doctors.length,
+            current: _currentPage,
+            onTap: _goTo,
+          ),
+        ],
       );
     }
 
-    // Desktop: Show 4 cards at a time with navigation
-    final visibleDoctors = _doctors.skip(_currentPage).take(4).toList();
+    // Desktop: 4 cards per page, smooth PageView slide
     final totalPages = (_doctors.length / 4).ceil();
 
     return Padding(
@@ -892,54 +907,44 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
           Stack(
             alignment: Alignment.center,
             children: [
-              // Doctor Cards with smooth animation
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 600),
-                    switchInCurve: Curves.easeInOut,
-                    switchOutCurve: Curves.easeInOut,
-                    transitionBuilder: (Widget child, Animation<double> animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.1, 0),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Row(
-                      key: ValueKey<int>(_currentPage),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: visibleDoctors.map((doctor) {
-                        return Padding(
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1080),
+                child: SizedBox(
+                  height: 280,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (p) => setState(() => _currentPage = p),
+                    itemCount: totalPages,
+                    itemBuilder: (_, pageIndex) {
+                      final start = pageIndex * 4;
+                      final pageDoctors = _doctors.skip(start).take(4).toList();
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: pageDoctors.map((doctor) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 11),
                           child: _DoctorCard(doctor: doctor),
-                        );
-                      }).toList(),
-                    ),
+                        )).toList(),
+                      );
+                    },
                   ),
                 ),
               ),
-              // Navigation Buttons
+              // Prev button
               Positioned(
                 left: 0,
                 child: _SliderButton(
-                  icon: Icons.arrow_back,
-                  onTap: _prevPage,
+                  icon: Icons.arrow_back_rounded,
+                  onTap: () => _goTo(_currentPage - 1),
                   enabled: _currentPage > 0,
                 ),
               ),
+              // Next button
               Positioned(
                 right: 0,
                 child: _SliderButton(
-                  icon: Icons.arrow_forward,
-                  onTap: _nextPage,
-                  enabled: _currentPage < _doctors.length - 4,
+                  icon: Icons.arrow_forward_rounded,
+                  onTap: () => _goTo(_currentPage + 1),
+                  enabled: _currentPage < totalPages - 1,
                 ),
               ),
             ],
@@ -947,7 +952,8 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
           const SizedBox(height: 24),
           _SliderDots(
             total: totalPages,
-            current: (_currentPage / 4).floor(),
+            current: _currentPage,
+            onTap: _goTo,
           ),
         ],
       ),
@@ -955,7 +961,7 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   }
 }
 
-class _SliderButton extends StatelessWidget {
+class _SliderButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool enabled;
@@ -967,29 +973,43 @@ class _SliderButton extends StatelessWidget {
   });
 
   @override
+  State<_SliderButton> createState() => _SliderButtonState();
+}
+
+class _SliderButtonState extends State<_SliderButton> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: enabled ? const Color(0xFF0036BC) : Colors.grey[300],
-          shape: BoxShape.circle,
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF0036BC).withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          icon,
-          color: enabled ? Colors.white : Colors.grey[500],
-          size: 20,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.enabled ? widget.onTap : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: widget.enabled
+                ? (_hovered ? const Color(0xFF0024A0) : const Color(0xFF0036BC))
+                : Colors.grey[300],
+            shape: BoxShape.circle,
+            boxShadow: widget.enabled
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0036BC).withOpacity(_hovered ? 0.45 : 0.25),
+                      blurRadius: _hovered ? 22 : 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(
+            widget.icon,
+            color: widget.enabled ? Colors.white : Colors.grey[500],
+            size: 20,
+          ),
         ),
       ),
     );
@@ -999,8 +1019,13 @@ class _SliderButton extends StatelessWidget {
 class _SliderDots extends StatelessWidget {
   final int total;
   final int current;
+  final void Function(int) onTap;
 
-  const _SliderDots({required this.total, required this.current});
+  const _SliderDots({
+    required this.total,
+    required this.current,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1008,14 +1033,18 @@ class _SliderDots extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(total, (i) {
         final isActive = i == current;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          width: isActive ? 28 : 8,
-          height: 8,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF0036BC) : Colors.grey[300],
-            borderRadius: BorderRadius.circular(4),
+        return GestureDetector(
+          onTap: () => onTap(i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            width: isActive ? 32 : 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFF0036BC) : const Color(0xFFD1D5DB),
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
         );
       }),
