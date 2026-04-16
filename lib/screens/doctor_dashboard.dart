@@ -143,11 +143,15 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildTodayAppointments(),
                         const SizedBox(height: 24),
 
-                        // 4. Consultations Count Card
+                        // 4. Earnings Display
+                        _buildEarningsCard(),
+                        const SizedBox(height: 24),
+
+                        // 5. Consultations Count Card
                         _buildConsultationsCard(),
                         const SizedBox(height: 24),
 
-                        // 5. Clinical Flags (SOAP notes alerts)
+                        // 6. Clinical Flags (SOAP notes alerts)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
@@ -740,6 +744,120 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
+  Widget _buildEarningsCard() {
+    // Mock data - backend se aayega
+    final previousMonthEarnings = _stats['previousMonthEarnings'] ?? 45000;
+    final totalNetEarnings = _stats['totalNetEarnings'] ?? 180000;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Earnings Overview',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Previous Month',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'PKR ${previousMonthEarnings.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Net Earnings',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'PKR ${totalNetEarnings.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildConsultationsCard() {
     final totalConsultations = _stats['totalPatients'] ?? _completedCount;
     
@@ -1235,18 +1353,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           mainAxisSpacing: 16,
           childAspectRatio: clinicalRatio,
           children: [
-            _buildFeatureCard(
-              'My Appointments',
-              Icons.calendar_month_rounded,
-              const Color(0xFF3B82F6),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorAppointmentsScreen(),
-                  ),
-                );
-              },
-            ),
+
             _buildFeatureCard(
               'Quality Score',
               Icons.rule_folder_rounded,
@@ -1295,18 +1402,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 );
               },
             ),
-            _buildFeatureCard(
-              'Revenue & Analytics',
-              Icons.bar_chart_rounded,
-              const Color(0xFF10B981),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorAnalytics(),
-                  ),
-                );
-              },
-            ),
+
           ],
         ),
         const SizedBox(height: 32),
