@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
@@ -418,7 +419,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
                       ),
-                      child: Image.asset(ImagePaths.logo, fit: BoxFit.contain),
+                      child: SvgPicture.asset(ImagePaths.logo, fit: BoxFit.contain),
                     ),
                     const SizedBox(height: 28),
                     const Text('iCare Virtual Hospital',
@@ -555,7 +556,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ),
         title: Row(
           children: [
-            Image.asset(ImagePaths.logo, width: 30, height: 30),
+            SvgPicture.asset(ImagePaths.logo, width: 30, height: 30),
             const SizedBox(width: 8),
             Text(
               _isPatient ? 'Sign Up' : '${widget.role} Sign Up',

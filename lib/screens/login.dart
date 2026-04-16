@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/forget_password.dart';
@@ -321,13 +322,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.0),
-                                  blurRadius: 40,
-                                  spreadRadius: 0,
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
-                            child: Image.asset(ImagePaths.logo, fit: BoxFit.contain),
+                            child: SvgPicture.asset(ImagePaths.logo, fit: BoxFit.contain),
                           ),
                           const SizedBox(height: 28),
                           const Text(

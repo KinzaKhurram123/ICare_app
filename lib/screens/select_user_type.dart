@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -233,7 +234,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                                 width: 1.5,
                               ),
                             ),
-                            child: Image.asset(
+                            child: SvgPicture.asset(
                               ImagePaths.logo,
                               fit: BoxFit.contain,
                             ),

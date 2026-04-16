@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
 import 'package:icare/screens/admin_dashboard.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -472,7 +473,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
           Center(
-            child: Image.asset(
+            child: SvgPicture.asset(
               ImagePaths.logo,
               height: 70,
               fit: BoxFit.contain,

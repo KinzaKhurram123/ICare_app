@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/screens/signup.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -57,7 +58,7 @@ class WorkWithUsSignup extends StatelessWidget {
         ),
         title: Row(
           children: [
-            Image.asset(ImagePaths.logo, width: 32, height: 32),
+            SvgPicture.asset(ImagePaths.logo, width: 32, height: 32),
             const SizedBox(width: 8),
             const Text(
               'Work With Us',

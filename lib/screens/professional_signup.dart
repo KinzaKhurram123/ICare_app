@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 
@@ -146,7 +147,7 @@ class _ProfessionalSignupState extends State<ProfessionalSignup> {
         ),
         title: Row(
           children: [
-            Image.asset(ImagePaths.logo, width: 30, height: 30),
+            SvgPicture.asset(ImagePaths.logo, width: 30, height: 30),
             const SizedBox(width: 8),
             Text(
               '${widget.role} Sign Up',

@@ -1,6 +1,7 @@
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -64,7 +65,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         leading: const CustomBackButton(),
         title: Row(
           children: [
-            Image.asset(
+            SvgPicture.asset(
               ImagePaths.logo,
               width: 32,
               height: 32,
