@@ -1455,7 +1455,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.person_add_rounded,
+                    Icons.person_add_outlined,
                     'Manage Instructors',
                     () {
                       Navigator.of(context).pushReplacement(
@@ -1480,7 +1480,7 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.security_rounded,
+                    Icons.security_outlined,
                     'Security Audit Logs',
                     () {
                       Navigator.of(context).push(
@@ -1797,4 +1797,5 @@ class _SidebarAction {
   final VoidCallback onTap;
   const _SidebarAction(this.label, this.icon, this.onTap);
 }
+
 
