@@ -84,9 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Default View (Patient/Default)
     content = Container(
-      decoration: BoxDecoration(
-        color: isDesktop ? const Color(0xFFF8FAFC) : null,
-      ),
+      color: Colors.white,
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -96,67 +94,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               if (isDesktop) ...[
                 // Desktop: Premium Welcome Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 30,
-                  ),
-                  child: Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CustomText(
-                            text: "Welcome back,",
-                            fontSize: 15,
-                            color: const Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
-                          ),
-                          const SizedBox(height: 4),
-                          CustomText(
-                            text: userName,
-                            fontSize: 32,
-                            color: const Color(0xFF0F172A),
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 450,
-                        margin: const EdgeInsets.only(top: 10),
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A).withOpacity(0.03),
-                              blurRadius: 25,
-                              offset: const Offset(0, 8),
+                Container(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 30,
+                    ),
+                    child: Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CustomText(
+                              text: "Welcome back,",
+                              fontSize: 15,
+                              color: const Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                            const SizedBox(height: 4),
+                            CustomText(
+                              text: userName,
+                              fontSize: 32,
+                              color: const Color(0xFF0F172A),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1,
                             ),
                           ],
                         ),
-                        child: CustomInputField(
+                        const Spacer(),
+                        Container(
                           width: 450,
-                          height: 52,
-                          margin: EdgeInsets.zero,
-                          hintText: "Search for doctors, labs, courses...",
-                          trailingIcon: SvgWrapper(
-                            assetPath: ImagePaths.filters,
-                            onPress: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => FiltersScreen(),
+                          margin: const EdgeInsets.only(top: 10),
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withOpacity(0.03),
+                                blurRadius: 25,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: CustomInputField(
+                            width: 450,
+                            height: 52,
+                            margin: EdgeInsets.zero,
+                            hintText: "Search for doctors, labs, courses...",
+                            trailingIcon: SvgWrapper(
+                              assetPath: ImagePaths.filters,
+                              onPress: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => FiltersScreen(),
+                                ),
                               ),
                             ),
-                          ),
-                          leadingIcon: const Icon(
-                            Icons.search_rounded,
-                            color: Color(0xFF94A3B8),
-                            size: 22,
+                            leadingIcon: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 22,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ] else ...[
@@ -179,107 +180,110 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Slider Section
               if (isDesktop) ...[
                 // Desktop: Premium Hero Slider
-                Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    SizedBox(
-                      width: Utils.windowWidth(context),
-                      height: 380,
-                      child: PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) =>
-                            setState(() => _currentSlide = index),
-                        itemCount: 3,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 10,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(28),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF0F172A),
-                                    Color(0xFF1E293B),
+                Container(
+                  color: Colors.white,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      SizedBox(
+                        width: Utils.windowWidth(context),
+                        height: 380,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          onPageChanged: (index) =>
+                              setState(() => _currentSlide = index),
+                          itemCount: 3,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 30,
+                                vertical: 10,
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(28),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF0F172A),
+                                      Color(0xFF1E293B),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF0F172A,
+                                      ).withOpacity(0.15),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 12),
+                                    ),
                                   ],
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF0F172A,
-                                    ).withOpacity(0.15),
-                                    blurRadius: 30,
-                                    offset: const Offset(0, 12),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(28),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Opacity(
-                                      opacity: 0.35,
-                                      child: Image.asset(
-                                        ImagePaths.courseAd,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(
-                                              0xFF0F172A,
-                                            ).withOpacity(0.6),
-                                            Colors.transparent,
-                                          ],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(28),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Opacity(
+                                        opacity: 0.35,
+                                        child: Image.asset(
+                                          ImagePaths.courseAd,
+                                          fit: BoxFit.cover,
                                         ),
                                       ),
-                                    ),
-                                    Positioned.fill(
-                                      child: Image.asset(
-                                        ImagePaths.courseAd,
-                                        fit: BoxFit.contain,
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(
+                                                0xFF0F172A,
+                                              ).withOpacity(0.6),
+                                              Colors.transparent,
+                                            ],
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      Positioned.fill(
+                                        child: Image.asset(
+                                          ImagePaths.courseAd,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 28,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          3,
-                          (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 600),
-                            curve: Curves.easeOutQuint,
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            height: 6,
-                            width: _currentSlide == index ? 28 : 6,
-                            decoration: BoxDecoration(
-                              color: _currentSlide == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(10),
+                      Positioned(
+                        bottom: 28,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            3,
+                            (index) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 600),
+                              curve: Curves.easeOutQuint,
+                              margin: const EdgeInsets.symmetric(horizontal: 5),
+                              height: 6,
+                              width: _currentSlide == index ? 28 : 6,
+                              decoration: BoxDecoration(
+                                color: _currentSlide == index
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ] else ...[
                 // Mobile: Original simple slider
@@ -1157,8 +1161,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: 0),
-      child: content,
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Container(
+        color: Colors.white,
+        child: content,
+      ),
     );
   }
 

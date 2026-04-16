@@ -104,12 +104,36 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: CustomText(
-          text: "My Appointments",
-          fontFamily: "Gilroy-Bold",
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFF0F172A),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomText(
+              text: "My Appointments",
+              fontFamily: "Gilroy-Bold",
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF0F172A),
+            ),
+            if (_appointments.where((a) => a.status.toLowerCase() == 'pending').isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'New ${_appointments.where((a) => a.status.toLowerCase() == 'pending').length.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    fontFamily: 'Gilroy-Bold',
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
       body: Column(

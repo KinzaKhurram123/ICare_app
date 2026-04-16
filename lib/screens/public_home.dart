@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/screens/doctors_list.dart';
@@ -83,6 +84,12 @@ class PublicHome extends StatelessWidget {
                         _SectionHeader(
                           title: 'Connect to a Doctor',
                           subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                        ),
+                        const SizedBox(height: 24),
+                        // Search bar moved here from banner
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: DoctorSearchBar(isMobile: MediaQuery.of(context).size.width < 700),
                         ),
                         const SizedBox(height: 40),
                         _DoctorsSlider(),
@@ -716,7 +723,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                     foregroundColor: const Color(0xFF0036BC),
                                     minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: isMobile ? 22 : 32,
+                                      horizontal: isMobile ? 16 : 32,
                                     ),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     elevation: 0,
@@ -725,9 +732,10 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                     'Connect to a Doctor Now',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
-                                      fontSize: isMobile ? 13 : 15,
+                                      fontSize: isMobile ? 12 : 15,
                                       fontFamily: 'Gilroy-Bold',
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
                               ),
@@ -757,8 +765,6 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                             ],
                           ),
                           SizedBox(height: isMobile ? 16 : 22),
-                          // Search bar with 3 modes
-                          DoctorSearchBar(isMobile: isMobile),
                         ],
                       ),
                     ),
@@ -768,8 +774,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                     flex: 45,
                     child: Image.asset(
                       'assets/images/new.png',
-                      fit: BoxFit.contain,
-                      alignment: isMobile ? Alignment.centerRight : const Alignment(0.3, 0.0),
+                      fit: isMobile ? BoxFit.cover : BoxFit.contain,
+                      alignment: isMobile ? Alignment.center : const Alignment(0.3, 0.0),
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   ),
@@ -808,6 +814,7 @@ class _DoctorsSlider extends StatefulWidget {
 class _DoctorsSliderState extends State<_DoctorsSlider> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _autoPlayTimer;
 
   static const _doctors = [
     {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'img': 'assets/images/user1.png'},
@@ -821,9 +828,26 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _startAutoPlay();
+  }
+
+  @override
   void dispose() {
+    _autoPlayTimer?.cancel();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _startAutoPlay() {
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_currentPage < _doctors.length - 4) {
+        _nextPage();
+      } else {
+        setState(() => _currentPage = 0);
+      }
+    });
   }
 
   void _nextPage() {
@@ -867,18 +891,36 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
           Stack(
             alignment: Alignment.center,
             children: [
-              // Doctor Cards
+              // Doctor Cards with smooth animation
               Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1000),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: visibleDoctors.map((doctor) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 11),
-                        child: _DoctorCard(doctor: doctor),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 600),
+                    switchInCurve: Curves.easeInOut,
+                    switchOutCurve: Curves.easeInOut,
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.1, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
                       );
-                    }).toList(),
+                    },
+                    child: Row(
+                      key: ValueKey<int>(_currentPage),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: visibleDoctors.map((doctor) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 11),
+                          child: _DoctorCard(doctor: doctor),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
@@ -1032,21 +1074,9 @@ class _DoctorCardState extends State<_DoctorCard> {
                 ),
               ),
               child: ClipOval(
-                child: Image.network(
+                child: Image.asset(
                   widget.doctor['img']!,
                   fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: const Color(0xFFE8F4FF),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0036BC)),
-                        ),
-                      ),
-                    );
-                  },
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFF0036BC),
                     child: const Icon(Icons.person, size: 36, color: Colors.white),
@@ -2113,6 +2143,12 @@ class PublicHomeBody extends StatelessWidget {
                 _SectionHeader(
                   title: 'Connect to a Doctor',
                   subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                ),
+                const SizedBox(height: 24),
+                // Search bar moved here from banner
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: DoctorSearchBar(isMobile: MediaQuery.of(context).size.width < 700),
                 ),
                 const SizedBox(height: 40),
                 _DoctorsSlider(),
