@@ -1520,28 +1520,77 @@ class _WebSidebar extends ConsumerWidget {
     String label,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
+    return _HoverableNavItem(
+      icon: icon,
+      label: label,
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF64748B)),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF64748B),
+    );
+  }
+}
+
+class _HoverableNavItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HoverableNavItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverableNavItem> createState() => _HoverableNavItemState();
+}
+
+class _HoverableNavItemState extends State<_HoverableNavItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? AppColors.primaryColor.withValues(alpha: 0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: _isHovered
+                ? Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.20),
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                size: 20,
+                color: _isHovered
+                    ? AppColors.primaryColor
+                    : const Color(0xFF64748B),
               ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
+                  color: _isHovered
+                      ? AppColors.primaryColor
+                      : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
