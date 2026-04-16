@@ -1639,14 +1639,14 @@ class _WebSidebar extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.primaryColor.withValues(alpha: 0.65)),
+            Icon(icon, size: 20, color: const Color(0xFF64748B)),
             const SizedBox(width: 14),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: AppColors.primaryColor.withValues(alpha: 0.75),
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
               ),
             ),
           ],
