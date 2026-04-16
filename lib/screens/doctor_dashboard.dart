@@ -143,11 +143,15 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildTodayAppointments(),
                         const SizedBox(height: 24),
 
-                        // 4. Clinical Flags (SOAP notes alerts)
+                        // 4. Consultations Count Card
+                        _buildConsultationsCard(),
+                        const SizedBox(height: 24),
+
+                        // 5. Clinical Flags (SOAP notes alerts)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
-                        // 5. Clinical & Professional Features
+                        // 6. Clinical & Professional Features
                         _buildFeatureGrid(isDesktop, isTablet),
                         // Quick Actions intentionally removed per meeting notes
                       ],
@@ -209,7 +213,54 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     color: Color(0xFF0F172A),
                   ),
                 ),
-
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            avgRating.toString(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.sentiment_very_satisfied_rounded, color: Color(0xFF8B5CF6), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            satisfaction.toString(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF6B21A8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -685,6 +736,66 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildConsultationsCard() {
+    final totalConsultations = _stats['totalPatients'] ?? _completedCount;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.medical_services_rounded,
+              color: Color(0xFF3B82F6),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  totalConsultations.toString(),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const Text(
+                  'Total Consultations',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
