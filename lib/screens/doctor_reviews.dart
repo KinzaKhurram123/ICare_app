@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/doctor_service.dart';
+import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
@@ -168,12 +170,18 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                 const SizedBox(height: 8),
                 Row(
                   children: List.generate(5, (index) {
-                    return Icon(
-                      index < _averageRating.round()
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      color: Colors.white,
-                      size: 24,
+                    final active = index < _averageRating.round();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: SvgPicture.asset(
+                        ImagePaths.star,
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          active ? Colors.white : Colors.white.withOpacity(0.35),
+                          BlendMode.srcIn,
+                        ),
+                      ),
                     );
                   }),
                 ),
@@ -191,10 +199,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.star_rounded,
-              size: 64,
-              color: Colors.white,
+            child: SvgPicture.asset(
+              ImagePaths.star,
+              width: 64,
+              height: 64,
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
           ),
         ],
@@ -252,10 +261,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 16,
-                          color: Color(0xFFF59E0B),
+                        SvgPicture.asset(
+                          ImagePaths.star,
+                          width: 16,
+                          height: 16,
+                          colorFilter: const ColorFilter.mode(Color(0xFFF59E0B), BlendMode.srcIn),
                         ),
                       ],
                     ),
@@ -423,10 +433,11 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 14,
-                      color: Color(0xFFF59E0B),
+                    SvgPicture.asset(
+                      ImagePaths.star,
+                      width: 14,
+                      height: 14,
+                      colorFilter: const ColorFilter.mode(Color(0xFFF59E0B), BlendMode.srcIn),
                     ),
                     const SizedBox(width: 4),
                     Text(

@@ -602,12 +602,16 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            item.icon,
-                            size: 20,
-                            color: isSelected
-                                ? AppColors.primaryColor
-                                : const Color(0xFF64748B),
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: Icon(
+                              item.icon,
+                              size: 22,
+                              color: isSelected
+                                  ? AppColors.primaryColor
+                                  : const Color(0xFF64748B),
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(

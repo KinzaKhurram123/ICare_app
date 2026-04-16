@@ -334,7 +334,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                               ],
                             ),
-                            child: SvgPicture.asset(ImagePaths.logo, fit: BoxFit.contain, colorFilter: null),
+                            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                           ),
                           const SizedBox(height: 28),
                           const Text(

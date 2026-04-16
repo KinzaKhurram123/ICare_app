@@ -234,11 +234,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                                 BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, spreadRadius: 0, offset: Offset(0, 2)),
                               ],
                             ),
-                            child: SvgPicture.asset(
-                              ImagePaths.logo,
-                              fit: BoxFit.contain,
-                              colorFilter: null,
-                            ),
+                            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                           ),
                           const SizedBox(height: 32),
                           const Text(
