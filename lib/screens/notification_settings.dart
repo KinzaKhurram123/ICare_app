@@ -266,7 +266,7 @@ class _WebNotificationSettingsScreenState
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
-          text: "Notification Preferences",
+          text: "Notification Settings",
           fontFamily: "Gilroy-Bold",
           fontSize: 20,
           color: AppColors.primaryColor,

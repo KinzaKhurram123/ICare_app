@@ -181,10 +181,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (currentIndex == 0) {
         activePage = const HomeScreen();
       } else if (currentIndex == 1) {
-        activePage = BookingsScreen(tabs: true);
+        activePage = const Courses(myPurchased: true);
       } else if (currentIndex == 2) {
-        activePage = ChatListScreen();
-      } else if (currentIndex == 3) {
         activePage = ProfileScreen();
       } else if (currentIndex == 4) {
         activePage = const Courses(myPurchased: true);
