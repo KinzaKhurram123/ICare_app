@@ -36,25 +36,114 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         category: _filterCategory != 'All' ? _filterCategory : null,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
+
+      List<Map<String, dynamic>> products = medicines.map<Map<String, dynamic>>((m) => {
+        '_id': m['_id'],
+        'name': m['productName'] ?? 'Unknown',
+        'brand': m['brand'] ?? m['companyName'] ?? '',
+        'category': m['category'] ?? 'Other',
+        'type': m['medicineType'] ?? 'Tablet',
+        'power': m['power'] ?? '',
+        'stock': (m['quantity'] ?? 0) as int,
+        'price': (m['price'] ?? 0).toDouble(),
+        'amount': m['amount'] ?? '',
+        'details': m['details'] ?? '',
+        'precautions': m['precautions'] ?? '',
+        'manufacturer': m['companyName'] ?? '',
+        'expiry': m['expiry'] != null
+            ? DateTime.parse(m['expiry'])
+            : DateTime.now().add(const Duration(days: 365)),
+        'isAvailable': m['isAvailable'] ?? true,
+      }).toList();
+
+      // Add dummy data if inventory is empty
+      if (products.isEmpty && _filterCategory == 'All' && _searchQuery.isEmpty) {
+        products = [
+          {
+            '_id': 'dummy_1',
+            'name': 'Panadol',
+            'brand': 'GSK',
+            'category': 'Pain Relief',
+            'type': 'Tablet',
+            'power': '500mg',
+            'stock': 150,
+            'price': 45.0,
+            'amount': '10 tablets',
+            'details': 'Paracetamol for fever and pain relief',
+            'precautions': 'Do not exceed recommended dose',
+            'manufacturer': 'GlaxoSmithKline Pakistan',
+            'expiry': DateTime.now().add(const Duration(days: 730)),
+            'isAvailable': true,
+          },
+          {
+            '_id': 'dummy_2',
+            'name': 'Brufen',
+            'brand': 'Abbott',
+            'category': 'Pain Relief',
+            'type': 'Tablet',
+            'power': '400mg',
+            'stock': 120,
+            'price': 85.0,
+            'amount': '20 tablets',
+            'details': 'Ibuprofen for pain and inflammation',
+            'precautions': 'Take with food to avoid stomach upset',
+            'manufacturer': 'Abbott Laboratories Pakistan',
+            'expiry': DateTime.now().add(const Duration(days: 700)),
+            'isAvailable': true,
+          },
+          {
+            '_id': 'dummy_3',
+            'name': 'Augmentin',
+            'brand': 'GSK',
+            'category': 'Antibiotic',
+            'type': 'Tablet',
+            'power': '625mg',
+            'stock': 80,
+            'price': 320.0,
+            'amount': '6 tablets',
+            'details': 'Amoxicillin + Clavulanic acid antibiotic',
+            'precautions': 'Complete full course as prescribed',
+            'manufacturer': 'GlaxoSmithKline Pakistan',
+            'expiry': DateTime.now().add(const Duration(days: 650)),
+            'isAvailable': true,
+          },
+          {
+            '_id': 'dummy_4',
+            'name': 'Flagyl',
+            'brand': 'Sanofi',
+            'category': 'Antibiotic',
+            'type': 'Tablet',
+            'power': '400mg',
+            'stock': 95,
+            'price': 180.0,
+            'amount': '10 tablets',
+            'details': 'Metronidazole for bacterial infections',
+            'precautions': 'Avoid alcohol during treatment',
+            'manufacturer': 'Sanofi Pakistan',
+            'expiry': DateTime.now().add(const Duration(days: 680)),
+            'isAvailable': true,
+          },
+          {
+            '_id': 'dummy_5',
+            'name': 'Disprin',
+            'brand': 'Reckitt Benckiser',
+            'category': 'Pain Relief',
+            'type': 'Tablet',
+            'power': '300mg',
+            'stock': 200,
+            'price': 35.0,
+            'amount': '12 tablets',
+            'details': 'Aspirin for pain relief and fever',
+            'precautions': 'Not for children under 12',
+            'manufacturer': 'Reckitt Benckiser Pakistan',
+            'expiry': DateTime.now().add(const Duration(days: 720)),
+            'isAvailable': true,
+          },
+        ];
+      }
+
       setState(() {
-        _products = medicines.map<Map<String, dynamic>>((m) => {
-          '_id': m['_id'],
-          'name': m['productName'] ?? 'Unknown',
-          'brand': m['brand'] ?? m['companyName'] ?? '',
-          'category': m['category'] ?? 'Other',
-          'type': m['medicineType'] ?? 'Tablet',
-          'power': m['power'] ?? '',
-          'stock': (m['quantity'] ?? 0) as int,
-          'price': (m['price'] ?? 0).toDouble(),
-          'amount': m['amount'] ?? '',
-          'details': m['details'] ?? '',
-          'precautions': m['precautions'] ?? '',
-          'manufacturer': m['companyName'] ?? '',
-          'expiry': m['expiry'] != null
-              ? DateTime.parse(m['expiry'])
-              : DateTime.now().add(const Duration(days: 365)),
-          'isAvailable': m['isAvailable'] ?? true,
-        }).toList();
+        _products = products;
         _isLoading = false;
       });
     } catch (e) {
