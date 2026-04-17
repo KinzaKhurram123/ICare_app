@@ -42,6 +42,11 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   int _calories = 1450;
   int _hydrationPct = 62;
 
+  // Menstrual cycle
+  bool _periodTracking = true;
+  int _cycleDay = 14;
+  String _cyclePhase = 'Ovulation';
+
   // Points
   int _pointsToday = 45;
 
@@ -163,7 +168,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -235,8 +240,11 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   // ── Hero header ─────────────────────────────────────────────────────────
   Widget _buildHeroHeader() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1416,6 +1424,120 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               ),
             ],
           ),
+          const SizedBox(height: 14),
+
+          // Menstrual Cycle tracker
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('🌸', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Menstrual Cycle',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A))),
+                          Text('Cycle day tracking',
+                              style: TextStyle(
+                                  fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _periodTracking,
+                      activeColor: const Color(0xFFEC4899),
+                      onChanged: (v) =>
+                          setState(() => _periodTracking = v),
+                    ),
+                  ],
+                ),
+                if (_periodTracking) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Day $_cycleDay of cycle',
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A))),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFDF2F8),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(_cyclePhase,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFEC4899))),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: Color(0xFFEC4899)),
+                            onPressed: () => setState(() {
+                              _cycleDay =
+                                  (_cycleDay - 1).clamp(1, 35);
+                              _cyclePhase = _getCyclePhase(_cycleDay);
+                            }),
+                          ),
+                          Text('$_cycleDay',
+                              style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFEC4899))),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline,
+                                color: Color(0xFFEC4899)),
+                            onPressed: () => setState(() {
+                              _cycleDay =
+                                  (_cycleDay + 1).clamp(1, 35);
+                              _cyclePhase = _getCyclePhase(_cycleDay);
+                            }),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: _cycleDay / 28,
+                      backgroundColor: const Color(0xFFFDF2F8),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFFEC4899)),
+                      minHeight: 8,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 80),
         ],
       ),
@@ -1491,6 +1613,14 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
       Color(0xFF991B1B),
     ];
     return colors[(level - 1).clamp(0, 4)];
+  }
+
+  String _getCyclePhase(int day) {
+    if (day <= 5) return 'Menstruation';
+    if (day <= 13) return 'Follicular';
+    if (day <= 16) return 'Ovulation';
+    if (day <= 28) return 'Luteal';
+    return 'Extended';
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
