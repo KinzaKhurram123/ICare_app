@@ -379,10 +379,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
     } else if (role == 'Patient') {
       items = [
         _SidebarItem(icon: Icons.home_outlined, label: 'Home', index: 0),
-        _SidebarItem(icon: Icons.calendar_month_outlined, label: 'Appointments', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
         _SidebarItem(icon: Icons.health_and_safety_outlined, label: 'Health Programs', index: 4),
-        _SidebarItem(icon: Icons.person_outline, label: 'My Profile', index: 3),
       ];
     } else {
       items = [
@@ -658,6 +655,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
+                    Icons.calendar_month_outlined,
+                    'My Appointments',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const MyAppointmentsListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
                     Icons.history_outlined,
                     'Health Journey',
                     () {
@@ -724,18 +733,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                           builder: (ctx) => role == 'Patient'
                               ? LabReportsScreen()
                               : LabBookingsManagement(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.calendar_month_outlined,
-                    'My Appointments',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const MyAppointmentsListScreen(),
                         ),
                       );
                     },
@@ -1309,18 +1306,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       );
                     },
                   ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.assignment_outlined,
-                    'My Care Plans',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
-                  ),
+
                   _buildExtraNavItem(
                     context,
                     Icons.help_outline_rounded,
