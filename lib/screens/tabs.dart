@@ -21,6 +21,10 @@ import 'package:icare/screens/login.dart';
 import 'package:icare/screens/profile.dart';
 import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/screens/upload_prescription.dart';
+import 'package:icare/screens/patient_medical_records.dart';
+import 'package:icare/screens/lab_reports_screen.dart';
+import 'package:icare/screens/courses.dart';
+import 'package:icare/screens/patient_lab_orders.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -57,7 +61,7 @@ import 'package:icare/screens/community_forum_screen.dart';
 import 'package:icare/screens/health_journey_screen.dart';
 import 'package:icare/screens/lifestyle_tracker_screen.dart';
 import 'package:icare/screens/manage_dependents_screen.dart';
-import 'package:icare/screens/prescription_templates_screen.dart';
+import 'package:icare/screens/prescription_templates.dart';
 import 'package:icare/screens/security_audit_log_screen.dart';
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/resource_library_screen.dart';
@@ -95,8 +99,13 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   var currentIndex = 0;
+  int _profileKey = 0; // increments each time profile tab is selected → forces fresh rebuild
+
   void _selectPage(int index) {
     setState(() {
+      if (index == 3 && currentIndex != 3) {
+        _profileKey++; // force ProfileScreen to rebuild when switching to profile tab
+      }
       currentIndex = index;
     });
   }
@@ -119,7 +128,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = const PharmacyInventory();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Laboratory") {
       if (currentIndex == 0) {
@@ -129,7 +138,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = const LabReportsScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Doctor") {
       if (currentIndex == 0) {
@@ -139,7 +148,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Instructor") {
       if (currentIndex == 0) {
@@ -149,7 +158,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -159,7 +168,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Admin") {
       if (currentIndex == 0) {
@@ -169,7 +178,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       } else {
         activePage = AdminDashboard(
           initialTab: widget.initialAdminTab ?? 'Pending',
@@ -184,9 +193,11 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       } else if (currentIndex == 4) {
         activePage = const Courses(myPurchased: true);
+      } else if (currentIndex == 5) {
+        activePage = PatientMedicalRecords();
       }
     }
 
@@ -376,10 +387,9 @@ class _WebSidebar extends ConsumerWidget {
     } else if (role == 'Patient') {
       items = [
         _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'Appointments', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_rounded, label: 'Messages', index: 2),
+        _SidebarItem(icon: Icons.folder_shared_rounded, label: 'Medical Records', index: 5), // Added index 5 for Records
+        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'My Appointments', index: 1),
         _SidebarItem(icon: Icons.health_and_safety_rounded, label: 'Health Programs', index: 4),
-        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
       ];
     } else {
       items = [
@@ -454,8 +464,8 @@ class _WebSidebar extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                if (role == 'Patient') ...[
-                  // iCare logo image for Patient — white bg so colors show correctly
+                if (role == 'Patient' || role == 'Doctor') ...[
+                  // iCare logo image — white bg so colors show correctly
                   Container(
                     width: 42,
                     height: 42,
@@ -525,8 +535,8 @@ class _WebSidebar extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // ── Quick Action Buttons (Show for all roles except Admin and Patient) ───────────
-          if (role.isNotEmpty && role != 'Admin' && role != 'Patient') ...[
+          // ── Quick Action Buttons (Show for all roles except Admin, Patient and Doctor) ───────────
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
             Padding(
               padding: const EdgeInsets.only(left: 24, bottom: 8),
               child: Align(
@@ -653,7 +663,7 @@ class _WebSidebar extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                role == 'Patient' ? 'MY ACCOUNT' : 'NAVIGATION',
+                role == 'Patient' || role == 'Doctor' ? 'MY ACCOUNT' : 'NAVIGATION',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 10,
@@ -769,18 +779,8 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.task_alt_rounded,
-                    'Wellness Goals',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.science_rounded,
-                    'Laboratories',
+                    'Book a Lab Test',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -790,15 +790,11 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.biotech_rounded,
-                    role == 'Patient'
-                        ? 'Lab Results/Reports'
-                        : 'Management Dashboard',
+                    'Lab Results/Reports',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => role == 'Patient'
-                              ? LabReportsScreen()
-                              : LabBookingsManagement(),
+                          builder: (ctx) => LabReportsScreen(),
                         ),
                       );
                     },
@@ -806,7 +802,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.calendar_month_rounded,
-                    'My Appointment',
+                    'Booking Details',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -818,7 +814,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.medication_rounded,
-                    'Pharmacies',
+                    'Order Medicines',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -847,18 +843,6 @@ class _WebSidebar extends ConsumerWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const HealthCommunityScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.health_and_safety_outlined,
-                    'My Care Plans',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
                         ),
                       );
                     },
@@ -926,7 +910,7 @@ class _WebSidebar extends ConsumerWidget {
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const PrescriptionTemplatesScreen(),
+                          builder: (ctx) => const PrescriptionTemplates(),
                         ),
                       );
                     },
@@ -975,30 +959,6 @@ class _WebSidebar extends ConsumerWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const DoctorNotifications(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.person_rounded,
-                    'My Profile',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorProfileSetup(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.calendar_month_rounded,
-                    'My Appointments',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorAppointmentsScreen(),
                         ),
                       );
                     },
@@ -1672,48 +1632,7 @@ class _WebSidebar extends ConsumerWidget {
             child: Divider(color: Colors.white.withValues(alpha: 0.15)),
           ),
 
-          // ── Logout ─────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-            child: GestureDetector(
-              onTap: () {
-                ref.read(authProvider.notifier).setUserLogout();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (ctx) => const PublicHome()),
-                  (route) => false,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Logout',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+
         ],
       ),
     );
@@ -1929,82 +1848,133 @@ class _WebTopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Avatar + greeting
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Row(
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          // Avatar + greeting — dropdown with Edit Profile & Logout
+          Consumer(
+            builder: (context, ref, child) {
+              final user = ref.watch(authProvider).user;
+              final pic = user?.profilePicture;
+
+              Widget avatar;
+              if (pic != null && pic.isNotEmpty) {
+                try {
+                  final bytes = pic.contains(',')
+                      ? base64Decode(pic.split(',').last)
+                      : base64Decode(pic);
+                  avatar = CircleAvatar(
+                    radius: 20,
+                    backgroundImage: MemoryImage(bytes),
+                  );
+                } catch (_) {
+                  avatar = _defaultAvatar(user?.name);
+                }
+              } else {
+                avatar = _defaultAvatar(user?.name);
+              }
+
+              return PopupMenuButton<String>(
+                offset: const Offset(0, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    final role = ref.read(authProvider).userRole;
+                    if (role == 'Doctor') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()));
+                    } else if (role == 'Laboratory') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabProfileSetup()));
+                    } else if (role == 'Pharmacy') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()));
+                    } else {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()));
+                    }
+                  } else if (value == 'logout') {
+                    ref.read(authProvider.notifier).setUserLogout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                      (route) => false,
+                    );
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18,
+                            color: Color(0xFF0B2D6E)),
+                        SizedBox(width: 10),
+                        Text('Edit Profile'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout_rounded, size: 18,
+                            color: Colors.redAccent),
+                        SizedBox(width: 10),
+                        Text('Logout',
+                            style: TextStyle(color: Colors.redAccent)),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Row(
                   children: [
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final userName =
-                            ref.watch(authProvider).user?.name ?? 'User';
-                        return Text(
-                          userName,
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          user?.name ?? 'User',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                             color: Color(0xFF1A1A2E),
                           ),
-                        );
-                      },
+                        ),
+                        Text(
+                          role.isNotEmpty
+                              ? role == 'Laboratory'
+                                    ? 'Lab Technician'
+                                    : role == 'Pharmacy'
+                                    ? 'Pharmacist'
+                                    : role[0].toUpperCase() + role.substring(1)
+                              : role,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF888888),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      role.isNotEmpty
-                          ? role == 'Laboratory'
-                                ? 'Lab Technician'
-                                : role == 'Pharmacy'
-                                ? 'Pharmacist'
-                                : role[0].toUpperCase() + role.substring(1)
-                          : role,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF888888),
-                      ),
-                    ),
+                    const SizedBox(width: 10),
+                    avatar,
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down,
+                        color: Color(0xFF888888), size: 18),
                   ],
                 ),
-                const SizedBox(width: 10),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final user = ref.watch(authProvider).user;
-                    final pic = user?.profilePicture;
-                    if (pic != null && pic.isNotEmpty) {
-                      try {
-                        final bytes = pic.contains(',')
-                            ? base64Decode(pic.split(',').last)
-                            : base64Decode(pic);
-                        return CircleAvatar(
-                          radius: 20,
-                          backgroundImage: MemoryImage(bytes),
-                        );
-                      } catch (_) {}
-                    }
-                    return CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                      child: Text(
-                        (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF6366F1)),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
+
+Widget _defaultAvatar(String? name) => CircleAvatar(
+      radius: 20,
+      backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
+      child: Text(
+        (name != null && name.isNotEmpty) ? name[0].toUpperCase() : 'U',
+        style: const TextStyle(
+            fontWeight: FontWeight.w700, color: Color(0xFF6366F1)),
+      ),
+    );
 
 class _SidebarItem {
   final IconData icon;

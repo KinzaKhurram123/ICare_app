@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/create_reminder.dart';
+import 'package:icare/services/google_calendar_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -39,6 +40,65 @@ class _ReminderListState extends State<ReminderList> {
         _isLoading = false;
       });
     }
+  }
+
+  List<Widget> _buildReminderSection(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required Color color,
+    required List<dynamic> items,
+    required bool isWeb,
+  }) {
+    if (items.isEmpty) return [];
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: color),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              child: Text('${items.length}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+            ),
+          ],
+        ),
+      ),
+      ...items.map((item) {
+        final dateStr = item["date"] != null
+            ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"]))
+            : "N/A";
+        if (isWeb) {
+          return WebReminderWidget(
+            title: item["title"],
+            patientName: item["patientName"] ?? item["patient"]?["name"],
+            date: dateStr,
+            time: item["time"] ?? "N/A",
+            description: item["instructions"],
+            description2: item["disease"],
+          );
+        }
+        return ReminderWidget(
+          title: item["title"],
+          patientName: item["patientName"] ?? item["patient"]?["name"],
+          date: dateStr,
+          time: item["time"] ?? "N/A",
+          description2: item["disease"],
+          description: item["instructions"],
+        );
+      }),
+    ];
   }
 
   Widget _buildWebLayout(BuildContext context) {
@@ -131,26 +191,28 @@ class _ReminderListState extends State<ReminderList> {
                           ? const Center(child: Text("No reminders found"))
                           : RefreshIndicator(
                               onRefresh: _loadReminders,
-                              child: ListView.builder(
+                              child: ListView(
                                 padding: const EdgeInsets.only(bottom: 40),
-                                itemCount: _remindersList.length,
-                                itemBuilder: (ctx, i) {
-                                  final item = _remindersList[i];
-                                  return WebReminderWidget(
-                                    title: item["title"],
-                                    patientName:
-                                        item["patientName"] ??
-                                        item["patient"]?["name"],
-                                    date: item["date"] != null
-                                        ? DateFormat(
-                                            'MMMM, dd, yyyy',
-                                          ).format(DateTime.parse(item["date"]))
-                                        : "N/A",
-                                    time: item["time"] ?? "N/A",
-                                    description: item["instructions"],
-                                    description2: item["disease"],
-                                  );
-                                },
+                                children: [
+                                  // Doctor-assigned reminders
+                                  ..._buildReminderSection(
+                                    context,
+                                    label: 'Doctor Assigned',
+                                    icon: Icons.local_hospital_rounded,
+                                    color: const Color(0xFF3B82F6),
+                                    items: _remindersList.where((r) => r['isManual'] != true).toList(),
+                                    isWeb: true,
+                                  ),
+                                  // Self-created reminders
+                                  ..._buildReminderSection(
+                                    context,
+                                    label: 'My Reminders',
+                                    icon: Icons.person_rounded,
+                                    color: const Color(0xFF10B981),
+                                    items: _remindersList.where((r) => r['isManual'] == true).toList(),
+                                    isWeb: true,
+                                  ),
+                                ],
                               ),
                             ),
                     ),
@@ -292,30 +354,30 @@ class _ReminderListState extends State<ReminderList> {
                       ? const Center(child: Text("No reminders found"))
                       : RefreshIndicator(
                           onRefresh: _loadReminders,
-                          child: ListView.builder(
+                          child: ListView(
                             padding: EdgeInsets.only(
                               bottom: ScallingConfig.verticalScale(60),
                               left: ScallingConfig.scale(20),
                               right: ScallingConfig.scale(20),
                             ),
-                            itemCount: _remindersList.length,
-                            itemBuilder: (ctx, i) {
-                              final item = _remindersList[i];
-                              return ReminderWidget(
-                                title: item["title"],
-                                patientName:
-                                    item["patientName"] ??
-                                    item["patient"]?["name"],
-                                date: item["date"] != null
-                                    ? DateFormat(
-                                        'MMMM, dd, yyyy',
-                                      ).format(DateTime.parse(item["date"]))
-                                    : "N/A",
-                                time: item["time"] ?? "N/A",
-                                description2: item["disease"],
-                                description: item["instructions"],
-                              );
-                            },
+                            children: [
+                              ..._buildReminderSection(
+                                context,
+                                label: 'Doctor Assigned',
+                                icon: Icons.local_hospital_rounded,
+                                color: const Color(0xFF3B82F6),
+                                items: _remindersList.where((r) => r['isManual'] != true).toList(),
+                                isWeb: false,
+                              ),
+                              ..._buildReminderSection(
+                                context,
+                                label: 'My Reminders',
+                                icon: Icons.person_rounded,
+                                color: const Color(0xFF10B981),
+                                items: _remindersList.where((r) => r['isManual'] == true).toList(),
+                                isWeb: false,
+                              ),
+                            ],
                           ),
                         ),
                 ),
@@ -352,6 +414,38 @@ class WebReminderWidget extends StatelessWidget {
     this.description,
     this.description2,
   });
+
+  Future<void> _syncToCalendar(BuildContext context) async {
+    // Parse date and time
+    DateTime? eventDate;
+    try {
+      final dateStr = date ?? '';
+      final timeStr = time ?? '08:00';
+      final parsed = DateFormat('MMMM, dd, yyyy').parse(dateStr);
+      final timeParts = timeStr.replaceAll(RegExp(r'[APM ]'), '').split(':');
+      int hour = int.tryParse(timeParts[0]) ?? 8;
+      int minute = int.tryParse(timeParts.length > 1 ? timeParts[1] : '0') ?? 0;
+      if (timeStr.contains('PM') && hour != 12) hour += 12;
+      if (timeStr.contains('AM') && hour == 12) hour = 0;
+      eventDate = DateTime(parsed.year, parsed.month, parsed.day, hour, minute);
+    } catch (_) {
+      eventDate = DateTime.now().add(const Duration(hours: 1));
+    }
+
+    final success = await GoogleCalendarService().addReminderToCalendar(
+      title: title ?? 'Reminder',
+      description: [description, description2].where((s) => s != null && s.isNotEmpty).join(' — '),
+      dateTime: eventDate,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success ? 'Added to Google Calendar ✓' : 'Could not sync — please sign in with Google'),
+        backgroundColor: success ? const Color(0xFF10B981) : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -548,6 +642,17 @@ class WebReminderWidget extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () => _syncToCalendar(context),
+                  icon: const Icon(Icons.calendar_month_rounded, size: 16),
+                  label: const Text("Sync Calendar"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF10B981),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
               ],
             ),
           ],
@@ -573,7 +678,37 @@ class ReminderWidget extends StatelessWidget {
   final String? time;
   final String? description;
   final String? description2;
-  // final String? ;
+
+  Future<void> _syncToCalendar(BuildContext context) async {
+    DateTime? eventDate;
+    try {
+      final dateStr = date ?? '';
+      final timeStr = time ?? '08:00';
+      final parsed = DateFormat('MMMM, dd, yyyy').parse(dateStr);
+      final timeParts = timeStr.replaceAll(RegExp(r'[APM ]'), '').split(':');
+      int hour = int.tryParse(timeParts[0]) ?? 8;
+      int minute = int.tryParse(timeParts.length > 1 ? timeParts[1] : '0') ?? 0;
+      if (timeStr.contains('PM') && hour != 12) hour += 12;
+      if (timeStr.contains('AM') && hour == 12) hour = 0;
+      eventDate = DateTime(parsed.year, parsed.month, parsed.day, hour, minute);
+    } catch (_) {
+      eventDate = DateTime.now().add(const Duration(hours: 1));
+    }
+
+    final success = await GoogleCalendarService().addReminderToCalendar(
+      title: title ?? 'Reminder',
+      description: [description, description2].where((s) => s != null && s.isNotEmpty).join(' — '),
+      dateTime: eventDate,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success ? 'Added to Google Calendar ✓' : 'Could not sync — please sign in with Google'),
+        backgroundColor: success ? const Color(0xFF10B981) : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -671,7 +806,6 @@ class ReminderWidget extends StatelessWidget {
                 labelSize: 15,
                 label: "Edit",
                 onPressed: () {
-                  // Navigator.of(context).pop(2);
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (ctx) => CreateReminder(isEdit: true),
@@ -690,6 +824,21 @@ class ReminderWidget extends StatelessWidget {
                 onPressed: () {},
               ),
             ],
+          ),
+          SizedBox(height: ScallingConfig.scale(8)),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _syncToCalendar(context),
+              icon: const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFF10B981)),
+              label: const Text('Sync to Google Calendar',
+                  style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w600, fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF10B981)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
           ),
         ],
       ),

@@ -6,8 +6,10 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/create_medical_record.dart';
 import 'package:icare/screens/decline_appointment_redesign.dart';
 import 'package:icare/screens/intake_notes_screen.dart';
+import 'package:icare/screens/patient_medical_records.dart';
 import 'package:icare/screens/patient_profile_view.dart';
 import 'package:icare/screens/soap_notes_screen.dart';
+import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -45,9 +47,15 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: CustomBackButton(),
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const TabsScreen()),
+            (route) => false,
+          ),
+          child: const CustomBackButton(),
+        ),
         title: CustomText(
-          text: "View Profile",
+          text: "Appointment Details",
           letterSpacing: -0.31,
           lineHeight: 1.0,
           fontSize: 16.78,
@@ -61,9 +69,10 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
           children: [
             ProfileInfoWidget(
               name: otherPerson?.name ?? 'User',
-              email: otherPerson?.email ?? 'N/A',
+              email: selectedRole == 'Doctor' ? (otherPerson?.email ?? 'N/A') : '',
               appointmentId: appointment.id,
               patient: appointment.patient,
+              showContact: selectedRole == 'Doctor',
             ),
             DetailsInfoWidget(
               title: "Scheduled Appointment",
@@ -73,33 +82,43 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                 "Booking for": "Self",
                 "Status": appointment.status.toUpperCase(),
               },
+              statusKey: "Status",
+              statusValue: appointment.status,
             ),
             DetailsInfoWidget(
               title: selectedRole == 'Doctor' ? "Patient Info" : "Doctor Info",
-              data: {
-                "Name": otherPerson?.name ?? 'N/A',
-                "Email": otherPerson?.email ?? 'N/A',
-                "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                "Reason": appointment.reason ?? 'N/A',
-              },
+              data: selectedRole == 'Patient'
+                  ? {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    }
+                  : {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Email": otherPerson?.email ?? 'N/A',
+                      "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    },
             ),
             if (selectedRole == "lab_technician") ...[Tests()],
 
-            ConsultationTypeCard(
-              chat: true,
-              title: "Messaging",
-              description: "Chat With Doctor",
-              duration: "30 Minutes",
-            ),
-            SizedBox(height: ScallingConfig.scale(10)),
-            ConsultationTypeCard(
-              call: true,
-              title: "Voice Call",
-              description: "Voice call With Doctor",
-              duration: "30 Minutes",
-            ),
+            // Only show messaging/call for Doctor, not Patient
+            if (selectedRole == "Doctor") ...[
+              ConsultationTypeCard(
+                chat: true,
+                title: "Messaging",
+                description: "Chat With Doctor",
+                duration: "30 Minutes",
+              ),
+              SizedBox(height: ScallingConfig.scale(10)),
+              ConsultationTypeCard(
+                call: true,
+                title: "Voice Call",
+                description: "Voice call With Doctor",
+                duration: "30 Minutes",
+              ),
+            ],
 
-            if (selectedRole == "Patient" || selectedRole == "Doctor") ...[
+            if (selectedRole == "Doctor") ...[
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: ScallingConfig.scale(20),
@@ -220,6 +239,7 @@ class ProfileInfoWidget extends StatelessWidget {
   final String email;
   final String appointmentId;
   final dynamic patient;
+  final bool showContact;
 
   const ProfileInfoWidget({
     super.key,
@@ -227,6 +247,7 @@ class ProfileInfoWidget extends StatelessWidget {
     required this.email,
     required this.appointmentId,
     required this.patient,
+    this.showContact = true,
   });
 
   @override
@@ -273,14 +294,16 @@ class ProfileInfoWidget extends StatelessWidget {
                     ),
                     SizedBox(width: ScallingConfig.scale(10)),
                     CustomText(
-                      text: "View Profile",
+                      text: "View Full Details",
                       underline: true,
                       onTap: () {
                         if (patient != null) {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (ctx) =>
-                                  PatientProfileView(patient: patient),
+                              builder: (ctx) => PatientMedicalRecords(
+                                patientId: patient.id,
+                                patientName: name,
+                              ),
                             ),
                           );
                         }
@@ -290,6 +313,7 @@ class ProfileInfoWidget extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: ScallingConfig.scale(10)),
+                if (showContact)
                 Row(
                   children: [
                     Icon(
@@ -328,10 +352,18 @@ class ProfileInfoWidget extends StatelessWidget {
 }
 
 class DetailsInfoWidget extends StatelessWidget {
-  const DetailsInfoWidget({super.key, this.title = '', required this.data});
+  const DetailsInfoWidget({
+    super.key,
+    this.title = '',
+    required this.data,
+    this.statusKey,
+    this.statusValue,
+  });
 
   final String title;
   final Map<String, String> data;
+  final String? statusKey;
+  final String? statusValue;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +377,8 @@ class DetailsInfoWidget extends StatelessWidget {
           children: [
             CustomText(text: title, fontSize: 14, isBold: true),
             ...data.entries.map((item) {
+              final isStatus = statusKey != null && item.key == statusKey;
+              final isConfirmed = statusValue?.toLowerCase() == 'confirmed';
               return Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
@@ -355,11 +389,31 @@ class DetailsInfoWidget extends StatelessWidget {
                       fontSize: 12,
                       color: AppColors.darkGreyColor,
                     ),
-                    CustomText(
-                      text: item.value,
-                      isBold: true,
-                      color: AppColors.darkGreyColor,
-                    ),
+                    isStatus
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isConfirmed
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                                  : AppColors.darkGreyColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              item.value,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: isConfirmed
+                                    ? const Color(0xFF10B981)
+                                    : AppColors.darkGreyColor,
+                              ),
+                            ),
+                          )
+                        : CustomText(
+                            text: item.value,
+                            isBold: true,
+                            color: AppColors.darkGreyColor,
+                          ),
                   ],
                 ),
               );
@@ -525,9 +579,15 @@ class _WebPatientProfileView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const CustomBackButton(),
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const TabsScreen()),
+            (route) => false,
+          ),
+          child: const CustomBackButton(),
+        ),
         title: const Text(
-          "View Profile",
+          "Appointment Details",
           style: TextStyle(
             fontSize: 18,
             fontFamily: "Gilroy-Bold",
@@ -601,16 +661,18 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildInfoRow(
-                          Icons.email_outlined,
-                          otherPerson?.email ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          Icons.phone_outlined,
-                          otherPerson?.phoneNumber ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
+                        if (selectedRole == 'Doctor') ...[
+                          _buildInfoRow(
+                            Icons.email_outlined,
+                            otherPerson?.email ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.phone_outlined,
+                            otherPerson?.phoneNumber ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         _buildInfoRow(
                           Icons.qr_code_rounded,
                           "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
@@ -620,14 +682,15 @@ class _WebPatientProfileView extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (ctx) => PatientProfileView(
-                                  patient: appointment.patient!,
+                                builder: (ctx) => PatientMedicalRecords(
+                                  patientId: appointment.patient!.id,
+                                  patientName: profileName,
                                 ),
                               ),
                             );
                           },
                           child: const Text(
-                            "View Full Profile →",
+                            "View Full Details →",
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -665,12 +728,17 @@ class _WebPatientProfileView extends StatelessWidget {
                             : "Doctor Info",
                         Icons.person_outline_rounded,
                         const Color(0xFF3B82F6),
-                        {
-                          "Name": otherPerson?.name ?? 'N/A',
-                          "Email": otherPerson?.email ?? 'N/A',
-                          "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                          "Reason": appointment.reason ?? 'N/A',
-                        },
+                        selectedRole == 'Patient'
+                            ? {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              }
+                            : {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Email": otherPerson?.email ?? 'N/A',
+                                "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              },
                       ),
                       if (selectedRole == "lab_technician") ...[
                         const SizedBox(height: 24),
@@ -684,33 +752,34 @@ class _WebPatientProfileView extends StatelessWidget {
                           },
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      // Consultation Options
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Messaging",
-                              "Chat With Doctor",
-                              "30 Minutes",
-                              Icons.chat_bubble_outline_rounded,
-                              const Color(0xFF10B981),
+                      // Consultation Options — Doctor only
+                      if (selectedRole == "Doctor") ...[
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildConsultationCard(
+                                "Messaging",
+                                "Chat With Doctor",
+                                "30 Minutes",
+                                Icons.chat_bubble_outline_rounded,
+                                const Color(0xFF10B981),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Voice Call",
-                              "Voice call With Doctor",
-                              "30 Minutes",
-                              Icons.phone_outlined,
-                              const Color(0xFF0EA5E9),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildConsultationCard(
+                                "Voice Call",
+                                "Voice call With Doctor",
+                                "30 Minutes",
+                                Icons.phone_outlined,
+                                const Color(0xFF0EA5E9),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      if (selectedRole == "Patient" ||
-                          selectedRole == "Doctor") ...[
+                          ],
+                        ),
+                      ],
+                      if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
                         Row(
                           children: [

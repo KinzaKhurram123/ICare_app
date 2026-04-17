@@ -580,64 +580,41 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
   }
 
   Widget _buildHealthProgramAnalytics(Map<String, dynamic> stats) {
+    // Count unique patients who have appointments
+    final uniquePatients = _appointments.map((a) => a.patient?.id).toSet().length;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Health Program Compliance',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
+          const Text('Patient Overview',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                child: _buildSmallStat(
-                  'Assigned',
-                  '12',
-                  Icons.assignment_turned_in_rounded,
-                  const Color(0xFF6366F1),
-                ),
-              ),
+              Expanded(child: _buildSmallStat('Unique Patients', '$uniquePatients',
+                  Icons.people_rounded, const Color(0xFF6366F1))),
               const SizedBox(width: 16),
-              Expanded(
-                child: _buildSmallStat(
-                  'Avg. Progress',
-                  '65%',
-                  Icons.trending_up_rounded,
-                  const Color(0xFF10B981),
-                ),
-              ),
+              Expanded(child: _buildSmallStat('Medical Records', '${_medicalRecords.length}',
+                  Icons.folder_rounded, const Color(0xFF10B981))),
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Top Active Programs',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
-            ),
-          ),
+          const Text('Appointment Status Breakdown',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
           const SizedBox(height: 12),
-          _buildProgramMiniCard('Diabetes Management', 0.85, '8 Patients'),
-          _buildProgramMiniCard('Hypertension Control', 0.45, '4 Patients'),
+          _buildProgramMiniCard('Completed', stats['completed'] / (stats['total'] > 0 ? stats['total'] : 1),
+              '${stats['completed']} appointments'),
+          _buildProgramMiniCard('Pending', stats['pending'] / (stats['total'] > 0 ? stats['total'] : 1),
+              '${stats['pending']} appointments'),
         ],
       ),
     );

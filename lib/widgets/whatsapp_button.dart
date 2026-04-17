@@ -21,26 +21,21 @@ class WhatsAppFloatingButton extends StatelessWidget {
           webOnlyWindowName: '_blank',
         );
       } else {
-        _showError(context, 'Unable to open WhatsApp. Please try again.');
+        if (context.mounted) _showError(context, 'Unable to open WhatsApp. Please try again.');
       }
     } catch (_) {
-      _showError(
-        context,
-        'Error opening WhatsApp. Please check your connection.',
-      );
+      if (context.mounted) _showError(context, 'Error opening WhatsApp. Please check your connection.');
     }
   }
 
   void _showError(BuildContext context, String message) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -50,15 +45,8 @@ class WhatsAppFloatingButton extends StatelessWidget {
       right: 20,
       child: Tooltip(
         message: 'Chat on WhatsApp',
-        textStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(8),
-        ),
+        textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
         child: GestureDetector(
           onTap: () => _openWhatsApp(context),
           child: Container(
@@ -73,13 +61,13 @@ class WhatsAppFloatingButton extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF25D366).withOpacity(0.5),
+                  color: const Color(0xFF25D366).withValues(alpha: 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                   spreadRadius: 2,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

@@ -29,6 +29,7 @@ import 'package:icare/widgets/laboratory.dart';
 import 'package:icare/widgets/student_home.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:easy_date_timeline/easy_date_timeline.dart';
+import 'package:icare/widgets/pulsing_button.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -230,23 +231,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       ),
                                     ),
                                     Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(
-                                              0xFF0F172A,
-                                            ).withOpacity(0.6),
-                                            Colors.transparent,
-                                          ],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned.fill(
-                                      child: Image.asset(
-                                        ImagePaths.courseAd,
-                                        fit: BoxFit.contain,
+                                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            "Talk to a verified",
+                                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w400),
+                                          ),
+                                          const Text(
+                                            "Specialist Doctor",
+                                            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Text(
+                                            "Certified Doctor Access — Complete Heal",
+                                            style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                                          ),
+                                          const SizedBox(height: 24),
+                                          PulsingButton(
+                                            label: "Connect Now", 
+                                            onTap: () => Navigator.of(context).push(
+                                              MaterialPageRoute(builder: (_) => const DoctorsList()),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -405,65 +415,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: const AppointmentCard(),
                 ),
               ),
-              const SizedBox(height: 28),
-              // Stunning "View All" Button
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => const UpcomingAppointments(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
+              const SizedBox(height: 40),
+              // Section Order Implementation
+              CenteredSection(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SectionHeader(
+                      title: 'Browse by Specialty',
+                      subtitle: 'Find the right specialist for your health needs',
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(50),
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryColor.withOpacity(0.06),
-                          AppColors.secondaryColor.withOpacity(0.06),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: AppColors.primaryColor.withOpacity(0.15),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CustomText(
-                          text: "View All Upcoming Appointments",
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryColor,
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 16,
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                    SizedBox(height: 24),
+                    SpecialtyGrid(),
+                    SizedBox(height: 32),
+                  ],
                 ),
               ),
-
               const SizedBox(height: 60),
+              OrderMedicinesSection(),
+              const SizedBox(height: 60),
+              BookLabSection(),
+              const SizedBox(height: 60),
+              CoursesSection(),
+              const SizedBox(height: 60),
+              Footer(),
             ],
           ),
         ),

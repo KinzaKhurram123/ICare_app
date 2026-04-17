@@ -118,4 +118,23 @@ class MedicalRecordService {
       };
     }
   }
+
+  /// Returns a flat list of lab test names prescribed by doctors across all records
+  Future<List<String>> getPrescribedLabTests() async {
+    try {
+      final result = await getMyRecords();
+      if (result['success'] != true) return [];
+      final records = result['records'] as List? ?? [];
+      final Set<String> tests = {};
+      for (final record in records) {
+        final labTests = record['labTests'] as List? ?? [];
+        for (final t in labTests) {
+          if (t is String && t.isNotEmpty) tests.add(t);
+        }
+      }
+      return tests.toList();
+    } catch (_) {
+      return [];
+    }
+  }
 }

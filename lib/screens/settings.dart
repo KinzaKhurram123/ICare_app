@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/about_us.dart';
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/change_password.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/notification_settings.dart';
-import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/screens/reset_password.dart';
-import 'package:icare/screens/terms_and_conditions.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/services/security_service.dart';
@@ -243,33 +240,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         "value": _isBiometricEnabled,
         "onChanged": (val) => _toggleBiometrics(val),
       },
-      {
-        "id": "6",
-        "title": "Privacy Policy",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => PrivacyPolicy()));
-        },
-      },
-      {
-        "id": "7",
-        "title": "About Us",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => AboutUs()));
-        },
-      },
-      {
-        "id": "8",
-        "title": "Terms & Conditions",
-        "onPress": () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => TermsAndConditions()));
-        },
-      },
     ];
 
     if (MediaQuery.of(context).size.width > 600) {
@@ -347,7 +317,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        if (item['id'] != "8")
+                        if (item['id'] != "5")
                           const Divider(
                             color: AppColors.darkGreyColor,
                             thickness: 0.1,

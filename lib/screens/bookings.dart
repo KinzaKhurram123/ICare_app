@@ -80,9 +80,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
                 initialTabIndex: 0,
+                onCancelled: _loadAppointments,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
@@ -100,9 +101,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
                 initialTabIndex: 0,
+                onCancelled: _loadAppointments,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
@@ -120,9 +122,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
                 initialTabIndex: 1,
+                onCancelled: _loadAppointments,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
@@ -140,9 +143,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
                 initialTabIndex: 2,
+                onCancelled: _loadAppointments,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
@@ -160,9 +164,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
                 initialTabIndex: 0,
+                onCancelled: _loadAppointments,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
     ];

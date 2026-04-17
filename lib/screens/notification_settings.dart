@@ -21,13 +21,15 @@ class NotificationSettings extends ConsumerWidget {
             {"id": "1", "title": "New Course Updates", "onPress": () {}},
             {"id": "2", "title": "Assignment Reminders", "onPress": () {}},
             {"id": "3", "title": "Certificate Earned", "onPress": () {}},
-            {"id": "4", "title": "Admin Announcements", "onPress": () {}},
+            {"id": "4", "title": "Promotions", "onPress": () {}},
+            {"id": "5", "title": "Enable Notification Sound", "onPress": () {}},
           ]
         : [
-            {"id": "2", "title": "Booking Updates", "onPress": () {}},
-            {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
-            {"id": "4", "title": "Patient Messages", "onPress": () {}},
-            {"id": "5", "title": "Admin Announcements", "onPress": () {}},
+            {"id": "1", "title": "Booking Updates", "onPress": () {}},
+            {"id": "2", "title": "Customer Support Messages", "onPress": () {}},
+            {"id": "3", "title": "Promotions", "onPress": () {}},
+            {"id": "4", "title": "Enable Notification Sound", "onPress": () {}},
+            {"id": "5", "title": "Send prescription to email automatically", "onPress": () {}},
           ];
     if (MediaQuery.of(context).size.width > 600) {
       return _WebNotificationSettingsScreen(isStudent: isStudent);
@@ -38,12 +40,10 @@ class NotificationSettings extends ConsumerWidget {
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
-          text: "Notifications Settings",
-          fontSize: 16.78,
+          text: "Notification Settings",
+          fontSize: 18,
           fontFamily: "Gilroy-Bold",
-          color: AppColors.primary500,
-          letterSpacing: -0.31,
-          lineHeight: 1.0,
+          color: AppColors.primaryColor,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -149,13 +149,15 @@ class _WebNotificationSettingsScreenState
             "New Course Updates": true,
             "Assignment Reminders": true,
             "Certificate Earned": true,
-            "Admin Announcements": false,
+            "Promotions": false,
+            "Enable Notification Sound": true,
           }
         : {
             "Booking Updates": true,
             "Customer Support Messages": true,
-            "Patient Messages": false,
-            "Admin Announcements": true,
+            "Promotions": true,
+            "Enable Notification Sound": true,
+            "Send prescription to email automatically": true,
           };
   }
 
@@ -167,18 +169,22 @@ class _WebNotificationSettingsScreenState
               "Receive reminders before quiz deadlines and assignment due dates.",
           "Certificate Earned":
               "Be the first to know when you earn a new completion certificate.",
-          "Admin Announcements":
-              "Important platform updates and broadcast messages from administrators.",
+          "Promotions":
+              "Get notified about new courses, discounts, and health tips.",
+          "Enable Notification Sound":
+              "Play a sound when a new notification arrives.",
         }
       : {
           "Booking Updates":
               "Get notified when new appointments are booked, rescheduled, or canceled.",
           "Customer Support Messages":
               "Receive instant alerts when the support team responds to your queries.",
-          "Patient Messages":
-              "Stay updated when your patients send you direct messages.",
-          "Admin Announcements":
-              "Important system updates and broadcast messages from administrators.",
+          "Promotions":
+              "Stay updated on health packages, discounts, and wellness offers.",
+          "Enable Notification Sound":
+              "Play a sound when a new notification arrives.",
+          "Send prescription to email automatically":
+              "We will send a copy of your prescription to your registered email.",
         };
 
   Map<String, IconData> get settingIcons => widget.isStudent
@@ -186,13 +192,15 @@ class _WebNotificationSettingsScreenState
           "New Course Updates": Icons.library_books_rounded,
           "Assignment Reminders": Icons.assignment_late_rounded,
           "Certificate Earned": Icons.workspace_premium_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
+          "Promotions": Icons.campaign_rounded,
+          "Enable Notification Sound": Icons.volume_up_rounded,
         }
       : {
           "Booking Updates": Icons.event_available_rounded,
           "Customer Support Messages": Icons.support_agent_rounded,
-          "Patient Messages": Icons.chat_bubble_outline_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
+          "Promotions": Icons.campaign_rounded,
+          "Enable Notification Sound": Icons.volume_up_rounded,
+          "Send prescription to email automatically": Icons.email_rounded,
         };
 
   @override

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 
@@ -10,47 +12,81 @@ class ClinicalAuditScreen extends StatefulWidget {
 }
 
 class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
-  bool _isLoading = false;
-  List<Map<String, dynamic>> _auditLogs = [
-    {
-      'message': 'Missing SOAP notes for Appointment #821',
-      'status': 'Critical',
-      'color': Colors.red,
-    },
-    {
-      'message': 'Follow-up date not specified for Record #45',
-      'status': 'Warning',
-      'color': Colors.orange,
-    },
-    {
-      'message': 'Record #21 approved by Senior Medical Officer',
-      'status': 'Verified',
-      'color': Colors.green,
-    },
-  ];
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _auditLogs = [];
+  int _totalAppointments = 0;
+  int _completedWithRecords = 0;
+  int _pendingDocumentation = 0;
 
-  void _runQAScan() async {
+  @override
+  void initState() {
+    super.initState();
+    _loadAuditData();
+  }
+
+  Future<void> _loadAuditData() async {
     setState(() => _isLoading = true);
-    // Requirement 15.8: QA Automation logic
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final appResult = await AppointmentService().getMyAppointmentsDetailed();
+      final recordsResult = await MedicalRecordService().getDoctorRecords();
 
-    setState(() {
-      _auditLogs.insert(0, {
-        'message': 'New: Found 2 incomplete SOAP notes from yesterday.',
-        'status': 'System Flag',
-        'color': Colors.redAccent,
-      });
-      _isLoading = false;
-    });
+      if (mounted) {
+        final appointments = appResult['success']
+            ? (appResult['appointments'] as List)
+            : [];
+        final records = recordsResult['success']
+            ? (recordsResult['records'] as List)
+            : [];
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('QA Scan Complete: 2 new issues flagged.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+        final completed = appointments
+            .where((a) => a.status == 'completed')
+            .toList();
+        final recordPatientIds = records
+            .map((r) => r['patient']?['_id'] ?? r['patient'])
+            .toSet();
+
+        final logs = <Map<String, dynamic>>[];
+
+        // Flag completed appointments without medical records
+        for (final appt in completed) {
+          final patientId = appt.patient?.id ?? '';
+          if (!recordPatientIds.contains(patientId)) {
+            logs.add({
+              'message':
+                  'Missing medical record for ${appt.patient?.name ?? 'patient'} — ${appt.timeSlot}',
+              'status': 'Warning',
+              'color': Colors.orange,
+            });
+          }
+        }
+
+        if (logs.isEmpty) {
+          logs.add({
+            'message': 'All completed appointments have documentation.',
+            'status': 'Verified',
+            'color': Colors.green,
+          });
+        }
+
+        setState(() {
+          _totalAppointments = appointments.length;
+          _completedWithRecords = records.length;
+          _pendingDocumentation = logs
+              .where((l) => l['status'] == 'Warning')
+              .length;
+          _auditLogs = logs;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  double get _qualityScore {
+    if (_totalAppointments == 0) return 1.0;
+    final completed = _totalAppointments > 0 ? _completedWithRecords : 0;
+    return (completed / _totalAppointments).clamp(0.0, 1.0);
   }
 
   @override
@@ -63,79 +99,54 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
         elevation: 0,
         title: const Text(
           'Clinical Audit & QA',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
-            onPressed: _isLoading ? null : _runQAScan,
+            onPressed: _isLoading ? null : _loadAuditData,
             icon: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(
-                    Icons.security_update_good_rounded,
-                    color: AppColors.primaryColor,
-                  ),
-            tooltip: 'Run QA Scan',
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.refresh_rounded, color: AppColors.primaryColor),
+            tooltip: 'Refresh',
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildQualityScore(),
-            const SizedBox(height: 32),
-            _buildSectionHeader('Performance Metrics'),
-            const SizedBox(height: 16),
-            _buildMetricTile('Documentation Completeness', '98%', Colors.green),
-            _buildMetricTile('Prescription Accuracy', '100%', Colors.green),
-            _buildMetricTile('Patient Follow-up Rate', '85%', Colors.orange),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSectionHeader('Clinical Flags & QA Reviews'),
-                TextButton.icon(
-                  onPressed: _runQAScan,
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text(
-                    'Refresh Scan',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildQualityScore(),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Performance Metrics'),
+                  const SizedBox(height: 16),
+                  _buildMetricTile('Total Appointments', '$_totalAppointments', AppColors.primaryColor),
+                  _buildMetricTile('Medical Records Created', '$_completedWithRecords', Colors.green),
+                  _buildMetricTile('Pending Documentation', '$_pendingDocumentation',
+                      _pendingDocumentation > 0 ? Colors.orange : Colors.green),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Clinical Flags'),
+                  const SizedBox(height: 16),
+                  ..._auditLogs.map((log) =>
+                      _buildAuditLog(log['message'], log['status'], log['color'])),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            ..._auditLogs
-                .map(
-                  (log) => _buildAuditLog(
-                    log['message'],
-                    log['status'],
-                    log['color'],
-                  ),
-                )
-                .toList(),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildQualityScore() {
+    final score = _qualityScore;
+    final pct = '${(score * 100).toStringAsFixed(0)}%';
+    final color = score >= 0.8 ? Colors.green : score >= 0.5 ? Colors.orange : Colors.red;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF334155)],
-        ),
+        gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF334155)]),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -143,43 +154,31 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
           Stack(
             alignment: Alignment.center,
             children: [
-              const SizedBox(
-                width: 80,
-                height: 80,
+              SizedBox(
+                width: 80, height: 80,
                 child: CircularProgressIndicator(
-                  value: 0.94,
-                  strokeWidth: 8,
-                  color: Colors.green,
-                  backgroundColor: Colors.white10,
+                  value: score, strokeWidth: 8,
+                  color: color, backgroundColor: Colors.white10,
                 ),
               ),
-              const Text(
-                '94%',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
+              Text(pct, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
             ],
           ),
           const SizedBox(width: 24),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text('Documentation Score',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
                 Text(
-                  'Quality Score',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Your clinical documentation is above the hospital average.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  score >= 0.8
+                      ? 'Excellent documentation rate.'
+                      : score >= 0.5
+                          ? 'Some appointments need documentation.'
+                          : 'Many appointments missing records.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -239,7 +238,7 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [

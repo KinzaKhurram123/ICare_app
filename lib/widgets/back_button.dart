@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 class CustomBackButton extends StatelessWidget {
-  const CustomBackButton({super.key, this.margin, this.color});
+  const CustomBackButton({super.key, this.margin, this.color, this.onPressed});
   final EdgeInsets? margin;
   final Color? color;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: onPressed ?? () {
         Navigator.of(context).pop();
       },
       child: Container(

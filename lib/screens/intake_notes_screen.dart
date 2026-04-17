@@ -40,14 +40,21 @@ class _IntakeNotesScreenState extends State<IntakeNotesScreen> {
     );
     if (notes != null && mounted) {
       setState(() {
-        _complaintController.text = notes['chiefComplaint'] ?? '';
-        _historyController.text = notes['historyOfIllness'] ?? '';
-        _medicationsController.text = notes['currentMedications'] ?? '';
-        _allergiesController.text = notes['allergies'] ?? '';
-        _familyHistoryController.text = notes['familyHistory'] ?? '';
+        _complaintController.text = _formatValue(notes['chiefComplaint']);
+        _historyController.text = _formatValue(notes['historyOfIllness']);
+        _medicationsController.text = _formatValue(notes['currentMedications']);
+        _allergiesController.text = _formatValue(notes['allergies']);
+        _familyHistoryController.text = _formatValue(notes['familyHistory']);
       });
     }
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  String _formatValue(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    if (value is List) return value.join(', ');
+    return value.toString();
   }
 
   Future<void> _saveIntakeNotes() async {

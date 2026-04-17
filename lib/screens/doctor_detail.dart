@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/models/doctor.dart';
 import 'package:icare/screens/book_appointment.dart';
 import 'package:icare/screens/chat_screen.dart';
+import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -154,25 +155,6 @@ class DoctorDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Contact Information
-            _buildInfoCard(
-              title: 'Contact Information',
-              icon: Icons.contact_phone_rounded,
-              iconColor: const Color(0xFF3B82F6),
-              children: [
-                _buildInfoItem(
-                  icon: Icons.email_rounded,
-                  label: 'Email',
-                  value: doctor.user.email,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoItem(
-                  icon: Icons.phone_rounded,
-                  label: 'Phone',
-                  value: doctor.user.phoneNumber,
-                ),
-              ],
-            ),
 
             // Qualifications
             if (doctor.degrees.isNotEmpty ||
@@ -200,6 +182,13 @@ class DoctorDetailScreen extends StatelessWidget {
                       icon: Icons.badge_rounded,
                       label: 'License',
                       value: doctor.licenseNumber!,
+                    ),
+                  if (doctor.pmdcNumber != null &&
+                      doctor.pmdcNumber!.isNotEmpty)
+                    _buildInfoItem(
+                      icon: Icons.verified_user_rounded,
+                      label: 'PMDC No.',
+                      value: doctor.pmdcNumber!,
                     ),
                 ],
               ),
@@ -313,61 +302,11 @@ class DoctorDetailScreen extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Chat Button
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryColor, width: 2),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.primaryColor,
-                    ),
-                    onPressed: () {
-                      if (doctor.user.id.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Unable to start chat: Doctor ID is missing',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      debugPrint('🚀 Opening chat with doctor:');
-                      debugPrint('   ID: ${doctor.user.id}');
-                      debugPrint('   Name: ${doctor.user.name}');
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            userId: doctor.user.id,
-                            userName: doctor.user.name,
-                            userImage: doctor.user.profilePicture,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
                 // Book Appointment Button
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) =>
-                              BookAppointmentScreen(doctor: doctor),
-                        ),
-                      );
+                      _showConsultationModal(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
@@ -380,13 +319,13 @@ class DoctorDetailScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         Icon(
-                          Icons.calendar_today_rounded,
+                          Icons.video_call_rounded,
                           color: Colors.white,
-                          size: 20,
+                          size: 24,
                         ),
                         SizedBox(width: 12),
                         Text(
-                          'Book Appointment',
+                          'Consult Now',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -642,34 +581,6 @@ class DoctorDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Contact Information Card
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 24 : 16,
-                    ),
-                    child: _buildModernCard(
-                      title: 'Contact Information',
-                      icon: Icons.contact_phone_rounded,
-                      iconColor: const Color(0xFF3B82F6),
-                      child: Column(
-                        children: [
-                          _buildContactItem(
-                            icon: Icons.email_rounded,
-                            label: 'Email Address',
-                            value: doctor.user.email,
-                            color: const Color(0xFF3B82F6),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildContactItem(
-                            icon: Icons.phone_rounded,
-                            label: 'Phone Number',
-                            value: doctor.user.phoneNumber,
-                            color: const Color(0xFF10B981),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
                   // Qualifications Card
                   if (doctor.degrees.isNotEmpty ||
@@ -779,6 +690,14 @@ class DoctorDetailScreen extends StatelessWidget {
                                 label: 'License Number',
                                 value: doctor.licenseNumber!,
                                 color: const Color(0xFF8B5CF6),
+                              ),
+                            if (doctor.pmdcNumber != null &&
+                                doctor.pmdcNumber!.isNotEmpty)
+                              _buildContactItem(
+                                icon: Icons.verified_user_rounded,
+                                label: 'PMDC Number',
+                                value: doctor.pmdcNumber!,
+                                color: const Color(0xFF10B981),
                               ),
                           ],
                         ),
@@ -955,60 +874,7 @@ class DoctorDetailScreen extends StatelessWidget {
           margin: EdgeInsets.all(isDesktop ? 24 : 16),
           child: Row(
             children: [
-              // Chat Button
-              Container(
-                width: isDesktop ? 64 : 56,
-                height: isDesktop ? 64 : 56,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryColor, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryColor.withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.chat_bubble_outline,
-                    color: AppColors.primaryColor,
-                    size: isDesktop ? 28 : 24,
-                  ),
-                  onPressed: () {
-                    if (doctor.user.id.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Unable to start chat: Doctor ID is missing',
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    debugPrint('🚀 Opening chat with doctor (desktop):');
-                    debugPrint('   ID: ${doctor.user.id}');
-                    debugPrint('   Name: ${doctor.user.name}');
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(
-                          userId: doctor.user.id,
-                          userName: doctor.user.name,
-                          userImage: doctor.user.profilePicture,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Book Appointment Button
+              // Consult Now Button
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -1031,12 +897,7 @@ class DoctorDetailScreen extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                BookAppointmentScreen(doctor: doctor),
-                          ),
-                        );
+                        _showConsultationModal(context);
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
@@ -1045,9 +906,9 @@ class DoctorDetailScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(
-                              Icons.calendar_today_rounded,
+                              Icons.video_call_rounded,
                               color: Colors.white,
-                              size: 22,
+                              size: 26,
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -1069,6 +930,14 @@ class DoctorDetailScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showConsultationModal(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) => BookAppointmentScreen(doctor: doctor),
       ),
     );
   }

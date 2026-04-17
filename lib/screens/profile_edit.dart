@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -22,6 +23,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController cnicController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
+  final TextEditingController emergencyContact1Controller = TextEditingController();
+  final TextEditingController emergencyContact2Controller = TextEditingController();
   final UserService _userService = UserService();
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
@@ -38,12 +47,72 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       phoneController.text = user.phoneNumber;
       _uploadedImageUrl = user.profilePicture;
     }
+    _loadFullProfile();
+  }
+
+  // Auto-format CNIC as XXXXX-XXXXXXX-X
+  String _formatCnic(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 5) return digits;
+    if (digits.length <= 12) return '${digits.substring(0, 5)}-${digits.substring(5)}';
+    return '${digits.substring(0, 5)}-${digits.substring(5, 12)}-${digits.substring(12, digits.length.clamp(0, 13))}';
+  }
+
+  void _onCnicChanged(String value) {
+    final formatted = _formatCnic(value);
+    if (formatted != cnicController.text) {
+      cnicController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
+
+  String? _validateCnic(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final digits = value.replaceAll('-', '');
+    if (digits.length != 13) return 'CNIC must be 13 digits (XXXXX-XXXXXXX-X)';
+    return null;
+  }
+
+  Future<void> _loadFullProfile() async {
+    try {
+      final result = await UserService().getUserProfile();
+      if (result['success'] == true && mounted) {
+        final data = result['user'] as Map<String, dynamic>;
+        setState(() {
+          if ((data['name'] as String?)?.isNotEmpty == true) nameController.text = data['name'];
+          if ((data['phoneNumber'] as String?)?.isNotEmpty == true) phoneController.text = data['phoneNumber'];
+          cnicController.text = data['cnic'] ?? '';
+          heightController.text = data['height']?.toString() ?? '';
+          weightController.text = data['weight']?.toString() ?? '';
+          addressController.text = data['address'] ?? '';
+          ageController.text = data['age']?.toString() ?? '';
+          bioController.text = data['bio'] ?? '';
+          emergencyContact1Controller.text = data['emergencyContact1'] ?? '';
+          emergencyContact2Controller.text = data['emergencyContact2'] ?? '';
+          final pic = data['profileImage'] ?? data['profilePicture'];
+          if (pic != null && (pic as String).isNotEmpty) {
+            debugPrint('🖼️ Profile image found: ${pic.toString().substring(0, 30)}...');
+            _uploadedImageUrl = pic;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
+    cnicController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    addressController.dispose();
+    ageController.dispose();
+    bioController.dispose();
+    emergencyContact1Controller.dispose();
+    emergencyContact2Controller.dispose();
     super.dispose();
   }
 
@@ -217,10 +286,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final result = await _userService.updateProfile(
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
+        cnic: cnicController.text.trim(),
+        height: heightController.text.trim(),
+        weight: weightController.text.trim(),
+        address: addressController.text.trim(),
+        age: ageController.text.trim(),
+        bio: bioController.text.trim(),
+        emergencyContact1: emergencyContact1Controller.text.trim(),
+        emergencyContact2: emergencyContact2Controller.text.trim(),
       );
       if (result['success']) {
-        final user = app_user.User.fromJson(result['user']);
-        ref.read(authProvider.notifier).setUser(user);
+        // Build updated user — merge new fields into existing user
+        final existing = ref.read(authProvider).user;
+        final updated = app_user.User(
+          id: existing?.id ?? '',
+          name: nameController.text.trim(),
+          email: existing?.email ?? '',
+          phoneNumber: phoneController.text.trim(),
+          role: existing?.role ?? '',
+          profilePicture: _uploadedImageUrl ?? existing?.profilePicture,
+          cnic: cnicController.text.trim(),
+          height: heightController.text.trim(),
+          weight: weightController.text.trim(),
+          address: addressController.text.trim(),
+        );
+        ref.read(authProvider.notifier).setUser(updated);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
@@ -285,9 +375,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                               ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
                               : _selectedImage != null && !kIsWeb
                                   ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                                  : (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty && !_uploadedImageUrl!.startsWith('data:'))
-                                      ? Image.network(_uploadedImageUrl!, fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => _avatarFallback(user?.name))
+                                  : (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty)
+                                      ? _uploadedImageUrl!.startsWith('data:')
+                                          ? Image.memory(
+                                              _tryDecodeBase64(_uploadedImageUrl!),
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _avatarFallback(user?.name),
+                                            )
+                                          : Image.network(_uploadedImageUrl!, fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _avatarFallback(user?.name))
                                       : _avatarFallback(user?.name),
                         ),
                       ),
@@ -366,6 +462,107 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         const SizedBox(height: 8),
                         const Text('Email cannot be changed',
                             style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'CNIC Number (e.g. 12345-1234567-1)',
+                          leadingIcon: const Icon(Icons.credit_card_outlined, color: Color(0xFF94A3B8)),
+                          controller: cnicController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.number,
+                          onChanged: _onCnicChanged,
+                          validator: _validateCnic,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Age',
+                                leadingIcon: const Icon(Icons.cake_outlined, color: Color(0xFF94A3B8)),
+                                controller: ageController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Height (cm)',
+                                leadingIcon: const Icon(Icons.height_rounded, color: Color(0xFF94A3B8)),
+                                controller: heightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Weight (kg)',
+                                leadingIcon: const Icon(Icons.monitor_weight_outlined, color: Color(0xFF94A3B8)),
+                                controller: weightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Address',
+                          leadingIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8)),
+                          controller: addressController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Bio (optional)',
+                          leadingIcon: const Icon(Icons.description_outlined, color: Color(0xFF94A3B8)),
+                          controller: bioController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('Emergency Contacts',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        const SizedBox(height: 12),
+                        CustomInputField(
+                          hintText: 'Emergency Number 1',
+                          leadingIcon: const Icon(Icons.emergency_rounded, color: Color(0xFFEF4444)),
+                          controller: emergencyContact1Controller,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Emergency Number 2',
+                          leadingIcon: const Icon(Icons.emergency_rounded, color: Color(0xFFEF4444)),
+                          controller: emergencyContact2Controller,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.phone,
+                        ),
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
@@ -404,5 +601,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: AppColors.primaryColor),
       ),
     );
+  }
+
+  Uint8List _tryDecodeBase64(String data) {
+    try {
+      final base64Str = data.contains(',') ? data.split(',').last : data;
+      final bytes = base64Decode(base64Str);
+      debugPrint('✅ Base64 decoded: ${bytes.length} bytes');
+      return bytes;
+    } catch (e) {
+      debugPrint('❌ Base64 decode failed: $e');
+      return Uint8List(0);
+    }
   }
 }

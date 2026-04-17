@@ -4,6 +4,7 @@ import 'package:icare/screens/tabs.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/screens/select_payment_method.dart';
 import 'package:intl/intl.dart';
 
 class ConfirmBookingScreen extends StatefulWidget {
@@ -97,9 +98,10 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (ctx) => const TabsScreen()),
-                    (route) => false,
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => const SelectPaymentMethod(),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -110,7 +112,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Go to Home'),
+                child: const Text('Proceed to Payment'),
               ),
             ),
           ],

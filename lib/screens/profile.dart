@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,8 +45,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       try {
         if (role == 'Doctor') {
-          final result = await DoctorService().getStats();
-          if (result['success'] == true) _roleProfile = Map<String, dynamic>.from(result['stats'] as Map);
+          final result = await DoctorService().getMyProfile();
+          if (result['success'] == true) _roleProfile = Map<String, dynamic>.from(result['doctor'] as Map);
         } else if (role == 'Pharmacy') {
           _roleProfile = Map<String, dynamic>.from(await PharmacyService().getPharmacyProfile());
         } else if (role == 'Laboratory') {
@@ -97,12 +96,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       fallbackName: user?.name ?? '',
       fallbackEmail: user?.email ?? '',
       fallbackPhone: user?.phoneNumber ?? '',
+      fallbackProfilePicture: user?.profilePicture,
       onEdit: () async {
-        final updated = await Navigator.of(context)
-            .push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => _editScreen(role)));
-        if (updated != null && mounted) {
-          setState(() => _profileData = Map<String, dynamic>.from(updated));
-        }
+        await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => _editScreen(role)));
+        // Always reload after returning from edit screen
+        if (mounted) _loadProfile();
       },
     );
   }
@@ -116,6 +115,7 @@ class _ProfileView extends StatelessWidget {
   final String fallbackName;
   final String fallbackEmail;
   final String fallbackPhone;
+  final String? fallbackProfilePicture;
   final Future<void> Function() onEdit;
 
   const _ProfileView({
@@ -125,6 +125,7 @@ class _ProfileView extends StatelessWidget {
     required this.fallbackName,
     required this.fallbackEmail,
     required this.fallbackPhone,
+    this.fallbackProfilePicture,
     required this.onEdit,
   });
 
@@ -134,6 +135,12 @@ class _ProfileView extends StatelessWidget {
   String get _bio => (profileData?['bio'] as String?) ?? '';
   String get _age => (profileData?['age'] as String?) ?? '';
   String get _qualification => (profileData?['qualification'] as String?) ?? '';
+  String get _cnic => (profileData?['cnic'] as String?) ?? '';
+  String get _height => profileData?['height']?.toString() ?? '';
+  String get _weight => profileData?['weight']?.toString() ?? '';
+  String get _address => (profileData?['address'] as String?) ?? '';
+  String get _emergencyContact1 => (profileData?['emergencyContact1'] as String?) ?? '';
+  String get _emergencyContact2 => (profileData?['emergencyContact2'] as String?) ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -160,19 +167,12 @@ class _ProfileView extends StatelessWidget {
                   CircleAvatar(
                     radius: 48,
                     backgroundColor: Colors.white.withValues(alpha: 0.25),
-                    backgroundImage: (profileData?['profileImage'] as String?)?.isNotEmpty == true
-                        ? MemoryImage(_tryDecodeBase64(profileData!['profileImage']))
-                        : null,
-                    child: (profileData?['profileImage'] as String?)?.isNotEmpty == true
-                        ? null
-                        : Text(
-                            _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
-                            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white),
-                          ),
+                    child: _buildAvatarChild(),
                   ),
                   const SizedBox(height: 16),
                   Text(_name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
                   const SizedBox(height: 6),
+                  if (role != 'Patient')
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                     decoration: BoxDecoration(
@@ -222,8 +222,14 @@ class _ProfileView extends StatelessWidget {
                     _card('Profile Details', [
                       if (_bio.isNotEmpty) _row(Icons.description_outlined, 'Bio', _bio),
                       if (_age.isNotEmpty) _row(Icons.cake_outlined, 'Age', _age),
+                      if (role == 'Patient' && _cnic.isNotEmpty) _row(Icons.credit_card_outlined, 'CNIC', _cnic),
+                      if (role == 'Patient' && _height.isNotEmpty) _row(Icons.height_rounded, 'Height', '$_height cm'),
+                      if (role == 'Patient' && _weight.isNotEmpty) _row(Icons.monitor_weight_outlined, 'Weight', '$_weight kg'),
+                      if (role == 'Patient' && _address.isNotEmpty) _row(Icons.location_on_outlined, 'Address', _address),
                       if (_qualification.isNotEmpty) _row(Icons.school_outlined, 'Qualification', _qualification),
-                      if (_bio.isEmpty && _age.isEmpty && _qualification.isEmpty)
+                      if (role == 'Patient' && _emergencyContact1.isNotEmpty) _row(Icons.emergency_rounded, 'Emergency No. 1', _emergencyContact1),
+                      if (role == 'Patient' && _emergencyContact2.isNotEmpty) _row(Icons.emergency_rounded, 'Emergency No. 2', _emergencyContact2),
+                      if (_bio.isEmpty && _age.isEmpty && _qualification.isEmpty && _cnic.isEmpty && _height.isEmpty && _weight.isEmpty && _address.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Text('Tap Edit Profile to add your details.',
@@ -251,10 +257,16 @@ class _ProfileView extends StatelessWidget {
     switch (role) {
       case 'Doctor':
         if (_str(rp['specialization']).isNotEmpty) rows.add(_row(Icons.medical_services_outlined, 'Specialization', _str(rp['specialization'])));
-        if (_str(rp['experience']).isNotEmpty) rows.add(_row(Icons.work_outline, 'Experience', '${_str(rp['experience'])} years'));
+        if (_str(rp['experience']).isNotEmpty) {
+          final exp = _str(rp['experience']).replaceAll(RegExp(r'\s*years?\s*$', caseSensitive: false), '').trim();
+          rows.add(_row(Icons.work_outline, 'Experience', '$exp years'));
+        }
+        if (rp['degrees'] is List && (rp['degrees'] as List).isNotEmpty)
+          rows.add(_row(Icons.school_outlined, 'Degrees', (rp['degrees'] as List).join(', ')));
         if (_str(rp['clinicName']).isNotEmpty) rows.add(_row(Icons.local_hospital_outlined, 'Clinic', _str(rp['clinicName'])));
         if (_str(rp['clinicAddress']).isNotEmpty) rows.add(_row(Icons.location_on_outlined, 'Address', _str(rp['clinicAddress'])));
         if (_str(rp['licenseNumber']).isNotEmpty) rows.add(_row(Icons.badge_outlined, 'License', _str(rp['licenseNumber'])));
+        if (_str(rp['pmdcNumber']).isNotEmpty) rows.add(_row(Icons.verified_user_outlined, 'PMDC', _str(rp['pmdcNumber'])));
         break;
       case 'Pharmacy':
         if (_str(rp['ownerName']).isNotEmpty) rows.add(_row(Icons.person_outline, 'Owner', _str(rp['ownerName'])));
@@ -295,14 +307,43 @@ class _ProfileView extends StatelessWidget {
 
   String _str(dynamic v) => v?.toString() ?? '';
 
-  Uint8List _tryDecodeBase64(String data) {
-    try {
-      final base64Str = data.contains(',') ? data.split(',').last : data;
-      return base64Decode(base64Str);
-    } catch (_) {
-      return Uint8List(0);
-    }
+  // Returns the raw image string from either field name the backend might use
+  String? get _profileImageStr {
+    final img = profileData?['profileImage'] as String?;
+    if (img != null && img.isNotEmpty) return img;
+    final pic = profileData?['profilePicture'] as String?;
+    if (pic != null && pic.isNotEmpty) return pic;
+    // Fallback: use auth provider's cached user picture (updated immediately after upload)
+    if (fallbackProfilePicture != null && fallbackProfilePicture!.isNotEmpty) return fallbackProfilePicture;
+    return null;
   }
+
+  Widget _buildAvatarChild() {
+    final imgStr = _profileImageStr;
+    if (imgStr != null) {
+      try {
+        final base64Str = imgStr.contains(',') ? imgStr.split(',').last : imgStr;
+        final bytes = base64Decode(base64Str);
+        if (bytes.isNotEmpty) {
+          return ClipOval(
+            child: Image.memory(
+              bytes,
+              width: 96,
+              height: 96,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _avatarInitial(),
+            ),
+          );
+        }
+      } catch (_) {}
+    }
+    return _avatarInitial();
+  }
+
+  Widget _avatarInitial() => Text(
+    _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white),
+  );
 
   Widget _card(String title, List<Widget> children) {
     return Container(

@@ -108,9 +108,61 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _timelineItems.isEmpty
-          ? _buildEmptyState()
-          : _buildTimeline(),
+          : Column(
+              children: [
+                _buildComingSoonBanner(),
+                Expanded(
+                  child: _timelineItems.isEmpty
+                      ? _buildEmptyState()
+                      : _buildTimeline(),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildComingSoonBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF3B82F6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star_rounded, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Predictive Timeline Coming Soon!',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1E40AF),
+                  ),
+                ),
+                Text(
+                  'We are building AI to predict your next health milestones.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF1E40AF)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -41,12 +41,28 @@ class UserService {
     required String name,
     required String phoneNumber,
     String? profilePicture,
+    String? cnic,
+    String? height,
+    String? weight,
+    String? address,
+    String? age,
+    String? bio,
+    String? emergencyContact1,
+    String? emergencyContact2,
   }) async {
     try {
       final response = await _apiService.put('/users/profile', {
         'name': name,
         'phoneNumber': phoneNumber,
         if (profilePicture != null) 'profilePicture': profilePicture,
+        if (cnic != null && cnic.isNotEmpty) 'cnic': cnic,
+        if (height != null && height.isNotEmpty) 'height': height,
+        if (weight != null && weight.isNotEmpty) 'weight': weight,
+        if (address != null && address.isNotEmpty) 'address': address,
+        if (age != null && age.isNotEmpty) 'age': age,
+        if (bio != null && bio.isNotEmpty) 'bio': bio,
+        if (emergencyContact1 != null && emergencyContact1.isNotEmpty) 'emergencyContact1': emergencyContact1,
+        if (emergencyContact2 != null && emergencyContact2.isNotEmpty) 'emergencyContact2': emergencyContact2,
       });
 
       if (response.statusCode == 200) {

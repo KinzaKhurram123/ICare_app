@@ -120,10 +120,10 @@ class MyAppointment extends StatelessWidget {
                                             TextButton.icon(
                                               onPressed: () {},
                                               icon: const Icon(
-                                                Icons.visibility_outlined,
+                                                Icons.info_outline_rounded,
                                                 size: 18,
                                               ),
-                                              label: const Text("View Profile"),
+                                              label: const Text("Appointment Details"),
                                               style: TextButton.styleFrom(
                                                 foregroundColor:
                                                     AppColors.primaryColor,
@@ -137,16 +137,22 @@ class MyAppointment extends StatelessWidget {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Icon(
-                                              Icons.location_on_rounded,
-                                              size: 16,
-                                              color: Color(0xFF94A3B8),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            const Text(
-                                              "20 Cooper Square, USA",
-                                              style: TextStyle(
-                                                color: Color(0xFF64748B),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF10B981).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Text(
+                                                "Confirmed",
+                                                style: TextStyle(
+                                                  color: Color(0xFF10B981),
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -367,7 +373,13 @@ class MyAppointment extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.bgColor,
         automaticallyImplyLeading: false,
-        leading: CustomBackButton(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () {
+            // Navigator.of(context).pushAndRemoveUntil(...) to home index 0
+            Navigator.of(context).pop(); // Default for now, but ensured context is consistent
+          },
+        ),
         title: CustomText(
           text: "My Appointment",
           fontSize: 16.78,
@@ -462,10 +474,9 @@ class ProfileInfoWidget extends StatelessWidget {
                     // Spacer(),
                     SizedBox(width: ScallingConfig.scale(50)),
                     CustomText(
-                      text: "View Profile",
+                      text: "Appointment Details",
                       underline: true,
                       onTap: () {},
-
                       isSemiBold: true,
                     ),
                   ],
@@ -473,12 +484,21 @@ class ProfileInfoWidget extends StatelessWidget {
                 SizedBox(height: ScallingConfig.scale(10)),
                 Row(
                   children: [
-                    SvgWrapper(assetPath: ImagePaths.location),
-                    SizedBox(width: Utils.windowWidth(context) * 0.025),
-                    CustomText(
-                      text: "20 Cooper Square, USA",
-                      fontSize: 12,
-                      color: AppColors.darkGreyColor,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const CustomText(
+                        text: "Confirmed",
+                        fontSize: 12,
+                        color: Color(0xFF10B981),
+                        isBold: true,
+                      ),
                     ),
                   ],
                 ),

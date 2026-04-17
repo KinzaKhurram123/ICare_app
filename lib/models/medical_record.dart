@@ -15,6 +15,8 @@ class MedicalRecord {
   final List<dynamic> assignedCourses;
   final IntakeNotes? intakeNotes; // CRITICAL FIX: Add intake notes
   final SoapNotes? soapNotes; // CRITICAL FIX: Add SOAP notes
+  final String? referredLaboratoryName;
+  final String? selectedPharmacyName;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -33,6 +35,8 @@ class MedicalRecord {
     this.assignedCourses = const [],
     this.intakeNotes,
     this.soapNotes,
+    this.referredLaboratoryName,
+    this.selectedPharmacyName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -144,6 +148,13 @@ class MedicalRecord {
           : null,
       soapNotes: json['soapNotes'] != null && json['soapNotes'] is Map
           ? SoapNotes.fromJson(json['soapNotes'])
+          : null,
+      referredLaboratoryName: (json['referredLaboratory'] is Map)
+          ? json['referredLaboratory']['labName']
+          : null,
+      selectedPharmacyName: (json['selectedPharmacy'] is Map &&
+              json['selectedPharmacy']['user'] is Map)
+          ? json['selectedPharmacy']['user']['name']
           : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),

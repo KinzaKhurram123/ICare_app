@@ -214,7 +214,9 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
   }
 
   Widget _buildPostCard(dynamic post) {
-    final bool isVerified = post['author']?['isVerified'] ?? true;
+    final dynamic authorRaw = post['author'];
+    final String authorName = (authorRaw is Map ? authorRaw['name'] : null) ?? 'Doctor';
+    final bool isVerified = (authorRaw is Map ? authorRaw['isVerified'] : null) ?? true;
 
     return InkWell(
       onTap: () {
@@ -246,7 +248,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
                 CircleAvatar(
                   backgroundColor: AppColors.primaryColor.withOpacity(0.1),
                   child: Text(
-                    (post['author']?['name'] ?? 'D')[0].toUpperCase(),
+                    authorName.isNotEmpty ? authorName[0].toUpperCase() : 'D',
                     style: const TextStyle(
                       color: AppColors.primaryColor,
                       fontWeight: FontWeight.bold,
@@ -261,7 +263,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
                       Row(
                         children: [
                           Text(
-                            post['author']?['name'] ?? 'Doctor',
+                            authorName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -278,9 +280,11 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
                         ],
                       ),
                       Text(
-                        DateFormat(
-                          'MMM dd, yyyy',
-                        ).format(DateTime.parse(post['createdAt'])),
+                        DateFormat('MMM dd, yyyy').format(
+                          post['createdAt'] != null
+                              ? DateTime.tryParse(post['createdAt'].toString()) ?? DateTime.now()
+                              : DateTime.now(),
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11,
@@ -299,7 +303,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    post['category'],
+                    post['category'] ?? 'General',
                     style: const TextStyle(
                       color: AppColors.primaryColor,
                       fontSize: 10,
@@ -311,7 +315,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              post['title'],
+              post['title'] ?? '',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
@@ -320,7 +324,7 @@ class _DoctorForumScreenState extends State<DoctorForumScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              post['content'],
+              post['content'] ?? '',
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -399,13 +403,13 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
     if (_commentController.text.isEmpty) return;
     try {
       await _apiService.post('/forum/${widget.post['_id']}/comment', {
-        'content': _commentController.text,
+        'text': _commentController.text,
       });
       _commentController.clear();
       // In a real app, we'd fetch updated comments here
       setState(() {
         _comments.add({
-          'content': _commentController.text,
+          'text': _commentController.text,
           'author': {'name': 'You', 'isVerified': true},
           'createdAt': DateTime.now().toIso8601String(),
         });
@@ -442,7 +446,7 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
                   _buildPostHeader(),
                   const SizedBox(height: 20),
                   Text(
-                    widget.post['title'],
+                    widget.post['title'] ?? '',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
@@ -450,7 +454,7 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    widget.post['content'],
+                    widget.post['content'] ?? '',
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.6,
@@ -494,13 +498,15 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.post['author']?['name'] ?? 'Doctor',
+              (widget.post['author'] is Map ? widget.post['author']['name'] : null) ?? 'Doctor',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
-              DateFormat(
-                'MMM dd, yyyy',
-              ).format(DateTime.parse(widget.post['createdAt'])),
+              DateFormat('MMM dd, yyyy').format(
+                widget.post['createdAt'] != null
+                    ? DateTime.tryParse(widget.post['createdAt'].toString()) ?? DateTime.now()
+                    : DateTime.now(),
+              ),
               style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
           ],
@@ -528,13 +534,13 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
                 Row(
                   children: [
                     Text(
-                      comment['author']?['name'] ?? 'Doctor',
+                      (comment['author'] is Map ? comment['author']['name'] : comment['authorName']) ?? 'Doctor',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
                     ),
-                    if (comment['author']?['isVerified'] ?? true) ...[
+                    if ((comment['author'] is Map ? comment['author']['isVerified'] : null) ?? true) ...[
                       const SizedBox(width: 4),
                       const Icon(
                         Icons.verified_rounded,
@@ -544,9 +550,11 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
                     ],
                     const Spacer(),
                     Text(
-                      DateFormat(
-                        'MMM dd',
-                      ).format(DateTime.parse(comment['createdAt'])),
+                      DateFormat('MMM dd').format(
+                        comment['createdAt'] != null
+                            ? DateTime.tryParse(comment['createdAt'].toString()) ?? DateTime.now()
+                            : DateTime.now(),
+                      ),
                       style: const TextStyle(
                         color: Color(0xFF64748B),
                         fontSize: 10,
@@ -556,7 +564,7 @@ class _ForumDetailScreenState extends State<ForumDetailScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  comment['content'],
+                  comment['text'] ?? comment['content'] ?? '',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF475569),

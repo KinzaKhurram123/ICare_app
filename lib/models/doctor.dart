@@ -9,6 +9,7 @@ class Doctor {
   final List<String> degrees;
   final String? experience;
   final String? licenseNumber;
+  final String? pmdcNumber;
   final String? clinicName;
   final String? clinicAddress;
   final List<String> availableDays;
@@ -26,6 +27,7 @@ class Doctor {
     this.degrees = const [],
     this.experience,
     this.licenseNumber,
+    this.pmdcNumber,
     this.clinicName,
     this.clinicAddress,
     this.availableDays = const [],
@@ -57,14 +59,19 @@ class Doctor {
           : [],
       experience: json['experience'],
       licenseNumber: json['licenseNumber'],
+      pmdcNumber: json['pmdcNumber'],
       clinicName: json['clinicName'],
       clinicAddress: json['clinicAddress'],
       availableDays: json['availableDays'] != null
           ? List<String>.from(json['availableDays'])
-          : [],
+          : (json['availability']?['availableDays'] != null
+              ? List<String>.from(json['availability']['availableDays'])
+              : []),
       availableTime: json['availableTime'] != null
           ? AvailableTime.fromJson(json['availableTime'])
-          : null,
+          : (json['availability']?['availableTime'] != null
+              ? AvailableTime.fromJson(json['availability']['availableTime'])
+              : null),
       isApproved: json['isApproved'] ?? false,
       ratings: json['ratings'] != null
           ? List<double>.from(json['ratings'].map((r) => r.toDouble()))

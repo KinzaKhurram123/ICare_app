@@ -123,7 +123,10 @@ class NotificationService {
   /// Get notifications for current user
   Future<Map<String, dynamic>> getNotifications() async {
     try {
-      final response = await _apiService.get('/notifications');
+      // Note: backend expects userId in path, but we can use 'me' as a convention
+      // or fetch from auth provider. For now, call without userId and let backend
+      // use req.user.id from the auth token.
+      final response = await _apiService.get('/notifications/me');
       return response.data;
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getNotifications');

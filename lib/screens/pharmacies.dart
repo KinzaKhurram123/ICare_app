@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/screens/pharmacy_details.dart';
+import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -242,7 +243,7 @@ class _PharmaciesScreenState extends State<PharmaciesScreen> {
       itemCount: _pharmacies.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisExtent: 320,
+        mainAxisExtent: 360,
         crossAxisSpacing: 24,
         mainAxisSpacing: 24,
       ),
@@ -315,7 +316,7 @@ class PharmacyWidget extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -384,14 +385,31 @@ class PharmacyWidget extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: CustomText(
-                                    text:
-                                        pharmacy['user']?['name'] ?? 'Pharmacy',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    fontFamily: "Gilroy-Bold",
-                                    color: const Color(0xFF0F172A),
-                                    letterSpacing: -0.5,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      CustomText(
+                                        text: pharmacy['user']?['name'] ?? 'Pharmacy',
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        fontFamily: "Gilroy-Bold",
+                                        color: const Color(0xFF0F172A),
+                                        letterSpacing: -0.5,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+                                          const SizedBox(width: 4),
+                                          const CustomText(
+                                            text: "4.8 (120+ reviews)",
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 if (pharmacy['isApproved'] == true)
@@ -426,7 +444,7 @@ class PharmacyWidget extends StatelessWidget {
                                   ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(
@@ -447,7 +465,7 @@ class PharmacyWidget extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 if (pharmacy['deliveryAvailable'] == true)
@@ -469,9 +487,9 @@ class PharmacyWidget extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   const Divider(color: Color(0xFFF1F5F9), height: 1),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

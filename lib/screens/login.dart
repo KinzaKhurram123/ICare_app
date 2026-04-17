@@ -135,11 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       );
     } else {
       if (mounted) setState(() => isLoading = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Could not load profile. Please login with password.'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ));
+        _showError('Could not load profile. Please login with password.');
     }
   }
 
@@ -655,80 +651,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                             return null;
                                           },
                                         ),
-                                        if (!isLogin) ...[
-                                          if (!widget.initialSignup) ...[
-                                          const SizedBox(height: 16),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF8FAFC),
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                              border: Border.all(
-                                                color: const Color(0xFFE2E8F0),
-                                                width: 1.5,
-                                              ),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                            ),
-                                            child: DropdownButtonHideUnderline(
-                                              child: DropdownButton<String>(
-                                                value: selectedSignupRole,
-                                                isExpanded: true,
-                                                icon: const Icon(
-                                                  Icons
-                                                      .keyboard_arrow_down_rounded,
-                                                  color: Color(0xFF94A3B8),
-                                                ),
-                                                items: const [
-                                                  DropdownMenuItem(
-                                                    value: 'Patient',
-                                                    child: Text(
-                                                      'Patient - Consult & Manage Health',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Doctor',
-                                                    child: Text(
-                                                      'Doctor - Manage Patients & Prescriptions',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Pharmacy',
-                                                    child: Text(
-                                                      'Pharmacy - Prescription Fulfillment',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Laboratory',
-                                                    child: Text(
-                                                      'Laboratory - Diagnostics & Reports',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Instructor',
-                                                    child: Text(
-                                                      'Instructor - Teach Health Programs',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Student',
-                                                    child: Text(
-                                                      'Student - Learn & Grow',
-                                                    ),
-                                                  ),
-                                                ],
-                                                onChanged: (val) {
-                                                  if (val != null)
-                                                    setState(
-                                                      () => selectedSignupRole =
-                                                          val,
-                                                    );
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                          ], // end !initialSignup
+                                        if (!isLogin) ...[ // end !initialSignup
                                           const SizedBox(height: 16),
                                           CustomInputField(
                                             hintText: "Email Address",
@@ -1091,8 +1014,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             children: [
                               if (!isLogin) ...[
-                                if (!widget.initialSignup) _buildRoleDropdown(),
-                                if (!widget.initialSignup) const SizedBox(height: 5),
                                 _buildMobileField(
                                   "Full Name",
                                   Icons.person_outline,
@@ -1180,33 +1101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildRoleDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppColors.veryLightGrey, width: 2),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedSignupRole,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: 'Patient', child: Text('Patient — Consult & Manage Health')),
-            DropdownMenuItem(value: 'Doctor', child: Text('Doctor — Manage Patients & Prescriptions')),
-            DropdownMenuItem(value: 'Pharmacy', child: Text('Pharmacy — Prescription Fulfillment')),
-            DropdownMenuItem(value: 'Laboratory', child: Text('Laboratory — Diagnostics & Reports')),
-            DropdownMenuItem(value: 'Instructor', child: Text('Instructor — Teach Health Programs')),
-            DropdownMenuItem(value: 'Student', child: Text('Student — Learn & Grow')),
-          ],
-          onChanged: (val) {
-            if (val != null) setState(() => selectedSignupRole = val);
-          },
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildMobileField(
     String hint,
@@ -1433,19 +1328,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       } else if (mounted) {
         final msg = result['message']?.toString() ?? 'Google sign in failed';
         if (msg != 'Sign in cancelled') {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ));
+          _showError(msg);
         }
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error: ${e.toString()}'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ));
+      if (mounted) _showError('Error: ${e.toString()}');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

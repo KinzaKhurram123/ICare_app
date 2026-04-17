@@ -116,6 +116,8 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
                   children: [
                     _buildWelcomeHeader(userName),
                     const SizedBox(height: 24),
+                    _buildMedicalRecordsBanner(context), // Added prominent button
+                    const SizedBox(height: 24),
                     _buildQuickStats(isDesktop),
                     const SizedBox(height: 24),
                     _buildActiveTreatmentOverview(),
@@ -1814,6 +1816,67 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMedicalRecordsBanner(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (ctx) => PatientMedicalRecords()),
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.folder_shared_rounded,
+                color: Color(0xFF10B981),
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 20),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Medical Records',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF065F46),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'View what your doctor recorded, prescriptions, and notes.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF047857)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Color(0xFF059669),
+            ),
+          ],
+        ),
       ),
     );
   }

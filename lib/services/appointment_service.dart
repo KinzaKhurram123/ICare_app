@@ -139,4 +139,30 @@ class AppointmentService {
       return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
+
+  Future<Map<String, dynamic>> cancelAppointment({
+    required String appointmentId,
+    String? reason,
+  }) async {
+    try {
+      final response = await _apiService.put(
+        '/appointments/$appointmentId/cancel',
+        {'reason': reason ?? 'Cancelled by patient'},
+      );
+      final data = response.data as Map<String, dynamic>;
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Appointment cancelled',
+      };
+    } on DioException catch (e) {
+      debugPrint('❌ Cancel appointment error: ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
+      return {
+        'success': false,
+        'message': e.response?.data['message'] ?? 'Failed to cancel appointment',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'An unexpected error occurred'};
+    }
+  }
 }
