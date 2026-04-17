@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/icare_app_bar.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:intl/intl.dart';
@@ -58,32 +59,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        leading: const CustomBackButton(),
-        title: Row(
-          children: [
-            SvgPicture.asset(
-              ImagePaths.logo,
-              width: 32,
-              height: 32,
-              colorFilter: null,
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Health Community',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: IcareAppBar(title: 'Health Community'),
       body: Column(
         children: [
           _buildCategoryBar(),
