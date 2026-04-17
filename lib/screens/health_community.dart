@@ -59,7 +59,27 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      appBar: IcareAppBar(title: 'Health Community'),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        leading: const CustomBackButton(),
+        centerTitle: true,
+        title: const Text(
+          'Health Community',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            fontFamily: 'Gilroy-Bold',
+            letterSpacing: -0.3,
+          ),
+        ),
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+      ),
       body: Column(
         children: [
           _buildCategoryBar(),
