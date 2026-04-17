@@ -63,7 +63,7 @@ class PharmacyService {
       final ordersResponse = await _apiService.get(
         '/pharmacy/orders/pharmacy/list',
       );
-      final orders = ordersResponse.data['orders'] as List;
+      final orders = (ordersResponse.data['orders'] as List?) ?? [];
       debugPrint('✅ Got ${orders.length} orders');
 
       // Get all medicines for the pharmacy
@@ -73,7 +73,7 @@ class PharmacyService {
       final medicinesResponse = await _apiService.get(
         '/pharmacy/products?pharmacyId=$pharmacyId',
       );
-      final medicines = medicinesResponse.data['medicines'] as List;
+      final medicines = (medicinesResponse.data['medicines'] as List?) ?? [];
       debugPrint('✅ Got ${medicines.length} medicines');
 
       // Calculate stats
@@ -104,8 +104,16 @@ class PharmacyService {
         'revenue': revenue.toInt(),
       };
     } catch (e) {
-      debugPrint('Error getting pharmacy stats: $e');
-      rethrow;
+      debugPrint('❌ Error getting pharmacy stats: $e');
+      // Return default stats instead of throwing
+      return {
+        'totalOrders': 0,
+        'pendingOrders': 0,
+        'completedOrders': 0,
+        'totalProducts': 0,
+        'lowStock': 0,
+        'revenue': 0,
+      };
     }
   }
 

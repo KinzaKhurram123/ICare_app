@@ -20,6 +20,7 @@ List<Widget> _doctorTabs(
       image: ImagePaths.home,
       title: "Home",
     ),
+    SizedBox(width: 20),
     CustomTabButton(
       onPressed: () {
         onSelect(1);
@@ -29,27 +30,6 @@ List<Widget> _doctorTabs(
           : AppColors.grayColor,
       image: ImagePaths.bookings,
       title: "Bookings",
-    ),
-    SizedBox(width: 20),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(2);
-      },
-      iconColor: currentIndex == 2
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.chat,
-      title: "Chat",
-    ),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(3);
-      },
-      iconColor: currentIndex == 3
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.profile2,
-      title: "Profile",
     ),
   ];
 }

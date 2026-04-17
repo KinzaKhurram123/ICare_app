@@ -137,10 +137,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = const DoctorDashboard();
       } else if (currentIndex == 1) {
         activePage = const DoctorAppointmentsScreen();
-      } else if (currentIndex == 2) {
-        activePage = ChatListScreen();
-      } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
       }
     } else if (role == "Instructor") {
       if (currentIndex == 0) {
@@ -379,6 +375,19 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
         _SidebarItem(icon: Icons.home_outlined, label: 'Home', index: 0),
         _SidebarItem(icon: Icons.health_and_safety_outlined, label: 'Health Programs', index: 4),
       ];
+    } else if (role == 'Doctor') {
+      items = [
+        _SidebarItem(
+          icon: Icons.home_outlined,
+          label: 'Dashboard',
+          index: 0,
+        ),
+        _SidebarItem(
+          icon: Icons.calendar_month_outlined,
+          label: 'Appointments',
+          index: 1,
+        ),
+      ];
     } else {
       items = [
         _SidebarItem(
@@ -459,8 +468,8 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
 
           const SizedBox(height: 28),
 
-          // ── Profile card (hidden for Patient and Doctor) ───────────────
-          if (role != 'Patient' && role != 'Doctor')
+          // ── Profile card (hidden for Patient, Doctor, Pharmacy, Laboratory) ───────────────
+          if (role != 'Patient' && role != 'Doctor' && role != 'Pharmacy' && role != 'Laboratory')
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -812,7 +821,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   _buildExtraNavItem(
                     context,
                     Icons.analytics_outlined,
-                    'Analytics',
+                    'Revenue & Analytics',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -820,31 +829,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         ),
                       );
                     },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.description_outlined,
-                    'Prescription Templates',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PrescriptionTemplatesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.star_outlined,
-                    'Reviews',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorReviews(),
-                        ),
-                      );
-                    },
-                    svgPath: ImagePaths.star,
                   ),
                   _buildExtraNavItem(
                     context,
