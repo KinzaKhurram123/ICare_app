@@ -87,7 +87,39 @@ class PatientProfile extends ConsumerWidget {
               fontFamily: "Gilroy-Bold",
               fontSize: 16.79,
             ),
-            SizedBox(height: ScallingConfig.scale(30)),
+            SizedBox(height: ScallingConfig.scale(12)),
+            // Age / Height / Weight chips
+            SizedBox(
+              width: Utils.windowWidth(context) * 0.9,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _infoChip(Icons.cake_outlined, "Age", "28 yrs"),
+                  SizedBox(width: ScallingConfig.scale(10)),
+                  _infoChip(Icons.height_rounded, "Height", "165 cm"),
+                  SizedBox(width: ScallingConfig.scale(10)),
+                  _infoChip(Icons.monitor_weight_outlined, "Weight", "58 kg"),
+                ],
+              ),
+            ),
+            SizedBox(height: ScallingConfig.scale(10)),
+            // Address
+            SizedBox(
+              width: Utils.windowWidth(context) * 0.9,
+              child: Row(
+                children: [
+                  Icon(Icons.location_on_outlined, color: AppColors.primaryColor, size: 20),
+                  SizedBox(width: ScallingConfig.scale(10)),
+                  Expanded(
+                    child: CustomText(
+                      text: "House 12, Street 4, Gulberg III, Lahore",
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ScallingConfig.scale(18)),
             SizedBox(
               width: Utils.windowWidth(context) * 0.9,
               child: Row(
@@ -288,6 +320,26 @@ class PatientProfile extends ConsumerWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  Widget _infoChip(IconData icon, String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryColor.withOpacity(0.15)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: AppColors.primaryColor, size: 18),
+            const SizedBox(height: 4),
+            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+            Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
           ],
         ),
       ),

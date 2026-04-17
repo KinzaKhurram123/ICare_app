@@ -94,7 +94,17 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                   children: [
                     Row(
                       children: [
-                        const CustomBackButton(color: Colors.white),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 6),
+                              Text('Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                            ],
+                          ),
+                        ),
                         const Spacer(),
                       ],
                     ),
