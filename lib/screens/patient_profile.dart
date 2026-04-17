@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -7,11 +10,11 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 
-class PatientProfile extends StatelessWidget {
+class PatientProfile extends ConsumerWidget {
   const PatientProfile({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         leading: CustomBackButton(),
@@ -25,6 +28,47 @@ class PatientProfile extends StatelessWidget {
           lineHeight: 1.0,
           color: AppColors.primary500,
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.account_circle, color: AppColors.primaryColor, size: 28),
+            offset: const Offset(0, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) {
+              if (value == 'edit') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
+                );
+              } else if (value == 'logout') {
+                ref.read(authProvider.notifier).logout();
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryColor),
+                    SizedBox(width: 12),
+                    Text('Edit Profile', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 20, color: Colors.red),
+                    SizedBox(width: 12),
+                    Text('Logout', style: TextStyle(fontSize: 14, color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
