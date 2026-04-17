@@ -216,46 +216,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
 
-      // Privacy & Data
-      _SettingsSection(
-        title: 'Privacy & Data',
-        icon: Icons.shield_rounded,
-        iconColor: const Color(0xFF8B5CF6),
-        iconBg: const Color(0xFFF5F3FF),
-        items: [
-          _SettingsItem(
-            title: 'Privacy Policy',
-            icon: Icons.privacy_tip_outlined,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => PrivacyPolicy()),
+      // Privacy & Data (removed Privacy Policy for patients per client request)
+      if (!isPatient)
+        _SettingsSection(
+          title: 'Privacy & Data',
+          icon: Icons.shield_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          iconBg: const Color(0xFFF5F3FF),
+          items: [
+            _SettingsItem(
+              title: 'Privacy Policy',
+              icon: Icons.privacy_tip_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => PrivacyPolicy()),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
 
-      // About & Legal
-      _SettingsSection(
-        title: 'About & Legal',
-        icon: Icons.info_rounded,
-        iconColor: const Color(0xFFF59E0B),
-        iconBg: const Color(0xFFFEF3C7),
-        items: [
-          _SettingsItem(
-            title: 'About iCare',
-            icon: Icons.info_outline_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => AboutUs()),
+      // About & Legal (removed for patients per client request)
+      if (!isPatient)
+        _SettingsSection(
+          title: 'About & Legal',
+          icon: Icons.info_rounded,
+          iconColor: const Color(0xFFF59E0B),
+          iconBg: const Color(0xFFFEF3C7),
+          items: [
+            _SettingsItem(
+              title: 'About iCare',
+              icon: Icons.info_outline_rounded,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => AboutUs()),
+              ),
             ),
-          ),
-          _SettingsItem(
-            title: 'Terms & Conditions',
-            icon: Icons.gavel_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => TermsAndConditions()),
+            _SettingsItem(
+              title: 'Terms & Conditions',
+              icon: Icons.gavel_rounded,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => TermsAndConditions()),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
 
       // Health Profile
       _SettingsSection(
