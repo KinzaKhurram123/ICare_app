@@ -729,50 +729,13 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // iCare logo + brand
-          Row(
-            children: [
-              Container(
-                width: 38, height: 38,
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0036BC).withOpacity(0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'iCare',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0036BC),
-                      fontFamily: 'Gilroy-Bold',
-                    ),
-                  ),
-                  Text(
-                    'by RM Health Solution',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Colors.grey[500],
-                      fontFamily: 'Gilroy-Medium',
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          // iCare logo only
+          Image.asset(
+            'assets/images/logo.png',
+            width: 52,
+            height: 52,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
           const SizedBox(height: 16),
           Container(height: 1, color: const Color(0xFFE8ECF5)),

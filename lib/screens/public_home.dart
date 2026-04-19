@@ -44,58 +44,15 @@ class PublicHome extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Left: iCare logo + brand name
+                      // Left: iCare logo only
                       Positioned(
                         left: 0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: isMobile ? 36 : 44,
-                              height: isMobile ? 36 : 44,
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF0036BC).withOpacity(0.12),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-                            ),
-                            if (!isMobile) ...[
-                              const SizedBox(width: 10),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'iCare',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF0036BC),
-                                      fontFamily: 'Gilroy-Bold',
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  Text(
-                                    'by RM Health Solution',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[500],
-                                      fontFamily: 'Gilroy-Medium',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: isMobile ? 44 : 56,
+                          height: isMobile ? 44 : 56,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
                         ),
                       ),
                       // Right: nav buttons
@@ -2148,28 +2105,12 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 52, height: 52,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: const Color(0xFF0036BC).withOpacity(0.10), blurRadius: 12, offset: const Offset(0, 3))],
-                      ),
-                      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('iCare', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0036BC), fontFamily: 'Gilroy-Bold')),
-                        Text('by RM Health Solution', style: TextStyle(fontSize: 11, color: Colors.grey[500], fontFamily: 'Gilroy-Medium')),
-                      ],
-                    ),
-                  ],
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -2218,24 +2159,12 @@ class _Footer extends StatelessWidget {
     return [
       Row(
         children: [
-          Container(
-            width: 44, height: 44,
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [BoxShadow(color: const Color(0xFF0036BC).withOpacity(0.10), blurRadius: 10, offset: const Offset(0, 2))],
-            ),
-            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('iCare', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0036BC), fontFamily: 'Gilroy-Bold')),
-              Text('by RM Health Solution', style: TextStyle(fontSize: 10, color: Colors.grey[500], fontFamily: 'Gilroy-Medium')),
-            ],
+          Image.asset(
+            'assets/images/logo.png',
+            width: 60,
+            height: 60,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
         ],
       ),
