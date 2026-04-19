@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/screens/doctors_list.dart';
+import 'package:icare/screens/pharmacies.dart';
+import 'package:icare/screens/lab_list.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
