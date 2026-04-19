@@ -393,13 +393,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
-                                const SizedBox(height: 14),
-                                _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
-                                const SizedBox(height: 14),
-                                _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
-                                const SizedBox(height: 14),
-                                _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                                _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records"),
+                                const SizedBox(height: 18),
+                                _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only", "All providers are PMDC credentialed"),
+                                const SizedBox(height: 18),
+                                _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital", "Consult, prescribe & manage all-in-one"),
+                                const SizedBox(height: 18),
+                                _buildHeroTrust(Icons.people_rounded, "Trusted Nationwide", "Thousands of patients across Pakistan"),
                               ],
                             ),
                           ),
@@ -1420,28 +1420,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildHeroTrust(IconData icon, String text) {
+  Widget _buildHeroTrust(IconData icon, String title, String subtitle) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 42, height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           ),
-          child: Icon(icon, color: Colors.white, size: 18),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
-        const SizedBox(width: 12),
-        Text(
-          text,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.60),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  height: 1.3,
+                ),
+              ),
+            ],
           ),
         ),
       ],

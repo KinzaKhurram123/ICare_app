@@ -10,6 +10,7 @@ import 'package:icare/services/user_service.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/auth_left_panel.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   final String role;
@@ -540,7 +541,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return Scaffold(
         body: Row(
           children: [
-            Expanded(flex: 5, child: _buildLeftPanel(size.height)),
+            const Expanded(flex: 5, child: AuthLeftPanel()),
             Expanded(flex: 5, child: _buildRightPanel()),
           ],
         ),
