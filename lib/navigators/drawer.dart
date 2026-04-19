@@ -114,21 +114,29 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
 
     if (selectedRole == "Laboratory") {
       drawerItems = [
-        _drawerItem('Tasks', Icons.task_alt_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
+        _drawerItem('Dashboard', Icons.dashboard_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LaboratoryDashboard()),
+          );
         }),
-        _drawerItem('Report Lab Results', Icons.biotech_outlined, () {
+        _drawerItem('Test Requests', Icons.pending_actions_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
         }),
-        _drawerItem('My Appointment', Icons.calendar_month_outlined, () {
+        _drawerItem('Orders', Icons.receipt_long_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
+        }),
+        _drawerItem('Test Catalog', Icons.science_outlined, () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => const MyAppointmentsListScreen(),
-            ),
+            MaterialPageRoute(builder: (ctx) => const LabTestsManagement()),
+          );
+        }),
+        _drawerItem('Result Entry', Icons.upload_file_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
           );
         }),
         _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
@@ -136,15 +144,23 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
         }),
-        _drawerItem('Notifications', Icons.notifications_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
-          );
-        }),
-        _drawerItem('Help & Support', Icons.help_outline_rounded, () {
+        _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
+          ).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics()));
+        }),
+        _drawerItem('Settings', Icons.settings_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
+        _drawerItem('iCare Lab Support', Icons.headset_mic_rounded, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Direct support chat coming soon. For now, email support@icare.com'),
+              duration: Duration(seconds: 3),
+            ),
+          );
         }),
       ];
     } else if (selectedRole == "Patient") {
@@ -242,91 +258,43 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             MaterialPageRoute(builder: (ctx) => const PharmacistDashboard()),
           );
         }),
-        _drawerItem('Profile Setup', Icons.edit_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()),
-          );
+        _drawerItem('Awaiting Fulfillment', Icons.pending_actions_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const PharmacyOrders()));
+        }),
+        _drawerItem('Orders', Icons.receipt_long_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const PharmacyOrders()));
         }),
         _drawerItem('Inventory', Icons.inventory_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const PharmacyInventory()),
           );
         }),
-        _drawerItem('Orders', Icons.shopping_cart_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const PharmacyOrders()));
-        }),
-        _drawerItem('Analytics', Icons.analytics_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const PharmacyAnalytics()),
-          );
-        }),
-        _drawerItem('Tasks', Icons.task_alt_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
-        }),
-        _drawerItem('My Orders', Icons.shopping_basket_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const MyOrdersScreen()));
-        }),
         _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
         }),
-        _drawerItem('My Appointment', Icons.calendar_month_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }),
-        _drawerItem('Notifications', Icons.notifications_outlined, () {
+        _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
+            MaterialPageRoute(builder: (ctx) => const PharmacyAnalytics()),
           );
         }),
-        _drawerItem('Help & Support', Icons.help_outline_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
-        }),
-        _drawerItem('Prescriptions', Icons.description_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const PrescriptionsScreen()),
-          );
-        }),
-        _drawerItem('Reminders', Icons.alarm_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
-        }),
-        _drawerItem('Wallet', Icons.account_balance_wallet_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const WalletScreen()));
-        }),
-        _drawerItem('Courses', Icons.school_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
-        }),
-        _drawerItem(
-          'Pharmacy Management',
-          Icons.admin_panel_settings_outlined,
-          () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) => const PharmacyManagementScreen(),
-              ),
-            );
-          },
-        ),
         _drawerItem('Settings', Icons.settings_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
+        _drawerItem('iCare Pharmacist Support', Icons.headset_mic_rounded, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Direct support chat coming soon. For now, email support@icare.com'),
+              duration: Duration(seconds: 3),
+            ),
+          );
         }),
       ];
     } else if (selectedRole == "Laboratory") {
@@ -336,45 +304,30 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             MaterialPageRoute(builder: (ctx) => const LaboratoryDashboard()),
           );
         }),
-        _drawerItem('Profile Setup', Icons.edit_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const LabProfileSetup()));
-        }),
-        _drawerItem('Bookings', Icons.calendar_today_outlined, () {
+        _drawerItem('Test Requests', Icons.pending_actions_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
         }),
-        _drawerItem('Tests Management', Icons.science_outlined, () {
+        _drawerItem('Test Catalog', Icons.science_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const LabTestsManagement()),
           );
         }),
-        _drawerItem('Analytics', Icons.analytics_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics()));
+        _drawerItem('Result Entry', Icons.upload_file_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
+          );
         }),
         _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
         }),
-        _drawerItem('Tasks', Icons.task_alt_outlined, () {
+        _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const TaskScreen()));
-        }),
-        _drawerItem('My Appointment', Icons.calendar_month_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const MyAppointment()));
-        }),
-        _drawerItem('Notifications', Icons.notifications_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const NotificationScreen()),
-          );
+          ).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics()));
         }),
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {
           Navigator.of(
@@ -385,6 +338,14 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+        }),
+        _drawerItem('iCare Lab Support', Icons.headset_mic_rounded, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Direct support chat coming soon. For now, email support@icare.com'),
+              duration: Duration(seconds: 3),
+            ),
+          );
         }),
       ];
     } else if (selectedRole == "Instructor") {
@@ -548,29 +509,37 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                           'Test Requests',
                           const Color(0xFF6366F1),
                           Icons.pending_actions_outlined,
-                          () {},
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => LabBookingsManagement()),
+                          ),
                         ),
                         _drawerActionItem(
                           context,
-                          'Upload Reports',
+                          'Result Entry',
                           const Color(0xFF0EA5E9),
                           Icons.upload_file_outlined,
-                          () {},
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const LabReportsScreen()),
+                          ),
                         ),
                       ] else if (selectedRole == 'Pharmacy') ...[
                         _drawerActionItem(
                           context,
-                          'Incoming Prescriptions',
+                          'Awaiting Fulfillment',
                           const Color(0xFF10B981),
-                          Icons.receipt_long_outlined,
-                          () {},
+                          Icons.pending_actions_outlined,
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const PharmacyOrders()),
+                          ),
                         ),
                         _drawerActionItem(
                           context,
                           'Manage Inventory',
                           const Color(0xFFF59E0B),
                           Icons.inventory_2_outlined,
-                          () {},
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const PharmacyInventory()),
+                          ),
                         ),
                       ] else if (selectedRole == 'Instructor') ...[
                         _drawerActionItem(

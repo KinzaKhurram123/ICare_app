@@ -26,6 +26,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
   final _openHoursToController = TextEditingController();
 
   bool _deliveryAvailable = false;
+  bool _drapCompliance = false;
 
   @override
   void initState() {
@@ -146,7 +147,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                       const SizedBox(height: 16),
                       _buildTextField(
                         controller: _licenseNumberController,
-                        label: 'License Number',
+                        label: 'Drug Sale License',
                         icon: Icons.verified_user,
                       ),
                     ]),
@@ -197,6 +198,26 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                           setState(() => _deliveryAvailable = value);
                         },
                         activeColor: const Color(0xFF00897B),
+                      ),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildSection('Compliance', Icons.verified_user_outlined, [
+                      CheckboxListTile(
+                        title: const Text(
+                          'DRAP Compliance Agreement',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        subtitle: const Text(
+                          'I confirm this pharmacy operates in accordance with DRAP (Drug Regulatory Authority of Pakistan) regulations and drug sale policies.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: _drapCompliance,
+                        onChanged: (value) {
+                          setState(() => _drapCompliance = value ?? false);
+                        },
+                        activeColor: const Color(0xFF00897B),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
                       ),
                     ]),
                     const SizedBox(height: 32),

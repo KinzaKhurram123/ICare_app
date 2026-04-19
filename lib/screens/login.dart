@@ -338,16 +338,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           const SizedBox(height: 28),
                           const Text(
-                            "iCare Virtual Hospital",
+                            "iCare",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 32, fontWeight: FontWeight.w800,
                               color: Colors.white, letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 4),
                           Text(
-                            "Your Virtual Healthcare Platform",
+                            "by RM Health Solution",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.75),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Image.asset(
+                              'assets/images/health.jpeg',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            "Your Trusted Healthcare Platform",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600,

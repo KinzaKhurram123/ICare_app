@@ -39,27 +39,58 @@ class PublicHome extends StatelessWidget {
                     horizontal: isMobile ? 12 : 24,
                     vertical: 14,
                   ),
-                  child: Row(
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      SvgPicture.asset(ImagePaths.logo, width: isMobile ? 32 : 44, height: isMobile ? 32 : 44, colorFilter: null),
-                      const Spacer(),
-                      _NavButton(
-                        label: 'Sign In',
-                        filled: true,
-                        onTap: () => context.go('/login'),
+                      // Center: logo
+                      Center(
+                        child: SvgPicture.asset(
+                          ImagePaths.logo,
+                          width: isMobile ? 36 : 48,
+                          height: isMobile ? 36 : 48,
+                          colorFilter: null,
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      _NavButton(
-                        label: 'Sign Up',
-                        filled: false,
-                        onTap: () => context.go('/signup'),
-                      ),
-                      const SizedBox(width: 6),
-                      _NavButton(
-                        label: 'Work With Us',
-                        filled: false,
-                        accent: true,
-                        onTap: () => context.go('/work-with-us'),
+                      // Right: nav buttons
+                      Positioned(
+                        right: 0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!isMobile) ...[
+                              _NavButton(
+                                label: 'Sign In',
+                                filled: true,
+                                onTap: () => context.go('/login'),
+                              ),
+                              const SizedBox(width: 6),
+                              _NavButton(
+                                label: 'Sign Up',
+                                filled: false,
+                                onTap: () => context.go('/signup'),
+                              ),
+                              const SizedBox(width: 6),
+                              _NavButton(
+                                label: 'Work With Us',
+                                filled: false,
+                                accent: true,
+                                onTap: () => context.go('/work-with-us'),
+                              ),
+                            ] else ...[
+                              _NavButton(
+                                label: 'Sign In',
+                                filled: true,
+                                onTap: () => context.go('/login'),
+                              ),
+                              const SizedBox(width: 6),
+                              _NavButton(
+                                label: 'Sign Up',
+                                filled: false,
+                                onTap: () => context.go('/signup'),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -83,8 +114,13 @@ class PublicHome extends StatelessWidget {
                     child: Column(
                       children: [
                         _SectionHeader(
-                          title: 'Connect to a Doctor',
-                          subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                          title: 'Consult Available Doctors',
+                          subtitle: 'Talk to a verified doctor within minutes from the comfort of your home',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                            );
+                          },
                         ),
                         const SizedBox(height: 24),
                         // Search bar moved here from banner
@@ -155,6 +191,11 @@ class PublicHome extends StatelessWidget {
                       _SectionHeader(
                         title: 'Order Medicines',
                         subtitle: 'Order medicines from trusted pharmacies near you',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       _MedicineSearchBar(),
@@ -177,6 +218,11 @@ class PublicHome extends StatelessWidget {
                         _SectionHeader(
                           title: 'Book a Lab Test',
                           subtitle: 'Book lab tests and get results delivered at home',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (ctx) => LabsListScreen()),
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
                         _LabSearchBar(),
@@ -401,74 +447,93 @@ class _CourseCard extends StatefulWidget {
 }
 
 class _CourseCardState extends State<_CourseCard> {
-  bool _hovered = false;
-
   @override
   Widget build(BuildContext context) {
     final color = Color(widget.course['color'] as int);
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(20),
-        transform: Matrix4.identity()..translate(0.0, _hovered ? -3.0 : 0.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _hovered ? color : const Color(0xFFF3F3F3),
-            width: 2,
-          ),
-          boxShadow: [
-            if (_hovered)
-              BoxShadow(
-                color: color.withOpacity(0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(widget.course['icon'] as IconData, color: color, size: 26),
+    return Tooltip(
+      message: 'Coming Soon',
+      child: GestureDetector(
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('LMS coming soon — stay tuned!'),
+              duration: Duration(seconds: 2),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+          );
+        },
+        child: Opacity(
+          opacity: 0.75,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.basic,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFF3F3F3), width: 2),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    widget.course['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                      fontFamily: 'Gilroy-Bold',
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
+                    child: Icon(widget.course['icon'] as IconData, color: color, size: 26),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.course['desc'] as String,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                widget.course['title'] as String,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Coming Soon',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFF59E0B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.course['desc'] as String,
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[400]),
-          ],
+          ),
         ),
       ),
     );
@@ -666,8 +731,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         children: [
                           Text(
                             isMobile
-                                ? 'Talk to a Verified\nSpecialist Doctor'
-                                : 'Talk to a Verified\nSpecialist Doctor',
+                                ? 'Consult Available\nDoctors'
+                                : 'Consult Available\nDoctors',
                             textAlign: TextAlign.left,
                             style: TextStyle(
                               fontSize: isMobile ? 24 : 38,
@@ -1861,20 +1926,25 @@ class _StoreBadgeButton extends StatefulWidget {
 }
 
 class _StoreBadgeButtonState extends State<_StoreBadgeButton> {
-  bool _hovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()..scale(_hovered ? 1.05 : 1.0),
-          child: widget.child,
+    return Tooltip(
+      message: 'Coming Soon',
+      child: Opacity(
+        opacity: 0.65,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.basic,
+          child: GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('App coming soon — stay tuned!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: widget.child,
+          ),
         ),
       ),
     );
@@ -1928,11 +1998,12 @@ class _PhoneMockups extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
-  const _SectionHeader({required this.title, this.subtitle});
+  final VoidCallback? onTap;
+  const _SectionHeader({required this.title, this.subtitle, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1961,6 +2032,18 @@ class _SectionHeader extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: content,
+        ),
+      );
+    }
+    return content;
   }
 }
 
@@ -2171,8 +2254,8 @@ class PublicHomeBody extends StatelessWidget {
             child: Column(
               children: [
                 _SectionHeader(
-                  title: 'Connect to a Doctor',
-                  subtitle: 'Talk to verified doctors within minutes from the comfort of your home',
+                  title: 'Consult Available Doctors',
+                  subtitle: 'Talk to a verified doctor within minutes from the comfort of your home',
                 ),
                 const SizedBox(height: 24),
                 // Search bar moved here from banner

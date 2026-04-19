@@ -119,7 +119,7 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Analytics & Reports',
+          'Revenue & Analytics',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',

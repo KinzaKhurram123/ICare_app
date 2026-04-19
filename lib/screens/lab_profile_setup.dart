@@ -32,6 +32,7 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   final _workingHoursToController = TextEditingController();
 
   bool _homeSampleAvailable = false;
+  bool _drapCompliance = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -321,6 +322,8 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                           ),
                           const SizedBox(height: 20),
                           _buildServicesSection(),
+                          const SizedBox(height: 20),
+                          _buildDrapSection(),
                           const SizedBox(height: 32),
                           _buildSaveButton(),
                         ],
@@ -641,6 +644,34 @@ class _LabProfileSetupState extends State<LabProfileSetup>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDrapSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _drapCompliance ? const Color(0xFF10B981) : const Color(0xFFE2E8F0)),
+      ),
+      child: CheckboxListTile(
+        title: const Text(
+          'DRAP Compliance Agreement',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+        ),
+        subtitle: const Text(
+          'I confirm this laboratory operates in accordance with DRAP (Drug Regulatory Authority of Pakistan) regulations and diagnostic testing standards.',
+          style: TextStyle(fontSize: 12, height: 1.4),
+        ),
+        value: _drapCompliance,
+        onChanged: (value) {
+          setState(() => _drapCompliance = value ?? false);
+        },
+        activeColor: const Color(0xFF10B981),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }

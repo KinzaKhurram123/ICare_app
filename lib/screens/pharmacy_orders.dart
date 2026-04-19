@@ -95,7 +95,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     }
   }
 
-  Future<void> _updateOrderStatus(String orderId, String newStatus) async {
+  Future<void> _updateOrderStatus(String orderId, String newStatus, {String? expectedDelivery}) async {
     try {
       await _pharmacyService.updateOrderStatus(orderId, newStatus);
       await _loadOrders();
@@ -109,6 +109,119 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         Utils.showErrorSnackBar(context, e);
       }
     }
+  }
+
+  Future<void> _showDispatchDialog(String orderId) async {
+    final deliveryController = TextEditingController();
+    TimeOfDay? selectedTime;
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.delivery_dining_rounded, color: Color(0xFF8B5CF6), size: 22),
+              SizedBox(width: 10),
+              Text('Dispatch Order', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            ],
+          ),
+          content: SizedBox(
+            width: 380,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Enter the expected delivery time before dispatching. This will be shown to the patient.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Expected Delivery Time *',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          selectedTime = picked;
+                          deliveryController.text = picked.format(ctx);
+                        });
+                      }
+                    },
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        controller: deliveryController,
+                        decoration: InputDecoration(
+                          hintText: 'Tap to select time',
+                          suffixIcon: const Icon(Icons.access_time_rounded, color: Color(0xFF8B5CF6)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty) ? 'Expected delivery time is required' : null,
+                      ),
+                    ),
+                  ),
+                  if (selectedTime != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F0FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Patient will be notified: delivery by ${selectedTime!.format(ctx)}',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF6D28D9)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx);
+                  _updateOrderStatus(orderId, 'out_for_delivery',
+                      expectedDelivery: deliveryController.text);
+                }
+              },
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: const Text('Dispatch'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<Map<String, dynamic>> _getOrdersByStatus(String status) {
@@ -126,7 +239,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Dispense Requests',
+          'Orders',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -470,7 +583,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                           ),
                         ),
                         Text(
-                          '\$${order['total']}',
+                          'PKR ${order['total']}',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -541,13 +654,19 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                   ),
                 ] else if (status == 'preparing') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'out_for_delivery'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showDispatchDialog(order['_id']),
+                      icon: const Icon(Icons.delivery_dining_rounded, size: 18),
+                      label: const Text('Dispatch'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                    child: const Text('Out for Delivery'),
                   ),
                 ] else if (status == 'out_for_delivery') ...[
                   const SizedBox(height: 16),

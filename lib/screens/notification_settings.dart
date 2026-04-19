@@ -17,9 +17,11 @@ class NotificationSettings extends ConsumerWidget {
     final role = ref.read(authProvider).userRole ?? '';
     final isPatient = role == 'Patient';
     final isStudent = role == 'Student';
-    
+    final isPharmacy = role == 'Pharmacy';
+    final isLaboratory = role == 'Laboratory';
+
     List<Map<String, dynamic>> settingsList;
-    
+
     if (isPatient) {
       settingsList = [
         {"id": "1", "title": "Booking Updates", "onPress": () {}},
@@ -35,15 +37,28 @@ class NotificationSettings extends ConsumerWidget {
         {"id": "3", "title": "Certificate Earned", "onPress": () {}},
         {"id": "4", "title": "Admin Announcements", "onPress": () {}},
       ];
+    } else if (isPharmacy) {
+      settingsList = [
+        {"id": "1", "title": "New Orders", "onPress": () {}},
+        {"id": "2", "title": "Order Status Updates", "onPress": () {}},
+        {"id": "3", "title": "Low Stock Alerts", "onPress": () {}},
+        {"id": "4", "title": "Customer Support Messages", "onPress": () {}},
+      ];
+    } else if (isLaboratory) {
+      settingsList = [
+        {"id": "1", "title": "New Test Requests", "onPress": () {}},
+        {"id": "2", "title": "Result Ready Alerts", "onPress": () {}},
+        {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
+      ];
     } else {
       settingsList = [
-        {"id": "2", "title": "Booking Updates", "onPress": () {}},
+        {"id": "1", "title": "New Appointment Bookings", "onPress": () {}},
+        {"id": "2", "title": "Patient Messages", "onPress": () {}},
         {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
-        {"id": "4", "title": "Promotions", "onPress": () {}},
       ];
     }
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebNotificationSettingsScreen(isStudent: isStudent, isPatient: isPatient);
+      return _WebNotificationSettingsScreen(isStudent: isStudent, isPatient: isPatient, isPharmacy: isPharmacy, isLaboratory: isLaboratory);
     }
 
     return Scaffold(
@@ -155,7 +170,14 @@ class NotificationSettings extends ConsumerWidget {
 class _WebNotificationSettingsScreen extends StatefulWidget {
   final bool isStudent;
   final bool isPatient;
-  const _WebNotificationSettingsScreen({this.isStudent = false, this.isPatient = false});
+  final bool isPharmacy;
+  final bool isLaboratory;
+  const _WebNotificationSettingsScreen({
+    this.isStudent = false,
+    this.isPatient = false,
+    this.isPharmacy = false,
+    this.isLaboratory = false,
+  });
 
   @override
   State<_WebNotificationSettingsScreen> createState() =>
@@ -184,11 +206,24 @@ class _WebNotificationSettingsScreenState
         "Notification Sound": true,
         "Send prescription to email automatically": false,
       };
+    } else if (widget.isPharmacy) {
+      settingsState = {
+        "New Orders": true,
+        "Order Status Updates": true,
+        "Low Stock Alerts": true,
+        "Customer Support Messages": false,
+      };
+    } else if (widget.isLaboratory) {
+      settingsState = {
+        "New Test Requests": true,
+        "Result Ready Alerts": true,
+        "Customer Support Messages": false,
+      };
     } else {
       settingsState = {
-        "Booking Updates": true,
-        "Customer Support Messages": true,
-        "Promotions": true,
+        "New Appointment Bookings": true,
+        "Patient Messages": true,
+        "Customer Support Messages": false,
       };
     }
   }
@@ -218,14 +253,34 @@ class _WebNotificationSettingsScreenState
         "Send prescription to email automatically":
             "Automatically email your prescription after every completed consultation.",
       };
-    } else {
+    } else if (widget.isPharmacy) {
       return {
-        "Booking Updates":
-            "Get notified when new appointments are booked, rescheduled, or canceled.",
+        "New Orders":
+            "Get notified instantly when a new prescription order is placed.",
+        "Order Status Updates":
+            "Receive alerts when an order is updated, completed, or cancelled.",
+        "Low Stock Alerts":
+            "Be warned when a medicine's stock falls below the minimum threshold.",
         "Customer Support Messages":
             "Receive instant alerts when the support team responds to your queries.",
-        "Promotions":
-            "Important system updates and broadcast messages from the iCare team.",
+      };
+    } else if (widget.isLaboratory) {
+      return {
+        "New Test Requests":
+            "Get notified when a new diagnostic test is requested for your lab.",
+        "Result Ready Alerts":
+            "Receive alerts when a result entry is completed and ready for review.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
+      };
+    } else {
+      return {
+        "New Appointment Bookings":
+            "Get notified when a patient books a new appointment with you.",
+        "Patient Messages":
+            "Receive alerts when a patient sends you a message or follow-up.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
       };
     }
   }
@@ -246,11 +301,24 @@ class _WebNotificationSettingsScreenState
         "Notification Sound": Icons.volume_up_rounded,
         "Send prescription to email automatically": Icons.email_outlined,
       };
+    } else if (widget.isPharmacy) {
+      return {
+        "New Orders": Icons.shopping_bag_rounded,
+        "Order Status Updates": Icons.sync_rounded,
+        "Low Stock Alerts": Icons.warning_amber_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+      };
+    } else if (widget.isLaboratory) {
+      return {
+        "New Test Requests": Icons.biotech_rounded,
+        "Result Ready Alerts": Icons.assignment_turned_in_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+      };
     } else {
       return {
-        "Booking Updates": Icons.event_available_rounded,
+        "New Appointment Bookings": Icons.event_available_rounded,
+        "Patient Messages": Icons.chat_bubble_outline_rounded,
         "Customer Support Messages": Icons.support_agent_rounded,
-        "Promotions": Icons.campaign_rounded,
       };
     }
   }

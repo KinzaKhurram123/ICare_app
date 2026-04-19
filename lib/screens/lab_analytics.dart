@@ -134,7 +134,7 @@ class _LabAnalyticsState extends State<LabAnalytics>
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Analytics & Insights',
+          'Revenue & Analytics',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',

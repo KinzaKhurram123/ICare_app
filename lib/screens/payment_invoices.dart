@@ -181,7 +181,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   Expanded(
                     child: _buildSummaryCard(
                       title: "Total Revenue",
-                      amount: "\$${_totalRevenue.toStringAsFixed(0)}",
+                      amount: "PKR ${_totalRevenue.toStringAsFixed(0)}",
                       subtitle:
                           "${_invoices.where((i) => i['status'] == 'Paid').length} invoices paid",
                       icon: Icons.account_balance_wallet_rounded,
@@ -196,7 +196,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   Expanded(
                     child: _buildSummaryCard(
                       title: "Pending",
-                      amount: "\$${_totalPending.toStringAsFixed(0)}",
+                      amount: "PKR ${_totalPending.toStringAsFixed(0)}",
                       subtitle:
                           "${_invoices.where((i) => i['status'] == 'Pending').length} awaiting payment",
                       icon: Icons.schedule_rounded,
@@ -211,7 +211,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   Expanded(
                     child: _buildSummaryCard(
                       title: "Overdue",
-                      amount: "\$${_totalOverdue.toStringAsFixed(0)}",
+                      amount: "PKR ${_totalOverdue.toStringAsFixed(0)}",
                       subtitle:
                           "${_invoices.where((i) => i['status'] == 'Overdue').length} need attention",
                       icon: Icons.warning_rounded,
@@ -546,7 +546,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
           Expanded(
             flex: 2,
             child: Text(
-              "\$${(inv["amount"] as double).toStringAsFixed(2)}",
+              "PKR ${(inv["amount"] as double).toStringAsFixed(2)}",
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
@@ -631,19 +631,19 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
             children: [
               _buildMiniStat(
                 "Revenue",
-                "\$${_totalRevenue.toStringAsFixed(0)}",
+                "PKR ${_totalRevenue.toStringAsFixed(0)}",
                 const Color(0xFF10B981),
               ),
               const SizedBox(width: 12),
               _buildMiniStat(
                 "Pending",
-                "\$${_totalPending.toStringAsFixed(0)}",
+                "PKR ${_totalPending.toStringAsFixed(0)}",
                 const Color(0xFFF59E0B),
               ),
               const SizedBox(width: 12),
               _buildMiniStat(
                 "Overdue",
-                "\$${_totalOverdue.toStringAsFixed(0)}",
+                "PKR ${_totalOverdue.toStringAsFixed(0)}",
                 const Color(0xFFEF4444),
               ),
             ],
@@ -821,7 +821,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                 ),
               ),
               Text(
-                "\$${(inv["amount"] as double).toStringAsFixed(2)}",
+                "PKR ${(inv["amount"] as double).toStringAsFixed(2)}",
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 18,

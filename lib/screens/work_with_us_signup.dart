@@ -30,13 +30,6 @@ class WorkWithUsSignup extends StatelessWidget {
       'icon': Icons.biotech_rounded,
       'color': Color(0xFF8B5CF6),
     },
-    {
-      'role': 'Instructor',
-      'title': 'Instructor',
-      'subtitle': 'Teach Health Programs',
-      'icon': Icons.school_rounded,
-      'color': Color(0xFFF59E0B),
-    },
   ];
 
   @override

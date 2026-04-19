@@ -13,8 +13,10 @@ class HelpAndSupport extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.read(authProvider).userRole ?? '';
     final isStudent = role == 'Student';
+    final isPharmacy = role == 'Pharmacy';
+    final isLaboratory = role == 'Laboratory';
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebHelpAndSupport(isStudent: isStudent);
+      return _WebHelpAndSupport(isStudent: isStudent, isPharmacy: isPharmacy, isLaboratory: isLaboratory);
     }
 
     // REFINED MOBILE LAYOUT
@@ -158,7 +160,9 @@ class HelpAndSupport extends ConsumerWidget {
 
 class _WebHelpAndSupport extends StatelessWidget {
   final bool isStudent;
-  const _WebHelpAndSupport({this.isStudent = false});
+  final bool isPharmacy;
+  final bool isLaboratory;
+  const _WebHelpAndSupport({this.isStudent = false, this.isPharmacy = false, this.isLaboratory = false});
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +237,11 @@ class _WebHelpAndSupport extends StatelessWidget {
                         Text(
                           isStudent
                               ? "Our academic support team is available to help you with courses, certificates, and platform questions."
-                              : "Our support team is available 24/7 to help you with any issues or queries.",
+                              : isPharmacy
+                                  ? "Our pharmacy support team is here to assist with orders, inventory, and platform questions."
+                                  : isLaboratory
+                                      ? "Our lab support team is available to assist with test requests, result entry, and platform queries."
+                                      : "Our support team is available 24/7 to help you with any issues or queries.",
                           style: const TextStyle(
                             fontSize: 15,
                             color: Color(0xFF64748B),
@@ -320,6 +328,50 @@ class _WebHelpAndSupport extends StatelessWidget {
                           question: "How do I track my course progress?",
                           answer:
                               "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
+                        ),
+                      ] else if (isPharmacy) ...[
+                        _WebFaqCard(
+                          question: "How do I fulfill an incoming prescription?",
+                          answer:
+                              "Go to 'Awaiting Fulfillment' in your sidebar. Open the prescription, verify the medicines, and click 'Mark as Fulfilled' once the order is ready for pickup or dispatch.",
+                          isExpanded: true,
+                        ),
+                        _WebFaqCard(
+                          question: "How do I update my medicine inventory?",
+                          answer:
+                              "Navigate to 'Inventory' in the sidebar. You can add new medicines, update stock quantities, and set minimum stock thresholds to trigger low-stock alerts.",
+                        ),
+                        _WebFaqCard(
+                          question: "Where can I view my revenue and sales data?",
+                          answer:
+                              "Go to 'Revenue & Analytics' in your sidebar to view total revenue, order trends, top-selling medicines, and order breakdown by status.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I update my pharmacy profile?",
+                          answer:
+                              "Go to Settings and select 'Edit Profile'. You can update your pharmacy name, address, Drug Sale License, and contact details from there.",
+                        ),
+                      ] else if (isLaboratory) ...[
+                        _WebFaqCard(
+                          question: "How do I view and accept test requests?",
+                          answer:
+                              "Open 'Test Requests' from your sidebar. You will see all incoming diagnostic requests. Click on a request to review patient details and accept or reject it.",
+                          isExpanded: true,
+                        ),
+                        _WebFaqCard(
+                          question: "How do I enter test results?",
+                          answer:
+                              "Navigate to 'Result Entry' in the sidebar. Find the test request, fill in the result values, and click 'Submit Results'. The patient and requesting doctor are notified automatically.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I manage my test catalog?",
+                          answer:
+                              "Go to 'Test Catalog' in your sidebar to view, add, or update the diagnostic tests your lab offers, including pricing and turnaround time.",
+                        ),
+                        _WebFaqCard(
+                          question: "Where can I see my lab's revenue and analytics?",
+                          answer:
+                              "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
                         ),
                       ] else ...[
                         _WebFaqCard(

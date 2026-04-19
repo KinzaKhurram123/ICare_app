@@ -470,6 +470,12 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
   Widget _buildStatsGrid(bool isMobile) {
     final stats = [
       {
+        'title': 'Today',
+        'value': _stats?['todayBookings']?.toString() ?? '0',
+        'icon': Icons.today_rounded,
+        'trend': 'New',
+      },
+      {
         'title': 'Total Requests',
         'value': _stats?['totalBookings']?.toString() ?? '0',
         'icon': Icons.calendar_month_rounded,
@@ -486,12 +492,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
         'value': _stats?['completedBookings']?.toString() ?? '0',
         'icon': Icons.task_alt_rounded,
         'trend': '+8%',
-      },
-      {
-        'title': 'Today',
-        'value': _stats?['todayBookings']?.toString() ?? '0',
-        'icon': Icons.today_rounded,
-        'trend': 'New',
       },
     ];
 

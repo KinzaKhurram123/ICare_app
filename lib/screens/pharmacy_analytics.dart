@@ -58,7 +58,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Analytics & Reports',
+          'Revenue & Analytics',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -155,7 +155,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
               Expanded(
                 child: _buildStatCard(
                   'Total Revenue',
-                  '\$${_stats['totalRevenue']}',
+                  'PKR ${_stats['totalRevenue']}',
                   Icons.attach_money_rounded,
                   const Color(0xFF10B981),
                   '+12.5%',
@@ -189,7 +189,7 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
           children: [
             _buildStatCard(
               'Total Revenue',
-              '\$${_stats['totalRevenue']}',
+              'PKR ${_stats['totalRevenue']}',
               Icons.attach_money_rounded,
               const Color(0xFF10B981),
               '+12.5%',

@@ -22,6 +22,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
   bool _hasError = false;
 
   Map<String, int> _stats = {
+    'todayOrders': 0,
     'totalOrders': 0,
     'pendingOrders': 0,
     'completedOrders': 0,
@@ -190,7 +191,16 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Prescriptions',
+                  'Today',
+                  _stats['todayOrders']!,
+                  Icons.today_rounded,
+                  const Color(0xFF6366F1),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Orders',
                   _stats['totalOrders']!,
                   Icons.receipt_long_rounded,
                   const Color(0xFF3B82F6),
@@ -208,19 +218,10 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatCard(
-                  'Medications',
-                  _stats['totalProducts']!,
-                  Icons.medication_rounded,
+                  'Completed',
+                  _stats['completedOrders']!,
+                  Icons.check_circle_outline_rounded,
                   const Color(0xFF10B981),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatCard(
-                  'Low Stock',
-                  _stats['lowStock']!,
-                  Icons.warning_rounded,
-                  const Color(0xFFEF4444),
                 ),
               ),
             ],
@@ -233,19 +234,19 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Requests',
-                    _stats['totalOrders']!,
-                    Icons.receipt_long_rounded,
-                    const Color(0xFF3B82F6),
+                    'Today',
+                    _stats['todayOrders']!,
+                    Icons.today_rounded,
+                    const Color(0xFF6366F1),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Pending',
-                    _stats['pendingOrders']!,
-                    Icons.pending_actions_rounded,
-                    const Color(0xFFF59E0B),
+                    'Total Orders',
+                    _stats['totalOrders']!,
+                    Icons.receipt_long_rounded,
+                    const Color(0xFF3B82F6),
                   ),
                 ),
               ],
@@ -255,19 +256,19 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Medications',
-                    _stats['totalProducts']!,
-                    Icons.medication_liquid_rounded,
-                    const Color(0xFF10B981),
+                    'Pending',
+                    _stats['pendingOrders']!,
+                    Icons.pending_actions_rounded,
+                    const Color(0xFFF59E0B),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Low Stock',
-                    _stats['lowStock']!,
-                    Icons.warning_rounded,
-                    const Color(0xFFEF4444),
+                    'Completed',
+                    _stats['completedOrders']!,
+                    Icons.check_circle_outline_rounded,
+                    const Color(0xFF10B981),
                   ),
                 ),
               ],

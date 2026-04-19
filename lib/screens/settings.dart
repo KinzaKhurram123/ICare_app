@@ -116,6 +116,91 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     context.go('/login');
   }
 
+  void _showReportIssueDialog(BuildContext ctx) {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.bug_report_outlined, color: Color(0xFFEF4444), size: 22),
+            SizedBox(width: 10),
+            Text('Report an Issue', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Describe the issue you encountered. Our team will review it shortly.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Issue Title',
+                    hintText: 'e.g. Login not working',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a title' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Tell us what happened and how to reproduce it...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please describe the issue' : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogCtx);
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('Issue reported. Thank you — we will get back to you shortly.'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.send_rounded, size: 16),
+            label: const Text('Submit'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0036BC),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _comingSoon(BuildContext ctx, String feature) {
     showDialog(
       context: ctx,
@@ -148,6 +233,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final role = ref.read(authProvider).userRole ?? '';
     final isPatient = role == 'Patient';
+    final isPharmacy = role == 'Pharmacy';
+    final isLaboratory = role == 'Laboratory';
+    final isDoctor = role == 'Doctor';
 
     // Sections: each section has a title + list of items
     final List<_SettingsSection> sections = [
@@ -259,35 +347,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
 
-      // Health Profile
-      _SettingsSection(
-        title: 'Health Profile',
-        icon: Icons.favorite_rounded,
-        iconColor: const Color(0xFFEF4444),
-        iconBg: const Color(0xFFFEF2F2),
-        items: [
-          _SettingsItem(
-            title: 'Medical Conditions',
-            icon: Icons.medical_information_outlined,
-            onTap: () => _comingSoon(context, 'Medical Conditions'),
-          ),
-          _SettingsItem(
-            title: 'Allergies',
-            icon: Icons.warning_amber_rounded,
-            onTap: () => _comingSoon(context, 'Allergies'),
-          ),
-          _SettingsItem(
-            title: 'Current Medications',
-            icon: Icons.medication_outlined,
-            onTap: () => _comingSoon(context, 'Current Medications'),
-          ),
-          _SettingsItem(
-            title: 'Health Goals',
-            icon: Icons.flag_outlined,
-            onTap: () => _comingSoon(context, 'Health Goals'),
-          ),
-        ],
-      ),
+      // Health Profile — Patient only
+      if (isPatient)
+        _SettingsSection(
+          title: 'Health Profile',
+          icon: Icons.favorite_rounded,
+          iconColor: const Color(0xFFEF4444),
+          iconBg: const Color(0xFFFEF2F2),
+          items: [
+            _SettingsItem(
+              title: 'Medical Conditions',
+              icon: Icons.medical_information_outlined,
+              onTap: () => _comingSoon(context, 'Medical Conditions'),
+            ),
+            _SettingsItem(
+              title: 'Allergies',
+              icon: Icons.warning_amber_rounded,
+              onTap: () => _comingSoon(context, 'Allergies'),
+            ),
+            _SettingsItem(
+              title: 'Current Medications',
+              icon: Icons.medication_outlined,
+              onTap: () => _comingSoon(context, 'Current Medications'),
+            ),
+            _SettingsItem(
+              title: 'Health Goals',
+              icon: Icons.flag_outlined,
+              onTap: () => _comingSoon(context, 'Health Goals'),
+            ),
+          ],
+        ),
 
       // Support & Help
       _SettingsSection(
@@ -311,122 +400,126 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SettingsItem(
             title: 'Report an Issue',
             icon: Icons.bug_report_outlined,
-            onTap: () => _comingSoon(context, 'Report an Issue'),
+            onTap: () => _showReportIssueDialog(context),
           ),
         ],
       ),
 
-      // Consultation Settings
-      _SettingsSection(
-        title: 'Consultation Settings',
-        icon: Icons.video_call_rounded,
-        iconColor: const Color(0xFF8B5CF6),
-        iconBg: const Color(0xFFF5F3FF),
-        items: [
-          _SettingsItem(
-            title: 'Preferred Doctor Type',
-            icon: Icons.person_search_outlined,
-            onTap: () => _comingSoon(context, 'Preferred Doctor Type'),
-          ),
-          _SettingsItem(
-            title: 'Consultation History Access',
-            icon: Icons.history_outlined,
-            onTap: () => _comingSoon(context, 'Consultation History Access'),
-          ),
-          _SettingsItem(
-            title: 'Medical Records Upload',
-            icon: Icons.upload_file_outlined,
-            onTap: () => _comingSoon(context, 'Medical Records Upload'),
-          ),
-          _SettingsItem(
-            title: 'Video/Audio Preferences',
-            icon: Icons.settings_outlined,
-            onTap: () => _comingSoon(context, 'Video/Audio Preferences'),
-          ),
-        ],
-      ),
-
-      // Pharmacy Settings
-      _SettingsSection(
-        title: 'Pharmacy Settings',
-        icon: Icons.local_pharmacy_rounded,
-        iconColor: const Color(0xFF10B981),
-        iconBg: const Color(0xFFECFDF5),
-        items: [
-          _SettingsItem(
-            title: 'Saved Delivery Addresses',
-            icon: Icons.location_on_outlined,
-            onTap: () => _comingSoon(context, 'Saved Delivery Addresses'),
-          ),
-          _SettingsItem(
-            title: 'Preferred Pharmacy',
-            icon: Icons.store_outlined,
-            onTap: () => _comingSoon(context, 'Preferred Pharmacy'),
-          ),
-          _SettingsItem(
-            title: 'Order History',
-            icon: Icons.receipt_long_outlined,
-            onTap: () => _comingSoon(context, 'Order History'),
-          ),
-          _SettingsItem(
-            title: 'Delivery Preferences',
-            icon: Icons.delivery_dining_outlined,
-            onTap: () => _comingSoon(context, 'Delivery Preferences'),
-          ),
-        ],
-      ),
-
-      // Diagnostics Settings
-      _SettingsSection(
-        title: 'Diagnostics Settings',
-        icon: Icons.biotech_rounded,
-        iconColor: const Color(0xFF06B6D4),
-        iconBg: const Color(0xFFECFEFF),
-        items: [
-          _SettingsItem(
-            title: 'Test History',
-            icon: Icons.science_outlined,
-            onTap: () => _comingSoon(context, 'Test History'),
-          ),
-          _SettingsItem(
-            title: 'Home Sample Preferences',
-            icon: Icons.home_outlined,
-            onTap: () => _comingSoon(context, 'Home Sample Preferences'),
-          ),
-          _SettingsItem(
-            title: 'Report Delivery Method',
-            icon: Icons.send_outlined,
-            onTap: () => _comingSoon(context, 'Report Delivery Method'),
-          ),
-        ],
-      ),
-
-      // Learning Settings
-      _SettingsSection(
-        title: 'Learning Settings',
-        icon: Icons.school_rounded,
-        iconColor: const Color(0xFFF97316),
-        iconBg: const Color(0xFFFFF7ED),
-        items: [
-          _SettingsItem(
-            title: 'My Courses',
-            icon: Icons.menu_book_outlined,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const Courses()),
+      // Consultation Settings — Patient and Doctor only
+      if (isPatient || isDoctor)
+        _SettingsSection(
+          title: 'Consultation Settings',
+          icon: Icons.video_call_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          iconBg: const Color(0xFFF5F3FF),
+          items: [
+            _SettingsItem(
+              title: 'Preferred Doctor Type',
+              icon: Icons.person_search_outlined,
+              onTap: () => _comingSoon(context, 'Preferred Doctor Type'),
             ),
-          ),
-          _SettingsItem(
-            title: 'Certificates',
-            icon: Icons.workspace_premium_outlined,
-            onTap: () => _comingSoon(context, 'Certificates'),
-          ),
-          _SettingsItem(
-            title: 'Course Notifications',
-            icon: Icons.notifications_outlined,
-            onTap: () => _comingSoon(context, 'Course Notifications'),
-          ),
-        ],
-      ),
+            _SettingsItem(
+              title: 'Consultation History Access',
+              icon: Icons.history_outlined,
+              onTap: () => _comingSoon(context, 'Consultation History Access'),
+            ),
+            _SettingsItem(
+              title: 'Medical Records Upload',
+              icon: Icons.upload_file_outlined,
+              onTap: () => _comingSoon(context, 'Medical Records Upload'),
+            ),
+            _SettingsItem(
+              title: 'Video/Audio Preferences',
+              icon: Icons.settings_outlined,
+              onTap: () => _comingSoon(context, 'Video/Audio Preferences'),
+            ),
+          ],
+        ),
+
+      // Pharmacy Settings (patient-facing) — Patient only
+      if (isPatient)
+        _SettingsSection(
+          title: 'Pharmacy Settings',
+          icon: Icons.local_pharmacy_rounded,
+          iconColor: const Color(0xFF10B981),
+          iconBg: const Color(0xFFECFDF5),
+          items: [
+            _SettingsItem(
+              title: 'Saved Delivery Addresses',
+              icon: Icons.location_on_outlined,
+              onTap: () => _comingSoon(context, 'Saved Delivery Addresses'),
+            ),
+            _SettingsItem(
+              title: 'Preferred Pharmacy',
+              icon: Icons.store_outlined,
+              onTap: () => _comingSoon(context, 'Preferred Pharmacy'),
+            ),
+            _SettingsItem(
+              title: 'Order History',
+              icon: Icons.receipt_long_outlined,
+              onTap: () => _comingSoon(context, 'Order History'),
+            ),
+            _SettingsItem(
+              title: 'Delivery Preferences',
+              icon: Icons.delivery_dining_outlined,
+              onTap: () => _comingSoon(context, 'Delivery Preferences'),
+            ),
+          ],
+        ),
+
+      // Diagnostics Settings — Patient only
+      if (isPatient)
+        _SettingsSection(
+          title: 'Diagnostics Settings',
+          icon: Icons.biotech_rounded,
+          iconColor: const Color(0xFF06B6D4),
+          iconBg: const Color(0xFFECFEFF),
+          items: [
+            _SettingsItem(
+              title: 'Test History',
+              icon: Icons.science_outlined,
+              onTap: () => _comingSoon(context, 'Test History'),
+            ),
+            _SettingsItem(
+              title: 'Home Sample Preferences',
+              icon: Icons.home_outlined,
+              onTap: () => _comingSoon(context, 'Home Sample Preferences'),
+            ),
+            _SettingsItem(
+              title: 'Report Delivery Method',
+              icon: Icons.send_outlined,
+              onTap: () => _comingSoon(context, 'Report Delivery Method'),
+            ),
+          ],
+        ),
+
+      // Learning Settings — Patient, Student, Instructor only
+      if (!isPharmacy && !isLaboratory && !isDoctor)
+        _SettingsSection(
+          title: 'Learning Settings',
+          icon: Icons.school_rounded,
+          iconColor: const Color(0xFFF97316),
+          iconBg: const Color(0xFFFFF7ED),
+          items: [
+            _SettingsItem(
+              title: 'My Courses',
+              icon: Icons.menu_book_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const Courses()),
+              ),
+            ),
+            _SettingsItem(
+              title: 'Certificates',
+              icon: Icons.workspace_premium_outlined,
+              onTap: () => _comingSoon(context, 'Certificates'),
+            ),
+            _SettingsItem(
+              title: 'Course Notifications',
+              icon: Icons.notifications_outlined,
+              onTap: () => _comingSoon(context, 'Course Notifications'),
+            ),
+          ],
+        ),
 
       // Language & Region
       _SettingsSection(

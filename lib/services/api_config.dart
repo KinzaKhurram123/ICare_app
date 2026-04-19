@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 class ApiConfig {
   // Production backend URL
-  static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
+  static const String baseUrl = 'https://icare-backend-inky.vercel.app/api';
+
+  // Previous backend URL (kept for reference):
+  // static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
 
   // For local development (web/Chrome):
   // static const String baseUrl = 'http://localhost:5000/api';
