@@ -139,29 +139,23 @@ class AuthLeftPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // 4 Trust badges — improved with subtitles
-                  _trust(
-                    Icons.shield_rounded,
-                    'Data Protected & Secure',
-                    'End-to-end encrypted health records',
-                  ),
-                  const SizedBox(height: 18),
-                  _trust(
-                    Icons.verified_user_rounded,
-                    'Verified Doctors Only',
-                    'All providers are PMDC credentialed',
-                  ),
-                  const SizedBox(height: 18),
-                  _trust(
-                    Icons.medical_services_rounded,
-                    'Complete Virtual Hospital',
-                    'Consult, prescribe & manage all-in-one',
-                  ),
-                  const SizedBox(height: 18),
-                  _trust(
-                    Icons.people_rounded,
-                    'Trusted Nationwide',
-                    'Thousands of patients across Pakistan',
+                  // 4 Trust badges — centered with subtitles
+                  Center(
+                    child: SizedBox(
+                      width: 270,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _trust(Icons.shield_rounded, 'Data Protected & Secure', 'End-to-end encrypted health records'),
+                          const SizedBox(height: 18),
+                          _trust(Icons.verified_user_rounded, 'Verified Doctors Only', 'All providers are PMDC credentialed'),
+                          const SizedBox(height: 18),
+                          _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital', 'Consult, prescribe & manage all-in-one'),
+                          const SizedBox(height: 18),
+                          _trust(Icons.people_rounded, 'Trusted Nationwide', 'Thousands of patients across Pakistan'),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -174,7 +168,6 @@ class AuthLeftPanel extends StatelessWidget {
 
   Widget _trust(IconData icon, String title, String subtitle) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
@@ -188,7 +181,7 @@ class AuthLeftPanel extends StatelessWidget {
           child: Icon(icon, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 14),
-        Expanded(
+        Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
