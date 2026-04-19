@@ -325,6 +325,13 @@ class _ConditionSearchBar extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+              );
+            }
+          },
         ),
       ),
     );
@@ -354,6 +361,13 @@ class _MedicineSearchBar extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
+              );
+            }
+          },
         ),
       ),
     );
@@ -383,6 +397,13 @@ class _LabSearchBar extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => LabsListScreen()),
+              );
+            }
+          },
         ),
       ),
     );
