@@ -719,46 +719,100 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         : 'User';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
           bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primaryColor,
-            radius: 24,
-            child: const Icon(Icons.person_outlined, color: Colors.white),
+          // iCare logo + brand
+          Row(
+            children: [
+              Container(
+                width: 38, height: 38,
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0036BC).withOpacity(0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'iCare',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0036BC),
+                      fontFamily: 'Gilroy-Bold',
+                    ),
+                  ),
+                  Text(
+                    'by RM Health Solution',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.grey[500],
+                      fontFamily: 'Gilroy-Medium',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 16),
+          Container(height: 1, color: const Color(0xFFE8ECF5)),
+          const SizedBox(height: 16),
+          // User info row
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.primaryColor,
+                radius: 22,
+                child: const Icon(Icons.person_outlined, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      roleDisplay,
+                      style: const TextStyle(
+                        color: AppColors.primaryColor,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                Text(
-                  roleDisplay,
-                  style: const TextStyle(
-                    color: AppColors.primaryColor,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
