@@ -44,15 +44,13 @@ class PublicHome extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Left: iCare logo only
+                      // Left: iCare logo
                       Positioned(
                         left: 0,
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          width: isMobile ? 44 : 56,
-                          height: isMobile ? 44 : 56,
+                        child: SvgPicture.asset(
+                          ImagePaths.logo,
+                          height: isMobile ? 36 : 44,
                           fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
                         ),
                       ),
                       // Right: nav buttons
@@ -2105,12 +2103,10 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 72,
-                  height: 72,
+                SvgPicture.asset(
+                  ImagePaths.logo,
+                  height: 44,
                   fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -2159,12 +2155,10 @@ class _Footer extends StatelessWidget {
     return [
       Row(
         children: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 60,
-            height: 60,
+          SvgPicture.asset(
+            ImagePaths.logo,
+            height: 36,
             fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
           ),
         ],
       ),
