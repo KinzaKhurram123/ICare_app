@@ -93,7 +93,6 @@ class PublicHome extends StatelessWidget {
                 ),
               ),
             ),
-          ),
 
           SliverToBoxAdapter(
             child: Column(
@@ -295,6 +294,7 @@ class PublicHome extends StatelessWidget {
     );
   }
 }
+
 
 
 // ── Search Bars ───────────────────────────────────────────────────────────────
