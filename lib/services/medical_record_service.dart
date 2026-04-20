@@ -10,7 +10,7 @@ class MedicalRecordService {
   ) async {
     try {
       debugPrint('📋 Creating medical record...');
-      final response = await _apiService.post('/medical-records/create', data);
+      final response = await _apiService.post('/medical-records', data);
 
       debugPrint('✅ Response: ${response.statusCode}');
 
