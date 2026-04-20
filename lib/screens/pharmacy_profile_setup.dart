@@ -50,9 +50,10 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
     try {
       final profile = await _pharmacyService.getPharmacyProfile();
       setState(() {
-        _ownerNameController.text = profile['ownerName'] ?? '';
+        // Use pharmacy name or user name, not role
+        _ownerNameController.text = profile['pharmacyName'] ?? profile['name'] ?? profile['ownerName'] ?? '';
         _cnicController.text = profile['cnic'] ?? '';
-        _licenseNumberController.text = profile['licenseNumber'] ?? '';
+        _licenseNumberController.text = profile['licenseNumber'] ?? profile['drugSaleLicense'] ?? '';
         _addressController.text = profile['address'] ?? '';
         _cityController.text = profile['city'] ?? '';
         _openHoursFromController.text = profile['openHours']?['from'] ?? '';
@@ -133,8 +134,8 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                     _buildSection('Basic Information', Icons.info_outline, [
                       _buildTextField(
                         controller: _ownerNameController,
-                        label: 'Owner Name',
-                        icon: Icons.person,
+                        label: 'Pharmacy Name',
+                        icon: Icons.local_pharmacy,
                         validator: (v) =>
                             v?.isEmpty ?? true ? 'Required' : null,
                       ),
