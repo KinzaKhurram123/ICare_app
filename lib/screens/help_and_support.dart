@@ -15,8 +15,9 @@ class HelpAndSupport extends ConsumerWidget {
     final isStudent = role == 'Student';
     final isPharmacy = role == 'Pharmacy';
     final isLaboratory = role == 'Laboratory';
+    final isDoctor = role == 'Doctor';
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebHelpAndSupport(isStudent: isStudent, isPharmacy: isPharmacy, isLaboratory: isLaboratory);
+      return _WebHelpAndSupport(isStudent: isStudent, isPharmacy: isPharmacy, isLaboratory: isLaboratory, isDoctor: isDoctor);
     }
 
     // REFINED MOBILE LAYOUT
@@ -162,7 +163,8 @@ class _WebHelpAndSupport extends StatelessWidget {
   final bool isStudent;
   final bool isPharmacy;
   final bool isLaboratory;
-  const _WebHelpAndSupport({this.isStudent = false, this.isPharmacy = false, this.isLaboratory = false});
+  final bool isDoctor;
+  const _WebHelpAndSupport({this.isStudent = false, this.isPharmacy = false, this.isLaboratory = false, this.isDoctor = false});
 
   @override
   Widget build(BuildContext context) {
@@ -372,6 +374,33 @@ class _WebHelpAndSupport extends StatelessWidget {
                           question: "Where can I see my lab's revenue and analytics?",
                           answer:
                               "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
+                        ),
+                      ] else if (isDoctor) ...[
+                        _WebFaqCard(
+                          question: "How do I manage my appointment schedule?",
+                          answer:
+                              "Go to 'My Schedule' in your sidebar to view, accept, or reschedule patient appointments. You can also set your availability and block specific time slots.",
+                          isExpanded: true,
+                        ),
+                        _WebFaqCard(
+                          question: "How do I write and send prescriptions?",
+                          answer:
+                              "During or after a consultation, click 'Write Prescription' in the appointment details. Add medicines, dosage, and instructions, then send it directly to the patient.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I update my consultation fees?",
+                          answer:
+                              "Navigate to Settings > Professional Settings > Consultation Fees. You can set different fees for in-person, video, and follow-up consultations.",
+                        ),
+                        _WebFaqCard(
+                          question: "Where can I view my earnings and patient analytics?",
+                          answer:
+                              "Go to 'Revenue & Analytics' in your sidebar to see total earnings, appointment trends, patient demographics, and consultation breakdown by type.",
+                        ),
+                        _WebFaqCard(
+                          question: "How do I access patient medical history?",
+                          answer:
+                              "Click on any appointment to view the patient's profile, which includes past consultations, prescriptions, lab reports, and medical conditions.",
                         ),
                       ] else ...[
                         _WebFaqCard(

@@ -378,6 +378,129 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
 
+      // Pharmacy Business Settings — Pharmacy only
+      if (isPharmacy)
+        _SettingsSection(
+          title: 'Pharmacy Business Settings',
+          icon: Icons.store_rounded,
+          iconColor: const Color(0xFF10B981),
+          iconBg: const Color(0xFFECFDF5),
+          items: [
+            _SettingsItem(
+              title: 'Business Hours',
+              icon: Icons.access_time_rounded,
+              onTap: () => _comingSoon(context, 'Business Hours'),
+            ),
+            _SettingsItem(
+              title: 'Delivery Settings',
+              icon: Icons.local_shipping_outlined,
+              onTap: () => _comingSoon(context, 'Delivery Settings'),
+            ),
+            _SettingsItem(
+              title: 'Inventory Alerts',
+              icon: Icons.inventory_2_outlined,
+              onTap: () => _comingSoon(context, 'Inventory Alerts'),
+            ),
+            _SettingsItem(
+              title: 'Order Notifications',
+              icon: Icons.notifications_active_outlined,
+              onTap: () => _comingSoon(context, 'Order Notifications'),
+            ),
+            _SettingsItem(
+              title: 'Payment Methods',
+              icon: Icons.payment_rounded,
+              onTap: () => _comingSoon(context, 'Payment Methods'),
+            ),
+            _SettingsItem(
+              title: 'License & Compliance',
+              icon: Icons.verified_outlined,
+              onTap: () => _comingSoon(context, 'License & Compliance'),
+            ),
+          ],
+        ),
+
+      // Laboratory Settings — Laboratory only
+      if (isLaboratory)
+        _SettingsSection(
+          title: 'Laboratory Settings',
+          icon: Icons.science_rounded,
+          iconColor: const Color(0xFF06B6D4),
+          iconBg: const Color(0xFFECFEFF),
+          items: [
+            _SettingsItem(
+              title: 'Test Catalog',
+              icon: Icons.list_alt_rounded,
+              onTap: () => _comingSoon(context, 'Test Catalog'),
+            ),
+            _SettingsItem(
+              title: 'Sample Collection Settings',
+              icon: Icons.medical_services_outlined,
+              onTap: () => _comingSoon(context, 'Sample Collection Settings'),
+            ),
+            _SettingsItem(
+              title: 'Report Delivery Settings',
+              icon: Icons.description_outlined,
+              onTap: () => _comingSoon(context, 'Report Delivery Settings'),
+            ),
+            _SettingsItem(
+              title: 'Lab Timings',
+              icon: Icons.schedule_rounded,
+              onTap: () => _comingSoon(context, 'Lab Timings'),
+            ),
+            _SettingsItem(
+              title: 'Equipment Management',
+              icon: Icons.biotech_outlined,
+              onTap: () => _comingSoon(context, 'Equipment Management'),
+            ),
+            _SettingsItem(
+              title: 'Accreditation & Certifications',
+              icon: Icons.workspace_premium_outlined,
+              onTap: () => _comingSoon(context, 'Accreditation & Certifications'),
+            ),
+          ],
+        ),
+
+      // Doctor Professional Settings — Doctor only
+      if (isDoctor)
+        _SettingsSection(
+          title: 'Professional Settings',
+          icon: Icons.medical_information_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          iconBg: const Color(0xFFF5F3FF),
+          items: [
+            _SettingsItem(
+              title: 'Consultation Fees',
+              icon: Icons.attach_money_rounded,
+              onTap: () => _comingSoon(context, 'Consultation Fees'),
+            ),
+            _SettingsItem(
+              title: 'Availability & Schedule',
+              icon: Icons.event_available_outlined,
+              onTap: () => _comingSoon(context, 'Availability & Schedule'),
+            ),
+            _SettingsItem(
+              title: 'Specialization & Qualifications',
+              icon: Icons.school_outlined,
+              onTap: () => _comingSoon(context, 'Specialization & Qualifications'),
+            ),
+            _SettingsItem(
+              title: 'Clinic Details',
+              icon: Icons.local_hospital_outlined,
+              onTap: () => _comingSoon(context, 'Clinic Details'),
+            ),
+            _SettingsItem(
+              title: 'Prescription Templates',
+              icon: Icons.note_add_outlined,
+              onTap: () => _comingSoon(context, 'Prescription Templates'),
+            ),
+            _SettingsItem(
+              title: 'Medical License',
+              icon: Icons.badge_outlined,
+              onTap: () => _comingSoon(context, 'Medical License'),
+            ),
+          ],
+        ),
+
       // Support & Help
       _SettingsSection(
         title: 'Support & Help',

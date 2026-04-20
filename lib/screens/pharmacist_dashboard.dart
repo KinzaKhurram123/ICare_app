@@ -202,7 +202,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               Expanded(
                 child: _buildStatCard(
                   'Today',
-                  _stats['todayOrders']!,
+                  _stats['todayOrders'] ?? 0,
                   Icons.today_rounded,
                   const Color(0xFF6366F1),
                 ),
@@ -211,7 +211,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               Expanded(
                 child: _buildStatCard(
                   'Total Orders',
-                  _stats['totalOrders']!,
+                  _stats['totalOrders'] ?? 0,
                   Icons.receipt_long_rounded,
                   const Color(0xFF3B82F6),
                 ),
@@ -220,7 +220,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               Expanded(
                 child: _buildStatCard(
                   'Pending',
-                  _stats['pendingOrders']!,
+                  _stats['pendingOrders'] ?? 0,
                   Icons.pending_actions_rounded,
                   const Color(0xFFF59E0B),
                 ),
@@ -229,7 +229,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               Expanded(
                 child: _buildStatCard(
                   'Completed',
-                  _stats['completedOrders']!,
+                  _stats['completedOrders'] ?? 0,
                   Icons.check_circle_outline_rounded,
                   const Color(0xFF10B981),
                 ),
@@ -245,7 +245,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
                 Expanded(
                   child: _buildStatCard(
                     'Today',
-                    _stats['todayOrders']!,
+                    _stats['todayOrders'] ?? 0,
                     Icons.today_rounded,
                     const Color(0xFF6366F1),
                   ),
@@ -254,7 +254,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
                 Expanded(
                   child: _buildStatCard(
                     'Total Orders',
-                    _stats['totalOrders']!,
+                    _stats['totalOrders'] ?? 0,
                     Icons.receipt_long_rounded,
                     const Color(0xFF3B82F6),
                   ),
@@ -267,7 +267,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
                 Expanded(
                   child: _buildStatCard(
                     'Pending',
-                    _stats['pendingOrders']!,
+                    _stats['pendingOrders'] ?? 0,
                     Icons.pending_actions_rounded,
                     const Color(0xFFF59E0B),
                   ),
@@ -276,7 +276,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
                 Expanded(
                   child: _buildStatCard(
                     'Completed',
-                    _stats['completedOrders']!,
+                    _stats['completedOrders'] ?? 0,
                     Icons.check_circle_outline_rounded,
                     const Color(0xFF10B981),
                   ),
