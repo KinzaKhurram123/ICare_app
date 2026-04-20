@@ -226,7 +226,7 @@ class PublicHome extends StatelessWidget {
                         const SizedBox(height: 20),
                         Center(
                           child: GestureDetector(
-                            onTap: () {},
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LabsListScreen())),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
@@ -298,13 +298,24 @@ class PublicHome extends StatelessWidget {
 
 
 // ── Search Bars ───────────────────────────────────────────────────────────────
-class _ConditionSearchBar extends StatelessWidget {
+class _ConditionSearchBar extends StatefulWidget {
+  @override
+  State<_ConditionSearchBar> createState() => _ConditionSearchBarState();
+}
+
+class _ConditionSearchBarState extends State<_ConditionSearchBar> {
+  String _filter = 'specialty';
+
   @override
   Widget build(BuildContext context) {
+    final hintMap = {
+      'specialty': 'Search by specialty (e.g. Cardiologist...)',
+      'condition': 'Search by condition (e.g. Diabetes, Fever...)',
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 48,
+        height: 50,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -313,34 +324,69 @@ class _ConditionSearchBar extends StatelessWidget {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search by condition (e.g. Diabetes, Fever...)',
-            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0036BC), size: 20),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
-              );
-            }
-          },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: const BoxDecoration(
+                border: Border(right: BorderSide(color: Color(0xFFE8ECF5), width: 1.5)),
+              ),
+              child: DropdownButton<String>(
+                value: _filter,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.arrow_drop_down, size: 20),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF0036BC), fontWeight: FontWeight.w600),
+                items: const [
+                  DropdownMenuItem(value: 'specialty', child: Text('Specialty')),
+                  DropdownMenuItem(value: 'condition', child: Text('Condition')),
+                ],
+                onChanged: (v) => setState(() => _filter = v!),
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: hintMap[_filter],
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0036BC), size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _MedicineSearchBar extends StatelessWidget {
+class _MedicineSearchBar extends StatefulWidget {
+  @override
+  State<_MedicineSearchBar> createState() => _MedicineSearchBarState();
+}
+
+class _MedicineSearchBarState extends State<_MedicineSearchBar> {
+  String _filter = 'name';
+
   @override
   Widget build(BuildContext context) {
+    final hintMap = {
+      'name': 'Search by medicine name (e.g. Panadol...)',
+      'category': 'Search by category (e.g. Antibiotic...)',
+      'condition': 'Search by condition (e.g. Fever, Pain...)',
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 48,
+        height: 50,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -349,34 +395,70 @@ class _MedicineSearchBar extends StatelessWidget {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search for medicines, brands...',
-            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-            prefixIcon: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 20),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
-              );
-            }
-          },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: const BoxDecoration(
+                border: Border(right: BorderSide(color: Color(0xFFE8ECF5), width: 1.5)),
+              ),
+              child: DropdownButton<String>(
+                value: _filter,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.arrow_drop_down, size: 20),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                items: const [
+                  DropdownMenuItem(value: 'name', child: Text('Medicine Name')),
+                  DropdownMenuItem(value: 'category', child: Text('Category')),
+                  DropdownMenuItem(value: 'condition', child: Text('Condition')),
+                ],
+                onChanged: (v) => setState(() => _filter = v!),
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: hintMap[_filter],
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _LabSearchBar extends StatelessWidget {
+class _LabSearchBar extends StatefulWidget {
+  @override
+  State<_LabSearchBar> createState() => _LabSearchBarState();
+}
+
+class _LabSearchBarState extends State<_LabSearchBar> {
+  String _filter = 'test';
+
   @override
   Widget build(BuildContext context) {
+    final hintMap = {
+      'test': 'Search test name (e.g. CBC, HbA1c...)',
+      'category': 'Search by category (e.g. Blood Test...)',
+      'lab': 'Search by lab name (e.g. Chughtai...)',
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 48,
+        height: 50,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -385,21 +467,45 @@ class _LabSearchBar extends StatelessWidget {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search test names (e.g. CBC, HbA1c...)',
-            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-            prefixIcon: const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 20),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => LabsListScreen()),
-              );
-            }
-          },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: const BoxDecoration(
+                border: Border(right: BorderSide(color: Color(0xFFE8ECF5), width: 1.5)),
+              ),
+              child: DropdownButton<String>(
+                value: _filter,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.arrow_drop_down, size: 20),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF8B5CF6), fontWeight: FontWeight.w600),
+                items: const [
+                  DropdownMenuItem(value: 'test', child: Text('Test Name')),
+                  DropdownMenuItem(value: 'category', child: Text('Category')),
+                  DropdownMenuItem(value: 'lab', child: Text('Lab Name')),
+                ],
+                onChanged: (v) => setState(() => _filter = v!),
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: hintMap[_filter],
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => LabsListScreen()),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1310,6 +1416,9 @@ class _PharmaciesGrid extends StatelessWidget {
           icon: Icons.local_pharmacy_rounded,
           iconColor: const Color(0xFF10B981),
           width: double.infinity,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PharmaciesScreen()),
+          ),
         )).toList(),
       ),
     );
@@ -1348,6 +1457,9 @@ class _LaboratoriesGrid extends StatelessWidget {
           icon: Icons.biotech_rounded,
           iconColor: const Color(0xFF8B5CF6),
           width: double.infinity,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => LabsListScreen()),
+          ),
         )).toList(),
       ),
     );
@@ -1362,6 +1474,7 @@ class _ServiceCard extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
   final double width;
+  final VoidCallback? onTap;
 
   const _ServiceCard({
     required this.name,
@@ -1370,6 +1483,7 @@ class _ServiceCard extends StatefulWidget {
     required this.icon,
     required this.iconColor,
     required this.width,
+    this.onTap,
   });
 
   @override
@@ -1385,7 +1499,9 @@ class _ServiceCardState extends State<_ServiceCard> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: widget.width,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
@@ -1450,6 +1566,7 @@ class _ServiceCardState extends State<_ServiceCard> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );
@@ -1945,24 +2062,11 @@ class _StoreBadgeButton extends StatefulWidget {
 class _StoreBadgeButtonState extends State<_StoreBadgeButton> {
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Coming Soon',
-      child: Opacity(
-        opacity: 0.65,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.basic,
-          child: GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('App coming soon — stay tuned!'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            child: widget.child,
-          ),
-        ),
+    return Opacity(
+      opacity: 0.55,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.basic,
+        child: widget.child,
       ),
     );
   }
@@ -2377,7 +2481,7 @@ class PublicHomeBody extends StatelessWidget {
                 const SizedBox(height: 20),
                 Center(
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LabsListScreen())),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       decoration: BoxDecoration(

@@ -41,6 +41,7 @@ import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_tests_management.dart';
 import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
+import 'package:icare/screens/lab_settings_screen.dart';
 import 'package:icare/screens/lab_supplies_management.dart';
 import 'package:icare/screens/pharmacy_inventory.dart';
 import 'package:icare/screens/pharmacy_orders.dart';
@@ -388,16 +389,16 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
         ),
         _SidebarItem(
           icon: role == 'Pharmacy'
-              ? Icons.receipt_long_outlined
+              ? Icons.shopping_cart_outlined
               : (role == 'Laboratory'
-                    ? Icons.list_alt_outlined
+                    ? Icons.assignment_ind_outlined
                     : (role == 'Student'
                           ? Icons.school_outlined
                           : Icons.calendar_month_outlined)),
           label: role == 'Pharmacy'
-              ? 'Prescriptions'
+              ? 'Orders'
               : (role == 'Laboratory'
-                    ? 'Test Requests'
+                    ? 'New Requests'
                     : (role == 'Student' ? 'My Programs' : 'Appointments')),
           index: 1,
         ),
@@ -939,18 +940,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.person_outlined,
-                    'Profile Setup',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => InstructorProfileSetupScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.settings_outlined,
                     'Settings',
                     () {
@@ -977,15 +966,39 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.assignment_ind_outlined,
-                    'Diagnostic Queue',
+                    Icons.hourglass_empty_outlined,
+                    'Awaiting Fulfillment',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const LabBookingsManagement(
-                            title: 'Diagnostic Queue',
+                            title: 'Awaiting Fulfillment',
                             initialFilter: 'pending',
                           ),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.list_alt_outlined,
+                    'Orders',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const LabBookingsManagement(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.science_outlined,
+                    'Test Catalog',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const LabTestsManagement(),
                         ),
                       );
                     },
@@ -1007,83 +1020,8 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.history_outlined,
-                    'Clinical Archive',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabBookingsManagement(
-                            title: 'Clinical Archive',
-                            initialFilter: 'completed',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.science_outlined,
-                    'Test Catalog',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabTestsManagement(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.inventory_2_outlined,
-                    'Supplies Management',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabSuppliesManagement(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.analytics_outlined,
-                    'Lab Analytics',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabAnalytics(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.calendar_month_outlined,
-                    'My Appointments',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const MyAppointmentsListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.person_outline,
-                    'Profile Setup',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabProfileSetup(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.receipt_long_outlined,
-                    'Payment Invoices',
+                    'Invoices',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -1094,12 +1032,12 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.help_outline_rounded,
-                    'Help & Support',
+                    Icons.analytics_outlined,
+                    'Revenue & Analytics',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const HelpAndSupport(),
+                          builder: (ctx) => const LabAnalytics(),
                         ),
                       );
                     },
@@ -1111,7 +1049,19 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const SettingsScreen(),
+                          builder: (ctx) => const LabSettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.support_agent_outlined,
+                    'iCare Lab Support',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const HelpAndSupport(),
                         ),
                       );
                     },
@@ -1132,32 +1082,8 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.edit_outlined,
-                    'Profile Setup',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PharmacyProfileSetup(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.inventory_outlined,
-                    'Inventory',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PharmacyInventory(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.shopping_cart_outlined,
-                    'Orders',
+                    Icons.hourglass_empty_outlined,
+                    'Awaiting Fulfillment',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -1168,46 +1094,24 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
+                    Icons.receipt_long_outlined,
+                    'Invoices',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const PaymentInvoices(isPharmacy: true),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
                     Icons.analytics_outlined,
-                    'Analytics',
+                    'Revenue & Analytics',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const PharmacyAnalytics(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.task_alt_outlined,
-                    'Tasks',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.shopping_basket_outlined,
-                    'My Orders',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const MyOrdersScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.help_outline_rounded,
-                    'Help & Support',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const HelpAndSupport(),
                         ),
                       );
                     },
@@ -1220,6 +1124,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.support_agent_outlined,
+                    'iCare Pharmacist Support',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const HelpAndSupport(),
                         ),
                       );
                     },

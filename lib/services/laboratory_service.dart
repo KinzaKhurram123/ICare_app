@@ -185,6 +185,53 @@ class LaboratoryService {
     }
   }
 
+  // Rate a booking (patient side)
+  Future<void> rateBooking({
+    required String bookingId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      await _apiService.post('/laboratories/bookings/$bookingId/rate', {
+        'rating': rating,
+        'comment': comment,
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'rateBooking');
+      rethrow;
+    }
+  }
+
+  // Create walk-in order
+  Future<Map<String, dynamic>> createWalkInOrder({
+    required String patientName,
+    required String contact,
+    required String address,
+    required String tests,
+    required String collectionType,
+  }) async {
+    try {
+      final profile = await getProfile();
+      final labId = profile['_id'];
+      final response = await _apiService.post(
+        '/laboratories/$labId/bookings',
+        {
+          'patientName': patientName,
+          'contact': contact,
+          'address': address,
+          'testName': tests,
+          'collectionType': collectionType,
+          'source': 'walk-in',
+          'status': 'confirmed',
+        },
+      );
+      return response.data['booking'] ?? {};
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'createWalkInOrder');
+      rethrow;
+    }
+  }
+
   // Upload test result report
   Future<String> uploadReport(
     String bookingId,

@@ -95,34 +95,45 @@ class InstructorSidebar extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+      padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
       color: Colors.white,
-      child: const Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primaryColor,
-            radius: 24,
-            child: Icon(Icons.person_rounded, color: Colors.white),
+          Image.asset(
+            'assets/images/logo.png',
+            height: 64,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Instructor Panel',
-                  style: TextStyle(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.primaryColor,
+                radius: 22,
+                child: Icon(Icons.person_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Instructor Panel',
+                      style: TextStyle(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Program Manager',
+                      style: TextStyle(color: AppColors.primaryColor, fontSize: 12),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Program Manager',
-                  style: TextStyle(color: AppColors.primaryColor, fontSize: 13),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

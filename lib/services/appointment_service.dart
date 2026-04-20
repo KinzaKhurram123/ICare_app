@@ -139,4 +139,20 @@ class AppointmentService {
       return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
+
+  Future<void> rateAppointment({
+    required String appointmentId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      await _apiService.post('/appointments/$appointmentId/rate', {
+        'rating': rating,
+        'comment': comment,
+      });
+    } catch (e) {
+      debugPrint('❌ Rate appointment error: $e');
+      rethrow;
+    }
+  }
 }

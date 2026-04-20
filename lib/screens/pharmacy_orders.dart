@@ -3,6 +3,8 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/rating_dialog.dart';
+import 'package:icare/utils/pdf_invoice_generator.dart';
 import 'package:intl/intl.dart';
 
 class PharmacyOrders extends StatefulWidget {
@@ -54,6 +56,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'customerName': user?['name'] ?? 'Guest Customer',
             'customerPhone': user?['phoneNumber'] ?? 'N/A',
             'items': (o['items'] as List?)?.length ?? 0,
+            'itemsList': (o['items'] as List?) ?? [],
             'total': (o['totalAmount'] ?? 0).toDouble(),
             'status': o['status'] ?? 'pending',
             'date': o['createdAt'] != null
@@ -111,7 +114,44 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     }
   }
 
-  Future<void> _showDispatchDialog(String orderId) async {
+  Future<void> _showDispatchDialog(String orderId, List items) async {
+    // Check for controlled medicines exceeding 30-unit cap
+    final violatingItems = items.where((item) {
+      final isControlled = item['isControlled'] == true;
+      final qty = (item['quantity'] ?? item['qty'] ?? 0) as int;
+      return isControlled && qty > 30;
+    }).toList();
+
+    if (violatingItems.isNotEmpty && mounted) {
+      final names = violatingItems.map((i) => i['productName'] ?? i['name'] ?? 'Unknown').join(', ');
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_rounded, color: Color(0xFF8B5CF6), size: 22),
+              SizedBox(width: 10),
+              Text('Controlled Medicine Warning', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          content: Text(
+            'This order contains controlled medicine(s) exceeding the 30-unit limit:\n\n$names\n\nPlease verify prescription before dispatching.',
+            style: const TextStyle(fontSize: 13, height: 1.5),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+              child: const Text('Proceed Anyway'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
     final deliveryController = TextEditingController();
     TimeOfDay? selectedTime;
     final formKey = GlobalKey<FormState>();
@@ -657,7 +697,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => _showDispatchDialog(order['_id']),
+                      onPressed: () => _showDispatchDialog(order['_id'], order['itemsList'] as List),
                       icon: const Icon(Icons.delivery_dining_rounded, size: 18),
                       label: const Text('Dispatch'),
                       style: ElevatedButton.styleFrom(
@@ -671,12 +711,27 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                 ] else if (status == 'out_for_delivery') ...[
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'completed'),
+                    onPressed: () => _markAsCompleted(order['_id'], order['customerName']),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                     ),
                     child: const Text('Mark as Completed'),
+                  ),
+                ] else if (status == 'completed') ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _downloadInvoice(order),
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text('Download Invoice'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0036BC),
+                        side: const BorderSide(color: Color(0xFF0036BC)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -685,6 +740,71 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         ],
       ),
     );
+  }
+
+  Future<void> _downloadInvoice(Map<String, dynamic> order) async {
+    try {
+      final items = (order['medicines'] as List).map((medicine) {
+        return {
+          'name': medicine.toString(),
+          'quantity': 1,
+          'price': (order['total'] ?? 0) / (order['medicines'] as List).length,
+        };
+      }).toList();
+
+      await PdfInvoiceGenerator.generatePharmacyInvoice(
+        orderNumber: order['id'],
+        patientName: order['customerName'],
+        patientPhone: order['customerPhone'] ?? 'N/A',
+        patientAddress: 'N/A',
+        items: items,
+        deliveryFee: 0,
+        totalAmount: (order['total'] ?? 0).toDouble(),
+        orderDate: order['date'],
+        pharmacyName: 'iCare Pharmacy',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate invoice: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markAsCompleted(String orderId, String customerName) async {
+    try {
+      await _updateOrderStatus(orderId, 'completed');
+
+      if (mounted) {
+        final rated = await showRatingDialog(
+          context: context,
+          title: 'How was your experience?',
+          subtitle: 'Rate your experience with $customerName\'s order',
+          onSubmit: (rating, comment) async {
+            // Submit rating to backend
+            try {
+              await _pharmacyService.submitOrderRating(orderId, rating, comment);
+            } catch (e) {
+              debugPrint('Failed to submit rating: $e');
+            }
+          },
+        );
+
+        if (rated == true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Thank you for your feedback!'),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Utils.showErrorSnackBar(context, e);
+      }
+    }
   }
 
   Color _getStatusColor(String status) {

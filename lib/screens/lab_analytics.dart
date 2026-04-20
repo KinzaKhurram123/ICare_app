@@ -85,25 +85,57 @@ class _LabAnalyticsState extends State<LabAnalytics>
         return sum + (b['price'] ?? 0).toDouble();
       });
 
+      final completedCount = filteredBookings
+          .where((b) => b['status'] == 'completed')
+          .length;
+      final confirmedCount = filteredBookings
+          .where((b) => b['status'] == 'confirmed')
+          .length;
+      final cancelledCount = filteredBookings
+          .where((b) => b['status'] == 'cancelled')
+          .length;
+      final totalCount = filteredBookings.length;
+
+      // Acceptance rate = (confirmed + completed) / total
+      final acceptedCount = completedCount + confirmedCount;
+      final acceptanceRate = totalCount > 0
+          ? (acceptedCount / totalCount * 100)
+          : 0.0;
+
+      // Average patient rating from bookings that have a rating
+      final ratedBookings = filteredBookings
+          .where((b) => b['rating'] != null)
+          .toList();
+      final avgRating = ratedBookings.isNotEmpty
+          ? ratedBookings.fold<double>(
+                0,
+                (sum, b) => sum + (b['rating'] ?? 0).toDouble(),
+              ) /
+              ratedBookings.length
+          : 0.0;
+
+      // Pending payout = revenue from completed bookings not yet disbursed
+      final pendingPayout = filteredBookings
+          .where((b) => b['status'] == 'completed' && b['payoutStatus'] != 'paid')
+          .fold<double>(0, (sum, b) => sum + (b['price'] ?? 0).toDouble());
+
       setState(() {
         _analytics = {
-          'totalBookings': filteredBookings.length,
+          'totalBookings': totalCount,
           'allTimeBookings': bookings.length,
-          'completedBookings': filteredBookings
-              .where((b) => b['status'] == 'completed')
-              .length,
+          'completedBookings': completedCount,
           'pendingBookings': filteredBookings
               .where((b) => b['status'] == 'pending')
               .length,
-          'confirmedBookings': filteredBookings
-              .where((b) => b['status'] == 'confirmed')
-              .length,
-          'cancelledBookings': filteredBookings
-              .where((b) => b['status'] == 'cancelled')
-              .length,
+          'confirmedBookings': confirmedCount,
+          'cancelledBookings': cancelledCount,
           'topTests': topTests.take(5),
           'revenue': revenue,
-          'avgBookingsPerDay': filteredBookings.length / 30,
+          'avgBookingsPerDay': totalCount / 30,
+          'acceptanceRate': acceptanceRate,
+          'avgRating': avgRating,
+          'ratingCount': ratedBookings.length,
+          'pendingPayout': pendingPayout,
         };
         _isLoading = false;
       });
@@ -165,6 +197,8 @@ class _LabAnalyticsState extends State<LabAnalytics>
                           _buildOverviewCards(isDesktop),
                           const SizedBox(height: 24),
                           _buildRevenueCard(),
+                          const SizedBox(height: 24),
+                          _buildPerformanceMetrics(isDesktop),
                           const SizedBox(height: 24),
                           _buildStatusBreakdown(),
                           const SizedBox(height: 24),
@@ -588,6 +622,157 @@ class _LabAnalyticsState extends State<LabAnalytics>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPerformanceMetrics(bool isDesktop) {
+    final acceptanceRate = (_analytics?['acceptanceRate'] ?? 0.0) as double;
+    final avgRating = (_analytics?['avgRating'] ?? 0.0) as double;
+    final ratingCount = _analytics?['ratingCount'] ?? 0;
+    final pendingPayout = (_analytics?['pendingPayout'] ?? 0.0) as double;
+
+    final metrics = [
+      {
+        'title': 'Acceptance Rate',
+        'value': '${acceptanceRate.toStringAsFixed(1)}%',
+        'subtitle': 'of bookings accepted',
+        'icon': Icons.thumb_up_alt_rounded,
+        'color': const Color(0xFF10B981),
+        'progress': acceptanceRate / 100,
+      },
+      {
+        'title': 'Avg Patient Rating',
+        'value': avgRating > 0 ? avgRating.toStringAsFixed(1) : '—',
+        'subtitle': ratingCount > 0 ? '$ratingCount reviews' : 'No ratings yet',
+        'icon': Icons.star_rounded,
+        'color': const Color(0xFFF59E0B),
+        'progress': avgRating / 5.0,
+      },
+      {
+        'title': 'Pending Payout',
+        'value': 'PKR ${pendingPayout.toStringAsFixed(0)}',
+        'subtitle': 'from completed orders',
+        'icon': Icons.account_balance_wallet_rounded,
+        'color': const Color(0xFF8B5CF6),
+        'progress': null,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Performance Metrics',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (isDesktop)
+          Row(
+            children: metrics
+                .map(
+                  (m) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: _buildMetricCard(m),
+                    ),
+                  ),
+                )
+                .toList(),
+          )
+        else
+          Column(
+            children: metrics
+                .map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildMetricCard(m),
+                  ),
+                )
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard(Map<String, dynamic> metric) {
+    final color = metric['color'] as Color;
+    final progress = metric['progress'] as double?;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(metric['icon'] as IconData, color: color, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  metric['title'] as String,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            metric['value'] as String,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            metric['subtitle'] as String,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          if (progress != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                backgroundColor: const Color(0xFFF1F5F9),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

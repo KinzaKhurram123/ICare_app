@@ -14,8 +14,20 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   final LaboratoryService _labService = LaboratoryService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _tests = [];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  List<Map<String, dynamic>> get _filteredTests {
+    if (_searchQuery.isEmpty) return _tests;
+    return _tests.where((t) {
+      final name = (t['name'] ?? '').toString().toLowerCase();
+      final sample = (t['sampleType'] ?? '').toString().toLowerCase();
+      final q = _searchQuery.toLowerCase();
+      return name.contains(q) || sample.contains(q);
+    }).toList();
+  }
 
   // Premium Theme Colors
   static const Color primaryColor = Color(0xFF0B2D6E);
@@ -39,6 +51,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   @override
   void dispose() {
     _animationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -68,9 +81,14 @@ class _LabTestsManagementState extends State<LabTestsManagement>
     }
   }
 
-  Future<void> _addTest(String testName, double price) async {
+  Future<void> _addTest(String testName, double price, String turnaroundTime, String sampleType) async {
     try {
-      final newTest = {'name': testName, 'price': price};
+      final newTest = {
+        'name': testName,
+        'price': price,
+        'turnaroundTime': turnaroundTime,
+        'sampleType': sampleType,
+      };
       final updatedTests = [..._tests, newTest];
       await _labService.updateProfile({'availableTests': updatedTests});
       setState(() => _tests = updatedTests);
@@ -127,6 +145,8 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   void _showAddTestDialog() {
     final nameController = TextEditingController();
     final priceController = TextEditingController();
+    final turnaroundController = TextEditingController();
+    final sampleController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -352,7 +372,49 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
+                    const Text('TURNAROUND TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 4))]),
+                      child: TextField(
+                        controller: turnaroundController,
+                        decoration: InputDecoration(
+                          hintText: 'e.g., 4 Hours, 24 Hours, Same Day',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.schedule_rounded, color: primaryColor),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
+                          filled: true, fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.all(20),
+                        ),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('SAMPLE TYPE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 4))]),
+                      child: TextField(
+                        controller: sampleController,
+                        decoration: InputDecoration(
+                          hintText: 'e.g., Blood, Urine, Stool, Swab',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.colorize_rounded, color: primaryColor),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
+                          filled: true, fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.all(20),
+                        ),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                     Row(
                       children: [
                         Expanded(
@@ -360,22 +422,10 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              side: const BorderSide(
-                                color: Color(0xFFE2E8F0),
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                              side: const BorderSide(color: Color(0xFFE2E8F0), width: 2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
+                            child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -383,28 +433,17 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                           flex: 2,
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [primaryColor, secondaryColor],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
+                              gradient: const LinearGradient(colors: [primaryColor, secondaryColor], begin: Alignment.centerLeft, end: Alignment.centerRight),
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryColor.withOpacity(0.3),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
+                              boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
                             ),
                             child: ElevatedButton(
                               onPressed: () {
                                 final name = nameController.text.trim();
                                 final priceText = priceController.text.trim();
                                 if (name.isNotEmpty && priceText.isNotEmpty) {
-                                  final price =
-                                      double.tryParse(priceText) ?? 0.0;
-                                  _addTest(name, price);
+                                  final price = double.tryParse(priceText) ?? 0.0;
+                                  _addTest(name, price, turnaroundController.text.trim(), sampleController.text.trim());
                                   Navigator.pop(context);
                                 }
                               },
@@ -464,7 +503,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Tests Management',
+          'Test Catalog',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -484,10 +523,11 @@ class _LabTestsManagementState extends State<LabTestsManagement>
       body: Column(
         children: [
           _buildHeader(),
+          _buildSearchBar(),
           Expanded(
             child: _isLoading
                 ? _buildLoadingState()
-                : _tests.isEmpty
+                : _filteredTests.isEmpty
                 ? _buildEmptyState()
                 : _buildTestsList(),
           ),
@@ -576,6 +616,43 @@ class _LabTestsManagementState extends State<LabTestsManagement>
     );
   }
 
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (v) => setState(() => _searchQuery = v),
+          decoration: InputDecoration(
+            hintText: 'Search by test name or sample type...',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.search_rounded, color: primaryColor, size: 20),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLoadingState() {
     return const Center(
       child: Column(
@@ -644,18 +721,19 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   }
 
   Widget _buildTestsList() {
+    final tests = _filteredTests;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: RefreshIndicator(
         onRefresh: _loadTests,
         color: primaryColor,
         child: ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: _tests.length,
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+          itemCount: tests.length,
           itemBuilder: (context, index) {
             return AnimatedContainer(
               duration: Duration(milliseconds: 200 + (index * 50)),
-              child: _buildTestCard(_tests[index], index),
+              child: _buildTestCard(tests[index], _tests.indexOf(tests[index])),
             );
           },
         ),
@@ -666,79 +744,52 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   Widget _buildTestCard(Map<String, dynamic> test, int index) {
     final testName = test['name'] ?? 'Unknown Test';
     final price = test['price'] ?? 0.0;
+    final turnaround = test['turnaroundTime'] ?? '';
+    final sampleType = test['sampleType'] ?? '';
     final testIcon = _getTestIcon(testName);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Center(
-                child: Icon(testIcon, color: primaryColor, size: 28),
-              ),
+              child: Center(child: Icon(testIcon, color: primaryColor, size: 26)),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     testName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
-                    ),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      Text(
-                        'Test #${index + 1}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFCBD5E1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '\$$price',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: primaryColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      _buildChip('PKR $price', Icons.attach_money_rounded, const Color(0xFF10B981)),
+                      if (turnaround.isNotEmpty)
+                        _buildChip(turnaround, Icons.schedule_rounded, const Color(0xFFF59E0B)),
+                      if (sampleType.isNotEmpty)
+                        _buildChip(sampleType, Icons.colorize_rounded, const Color(0xFF8B5CF6)),
                     ],
                   ),
                 ],
@@ -746,17 +797,33 @@ class _LabTestsManagementState extends State<LabTestsManagement>
             ),
             IconButton(
               onPressed: () => _showDeleteDialog(testName, index),
-              icon: const Icon(Icons.delete_rounded),
+              icon: const Icon(Icons.delete_outline_rounded),
               color: const Color(0xFFEF4444),
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        ],
       ),
     );
   }

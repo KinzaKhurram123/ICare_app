@@ -1,4 +1,8 @@
+import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/services/pharmacy_service.dart';
@@ -54,6 +58,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
             ? DateTime.parse(m['expiry'])
             : DateTime.now().add(const Duration(days: 365)),
         'isAvailable': m['isAvailable'] ?? true,
+        'isControlled': m['isControlled'] ?? false,
       }).toList();
 
       // Add dummy data if inventory is empty
@@ -155,6 +160,229 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
     }
   }
 
+  // ── CSV Import / Export ──────────────────────────────────────────────────
+  void _showImportExportSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Bulk Import / Export',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Manage your inventory in bulk using CSV files',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 20),
+            _csvOptionTile(
+              Icons.file_download_outlined,
+              'Download Template',
+              'CSV template with all required fields',
+              const Color(0xFF3B82F6),
+              () { Navigator.pop(context); _downloadTemplate(); },
+            ),
+            const SizedBox(height: 12),
+            _csvOptionTile(
+              Icons.upload_file_outlined,
+              'Import CSV',
+              'Upload medicines from a filled template',
+              const Color(0xFF10B981),
+              () { Navigator.pop(context); _importCSV(); },
+            ),
+            const SizedBox(height: 12),
+            _csvOptionTile(
+              Icons.download_rounded,
+              'Export Inventory',
+              'Download your current inventory as CSV',
+              const Color(0xFF8B5CF6),
+              () { Navigator.pop(context); _exportCSV(); },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _csvOptionTile(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _downloadTemplate() {
+    const content = 'Name,Brand,Category,Type,Power,Price (PKR),Stock Quantity,Unit,Details,Precautions\n'
+        'Panadol,GSK,Pain Relief,Tablet,500mg,45,100,tablets,Paracetamol for fever and pain,Do not exceed 8 tablets per day\n';
+    _triggerDownload(content, 'icare_inventory_template.csv');
+  }
+
+  void _exportCSV() {
+    final buffer = StringBuffer();
+    buffer.writeln('Name,Brand,Category,Type,Power,Price (PKR),Stock Quantity,Unit,Details,Precautions');
+    for (final p in _products) {
+      buffer.writeln([
+        _esc(p['name'] ?? ''),
+        _esc(p['brand'] ?? ''),
+        _esc(p['category'] ?? ''),
+        _esc(p['type'] ?? ''),
+        _esc(p['power'] ?? ''),
+        p['price'] ?? 0,
+        p['stock'] ?? 0,
+        _esc(p['amount'] ?? ''),
+        _esc(p['details'] ?? ''),
+        _esc(p['precautions'] ?? ''),
+      ].join(','));
+    }
+    _triggerDownload(buffer.toString(), 'icare_inventory_export.csv');
+  }
+
+  String _esc(String v) {
+    if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+      return '"${v.replaceAll('"', '""')}"';
+    }
+    return v;
+  }
+
+  void _triggerDownload(String content, String filename) {
+    final bytes = utf8.encode(content);
+    final blob = html.Blob([bytes], 'text/csv');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', filename)
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  Future<void> _importCSV() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final bytes = result.files.first.bytes;
+      if (bytes == null) return;
+
+      final content = utf8.decode(bytes);
+      final lines = content.split('\n').where((l) => l.trim().isNotEmpty).toList();
+
+      if (lines.length < 2) {
+        _showSnack('CSV file has no data rows', isError: true);
+        return;
+      }
+
+      setState(() => _isLoading = true);
+      int success = 0, failed = 0;
+
+      for (int i = 1; i < lines.length; i++) {
+        final cols = _parseCsvLine(lines[i]);
+        if (cols.isEmpty || (cols[0]).isEmpty) continue;
+        try {
+          await _pharmacyService.createMedicine({
+            'productName': cols[0],
+            'brand': cols.length > 1 ? cols[1] : '',
+            'category': cols.length > 2 && cols[2].isNotEmpty ? cols[2] : 'Other',
+            'medicineType': cols.length > 3 && cols[3].isNotEmpty ? cols[3] : 'Tablet',
+            'power': cols.length > 4 ? cols[4] : '',
+            'price': double.tryParse(cols.length > 5 ? cols[5] : '0') ?? 0,
+            'quantity': int.tryParse(cols.length > 6 ? cols[6] : '0') ?? 0,
+            'amount': cols.length > 7 ? cols[7] : '',
+            'details': cols.length > 8 ? cols[8] : '',
+            'precautions': cols.length > 9 ? cols[9] : '',
+            'isAvailable': true,
+          });
+          success++;
+        } catch (_) {
+          failed++;
+        }
+      }
+
+      await _loadProducts();
+      if (mounted) {
+        _showSnack(
+          'Imported $success medicine${success != 1 ? 's' : ''}${failed > 0 ? ' ($failed failed)' : ''}',
+          isError: failed > 0 && success == 0,
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnack('Import failed: please check file format', isError: true);
+    }
+  }
+
+  List<String> _parseCsvLine(String line) {
+    final result = <String>[];
+    bool inQuotes = false;
+    final current = StringBuffer();
+    for (int i = 0; i < line.length; i++) {
+      final c = line[i];
+      if (c == '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+          current.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c == ',' && !inQuotes) {
+        result.add(current.toString().trim());
+        current.clear();
+      } else {
+        current.write(c);
+      }
+    }
+    result.add(current.toString().trim());
+    return result;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red : const Color(0xFF10B981),
+    ));
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   void _showAddModal() {
     showDialog(
       context: context,
@@ -193,6 +421,12 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         title: const Text('Inventory',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
         actions: [
+          IconButton(
+            onPressed: _showImportExportSheet,
+            icon: const Icon(Icons.upload_file_outlined, color: Color(0xFF0F172A)),
+            tooltip: 'Bulk Import / Export',
+          ),
+          const SizedBox(width: 4),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: ElevatedButton.icon(
@@ -341,6 +575,7 @@ class _MedicineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final stock = product['stock'] as int;
     final isLow = stock < 30;
+    final isControlled = product['isControlled'] == true;
     final expiry = product['expiry'] as DateTime;
     final expiringSoon = expiry.difference(DateTime.now()).inDays < 90;
     final color = _categoryColor;
@@ -349,7 +584,7 @@ class _MedicineCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isLow ? const Color(0xFFEF4444).withOpacity(0.3) : const Color(0xFFE2E8F0)),
+        border: Border.all(color: isControlled ? const Color(0xFF8B5CF6).withOpacity(0.4) : isLow ? const Color(0xFFEF4444).withOpacity(0.3) : const Color(0xFFE2E8F0)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -385,8 +620,18 @@ class _MedicineCard extends StatelessWidget {
                     child: Text(product['category'], style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                   ),
                 ),
+                // Controlled badge
+                if (isControlled)
+                  Positioned(
+                    top: 8, right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(20)),
+                      child: const Text('CONTROLLED', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    ),
+                  )
                 // Stock badge
-                if (isLow)
+                else if (isLow)
                   Positioned(
                     top: 8, right: 8,
                     child: Container(
@@ -472,6 +717,7 @@ class _AddMedicineModalState extends State<_AddMedicineModal> {
   String _category = 'Pain Relief';
   String _type = 'Tablet';
   String _delivery = 'both';
+  bool _isControlled = false;
   bool _saving = false;
 
   static const _categories = ['Pain Relief', 'Antibiotic', 'Allergy', 'Vitamins',
@@ -512,6 +758,7 @@ class _AddMedicineModalState extends State<_AddMedicineModal> {
       'details': _details.text.trim(),
       'precautions': _precautions.text.trim(),
       'deliveryOption': _delivery,
+      'isControlled': _isControlled,
       'isAvailable': true,
       'expiry': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
     });
@@ -600,6 +847,38 @@ class _AddMedicineModalState extends State<_AddMedicineModal> {
                       TextFormField(controller: _details, decoration: _dec('Description', Icons.description_rounded), maxLines: 2),
                       const SizedBox(height: 12),
                       TextFormField(controller: _precautions, decoration: _dec('Precautions', Icons.warning_amber_rounded), maxLines: 2),
+                      const SizedBox(height: 12),
+                      // Controlled medicine toggle
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _isControlled ? const Color(0xFF8B5CF6).withOpacity(0.06) : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _isControlled ? const Color(0xFF8B5CF6).withOpacity(0.3) : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Controlled Medicine', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                                  Text('Max 30 units per order', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _isControlled,
+                              onChanged: (v) => setState(() => _isControlled = v),
+                              activeColor: const Color(0xFF8B5CF6),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       // Delivery option
                       const Text('Delivery Option', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151))),

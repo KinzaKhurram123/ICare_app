@@ -4,11 +4,14 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:icare/utils/pdf_invoice_generator.dart';
 import '../services/laboratory_service.dart';
+import '../services/pharmacy_service.dart';
 import 'package:intl/intl.dart';
 
 class PaymentInvoices extends StatefulWidget {
-  const PaymentInvoices({super.key});
+  final bool isPharmacy;
+  const PaymentInvoices({super.key, this.isPharmacy = false});
 
   @override
   State<PaymentInvoices> createState() => _PaymentInvoicesState();
@@ -18,6 +21,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final LaboratoryService _labService = LaboratoryService();
+  final PharmacyService _pharmacyService = PharmacyService();
   String _selectedFilter = "All";
   bool _isLoading = true;
   List<Map<String, dynamic>> _invoices = [];
@@ -50,34 +54,64 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
   Future<void> _fetchInvoices() async {
     setState(() => _isLoading = true);
     try {
-      final profile = await _labService.getProfile();
-      final bookings = await _labService.getBookings(profile['_id']);
-
-      setState(() {
-        _invoices = bookings.map((b) {
-          final status = b['status'] == 'completed'
-              ? 'Paid'
-              : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
-          final dateStr = b['date'] ?? '';
-          DateTime? dateObj = DateTime.tryParse(dateStr);
-          final formattedDate = dateObj != null
-              ? DateFormat('dd MMM, yyyy').format(dateObj)
-              : '—';
-
-          return {
-            "id":
-                b['bookingNumber'] ??
-                "INV-${b['_id'].toString().substring(18)}",
-            "patient": b['patient']?['name'] ?? "Unknown Patient",
-            "test": b['testName'] ?? "Laboratory Test",
-            "amount": (b['price'] ?? 0).toDouble(),
-            "date": formattedDate,
-            "status": status,
-            "method": b['paymentMethod'] ?? "Cash",
-          };
-        }).toList();
-        _isLoading = false;
-      });
+      if (widget.isPharmacy) {
+        final orders = await _pharmacyService.getPharmacyOrders();
+        setState(() {
+          _invoices = orders.map((o) {
+            final rawStatus = o['status']?.toString() ?? '';
+            final status = rawStatus == 'completed'
+                ? 'Paid'
+                : (rawStatus == 'cancelled' ? 'Overdue' : 'Pending');
+            final dateStr = o['createdAt'] ?? o['date'] ?? '';
+            DateTime? dateObj = DateTime.tryParse(dateStr);
+            final formattedDate = dateObj != null
+                ? DateFormat('dd MMM, yyyy').format(dateObj)
+                : '—';
+            final id = o['orderNumber'] ?? "INV-${(o['_id'] ?? '').toString().replaceAll(RegExp(r'.+(.{6})'), r'\1')}";
+            final items = (o['items'] as List<dynamic>?)
+                    ?.map((i) => i['name'] ?? i['medicineName'] ?? '')
+                    .where((s) => s.isNotEmpty)
+                    .join(', ') ??
+                'Medicine Order';
+            return {
+              "id": id,
+              "patient": o['patient']?['name'] ?? o['customerName'] ?? "Customer",
+              "test": items.isEmpty ? 'Medicine Order' : items,
+              "amount": (o['totalAmount'] ?? o['total'] ?? 0).toDouble(),
+              "date": formattedDate,
+              "status": status,
+              "method": o['paymentMethod'] ?? "Cash",
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      } else {
+        final profile = await _labService.getProfile();
+        final bookings = await _labService.getBookings(profile['_id']);
+        setState(() {
+          _invoices = bookings.map((b) {
+            final status = b['status'] == 'completed'
+                ? 'Paid'
+                : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
+            final dateStr = b['date'] ?? '';
+            DateTime? dateObj = DateTime.tryParse(dateStr);
+            final formattedDate = dateObj != null
+                ? DateFormat('dd MMM, yyyy').format(dateObj)
+                : '—';
+            return {
+              "id": b['bookingNumber'] ??
+                  "INV-${b['_id'].toString().substring(18)}",
+              "patient": b['patient']?['name'] ?? "Unknown Patient",
+              "test": b['testName'] ?? "Laboratory Test",
+              "amount": (b['price'] ?? 0).toDouble(),
+              "date": formattedDate,
+              "status": status,
+              "method": b['paymentMethod'] ?? "Cash",
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching invoices: $e');
       setState(() => _isLoading = false);
@@ -105,6 +139,46 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
       .where((i) => i["status"] == "Overdue")
       .fold(0.0, (sum, i) => sum + (i["amount"] as double));
 
+  Future<void> _downloadInvoice(Map<String, dynamic> invoice) async {
+    try {
+      if (widget.isPharmacy) {
+        await PdfInvoiceGenerator.generatePharmacyInvoice(
+          orderNumber: invoice['id'],
+          patientName: invoice['patient'],
+          patientPhone: 'N/A',
+          patientAddress: 'N/A',
+          items: [
+            {
+              'name': invoice['test'],
+              'quantity': 1,
+              'price': invoice['amount'],
+            }
+          ],
+          deliveryFee: 0,
+          totalAmount: invoice['amount'],
+          orderDate: DateFormat('dd MMM, yyyy').parse(invoice['date']),
+          pharmacyName: 'iCare Pharmacy',
+        );
+      } else {
+        await PdfInvoiceGenerator.generateLabInvoice(
+          bookingNumber: invoice['id'],
+          patientName: invoice['patient'],
+          patientPhone: 'N/A',
+          testName: invoice['test'],
+          testPrice: invoice['amount'],
+          bookingDate: DateFormat('dd MMM, yyyy').parse(invoice['date']),
+          labName: 'iCare Laboratory',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate invoice: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
@@ -120,7 +194,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
         elevation: 0,
         centerTitle: true,
         title: CustomText(
-          text: "Payment Invoices",
+          text: widget.isPharmacy ? "Order Invoices" : "Payment Invoices",
           fontFamily: "Gilroy-Bold",
           fontSize: 18,
           fontWeight: FontWeight.w900,
@@ -320,9 +394,9 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                           bottom: BorderSide(color: Colors.grey.shade200),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Expanded(
+                          const Expanded(
                             flex: 2,
                             child: Text(
                               "INVOICE ID",
@@ -334,7 +408,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                               ),
                             ),
                           ),
-                          Expanded(
+                          const Expanded(
                             flex: 3,
                             child: Text(
                               "PATIENT",
@@ -349,8 +423,8 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                           Expanded(
                             flex: 3,
                             child: Text(
-                              "TEST",
-                              style: TextStyle(
+                              widget.isPharmacy ? "ORDER ITEMS" : "TEST",
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 11,
                                 color: Color(0xFF94A3B8),
@@ -593,7 +667,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
-                onTap: () {},
+                onTap: () => _downloadInvoice(inv),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -601,7 +675,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Icons.visibility_rounded,
+                    Icons.download_rounded,
                     size: 16,
                     color: Color(0xFF64748B),
                   ),

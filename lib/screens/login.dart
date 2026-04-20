@@ -388,20 +388,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 44),
-                          IntrinsicWidth(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records"),
-                                const SizedBox(height: 18),
-                                _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only", "All providers are PMDC credentialed"),
-                                const SizedBox(height: 18),
-                                _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital", "Consult, prescribe & manage all-in-one"),
-                                const SizedBox(height: 18),
-                                _buildHeroTrust(Icons.people_rounded, "Trusted Nationwide", "Thousands of patients across Pakistan"),
-                              ],
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Left Column - 2 items
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records"),
+                                    const SizedBox(height: 18),
+                                    _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only", "All providers are PMDC credentialed"),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              // Right Column - 2 items
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital", "Consult, prescribe & manage all-in-one"),
+                                    const SizedBox(height: 18),
+                                    _buildHeroTrust(Icons.people_rounded, "Trusted Nationwide", "Thousands of patients across Pakistan"),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

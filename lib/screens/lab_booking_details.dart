@@ -5,7 +5,8 @@ import '../models/lab_result.dart';
 import '../widgets/back_button.dart';
 import '../providers/auth_provider.dart';
 import '../services/laboratory_service.dart';
-import 'upload_lab_report_screen.dart';
+import 'lab_result_entry_screen.dart';
+import '../widgets/rating_dialog.dart';
 
 class LabBookingDetails extends ConsumerWidget {
   final Map<String, dynamic> booking;
@@ -51,9 +52,45 @@ class LabBookingDetails extends ConsumerWidget {
             _buildInfoCard(testName, status, date, patient),
             const SizedBox(height: 24),
             if (role == 'Laboratory') _buildActionButtons(context, status),
+            if (role != 'Laboratory' && status.toLowerCase() == 'completed')
+              _buildRateLabButton(context),
             const SizedBox(height: 24),
             if (results.isNotEmpty) _buildResultsSection(results),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRateLabButton(BuildContext context) {
+    final labService = LaboratoryService();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => showRatingDialog(
+            context: context,
+            title: 'Rate Your Lab Experience',
+            subtitle: 'How was your experience with this test?',
+            onSubmit: (rating, comment) async {
+              await labService.rateBooking(
+                bookingId: booking['_id'],
+                rating: rating,
+                comment: comment,
+              );
+            },
+          ),
+          icon: const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+          label: const Text(
+            'Rate this Lab',
+            style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: const BorderSide(color: Color(0xFFF59E0B)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ),
     );
@@ -378,14 +415,14 @@ class LabBookingDetails extends ConsumerWidget {
         if (currentStatus.toLowerCase() == 'completed' || currentStatus.toLowerCase() == 'confirmed')
           _buildActionButton(
             context,
-            'Upload Report',
-            Icons.upload_file_rounded,
+            'Enter Results',
+            Icons.biotech_rounded,
             const Color(0xFF8B5CF6),
             () async {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (ctx) => UploadLabReportScreen(booking: booking),
+                  builder: (ctx) => LabResultEntryScreen(booking: booking),
                 ),
               );
               if (result == true && context.mounted) {

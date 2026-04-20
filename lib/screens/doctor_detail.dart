@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/doctor.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/book_appointment.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -321,6 +322,46 @@ class DoctorDetailScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
+                      final isLoggedIn = ref.read(authProvider).isLoggedIn;
+                      if (!isLoggedIn) {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                SizedBox(width: 10),
+                                Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                            content: const Text(
+                              'You need to be logged in to book an appointment. Please sign in to continue.',
+                              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => LoginScreen()),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0036BC),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) =>
@@ -939,6 +980,46 @@ class DoctorDetailScreen extends ConsumerWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
+                        final isLoggedIn = ref.read(authProvider).isLoggedIn;
+                        if (!isLoggedIn) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Row(
+                                children: [
+                                  Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                  SizedBox(width: 10),
+                                  Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                              content: const Text(
+                                'You need to be logged in to book an appointment. Please sign in to continue.',
+                                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => LoginScreen()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0036BC),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (ctx) =>

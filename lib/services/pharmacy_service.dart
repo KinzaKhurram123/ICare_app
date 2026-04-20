@@ -182,6 +182,13 @@ class PharmacyService {
     return response.data['order'];
   }
 
+  Future<void> submitOrderRating(String orderId, int rating, String comment) async {
+    await _apiService.post('/pharmacy/orders/$orderId/rating', {
+      'rating': rating,
+      'comment': comment,
+    });
+  }
+
   // Analytics
   Future<Map<String, dynamic>> getAnalytics() async {
     try {

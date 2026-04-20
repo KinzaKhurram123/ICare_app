@@ -5,6 +5,7 @@ import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_tests_management.dart';
 import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/settings.dart';
+import 'package:icare/screens/lab_settings_screen.dart';
 import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/tasks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -476,7 +477,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
         'trend': 'New',
       },
       {
-        'title': 'Total Requests',
+        'title': 'Total',
         'value': _stats?['totalBookings']?.toString() ?? '0',
         'icon': Icons.calendar_month_rounded,
         'trend': '+12%',
@@ -651,14 +652,34 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
               runSpacing: 16,
               children: [
                 _buildActionButton(
-                  'Diagnostic Queue',
-                  Icons.assignment_ind_rounded,
+                  'Awaiting Fulfillment',
+                  Icons.hourglass_empty_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (ctx) => const LabBookingsManagement(
-                        title: 'Diagnostic Queue',
+                        title: 'Awaiting Fulfillment',
                         initialFilter: 'pending',
                       ),
+                    ),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Orders',
+                  Icons.list_alt_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabBookingsManagement(),
+                    ),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Test Catalog',
+                  Icons.science_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabTestsManagement(),
                     ),
                   ),
                   isMobile,
@@ -672,29 +693,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                         title: 'Result Entry',
                         initialFilter: 'confirmed',
                       ),
-                    ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Clinical Archive',
-                  Icons.history_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Clinical Archive',
-                        initialFilter: 'completed',
-                      ),
-                    ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Supplies',
-                  Icons.inventory_2_outlined,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabSuppliesManagement(),
                     ),
                   ),
                   isMobile,
@@ -718,18 +716,10 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Tasks',
-                  Icons.task_alt_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
                   'Settings',
                   Icons.settings_outlined,
                   () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
+                    MaterialPageRoute(builder: (ctx) => const LabSettingsScreen()),
                   ),
                   isMobile,
                 ),
