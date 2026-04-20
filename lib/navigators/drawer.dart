@@ -172,62 +172,67 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             ),
           );
         }),
-        _drawerItem('Dashboard', Icons.dashboard_outlined, () {
+        _drawerItem('My Prescriptions', Icons.medication_liquid_outlined, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const TabsScreen()));
+          ).push(MaterialPageRoute(builder: (ctx) => const PrescriptionsScreen()));
         }),
-        _drawerItem('Health Community', Icons.people_outline_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const HealthCommunityScreen()),
-          );
+        _drawerItem('Lab Reports', Icons.biotech_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const LabReportsScreen()));
         }),
-        _drawerItem('Booking History', Icons.history_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const BookingsHistoryScreen()),
-          );
+        _drawerItem('Medical Records', Icons.folder_shared_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const ViewProfileScreen()));
         }),
         _drawerItem('Book a Lab Test', Icons.science_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => LabsListScreen()));
         }),
-        _drawerItem('Order Medicines', Icons.medication_outlined, () {
+        _drawerItem('Order Medicines', Icons.local_pharmacy_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()));
-        }),
-        _drawerItem('Reminders', Icons.alarm_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
-        }),
-        _drawerItem('Emergency Contacts', Icons.contact_emergency_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const EmergencyContactsScreen()));
         }),
         _drawerItem('Health Programs', Icons.health_and_safety_outlined, () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
         }),
-      ];
-    } else if (selectedRole == "Doctor") {
-      drawerItems = [
-        _drawerItem('My Schedule', Icons.schedule_outlined, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const DoctorScheduleCalendar()),
-          );
-        }),
-        _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const DoctorAnalytics()));
-        }),
         _drawerItem('Health Community', Icons.people_outline_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const HealthCommunityScreen()),
+          );
+        }),
+        _drawerItem('Emergency Contacts', Icons.contact_emergency_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const EmergencyContactsScreen()));
+        }),
+        _drawerItem('Reminders', Icons.alarm_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const ReminderList()));
+        }),
+      ];
+    } else if (selectedRole == "Doctor") {
+      drawerItems = [
+        _drawerItem('My Appointments', Icons.calendar_month_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const DoctorAppointmentsScreen()),
+          );
+        }),
+        _drawerItem('Patient Records', Icons.folder_shared_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const PatientRecordsListScreen()),
+          );
+        }),
+        _drawerItem('My Schedule', Icons.schedule_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const DoctorScheduleCalendar()),
           );
         }),
         _drawerItem('Availability', Icons.event_available_outlined, () {
@@ -235,9 +240,24 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             MaterialPageRoute(builder: (ctx) => const DoctorAvailability()),
           );
         }),
+        _drawerItem('Professional Courses', Icons.school_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const Courses()));
+        }),
+        _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (ctx) => const DoctorAnalytics()));
+        }),
         _drawerItem('Notifications', Icons.notifications_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const DoctorNotifications()),
+          );
+        }),
+        _drawerItem('Health Community', Icons.people_outline_rounded, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const HealthCommunityScreen()),
           );
         }),
         _drawerItem('Help & Support', Icons.help_outline_rounded, () {

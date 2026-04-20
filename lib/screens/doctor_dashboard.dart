@@ -1187,21 +1187,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionCardCompact(
-                      'Profile',
-                      Icons.person_rounded,
-                      const Color(0xFF8B5CF6),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const DoctorProfileSetup(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ],
               );
             }
@@ -1260,18 +1245,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (ctx) => const PatientRecordsListScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildActionCardCompact(
-                  'Profile',
-                  Icons.person_rounded,
-                  const Color(0xFF8B5CF6),
-                  () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => const DoctorProfileSetup(),
                       ),
                     );
                   },

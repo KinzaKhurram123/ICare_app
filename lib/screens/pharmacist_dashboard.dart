@@ -403,18 +403,6 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
                 );
               },
             ),
-            _buildActionCard(
-              'Revenue & Analytics',
-              Icons.analytics_rounded,
-              const Color(0xFF8B5CF6),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const PharmacyAnalytics(),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ],

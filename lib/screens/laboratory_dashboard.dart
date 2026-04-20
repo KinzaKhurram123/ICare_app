@@ -715,14 +715,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   ),
                   isMobile,
                 ),
-                _buildActionButton(
-                  'Settings',
-                  Icons.settings_outlined,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const LabSettingsScreen()),
-                  ),
-                  isMobile,
-                ),
               ],
             ),
           ),
