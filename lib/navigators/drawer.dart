@@ -185,7 +185,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         _drawerItem('Medical Records', Icons.folder_shared_outlined, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const ViewProfileScreen()));
+          ).push(MaterialPageRoute(builder: (ctx) => const ViewProfile()));
         }),
         _drawerItem('Book a Lab Test', Icons.science_outlined, () {
           Navigator.of(
