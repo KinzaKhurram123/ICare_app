@@ -1,0 +1,376 @@
+const express = require('express');
+const router = express.Router();
+const mongoose = require('mongoose');
+const { connectMongoDB } = require('../config/mongodb');
+const User = require('../models/User');
+const LabProfile = require('../models/LabProfile');
+const LabTestRequest = require('../models/LabTestRequest');
+const { authMiddleware } = require('../middleware/auth');
+
+function toId(id) {
+  try { return new mongoose.Types.ObjectId(id); } catch { return null; }
+}
+
+// ─── GET ALL LABS ─────────────────────────────────────────────────────────────
+async function getAllLabs() {
+  await connectMongoDB();
+  const users = await User.find({ role: 'lab', is_active: { $ne: false } }).lean();
+  const ids = users.map(u => u._id);
+  const profiles = await LabProfile.find({ user_id: { $in: ids } }).lean();
+  const pMap = {};
+  profiles.forEach(p => { pMap[p.user_id.toString()] = p; });
+
+  return users.map(u => {
+    const p = pMap[u._id.toString()] || {};
+    return {
+      id: u._id.toString(), _id: u._id.toString(),
+      name: u.username || u.name, email: u.email, phone: u.phone,
+      lab_name: p.lab_name, license_number: p.license_number,
+      accreditation: p.accreditation, services: p.services,
+      operating_hours: p.operating_hours, address: p.address, city: p.city,
+      drap_compliance: p.drap_compliance, createdAt: u.createdAt,
+    };
+  });
+}
+
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const labs = await getAllLabs();
+    res.json({ success: true, labs, laboratories: labs });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, labs: [], laboratories: [] });
+  }
+});
+
+router.get('/get_all_laboratories', authMiddleware, async (req, res) => {
+  try {
+    const labs = await getAllLabs();
+    res.json({ success: true, laboratories: labs, labs });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, laboratories: [], labs: [] });
+  }
+});
+
+// ─── LAB PROFILE ──────────────────────────────────────────────────────────────
+router.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const user = await User.findById(userId).lean();
+    const profile = await LabProfile.findOne({ user_id: userId }).lean() || {};
+
+    const lab = {
+      id: user._id.toString(), _id: user._id.toString(),
+      username: user.username || user.name, email: user.email, phone: user.phone,
+      ...profile, user_id: undefined,
+    };
+    res.json({ success: true, laboratory: lab, profile: lab });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+});
+
+router.post('/add_laboratory_details', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const {
+      labName, lab_name, licenseNumber, license_number,
+      accreditation, services, operatingHours, operating_hours,
+      address, city, drapCompliance, drap_compliance,
+    } = req.body;
+
+    const update = {};
+    const finalLabName = labName || lab_name;
+    if (finalLabName) update.lab_name = finalLabName;
+    if (licenseNumber || license_number) update.license_number = licenseNumber || license_number;
+    if (accreditation !== undefined) update.accreditation = accreditation;
+    if (services !== undefined) update.services = services;
+    const hours = operatingHours || operating_hours;
+    if (hours) update.operating_hours = hours;
+    if (address !== undefined) update.address = address;
+    if (city !== undefined) update.city = city;
+    update.drap_compliance = drapCompliance ?? drap_compliance ?? false;
+
+    const profile = await LabProfile.findOneAndUpdate(
+      { user_id: userId },
+      { $set: update },
+      { new: true, upsert: true }
+    );
+
+    const result = { ...profile.toObject(), _id: profile._id.toString() };
+    res.json({ success: true, message: 'Lab profile saved', laboratory: result, existingProfile: result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to save lab profile' });
+  }
+});
+
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    if (req.user.role !== 'lab') {
+      return res.status(403).json({ success: false, message: 'Only labs can update lab profiles' });
+    }
+    const userId = toId(req.user.id);
+    const { labName, licenseNumber, accreditation, services, operatingHours, address, city, drapCompliance } = req.body;
+
+    const update = {};
+    if (labName) update.lab_name = labName;
+    if (licenseNumber) update.license_number = licenseNumber;
+    if (accreditation !== undefined) update.accreditation = accreditation;
+    if (services !== undefined) update.services = services;
+    if (operatingHours) update.operating_hours = operatingHours;
+    if (address !== undefined) update.address = address;
+    if (city !== undefined) update.city = city;
+    if (drapCompliance !== undefined) update.drap_compliance = drapCompliance;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    const profile = await LabProfile.findOneAndUpdate(
+      { user_id: userId },
+      { $set: update },
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, message: 'Lab profile updated', profile });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to update lab profile' });
+  }
+});
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [total, pending, completed, todayCount] = await Promise.all([
+      LabTestRequest.countDocuments({ lab_id: userId }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: 'pending' }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: 'completed' }),
+      LabTestRequest.countDocuments({ lab_id: userId, createdAt: { $gte: today } }),
+    ]);
+
+    res.json({ success: true, stats: { todayRequests: todayCount, totalRequests: total, pendingRequests: pending, completedRequests: completed } });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, stats: { todayRequests: 0, totalRequests: 0, pendingRequests: 0, completedRequests: 0 } });
+  }
+});
+
+// ─── BOOKINGS ─────────────────────────────────────────────────────────────────
+router.get('/bookings/my', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const bookings = await LabTestRequest.find({ patient_id: userId }).sort({ createdAt: -1 }).lean();
+    const labIds = [...new Set(bookings.map(b => b.lab_id.toString()))];
+    const labs = await User.find({ _id: { $in: labIds.map(id => toId(id)) } }).lean();
+    const labProfiles = await LabProfile.find({ user_id: { $in: labIds.map(id => toId(id)) } }).lean();
+    const lMap = {};
+    labs.forEach(l => { lMap[l._id.toString()] = l; });
+    const lpMap = {};
+    labProfiles.forEach(p => { lpMap[p.user_id.toString()] = p; });
+
+    const result = bookings.map(b => ({
+      ...b,
+      _id: b._id.toString(),
+      lab_name: lMap[b.lab_id.toString()]?.username || lMap[b.lab_id.toString()]?.name,
+      lab_full_name: lpMap[b.lab_id.toString()]?.lab_name,
+    }));
+    res.json({ success: true, bookings: result });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, bookings: [] });
+  }
+});
+
+router.get('/bookings/:bookingId', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const booking = await LabTestRequest.findOne({
+      _id: toId(req.params.bookingId),
+      $or: [{ patient_id: userId }, { lab_id: userId }],
+    }).lean();
+
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    const [patient, lab, labProfile] = await Promise.all([
+      User.findById(booking.patient_id).lean(),
+      User.findById(booking.lab_id).lean(),
+      LabProfile.findOne({ user_id: booking.lab_id }).lean(),
+    ]);
+
+    res.json({
+      success: true,
+      booking: {
+        ...booking,
+        _id: booking._id.toString(),
+        patient_name: patient?.username || patient?.name,
+        patient_email: patient?.email,
+        lab_username: lab?.username || lab?.name,
+        lab_name: labProfile?.lab_name,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to fetch booking' });
+  }
+});
+
+router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const { status, results, testDate, date } = req.body;
+    const update = {};
+    if (status) update.status = status;
+    if (results) update.results = results;
+    if (testDate || date) update.test_date = testDate || date;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    const booking = await LabTestRequest.findOneAndUpdate(
+      { _id: toId(req.params.bookingId), $or: [{ patient_id: userId }, { lab_id: userId }] },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
+    res.json({ success: true, message: 'Booking updated', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to update booking' });
+  }
+});
+
+router.get('/:labId/bookings', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const labId = toId(req.params.labId);
+    const { status } = req.query;
+    const query = { lab_id: labId };
+    if (status) query.status = status;
+
+    const bookings = await LabTestRequest.find(query).sort({ createdAt: -1 }).lean();
+    const patientIds = [...new Set(bookings.map(b => b.patient_id.toString()))];
+    const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
+    const pMap = {};
+    patients.forEach(p => { pMap[p._id.toString()] = p; });
+
+    const result = bookings.map(b => ({
+      ...b,
+      _id: b._id.toString(),
+      patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name,
+      patient_email: pMap[b.patient_id.toString()]?.email,
+      patient_phone: pMap[b.patient_id.toString()]?.phone,
+    }));
+    res.json({ success: true, bookings: result });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, bookings: [] });
+  }
+});
+
+router.post('/:labId/bookings', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const patientId = toId(req.user.id);
+    const labId = toId(req.params.labId);
+    const { testType, test_type, testDate, date, notes } = req.body;
+    const finalTest = testType || test_type;
+    if (!finalTest) return res.status(400).json({ success: false, message: 'Test type is required' });
+
+    const booking = await LabTestRequest.create({
+      patient_id: patientId,
+      lab_id: labId,
+      test_type: finalTest,
+      test_date: testDate || date || null,
+      status: 'pending',
+    });
+
+    res.status(201).json({ success: true, message: 'Booking created', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create booking' });
+  }
+});
+
+// Analytics stub
+router.all('/:labId/analytics/:metric', authMiddleware, async (req, res) => {
+  res.json({ success: true, analytics: {}, metrics: {}, trends: [], performance: [], revenue: {}, analysis: {}, comparison: {}, stats: {} });
+});
+
+// ─── REQUESTS (legacy) ────────────────────────────────────────────────────────
+router.get('/requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const query = req.user.role === 'lab' ? { lab_id: userId } : { patient_id: userId };
+    const requests = await LabTestRequest.find(query).sort({ createdAt: -1 }).lean();
+    const result = requests.map(r => ({ ...r, _id: r._id.toString() }));
+    res.json({ success: true, requests: result, bookings: result });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: true, requests: [], bookings: [] });
+  }
+});
+
+router.post('/requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const patientId = toId(req.user.id);
+    const { labId, lab_id, testType, test_type, testDate, date } = req.body;
+    const finalLab = toId(labId || lab_id);
+    const finalTest = testType || test_type;
+    if (!finalLab || !finalTest) {
+      return res.status(400).json({ success: false, message: 'Lab and test type are required' });
+    }
+    const request = await LabTestRequest.create({ patient_id: patientId, lab_id: finalLab, test_type: finalTest, test_date: testDate || date || null, status: 'pending' });
+    res.status(201).json({ success: true, message: 'Lab test request created', request: { ...request.toObject(), _id: request._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create lab request' });
+  }
+});
+
+router.put('/requests/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const { status, results } = req.body;
+    const update = {};
+    if (status) update.status = status;
+    if (results) update.results = results;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    const request = await LabTestRequest.findOneAndUpdate(
+      { _id: toId(req.params.id), $or: [{ patient_id: userId }, { lab_id: userId }] },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!request) return res.status(404).json({ success: false, message: 'Request not found or access denied' });
+    res.json({ success: true, message: 'Request updated', request: { ...request.toObject(), _id: request._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to update request' });
+  }
+});
+
+module.exports = router;
