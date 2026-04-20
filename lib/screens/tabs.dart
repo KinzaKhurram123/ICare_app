@@ -443,14 +443,11 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
         children: [
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SvgPicture.asset(
-              ImagePaths.logo,
-              height: 42,
-              fit: BoxFit.contain,
-              colorFilter: null,
-            ),
+          Image.asset(
+            'assets/images/logo.png',
+            height: 64,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
 
           const SizedBox(height: 28),
