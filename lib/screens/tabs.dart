@@ -119,8 +119,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = const PharmacyOrders();
       } else if (currentIndex == 2) {
         activePage = const PharmacyInventory();
-      } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
       }
     } else if (role == "Laboratory") {
       if (currentIndex == 0) {
@@ -129,8 +127,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = const LabBookingsManagement();
       } else if (currentIndex == 2) {
         activePage = const LabReportsScreen();
-      } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
       }
     } else if (role == "Doctor") {
       if (currentIndex == 0) {
@@ -145,8 +141,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = InstructorCoursesManagementScreen();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
-      } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -155,8 +149,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = Courses();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
-      } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
       }
     } else if (role == "Admin") {
       if (currentIndex == 0) {
@@ -368,7 +360,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
         _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', index: 0),
         _SidebarItem(icon: Icons.school_outlined, label: 'Courses', index: 1),
         _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
-        _SidebarItem(icon: Icons.person_outline, label: 'My Profile', index: 3),
       ];
     } else if (role == 'Patient') {
       items = [
@@ -420,11 +411,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
               ? 'Inventory'
               : (role == 'Laboratory' ? 'Upload Reports' : 'Messages'),
           index: 2,
-        ),
-        _SidebarItem(
-          icon: Icons.person_outline,
-          label: role == 'Student' ? 'My Account' : 'My Profile',
-          index: 3,
         ),
       ];
     }
@@ -1726,9 +1712,33 @@ class _WebTopBar extends ConsumerWidget {
               elevation: 4,
               onSelected: (value) {
                 if (value == 'edit') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-                  );
+                  // Navigate to role-specific profile edit page
+                  if (role == 'Doctor') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
+                    );
+                  } else if (role == 'Pharmacy') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()),
+                    );
+                  } else if (role == 'Laboratory') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const LabProfileSetup()),
+                    );
+                  } else if (role == 'Student') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const StudentProfileSetup()),
+                    );
+                  } else if (role == 'Instructor') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => InstructorProfileSetupScreen()),
+                    );
+                  } else {
+                    // Patient or other roles - use generic profile edit
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
+                    );
+                  }
                 } else if (value == 'logout') {
                   ref.read(authProvider.notifier).setUserLogout();
                   context.go('/login');
