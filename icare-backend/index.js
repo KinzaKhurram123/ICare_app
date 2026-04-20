@@ -17,6 +17,7 @@ const seedRoutes = require('./routes/seed');
 const ratingsRoutes = require('./routes/ratings');
 const inventoryRoutes = require('./routes/inventory');
 const invoicesRoutes = require('./routes/invoices');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 
@@ -95,7 +96,7 @@ const makeStub = (emptyKey) => {
   return r;
 };
 app.use('/api/chat', makeStub('messages'));
-app.use('/api/users', makeStub('users'));
+app.use('/api/users', usersRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
