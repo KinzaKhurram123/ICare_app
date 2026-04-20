@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 class ApiConfig {
   // Production backend URL - Virtual Hospital Backend
-  static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
+  static const String baseUrl = 'https://icare-backend-inky.vercel.app/api';
 
-  // New MongoDB backend (not in use):
-  // static const String baseUrl = 'https://icare-backend-inky.vercel.app/api';
+  // Virtual Hospital backend (same DB, old stub):
+  // static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
 
   // For local development (web/Chrome):
   // static const String baseUrl = 'http://localhost:5000/api';

@@ -797,7 +797,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
 
     if (symptoms.isNotEmpty) data['symptoms'] = symptoms;
 
-    // Build prescription object with medicines + referral together
+    // Build prescription object
     final Map<String, dynamic> prescriptionObj = {};
     if (cleanPrescription.isNotEmpty) prescriptionObj['medicines'] = cleanPrescription;
     if (_referSpecialty != null) {
@@ -812,17 +812,18 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
     if (_labTests.isNotEmpty) data['labTests'] = _labTests;
     if (_notesController.text.trim().isNotEmpty) data['notes'] = _notesController.text.trim();
     if (vitalSigns.isNotEmpty) data['vitalSigns'] = vitalSigns;
-    if (_followUpDate != null) data['followUpDate'] = _followUpDate!.toIso8601String();
-    if (_followUpDays > 0 || _followUpMonths > 0) {
-      final followUpAfter = DateTime.now()
-          .add(Duration(days: _followUpDays + (_followUpMonths * 30)));
-      data['followUpDate'] ??= followUpAfter.toIso8601String();
-      data['followUpDays'] = _followUpDays;
-      data['followUpMonths'] = _followUpMonths;
+    if (_followUpDate != null) {
+      data['followUpDate'] = _followUpDate!.toIso8601String();
+    } else if (_followUpDays > 0 || _followUpMonths > 0) {
+      data['followUpDate'] = DateTime.now()
+          .add(Duration(days: _followUpDays + (_followUpMonths * 30)))
+          .toIso8601String();
     }
-    if (_selectedProgramIds.isNotEmpty) data['assignedCourses'] = _selectedProgramIds;
+    if (_followUpDays > 0) data['followUpDays'] = _followUpDays;
+    if (_followUpMonths > 0) data['followUpMonths'] = _followUpMonths;
     if (_selectedLabId != null) data['referredLaboratory'] = _selectedLabId;
     if (_selectedPharmacyId != null) data['selectedPharmacy'] = _selectedPharmacyId;
+    if (_selectedProgramIds.isNotEmpty) data['assignedCourses'] = _selectedProgramIds;
 
     debugPrint('📤 Sending medical record: $data');
 
