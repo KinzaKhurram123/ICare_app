@@ -76,179 +76,147 @@ class _AccountActivatedScreenState extends State<AccountActivatedScreen>
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 40),
-
-                      // Main Card
-                      Container(
-                        padding: const EdgeInsets.all(40),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                  // Main Card
+                  Container(
+                    padding: const EdgeInsets.all(40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
                         ),
-                        child: Column(
-                          children: [
-                            // Success Icon with animation
-                            ScaleTransition(
-                              scale: _scaleAnimation,
-                              child: Container(
-                                width: 100,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.verified_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 56,
-                                ),
-                              ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Success Icon with animation
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
                             ),
-
-                            const SizedBox(height: 24),
-
-                            // Title
-                            const Text(
-                              '🎉 Account Activated!',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                fontFamily: 'Gilroy-Bold',
-                              ),
-                              textAlign: TextAlign.center,
+                            child: const Icon(
+                              Icons.verified_rounded,
+                              color: Color(0xFF10B981),
+                              size: 56,
                             ),
-
-                            const SizedBox(height: 12),
-
-                            // Subtitle
-                            Text(
-                              'Congratulations ${widget.userName}! Your account has been verified and activated.',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[600],
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Info Cards
-                            _buildInfoCard(
-                              icon: Icons.shield_rounded,
-                              title: 'Verified Provider',
-                              subtitle: 'You\'re now a verified ${widget.role} on iCare',
-                              color: const Color(0xFF10B981),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _buildInfoCard(
-                              icon: Icons.people_rounded,
-                              title: 'Start Serving Patients',
-                              subtitle: 'You can now accept orders and bookings',
-                              color: AppColors.primaryColor,
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _buildInfoCard(
-                              icon: Icons.support_agent_rounded,
-                              title: '24/7 Support',
-                              subtitle: 'Our team is here to help you succeed',
-                              color: const Color(0xFF8B5CF6),
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Go Online Button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton.icon(
-                                onPressed: _goOnline,
-                                icon: const Icon(Icons.rocket_launch_rounded, size: 22),
-                                label: const Text(
-                                  'Go Online Now',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w900,
-                                    fontFamily: 'Gilroy-Bold',
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF10B981),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  elevation: 0,
-                                  shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Setup Profile Later
-                            TextButton(
-                              onPressed: () => context.go('/home'),
-                              child: const Text(
-                                'I\'ll set up my profile later',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Welcome Message
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primaryColor.withValues(alpha: 0.15),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_rounded,
-                              color: AppColors.primaryColor,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Pro Tip: Complete your profile to get more visibility and trust from patients',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.4,
-                                ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          '🎉 Account Activated!',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            fontFamily: 'Gilroy-Bold',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Congratulations ${widget.userName}! Your account has been verified and activated.',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[600],
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        _buildInfoCard(
+                          icon: Icons.shield_rounded,
+                          title: 'Verified Provider',
+                          subtitle: 'You\'re now a verified ${widget.role} on iCare',
+                          color: const Color(0xFF10B981),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCard(
+                          icon: Icons.people_rounded,
+                          title: 'Start Serving Patients',
+                          subtitle: 'You can now accept orders and bookings',
+                          color: AppColors.primaryColor,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCard(
+                          icon: Icons.support_agent_rounded,
+                          title: '24/7 Support',
+                          subtitle: 'Our team is here to help you succeed',
+                          color: const Color(0xFF8B5CF6),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            onPressed: _goOnline,
+                            icon: const Icon(Icons.rocket_launch_rounded, size: 22),
+                            label: const Text(
+                              'Go Online Now',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Gilroy-Bold',
                               ),
                             ),
-                          ],
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () => context.go('/home'),
+                          child: const Text(
+                            'I\'ll set up my profile later',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  // Pro Tip
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primaryColor.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lightbulb_rounded, color: AppColors.primaryColor, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Pro Tip: Complete your profile to get more visibility and trust from patients',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.primaryColor,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
