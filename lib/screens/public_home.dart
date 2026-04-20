@@ -35,65 +35,58 @@ class PublicHome extends StatelessWidget {
                 color: Colors.white,
                 border: Border(bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1)),
               ),
-              child: Center(
-                child: Padding(
+              child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 12 : 24,
                     vertical: 14,
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Left: iCare logo
-                      Positioned(
-                        left: 0,
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          height: isMobile ? 44 : 56,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: isMobile ? 44 : 56,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                       // Right: nav buttons
-                      Positioned(
-                        right: 0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (!isMobile) ...[
-                              _NavButton(
-                                label: 'Sign In',
-                                filled: true,
-                                onTap: () => context.go('/login'),
-                              ),
-                              const SizedBox(width: 6),
-                              _NavButton(
-                                label: 'Sign Up',
-                                filled: false,
-                                onTap: () => context.go('/signup'),
-                              ),
-                              const SizedBox(width: 6),
-                              _NavButton(
-                                label: 'Work With Us',
-                                filled: false,
-                                accent: true,
-                                onTap: () => context.go('/work-with-us'),
-                              ),
-                            ] else ...[
-                              _NavButton(
-                                label: 'Sign In',
-                                filled: true,
-                                onTap: () => context.go('/login'),
-                              ),
-                              const SizedBox(width: 6),
-                              _NavButton(
-                                label: 'Sign Up',
-                                filled: false,
-                                onTap: () => context.go('/signup'),
-                              ),
-                            ],
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!isMobile) ...[
+                            _NavButton(
+                              label: 'Sign In',
+                              filled: true,
+                              onTap: () => context.go('/login'),
+                            ),
+                            const SizedBox(width: 6),
+                            _NavButton(
+                              label: 'Sign Up',
+                              filled: false,
+                              onTap: () => context.go('/signup'),
+                            ),
+                            const SizedBox(width: 6),
+                            _NavButton(
+                              label: 'Work With Us',
+                              filled: false,
+                              accent: true,
+                              onTap: () => context.go('/work-with-us'),
+                            ),
+                          ] else ...[
+                            _NavButton(
+                              label: 'Sign In',
+                              filled: true,
+                              onTap: () => context.go('/login'),
+                            ),
+                            const SizedBox(width: 6),
+                            _NavButton(
+                              label: 'Sign Up',
+                              filled: false,
+                              onTap: () => context.go('/signup'),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     ],
                   ),
