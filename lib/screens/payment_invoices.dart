@@ -141,32 +141,46 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
 
   Future<void> _downloadInvoice(Map<String, dynamic> invoice) async {
     try {
+      // Parse date safely
+      DateTime invoiceDate;
+      final rawDate = invoice['date'];
+      if (rawDate is DateTime) {
+        invoiceDate = rawDate;
+      } else if (rawDate != null) {
+        try {
+          invoiceDate = DateFormat('dd MMM, yyyy').parse(rawDate.toString());
+        } catch (_) {
+          invoiceDate = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+        }
+      } else {
+        invoiceDate = DateTime.now();
+      }
+
+      final amount = (invoice['amount'] ?? 0).toDouble();
+      final id = (invoice['id'] ?? invoice['_id'] ?? 'N/A').toString();
+      final patient = (invoice['patient'] ?? invoice['patientName'] ?? 'Patient').toString();
+      final test = (invoice['test'] ?? invoice['testName'] ?? 'Service').toString();
+
       if (widget.isPharmacy) {
         await PdfInvoiceGenerator.generatePharmacyInvoice(
-          orderNumber: invoice['id'],
-          patientName: invoice['patient'],
+          orderNumber: id,
+          patientName: patient,
           patientPhone: 'N/A',
           patientAddress: 'N/A',
-          items: [
-            {
-              'name': invoice['test'],
-              'quantity': 1,
-              'price': invoice['amount'],
-            }
-          ],
+          items: [{'name': test, 'quantity': 1, 'price': amount}],
           deliveryFee: 0,
-          totalAmount: invoice['amount'],
-          orderDate: DateFormat('dd MMM, yyyy').parse(invoice['date']),
+          totalAmount: amount,
+          orderDate: invoiceDate,
           pharmacyName: 'iCare Pharmacy',
         );
       } else {
         await PdfInvoiceGenerator.generateLabInvoice(
-          bookingNumber: invoice['id'],
-          patientName: invoice['patient'],
+          bookingNumber: id,
+          patientName: patient,
           patientPhone: 'N/A',
-          testName: invoice['test'],
-          testPrice: invoice['amount'],
-          bookingDate: DateFormat('dd MMM, yyyy').parse(invoice['date']),
+          testName: test,
+          testPrice: amount,
+          bookingDate: invoiceDate,
           labName: 'iCare Laboratory',
         );
       }

@@ -744,23 +744,45 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
 
   Future<void> _downloadInvoice(Map<String, dynamic> order) async {
     try {
-      final items = (order['medicines'] as List).map((medicine) {
-        return {
-          'name': medicine.toString(),
-          'quantity': 1,
-          'price': (order['total'] ?? 0) / (order['medicines'] as List).length,
-        };
+      final medicinesList = (order['medicines'] as List? ?? order['items'] as List? ?? []);
+      final total = (order['total'] ?? order['totalAmount'] ?? order['amount'] ?? 0).toDouble();
+      final perItem = medicinesList.isNotEmpty ? total / medicinesList.length : 0.0;
+
+      final items = medicinesList.map((medicine) {
+        if (medicine is Map) {
+          return {
+            'name': medicine['name']?.toString() ?? medicine['productName']?.toString() ?? 'Item',
+            'quantity': medicine['quantity'] ?? 1,
+            'price': (medicine['price'] ?? medicine['unitPrice'] ?? perItem).toDouble(),
+          };
+        }
+        return {'name': medicine.toString(), 'quantity': 1, 'price': perItem};
       }).toList();
 
+      if (items.isEmpty) {
+        items.add({'name': 'Pharmacy Order', 'quantity': 1, 'price': total});
+      }
+
+      // Parse date safely
+      DateTime orderDate;
+      final rawDate = order['date'] ?? order['createdAt'] ?? order['orderDate'];
+      if (rawDate is DateTime) {
+        orderDate = rawDate;
+      } else if (rawDate != null) {
+        orderDate = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+      } else {
+        orderDate = DateTime.now();
+      }
+
       await PdfInvoiceGenerator.generatePharmacyInvoice(
-        orderNumber: order['id'],
-        patientName: order['customerName'],
-        patientPhone: order['customerPhone'] ?? 'N/A',
-        patientAddress: 'N/A',
+        orderNumber: (order['id'] ?? order['_id'] ?? 'N/A').toString(),
+        patientName: (order['customerName'] ?? order['patientName'] ?? order['patient_name'] ?? 'Patient').toString(),
+        patientPhone: (order['customerPhone'] ?? order['phone'] ?? order['patientPhone'] ?? 'N/A').toString(),
+        patientAddress: (order['address'] ?? order['deliveryAddress'] ?? 'N/A').toString(),
         items: items,
-        deliveryFee: 0,
-        totalAmount: (order['total'] ?? 0).toDouble(),
-        orderDate: order['date'],
+        deliveryFee: (order['deliveryFee'] ?? order['delivery_fee'] ?? 0).toDouble(),
+        totalAmount: total,
+        orderDate: orderDate,
         pharmacyName: 'iCare Pharmacy',
       );
     } catch (e) {
