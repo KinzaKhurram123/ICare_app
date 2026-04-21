@@ -48,36 +48,52 @@ class Doctor {
       return [];
     }
 
+    // Safe list parsing helper
+    List<String> parseStringList(dynamic value) {
+      if (value == null) return [];
+      if (value is List) {
+        return value.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+      }
+      return [];
+    }
+
+    // Safe ratings parsing
+    List<double> parseRatings(dynamic value) {
+      if (value == null) return [];
+      if (value is List) {
+        return value
+            .map((r) {
+              if (r is num) return r.toDouble();
+              if (r is String) return double.tryParse(r);
+              return null;
+            })
+            .where((r) => r != null)
+            .cast<double>()
+            .toList();
+      }
+      return [];
+    }
+
     return Doctor(
-      id: json['_id'] ?? '',
+      id: json['_id']?.toString() ?? '',
       user: User.fromJson(json['user'] ?? {}),
-      specialization: json['specialization'],
-      pmdcNumber: json['pmdcNumber'],
+      specialization: json['specialization']?.toString(),
+      pmdcNumber: json['pmdcNumber']?.toString(),
       consultationType: parseConsultationType(json['consultationType']),
-      languages: json['languages'] != null
-          ? List<String>.from(json['languages'])
-          : [],
-      degrees: json['degrees'] != null
-          ? List<String>.from(json['degrees'])
-          : [],
-      experience: json['experience'],
-      licenseNumber: json['licenseNumber'],
-      clinicName: json['clinicName'],
-      clinicAddress: json['clinicAddress'],
-      availableDays: json['availableDays'] != null
-          ? List<String>.from(json['availableDays'])
-          : [],
+      languages: parseStringList(json['languages']),
+      degrees: parseStringList(json['degrees']),
+      experience: json['experience']?.toString(),
+      licenseNumber: json['licenseNumber']?.toString(),
+      clinicName: json['clinicName']?.toString(),
+      clinicAddress: json['clinicAddress']?.toString(),
+      availableDays: parseStringList(json['availableDays']),
       availableTime: json['availableTime'] != null
           ? AvailableTime.fromJson(json['availableTime'])
           : null,
-      isApproved: json['isApproved'] ?? false,
-      isOnline: json['isOnline'] ?? false,
-      ratings: json['ratings'] != null
-          ? List<double>.from(json['ratings'].map((r) => r.toDouble()))
-          : [],
-      reviews: json['reviews'] != null
-          ? List<String>.from(json['reviews'])
-          : [],
+      isApproved: json['isApproved'] == true,
+      isOnline: json['isOnline'] == true,
+      ratings: parseRatings(json['ratings']),
+      reviews: parseStringList(json['reviews']),
     );
   }
 

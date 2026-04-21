@@ -46,13 +46,26 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     try {
       setState(() => _isLoading = true);
       final status = _getCurrentStatus();
+      debugPrint('📋 Loading orders with status: $status');
       final orders = await _pharmacyService.getPharmacyOrders(status: status);
+      debugPrint('✅ Received ${orders.length} orders from backend');
+
       setState(() {
         _orders = orders.map((o) {
           final user = o['user'] as Map<String, dynamic>?;
+          final orderId = o['_id']?.toString();
+
+          // Skip orders with invalid IDs
+          if (orderId == null || orderId.isEmpty) {
+            debugPrint('⚠️ Skipping order with missing ID');
+            return null;
+          }
+
+          debugPrint('📦 Order ID: $orderId, Status: ${o['status']}');
+
           return {
-            '_id': o['_id'],
-            'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
+            '_id': orderId,
+            'id': o['orderNumber'] ?? '#${orderId.substring(0, 8)}',
             'customerName': user?['name'] ?? user?['username'] ?? 'Patient',
             'customerPhone': user?['phoneNumber'] ?? user?['phone'] ?? 'N/A',
             'items': (o['items'] as List?)?.length ?? 0,
@@ -76,10 +89,12 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'medicalRecord': o['medicalRecord'],
             'prescriptionId': o['prescriptionId'],
           };
-        }).toList();
+        }).whereType<Map<String, dynamic>>().toList(); // Filter out null entries
+        debugPrint('✅ Processed ${_orders.length} valid orders');
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('❌ Error loading orders: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,16 +121,64 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
 
   Future<void> _updateOrderStatus(String orderId, String newStatus, {String? expectedDelivery}) async {
     try {
+      debugPrint('🔄 Attempting to update order $orderId to $newStatus');
+
+      // Verify order exists in our current list
+      final orderExists = _orders.any((o) => o['_id'] == orderId);
+      if (!orderExists) {
+        debugPrint('⚠️ Order $orderId not found in current list');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('This order is no longer available. Refreshing...'),
+              backgroundColor: Color(0xFFEF4444),
+            ),
+          );
+          await _loadOrders();
+        }
+        return;
+      }
+
       await _pharmacyService.updateOrderStatus(orderId, newStatus);
+      debugPrint('✅ Order status updated successfully');
+
+      // Reload orders to get fresh data
       await _loadOrders();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Order status updated to $newStatus')),
+          SnackBar(
+            content: Text('Order status updated to $newStatus'),
+            backgroundColor: const Color(0xFF10B981),
+          ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        Utils.showErrorSnackBar(context, e);
+      debugPrint('❌ Error updating order status: $e');
+
+      // Check if it's a 404 error (order doesn't exist)
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('404') || errorMsg.contains('not found')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('This order no longer exists or does not belong to your pharmacy. Refreshing list...'),
+              backgroundColor: Color(0xFFEF4444),
+              duration: Duration(seconds: 4),
+            ),
+          );
+          // Refresh the orders list to remove stale data
+          await _loadOrders();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update order: ${e.toString()}'),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
       }
     }
   }
@@ -293,6 +356,13 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             color: Color(0xFF0F172A),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
+            onPressed: _loadOrders,
+            tooltip: 'Refresh orders',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primaryColor,
@@ -665,47 +735,60 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
+                        child: OutlinedButton.icon(
                           onPressed: () =>
                               _updateOrderStatus(order['_id'], 'cancelled'),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          label: const Text('Reject'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFEF4444),
-                            side: const BorderSide(color: Color(0xFFEF4444)),
-                            minimumSize: const Size(double.infinity, 44),
+                            side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                            minimumSize: const Size(double.infinity, 48),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () =>
                               _updateOrderStatus(order['_id'], 'confirmed'),
+                          icon: const Icon(Icons.check_rounded, size: 18),
+                          label: const Text('Accept'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
                             foregroundColor: Colors.white,
-                            minimumSize: const Size(double.infinity, 44),
+                            minimumSize: const Size(double.infinity, 48),
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
                   ),
                 ] else if (status == 'confirmed') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'preparing'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          _updateOrderStatus(order['_id'], 'preparing'),
+                      icon: const Icon(Icons.medication_rounded, size: 18),
+                      label: const Text('Start Preparing'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                    child: const Text('Start Preparing'),
                   ),
                 ] else if (status == 'preparing') ...[
                   const SizedBox(height: 16),
@@ -714,23 +797,32 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                     child: ElevatedButton.icon(
                       onPressed: () => _showDispatchDialog(order['_id'], order['itemsList'] as List),
                       icon: const Icon(Icons.delivery_dining_rounded, size: 18),
-                      label: const Text('Dispatch'),
+                      label: const Text('Dispatch Order'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
                 ] else if (status == 'out_for_delivery') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => _markAsCompleted(order['_id'], order['customerName']),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _markAsCompleted(order['_id'], order['customerName']),
+                      icon: const Icon(Icons.check_circle_rounded, size: 18),
+                      label: const Text('Mark as Completed'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                    child: const Text('Mark as Completed'),
                   ),
                 ] else if (status == 'completed') ...[
                   const SizedBox(height: 16),
