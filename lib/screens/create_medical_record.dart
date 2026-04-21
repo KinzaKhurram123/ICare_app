@@ -1416,9 +1416,9 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                             dropdownColor: Colors.white,
                             items: _availableLabs.map((lab) {
                               return DropdownMenuItem<String>(
-                                value: lab['_id'],
+                                value: lab['_id']?.toString(),
                                 child: Text(
-                                  "${lab['labName']} (${lab['city']})",
+                                  lab['labName']?.toString() ?? lab['name']?.toString() ?? 'Laboratory',
                                 ),
                               );
                             }).toList(),
@@ -1462,9 +1462,9 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                             dropdownColor: Colors.white,
                             items: _availablePharmacies.map((pharmacy) {
                               return DropdownMenuItem<String>(
-                                value: pharmacy['_id'],
+                                value: pharmacy['_id']?.toString(),
                                 child: Text(
-                                  "${pharmacy['pharmacyName']} (${pharmacy['city']})",
+                                  pharmacy['pharmacyName']?.toString() ?? pharmacy['name']?.toString() ?? 'Pharmacy',
                                 ),
                               );
                             }).toList(),

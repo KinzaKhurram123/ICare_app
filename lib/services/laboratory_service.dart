@@ -22,11 +22,15 @@ class LaboratoryService {
     try {
       final response = await _apiService.get('/laboratories/get_all_laboratories');
       final list = (response.data['laboratories'] ?? []) as List;
-      // normalize: ensure both _id and id fields exist
+      // Backend returns: { _id: profileId, user: { _id, name }, labName, city }
+      // We need user._id as the lab_id for bookings
       return list.map((l) {
         final map = Map<String, dynamic>.from(l);
-        map['_id'] = map['_id'] ?? map['id'];
+        final user = map['user'] as Map<String, dynamic>? ?? {};
+        map['_id'] = user['_id']?.toString() ?? map['_id']?.toString();
         map['id'] = map['_id'];
+        map['labName'] = map['labName'] ?? user['name'] ?? 'Laboratory';
+        map['name'] = map['labName'];
         return map;
       }).toList();
     } catch (e, stackTrace) {
