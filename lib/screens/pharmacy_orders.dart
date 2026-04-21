@@ -63,14 +63,16 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                 ? DateTime.parse(o['createdAt'])
                 : DateTime.now(),
             'medicines': (o['items'] as List?)
-                    ?.map((item) =>
-                        item['product_name'] ??
-                        item['productName'] ??
-                        item['name'] ??
-                        'Medicine')
+                    ?.map((item) {
+                      final name = (item['product_name'] ??
+                          item['productName'] ??
+                          item['name'] ??
+                          'Medicine').toString();
+                      return _sanitizeText(name) ?? name;
+                    })
                     .toList() ??
                 [],
-            'prescriptionText': o['prescriptionText'],
+            'prescriptionText': _sanitizeText(o['prescriptionText']?.toString()),
             'medicalRecord': o['medicalRecord'],
             'prescriptionId': o['prescriptionId'],
           };
@@ -669,8 +671,12 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFEF4444),
                             side: const BorderSide(color: Color(0xFFEF4444)),
+                            minimumSize: const Size(double.infinity, 44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          child: const Text('Reject'),
+                          child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -680,8 +686,13 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                               _updateOrderStatus(order['_id'], 'confirmed'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          child: const Text('Accept'),
+                          child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
@@ -831,6 +842,18 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         Utils.showErrorSnackBar(context, e);
       }
     }
+  }
+
+  /// Removes "undefined" / "null" strings injected by backend template rendering
+  String? _sanitizeText(String? text) {
+    if (text == null) return null;
+    final cleaned = text
+        .replaceAll(RegExp(r'\bundefined\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\bnull\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
+        .replaceAll(RegExp(r',\s*,'), ',')
+        .trim();
+    return cleaned.isEmpty ? null : cleaned;
   }
 
   Color _getStatusColor(String status) {

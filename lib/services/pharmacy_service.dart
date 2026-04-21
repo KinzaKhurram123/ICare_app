@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:icare/services/api_service.dart';
 
@@ -197,11 +198,23 @@ class PharmacyService {
     String orderId,
     String status,
   ) async {
-    final response = await _apiService.put(
-      '/pharmacy/update_order_status/$orderId',
-      {'status': status},
-    );
-    return response.data['order'];
+    try {
+      final response = await _apiService.put(
+        '/pharmacy/update_order_status/$orderId',
+        {'status': status},
+      );
+      return response.data['order'] ?? {};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // Fallback: try RESTful /pharmacy/orders/:id endpoint
+        final response = await _apiService.put(
+          '/pharmacy/orders/$orderId',
+          {'status': status},
+        );
+        return response.data['order'] ?? {};
+      }
+      rethrow;
+    }
   }
 
   Future<void> submitOrderRating(String orderId, int rating, String comment) async {
