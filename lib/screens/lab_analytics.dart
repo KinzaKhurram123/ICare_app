@@ -68,13 +68,16 @@ class _LabAnalyticsState extends State<LabAnalytics>
       }
 
       final filteredBookings = bookings.where((b) {
-        final date = DateTime.parse(b['date']);
+        final rawDate = b['createdAt'] ?? b['date'] ?? b['test_date'];
+        if (rawDate == null) return true; // include if no date
+        final date = DateTime.tryParse(rawDate.toString());
+        if (date == null) return true;
         return date.isAfter(startDate);
       }).toList();
 
       final testCounts = <String, int>{};
       for (var booking in filteredBookings) {
-        final testName = booking['testName'] ?? 'Unknown';
+        final testName = booking['test_type'] ?? booking['testName'] ?? booking['testType'] ?? 'Unknown';
         testCounts[testName] = (testCounts[testName] ?? 0) + 1;
       }
 

@@ -8,7 +8,14 @@ class PharmacyService {
   // Get all pharmacies (public endpoint)
   Future<List<dynamic>> getAllPharmacies() async {
     final response = await _apiService.get('/pharmacy/get_all_pharmacy');
-    return response.data['pharmacies'] as List;
+    final list = response.data['pharmacies'] as List? ?? [];
+    // normalize: ensure both _id and id fields exist
+    return list.map((p) {
+      final map = Map<String, dynamic>.from(p);
+      map['_id'] = map['_id'] ?? map['id'];
+      map['id'] = map['_id'];
+      return map;
+    }).toList();
   }
 
   // Get pharmacy profile for logged-in pharmacist

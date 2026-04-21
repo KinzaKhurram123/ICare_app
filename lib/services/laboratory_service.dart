@@ -20,10 +20,15 @@ class LaboratoryService {
   // Get all laboratories
   Future<List<dynamic>> getAllLaboratories() async {
     try {
-      final response = await _apiService.get(
-        '/laboratories/get_all_laboratories',
-      );
-      return response.data['laboratories'] ?? [];
+      final response = await _apiService.get('/laboratories/get_all_laboratories');
+      final list = (response.data['laboratories'] ?? []) as List;
+      // normalize: ensure both _id and id fields exist
+      return list.map((l) {
+        final map = Map<String, dynamic>.from(l);
+        map['_id'] = map['_id'] ?? map['id'];
+        map['id'] = map['_id'];
+        return map;
+      }).toList();
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getAllLaboratories');
       rethrow;
