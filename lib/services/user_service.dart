@@ -8,9 +8,9 @@ class UserService {
 
   Future<Map<String, dynamic>> getUserProfile({String? token}) async {
     try {
-      debugPrint("🌐 Calling /auth/profile endpoint...");
+      debugPrint("🌐 Calling /users/profile endpoint...");
 
-      final response = await _apiService.get('/auth/profile', token: token);
+      final response = await _apiService.get('/users/profile', token: token);
 
       debugPrint("📡 Response status: ${response.statusCode}");
       debugPrint("📡 Response data: ${response.data}");
