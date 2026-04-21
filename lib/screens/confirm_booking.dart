@@ -180,7 +180,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
               _buildSectionHeader('Selected Tests'),
               _buildDetailCard(
                 widget.selectedTests
-                    .map((t) => _buildTestLine(t.name, '\$${t.price}'))
+                    .map((t) => _buildTestLine(t.name, 'PKR ${t.price}'))
                     .toList(),
               ),
               const SizedBox(height: 24),
@@ -198,7 +198,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                       ),
                     ),
                     Text(
-                      '\$$_totalPrice',
+                      'PKR $_totalPrice',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
