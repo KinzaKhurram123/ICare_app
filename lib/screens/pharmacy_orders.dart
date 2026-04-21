@@ -53,8 +53,8 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
           return {
             '_id': o['_id'],
             'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
-            'customerName': user?['name'] ?? 'Guest Customer',
-            'customerPhone': user?['phoneNumber'] ?? 'N/A',
+            'customerName': user?['name'] ?? user?['username'] ?? 'Patient',
+            'customerPhone': user?['phoneNumber'] ?? user?['phone'] ?? 'N/A',
             'items': (o['items'] as List?)?.length ?? 0,
             'itemsList': (o['items'] as List?) ?? [],
             'total': (o['totalAmount'] ?? 0).toDouble(),
@@ -62,13 +62,17 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'date': o['createdAt'] != null
                 ? DateTime.parse(o['createdAt'])
                 : DateTime.now(),
-            'medicines':
-                (o['items'] as List?)
-                    ?.map((item) => item['productName'] ?? 'Unknown')
+            'medicines': (o['items'] as List?)
+                    ?.map((item) =>
+                        item['product_name'] ??
+                        item['productName'] ??
+                        item['name'] ??
+                        'Medicine')
                     .toList() ??
                 [],
             'prescriptionText': o['prescriptionText'],
             'medicalRecord': o['medicalRecord'],
+            'prescriptionId': o['prescriptionId'],
           };
         }).toList();
         _isLoading = false;

@@ -60,7 +60,7 @@ router.post('/create', authMiddleware, async (req, res) => {
     ) {
       try {
         const orderItems = prescription.medicines.map((m) => ({
-          product_name: m.name,
+          product_name: m.name || 'Medicine',
           generic_name: m.dosage || '',
           quantity: 1,
           price: 0,

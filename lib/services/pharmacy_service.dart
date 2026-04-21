@@ -176,9 +176,10 @@ class PharmacyService {
     String orderId,
     String status,
   ) async {
-    final response = await _apiService.put('/pharmacy/orders/$orderId/status', {
-      'status': status,
-    });
+    final response = await _apiService.put(
+      '/pharmacy/update_order_status/$orderId',
+      {'status': status},
+    );
     return response.data['order'];
   }
 

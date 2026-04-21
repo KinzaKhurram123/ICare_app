@@ -216,8 +216,10 @@ router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
       deliveryAddress: o.delivery_address,
       expectedDeliveryTime: o.expected_delivery_time,
       createdAt: o.createdAt,
+      prescriptionId: o.prescription_id,
       user: {
-        name: pMap[o.patient_id.toString()]?.username || pMap[o.patient_id.toString()]?.name,
+        _id: pMap[o.patient_id.toString()]?._id?.toString(),
+        name: pMap[o.patient_id.toString()]?.username || pMap[o.patient_id.toString()]?.name || 'Patient',
         email: pMap[o.patient_id.toString()]?.email,
         phoneNumber: pMap[o.patient_id.toString()]?.phone,
       },
