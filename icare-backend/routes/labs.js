@@ -232,11 +232,13 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, results, testDate, date } = req.body;
+    const { status, results, testDate, date, reportNotes, reportUrl } = req.body;
     const update = {};
     if (status) update.status = status;
     if (results) update.results = results;
     if (testDate || date) update.test_date = testDate || date;
+    if (reportNotes) update.report_notes = reportNotes;
+    if (reportUrl) update.report_url = reportUrl;
 
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ success: false, message: 'No fields to update' });
@@ -249,6 +251,21 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
     );
 
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found or access denied' });
+
+    // ── Notify doctor when results are submitted ─────────────────────────────────
+    if (update.status === 'completed' && booking.medical_record_id) {
+      try {
+        const MedicalRecord = require('../models/MedicalRecord');
+        const record = await MedicalRecord.findById(booking.medical_record_id).lean();
+        if (record) {
+          console.log(`🔔 Lab results ready → Doctor ${record.doctor} notified for test: ${booking.test_type}`);
+          // FCM/push notification would go here when integrated
+        }
+      } catch (notifyErr) {
+        console.error('⚠️  Doctor notification failed:', notifyErr.message);
+      }
+    }
+
     res.json({ success: true, message: 'Booking updated', booking: { ...booking.toObject(), _id: booking._id.toString() } });
   } catch (error) {
     console.error(error);

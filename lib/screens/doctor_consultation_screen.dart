@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/consultation.dart';
 import 'package:icare/services/healthcare_workflow_service.dart';
+import 'package:icare/services/laboratory_service.dart';
+import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/theme.dart';
 
 /// Doctor Consultation Screen
@@ -75,8 +77,39 @@ class _DoctorConsultationScreenState
   List<Map<String, dynamic>> _healthPrograms = [];
   Map<String, dynamic>? _referral;
 
+  // Selected pharmacy & lab for auto-routing
+  String? _selectedPharmacyId;
+  String? _selectedLabId;
+
+  List<dynamic> _availablePharmacies = [];
+  List<dynamic> _availableLabs = [];
+  bool _isLoadingPharmacies = false;
+  bool _isLoadingLabs = false;
+
+  final PharmacyService _pharmacyService = PharmacyService();
+  final LaboratoryService _labService = LaboratoryService();
+
   @override
-  void dispose() {
+  void initState() {
+    super.initState();
+    _loadPharmaciesAndLabs();
+  }
+
+  Future<void> _loadPharmaciesAndLabs() async {
+    setState(() { _isLoadingPharmacies = true; _isLoadingLabs = true; });
+    try {
+      final pharmacies = await _pharmacyService.getAllPharmacies();
+      if (mounted) setState(() { _availablePharmacies = pharmacies; _isLoadingPharmacies = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingPharmacies = false);
+    }
+    try {
+      final labs = await _labService.getAllLaboratories();
+      if (mounted) setState(() { _availableLabs = labs; _isLoadingLabs = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingLabs = false);
+    }
+  }
     // Dispose all controllers
     _chiefComplaintController.dispose();
     _hpiController.dispose();
@@ -786,6 +819,118 @@ class _DoctorConsultationScreenState
         ),
         const SizedBox(height: 20),
 
+        // ── ROUTE TO PHARMACY ─────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Send to Pharmacy', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Select pharmacy to auto-send prescription',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 8),
+              _isLoadingPharmacies
+                  ? const LinearProgressIndicator()
+                  : DropdownButtonFormField<String>(
+                      value: _selectedPharmacyId,
+                      decoration: InputDecoration(
+                        hintText: 'Select Pharmacy (optional)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('None')),
+                        ..._availablePharmacies.map((p) => DropdownMenuItem<String>(
+                          value: p['_id']?.toString() ?? p['id']?.toString(),
+                          child: Text(p['pharmacy_name'] ?? p['pharmacyName'] ?? p['name'] ?? 'Pharmacy'),
+                        )),
+                      ],
+                      onChanged: (v) => setState(() => _selectedPharmacyId = v),
+                    ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── ROUTE TO LAB ──────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Send to Laboratory', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Select lab to auto-send test orders',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 8),
+              _isLoadingLabs
+                  ? const LinearProgressIndicator()
+                  : DropdownButtonFormField<String>(
+                      value: _selectedLabId,
+                      decoration: InputDecoration(
+                        hintText: 'Select Laboratory (optional)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('None')),
+                        ..._availableLabs.map((l) => DropdownMenuItem<String>(
+                          value: l['_id']?.toString() ?? l['id']?.toString(),
+                          child: Text(l['lab_name'] ?? l['labName'] ?? l['name'] ?? 'Laboratory'),
+                        )),
+                      ],
+                      onChanged: (v) => setState(() => _selectedLabId = v),
+                    ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
         // ── INSTRUCTIONS ─────────────────────────────────────────────
         const Text(
           'Instructions to Patient',
@@ -1242,8 +1387,10 @@ class _DoctorConsultationScreenState
           clinicalNotes: _clinicalNotesController.text.trim(),
         ),
         plan: TreatmentPlan(
-          prescriptionIds: _prescriptions.map((p) => p['id'].toString()).toList(),
-          labTestRequestIds: _labTests.map((l) => l['id'].toString()).toList(),
+          // Pass medicine names as IDs so workflow service can send them to pharmacy
+          prescriptionIds: _prescriptions.map((p) => p['name'].toString()).toList(),
+          // Pass lab test names so workflow service can send them to lab
+          labTestRequestIds: _labTests.map((l) => l['name'].toString()).toList(),
           healthProgramIds: _healthPrograms.map((h) => h['id'].toString()).toList(),
           instructions: _instructionsController.text.trim(),
           followUpInstructions: _followUpInstructionsController.text.trim(),
@@ -1254,7 +1401,11 @@ class _DoctorConsultationScreenState
       );
 
       final workflowService = HealthcareWorkflowService();
-      final result = await workflowService.processConsultationCompletion(consultation);
+      final result = await workflowService.processConsultationCompletion(
+        consultation,
+        selectedPharmacyId: _selectedPharmacyId,
+        selectedLabId: _selectedLabId,
+      );
 
       if (mounted) {
         // Show completion summary
@@ -1295,9 +1446,11 @@ class _DoctorConsultationScreenState
             const Text('The following actions have been triggered:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
             const SizedBox(height: 16),
             if (_prescriptions.isNotEmpty)
-              _summaryRow(Icons.medication_rounded, const Color(0xFF3B82F6), '${_prescriptions.length} prescription(s) issued'),
+              _summaryRow(Icons.medication_rounded, const Color(0xFF3B82F6),
+                  '${_prescriptions.length} prescription(s) issued${_selectedPharmacyId != null ? ' → sent to pharmacy' : ''}'),
             if (_labTests.isNotEmpty)
-              _summaryRow(Icons.biotech_rounded, const Color(0xFF8B5CF6), '${_labTests.length} lab test(s) sent to lab dashboard'),
+              _summaryRow(Icons.biotech_rounded, const Color(0xFF8B5CF6),
+                  '${_labTests.length} lab test(s)${_selectedLabId != null ? ' → sent to lab dashboard' : ' ordered'}'),
             if (_healthPrograms.isNotEmpty)
               _summaryRow(Icons.health_and_safety_rounded, const Color(0xFF10B981), '${_healthPrograms.length} health program(s) assigned to patient'),
             if (_referral != null)

@@ -3,6 +3,8 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const { authMiddleware } = require('../middleware/auth');
 const MedicalRecord = require('../models/MedicalRecord');
+const PharmacyOrder = require('../models/PharmacyOrder');
+const LabTestRequest = require('../models/LabTestRequest');
 
 // POST /api/medical-records/create
 router.post('/create', authMiddleware, async (req, res) => {
@@ -49,6 +51,58 @@ router.post('/create', authMiddleware, async (req, res) => {
     const populated = await MedicalRecord.findById(record._id)
       .populate('doctor', 'name email')
       .populate('patient', 'name email');
+
+    // ── AUTO-TRIGGER: Send prescription to pharmacy ──────────────────────────
+    if (
+      selectedPharmacy &&
+      mongoose.isValidObjectId(selectedPharmacy) &&
+      prescription?.medicines?.length > 0
+    ) {
+      try {
+        const orderItems = prescription.medicines.map((m) => ({
+          product_name: m.name,
+          generic_name: m.dosage || '',
+          quantity: 1,
+          price: 0,
+        }));
+        await PharmacyOrder.create({
+          patient_id: patientId,
+          pharmacy_id: selectedPharmacy,
+          prescription_id: record._id.toString(),
+          delivery_address: '',
+          total_amount: 0,
+          status: 'pending',
+          order_number: `RX-${Date.now().toString().slice(-8)}`,
+          items: orderItems,
+        });
+        console.log(`✅ Pharmacy order auto-created for record ${record._id}`);
+      } catch (pharmErr) {
+        console.error('⚠️  Auto pharmacy order failed:', pharmErr.message);
+      }
+    }
+
+    // ── AUTO-TRIGGER: Send lab tests to laboratory ───────────────────────────
+    if (
+      referredLaboratory &&
+      mongoose.isValidObjectId(referredLaboratory) &&
+      labTests?.length > 0
+    ) {
+      try {
+        const labBookings = labTests.map((testName) =>
+          LabTestRequest.create({
+            patient_id: patientId,
+            lab_id: referredLaboratory,
+            test_type: testName,
+            status: 'pending',
+            medical_record_id: record._id.toString(),
+          })
+        );
+        await Promise.all(labBookings);
+        console.log(`✅ ${labTests.length} lab test(s) auto-created for record ${record._id}`);
+      } catch (labErr) {
+        console.error('⚠️  Auto lab booking failed:', labErr.message);
+      }
+    }
 
     res.status(201).json({ success: true, record: populated });
   } catch (err) {

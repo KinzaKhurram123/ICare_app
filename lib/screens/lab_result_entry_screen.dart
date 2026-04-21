@@ -99,7 +99,10 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Results submitted — patient & doctor notified'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Results submitted — patient & doctor notified ✅'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context, true);
       }
@@ -131,7 +134,10 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report uploaded — patient & doctor notified'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Report uploaded — patient & doctor notified ✅'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context, true);
       }

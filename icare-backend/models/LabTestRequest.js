@@ -10,7 +10,11 @@ const labTestRequestSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'sample-collected', 'processing', 'completed', 'cancelled'],
     default: 'pending',
   },
-  results: String,
+  results: mongoose.Schema.Types.Mixed,
+  report_url: String,
+  report_notes: String,
+  medical_record_id: String,
+  doctor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 module.exports = mongoose.models.LabTestRequest || mongoose.model('LabTestRequest', labTestRequestSchema);
