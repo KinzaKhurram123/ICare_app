@@ -123,22 +123,6 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     try {
       debugPrint('🔄 Attempting to update order $orderId to $newStatus');
 
-      // Verify order exists in our current list
-      final orderExists = _orders.any((o) => o['_id'] == orderId);
-      if (!orderExists) {
-        debugPrint('⚠️ Order $orderId not found in current list');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('This order is no longer available. Refreshing...'),
-              backgroundColor: Color(0xFFEF4444),
-            ),
-          );
-          await _loadOrders();
-        }
-        return;
-      }
-
       await _pharmacyService.updateOrderStatus(orderId, newStatus);
       debugPrint('✅ Order status updated successfully');
 
@@ -156,25 +140,28 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     } catch (e) {
       debugPrint('❌ Error updating order status: $e');
 
-      // Check if it's a 404 error (order doesn't exist)
+      // Check if it's a 404 error (backend bug - order in list but can't update)
       final errorMsg = e.toString().toLowerCase();
       if (errorMsg.contains('404') || errorMsg.contains('not found')) {
         if (mounted) {
+          // Remove the broken order from UI immediately
+          setState(() {
+            _orders.removeWhere((o) => o['_id'] == orderId);
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('This order no longer exists or does not belong to your pharmacy. Refreshing list...'),
+              content: Text('Backend error: Order removed from list. Please contact support.'),
               backgroundColor: Color(0xFFEF4444),
-              duration: Duration(seconds: 4),
+              duration: Duration(seconds: 3),
             ),
           );
-          // Refresh the orders list to remove stale data
-          await _loadOrders();
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update order: ${e.toString()}'),
+              content: Text('Failed to update: ${e.toString()}'),
               backgroundColor: const Color(0xFFEF4444),
             ),
           );
