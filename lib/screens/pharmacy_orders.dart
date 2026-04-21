@@ -129,34 +129,51 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
       if (mounted) {
         // Show success message based on action
         String message;
+        Color bgColor = const Color(0xFF10B981);
+
         switch (newStatus) {
           case 'confirmed':
-            message = 'Order accepted successfully';
+            message = '✓ Order accepted successfully';
             break;
           case 'rejected':
-            message = 'Order rejected';
+            message = '✗ Order rejected';
+            bgColor = const Color(0xFFEF4444);
             break;
           case 'preparing':
-            message = 'Order moved to preparing';
+            message = '✓ Order moved to preparing';
             break;
           case 'out_for_delivery':
-            message = 'Order dispatched for delivery';
+            message = '✓ Order dispatched for delivery';
             break;
           case 'completed':
-            message = 'Order marked as delivered';
+            message = '✓ Order marked as delivered';
             break;
           default:
-            message = 'Order status updated';
+            message = '✓ Order status updated';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message),
-            backgroundColor: const Color(0xFF10B981),
-            duration: const Duration(seconds: 2),
+            content: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: bgColor,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
+
+      // Small delay to ensure message is visible before reload
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // Reload orders to get fresh data
       await _loadOrders();
@@ -173,10 +190,18 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Backend error: Order removed from list. Please contact support.'),
-              backgroundColor: Color(0xFFEF4444),
-              duration: Duration(seconds: 3),
+            SnackBar(
+              content: const Text(
+                '⚠ Backend error: Order removed from list',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -184,8 +209,17 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update: ${e.toString()}'),
+              content: Text(
+                '✗ Failed to update: ${e.toString()}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
               backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
