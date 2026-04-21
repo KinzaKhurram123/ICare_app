@@ -87,23 +87,50 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
         });
       } else {
         final profile = await _labService.getProfile();
-        final bookings = await _labService.getBookings(profile['_id']);
+        final labId = profile['_id'] ?? profile['id'] ?? '';
+        final bookings = await _labService.getBookings(labId);
         setState(() {
           _invoices = bookings.map((b) {
             final status = b['status'] == 'completed'
                 ? 'Paid'
                 : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
-            final dateStr = b['date'] ?? '';
+            final dateStr = b['createdAt'] ?? b['test_date'] ?? b['date'] ?? '';
             DateTime? dateObj = DateTime.tryParse(dateStr);
             final formattedDate = dateObj != null
                 ? DateFormat('dd MMM, yyyy').format(dateObj)
-                : '—';
+                : DateFormat('dd MMM, yyyy').format(DateTime.now());
+            final id = b['bookingNumber'] ?? b['_id']?.toString() ?? 'N/A';
+            final shortId = id.length > 6 ? 'LAB-${id.substring(id.length - 6).toUpperCase()}' : 'LAB-$id';
+            // Patient name — try multiple field names
+            final patientName = b['patient_name'] ??
+                b['patientName'] ??
+                b['patient']?['name'] ??
+                b['patient']?['username'] ??
+                'Patient';
+            // Test name
+            final testName = b['test_type'] ?? b['testName'] ?? b['test'] ?? 'Laboratory Test';
+            // Default prices by test type
+            final defaultPrices = {
+              'cbc': 800, 'complete blood count': 800,
+              'lipid profile': 1500, 'lft': 1200, 'liver function': 1200,
+              'kft': 1200, 'kidney function': 1200,
+              'thyroid': 1800, 'hba1c': 1500, 'diabetes': 1500,
+              'vitamin d': 2000, 'covid': 3500, 'pcr': 3500,
+              'urine': 500, 'blood sugar': 400,
+            };
+            final testLower = testName.toLowerCase();
+            double price = (b['price'] ?? b['amount'] ?? b['totalAmount'] ?? 0).toDouble();
+            if (price == 0) {
+              for (final key in defaultPrices.keys) {
+                if (testLower.contains(key)) { price = defaultPrices[key]!.toDouble(); break; }
+              }
+              if (price == 0) price = 1000;
+            }
             return {
-              "id": b['bookingNumber'] ??
-                  "INV-${b['_id'].toString().substring(18)}",
-              "patient": b['patient']?['name'] ?? "Unknown Patient",
-              "test": b['testName'] ?? "Laboratory Test",
-              "amount": (b['price'] ?? 0).toDouble(),
+              "id": shortId,
+              "patient": patientName,
+              "test": testName,
+              "amount": price,
               "date": formattedDate,
               "status": status,
               "method": b['paymentMethod'] ?? "Cash",

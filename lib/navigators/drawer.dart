@@ -16,6 +16,7 @@ import 'package:icare/screens/doctor_profile_setup.dart';
 import 'package:icare/screens/help_and_support.dart';
 import 'package:icare/screens/health_community.dart';
 import 'package:icare/screens/patient_records_list.dart';
+import 'package:icare/screens/patient_medical_records.dart';
 import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/lab_list.dart';
@@ -185,7 +186,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         _drawerItem('Medical Records', Icons.folder_shared_outlined, () {
           Navigator.of(
             context,
-          ).push(MaterialPageRoute(builder: (ctx) => const ViewProfile()));
+          ).push(MaterialPageRoute(builder: (ctx) => const PatientMedicalRecords()));
         }),
         _drawerItem('Book a Lab Test', Icons.science_outlined, () {
           Navigator.of(
