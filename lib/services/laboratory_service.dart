@@ -23,14 +23,22 @@ class LaboratoryService {
       final response = await _apiService.get('/laboratories/get_all_laboratories');
       final list = (response.data['laboratories'] ?? []) as List;
       // Backend returns: { _id: profileId, user: { _id, name }, labName, city }
-      // We need user._id as the lab_id for bookings
       return list.map((l) {
         final map = Map<String, dynamic>.from(l);
         final user = map['user'] as Map<String, dynamic>? ?? {};
-        map['_id'] = user['_id']?.toString() ?? map['_id']?.toString();
+        // Preserve original profile _id for routing (referredLaboratory, getLabById)
+        map['profileId'] = map['_id']?.toString();
+        // Also keep user._id available if needed
+        map['userId'] = user['_id']?.toString();
+        map['_id'] = map['profileId'];
         map['id'] = map['_id'];
-        map['labName'] = map['labName'] ?? user['name'] ?? 'Laboratory';
-        map['name'] = map['labName'];
+        final displayName = map['labName']?.toString()
+            ?? map['lab_name']?.toString()
+            ?? user['name']?.toString()
+            ?? 'Laboratory';
+        map['labName'] = displayName;
+        map['lab_name'] = displayName;
+        map['name'] = displayName;
         return map;
       }).toList();
     } catch (e, stackTrace) {

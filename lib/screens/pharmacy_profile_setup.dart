@@ -50,8 +50,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
     try {
       final profile = await _pharmacyService.getPharmacyProfile();
       setState(() {
-        // Use pharmacy name or user name, not role
-        _ownerNameController.text = profile['pharmacyName'] ?? profile['name'] ?? profile['ownerName'] ?? '';
+        _ownerNameController.text = profile['pharmacyName'] ?? profile['ownerName'] ?? '';
         _cnicController.text = profile['cnic'] ?? '';
         _licenseNumberController.text = profile['licenseNumber'] ?? profile['drugSaleLicense'] ?? '';
         _addressController.text = profile['address'] ?? '';

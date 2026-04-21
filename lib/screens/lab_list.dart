@@ -39,6 +39,7 @@ class _LabsListScreenState extends State<LabsListScreen> {
       final List<Lab> loadedLabs = labsData.map((json) {
         return Lab(
           id: json['_id'] ?? '',
+          profileId: json['profileId']?.toString(),
           title: json['labName'] ?? json['name'] ?? 'Laboratory',
           photo: json['image'] ?? ImagePaths.lab1,
           delivery: json['homeSample'] == true
@@ -208,7 +209,11 @@ class LabsList extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (ctx) => tab == 'book'
-                    ? BookLabScreen(labId: labs[i].id, labTitle: labs[i].title)
+                    ? BookLabScreen(
+                        labId: labs[i].id,
+                        labTitle: labs[i].title,
+                        labProfileId: labs[i].profileId,
+                      )
                     : const LabReportsScreen(),
               ),
             );

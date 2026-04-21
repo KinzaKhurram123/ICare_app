@@ -864,8 +864,8 @@ class _DoctorConsultationScreenState
                       items: [
                         const DropdownMenuItem(value: null, child: Text('None')),
                         ..._availablePharmacies.map((p) => DropdownMenuItem<String>(
-                          value: p['_id']?.toString() ?? p['id']?.toString(),
-                          child: Text(p['pharmacy_name'] ?? p['pharmacyName'] ?? p['name'] ?? 'Pharmacy'),
+                          value: p['profileId']?.toString() ?? p['_id']?.toString() ?? p['id']?.toString(),
+                          child: Text(p['pharmacyName']?.toString() ?? p['pharmacy_name']?.toString() ?? p['name']?.toString() ?? 'Pharmacy'),
                         )),
                       ],
                       onChanged: (v) => setState(() => _selectedPharmacyId = v),
@@ -920,8 +920,8 @@ class _DoctorConsultationScreenState
                       items: [
                         const DropdownMenuItem(value: null, child: Text('None')),
                         ..._availableLabs.map((l) => DropdownMenuItem<String>(
-                          value: l['_id']?.toString() ?? l['id']?.toString(),
-                          child: Text(l['lab_name'] ?? l['labName'] ?? l['name'] ?? 'Laboratory'),
+                          value: l['profileId']?.toString() ?? l['_id']?.toString() ?? l['id']?.toString(),
+                          child: Text(l['labName']?.toString() ?? l['lab_name']?.toString() ?? l['name']?.toString() ?? 'Laboratory'),
                         )),
                       ],
                       onChanged: (v) => setState(() => _selectedLabId = v),
