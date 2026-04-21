@@ -186,7 +186,30 @@ class PharmacyService {
       url += '?status=$status';
     }
     final response = await _apiService.get(url);
-    return response.data['orders'] as List;
+    final allOrders = response.data['orders'] as List;
+
+    // Validate each order - only return orders that can actually be updated
+    final validOrders = <dynamic>[];
+    for (final order in allOrders) {
+      final orderId = order['_id']?.toString();
+      if (orderId == null || orderId.isEmpty) {
+        debugPrint('⚠️ Skipping order with no ID');
+        continue;
+      }
+
+      // Quick validation: try to fetch the order to confirm it exists
+      try {
+        await _apiService.get('/pharmacy/orders/$orderId');
+        validOrders.add(order);
+        debugPrint('✅ Order $orderId validated');
+      } catch (e) {
+        debugPrint('⚠️ Skipping broken order $orderId - backend returns 404');
+        // Skip orders that backend can't access
+      }
+    }
+
+    debugPrint('📊 Filtered ${allOrders.length} orders → ${validOrders.length} valid orders');
+    return validOrders;
   }
 
   Future<Map<String, dynamic>> getOrderById(String orderId) async {

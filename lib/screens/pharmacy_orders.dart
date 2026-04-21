@@ -109,11 +109,11 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
       case 0:
         return 'all';
       case 1:
-        return 'pending';
+        return 'pending'; // Awaiting Fulfillment
       case 2:
-        return 'processing';
+        return 'confirmed,preparing,out_for_delivery'; // Processing (all active states)
       case 3:
-        return 'completed';
+        return 'completed'; // Dispensed
       default:
         return 'all';
     }
@@ -126,17 +126,40 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
       await _pharmacyService.updateOrderStatus(orderId, newStatus);
       debugPrint('✅ Order status updated successfully');
 
-      // Reload orders to get fresh data
-      await _loadOrders();
-
       if (mounted) {
+        // Show success message based on action
+        String message;
+        switch (newStatus) {
+          case 'confirmed':
+            message = 'Order accepted successfully';
+            break;
+          case 'rejected':
+            message = 'Order rejected';
+            break;
+          case 'preparing':
+            message = 'Order moved to preparing';
+            break;
+          case 'out_for_delivery':
+            message = 'Order dispatched for delivery';
+            break;
+          case 'completed':
+            message = 'Order marked as delivered';
+            break;
+          default:
+            message = 'Order status updated';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Order status updated to $newStatus'),
+            content: Text(message),
             backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
+
+      // Reload orders to get fresh data
+      await _loadOrders();
     } catch (e) {
       debugPrint('❌ Error updating order status: $e');
 
@@ -724,7 +747,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () =>
-                              _updateOrderStatus(order['_id'], 'cancelled'),
+                              _updateOrderStatus(order['_id'], 'rejected'),
                           icon: const Icon(Icons.close_rounded, size: 18),
                           label: const Text('Reject'),
                           style: OutlinedButton.styleFrom(
@@ -801,7 +824,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                     child: ElevatedButton.icon(
                       onPressed: () => _markAsCompleted(order['_id'], order['customerName']),
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: const Text('Mark as Completed'),
+                      label: const Text('Mark as Delivered'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,
