@@ -36,33 +36,88 @@ class HealthcareWorkflowService {
       );
       final response = await _api.post('/medical-records/create', recordData);
 
-      if (response.data['success'] == true) {
-        result.medicalRecordId = response.data['record']?['_id'];
+      // Try both success:true and presence of record (some backends return 200 without explicit success flag)
+      final recordId = response.data['record']?['_id']
+          ?? response.data['medicalRecord']?['_id']
+          ?? response.data['data']?['_id'];
+      if (response.data['success'] == true || recordId != null) {
+        result.medicalRecordId = recordId;
         log('✅ Medical record created: ${result.medicalRecordId}');
-        if (selectedPharmacyId != null) {
-          result.prescriptionsCreated =
-              consultation.plan?.prescriptionIds.length ?? 0;
-        }
-        if (selectedLabId != null) {
-          result.labTestsCreated =
-              consultation.plan?.labTestRequestIds.length ?? 0;
+      }
+
+      // 2. Explicitly create pharmacy order if pharmacy was selected
+      if (selectedPharmacyId != null &&
+          (consultation.plan?.prescriptionIds.isNotEmpty ?? false)) {
+        try {
+          final medicines = consultation.plan!.prescriptionIds
+              .where((n) => n.isNotEmpty)
+              .toList();
+
+          // Build human-readable prescription text
+          final prescriptionText = medicines.join(', ');
+
+          final orderPayload = {
+            'pharmacyId': selectedPharmacyId,
+            'items': medicines.map((name) => {'name': name, 'quantity': 1}).toList(),
+            'prescriptionText': prescriptionText,
+            'source': 'doctor',
+            'totalAmount': 0,
+            if (result.medicalRecordId != null)
+              'medicalRecordId': result.medicalRecordId,
+            if (consultation.patientId.isNotEmpty)
+              'patientId': consultation.patientId,
+          };
+
+          await _api.post('/pharmacy/orders', orderPayload);
+          result.prescriptionsCreated = medicines.length;
+          log('✅ Pharmacy order created for ${medicines.length} medicine(s)');
+        } catch (e) {
+          log('⚠️ Pharmacy order creation failed: $e');
+          // Don't fail the whole workflow if pharmacy order fails
         }
       }
 
-      // 2. Assign health programs
+      // 3. Explicitly create lab booking if lab was selected
+      if (selectedLabId != null &&
+          (consultation.plan?.labTestRequestIds.isNotEmpty ?? false)) {
+        try {
+          final tests = consultation.plan!.labTestRequestIds
+              .where((n) => n.isNotEmpty)
+              .toList();
+
+          final labPayload = {
+            'patientId': consultation.patientId,
+            'testName': tests.join(', '),
+            'tests': tests,
+            'source': 'doctor',
+            'status': 'pending',
+            if (result.medicalRecordId != null)
+              'medicalRecordId': result.medicalRecordId,
+          };
+
+          await _api.post('/laboratories/$selectedLabId/bookings', labPayload);
+          result.labTestsCreated = tests.length;
+          log('✅ Lab booking created for ${tests.length} test(s)');
+        } catch (e) {
+          log('⚠️ Lab booking creation failed: $e');
+          // Don't fail the whole workflow if lab booking fails
+        }
+      }
+
+      // 5. Assign health programs
       if (consultation.plan?.healthProgramIds.isNotEmpty ?? false) {
         result.healthProgramsAssigned =
             consultation.plan!.healthProgramIds.length;
         log('📚 ${result.healthProgramsAssigned} health program(s) assigned');
       }
 
-      // 3. Create referral if present
+      // 6. Create referral if present
       if (consultation.plan?.referralId != null) {
         result.referralCreated = true;
         log('👨⚕️ Referral created');
       }
 
-      // 4. Audit log
+      // 7. Audit log
       await _createAuditLog(consultation, result);
 
       result.success = true;
