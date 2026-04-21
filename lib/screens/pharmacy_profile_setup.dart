@@ -50,7 +50,12 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
     try {
       final profile = await _pharmacyService.getPharmacyProfile();
       setState(() {
-        _ownerNameController.text = profile['pharmacyName'] ?? profile['ownerName'] ?? '';
+        // Filter out default role names stored by backend during registration
+        const defaultRoles = {'patient', 'doctor', 'pharmacy', 'admin', 'lab', 'pharmacist'};
+        String rawName = profile['pharmacyName']?.toString()
+            ?? profile['ownerName']?.toString()
+            ?? '';
+        _ownerNameController.text = defaultRoles.contains(rawName.toLowerCase().trim()) ? '' : rawName;
         _cnicController.text = profile['cnic'] ?? '';
         _licenseNumberController.text = profile['licenseNumber'] ?? profile['drugSaleLicense'] ?? '';
         _addressController.text = profile['address'] ?? '';
