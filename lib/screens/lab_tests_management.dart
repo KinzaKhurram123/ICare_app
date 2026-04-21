@@ -749,7 +749,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
     final testIcon = _getTestIcon(testName);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -759,7 +759,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Row(
           children: [
             Container(
@@ -771,7 +771,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
               ),
               child: Center(child: Icon(testIcon, color: primaryColor, size: 26)),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,9 +780,9 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                     testName,
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Wrap(
-                    spacing: 8,
+                    spacing: 6,
                     runSpacing: 4,
                     children: [
                       _buildChip('PKR $price', Icons.attach_money_rounded, const Color(0xFF10B981)),

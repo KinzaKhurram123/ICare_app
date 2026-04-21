@@ -378,7 +378,18 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
   }
 
   List<Map<String, dynamic>> _getOrdersByStatus(String status) {
-    return _orders;
+    if (status == 'all') return _orders;
+
+    if (status == 'processing') {
+      // Processing tab includes: confirmed, preparing, out_for_delivery
+      return _orders.where((o) {
+        final s = o['status']?.toString() ?? '';
+        return s == 'confirmed' || s == 'preparing' || s == 'out_for_delivery';
+      }).toList();
+    }
+
+    // For specific status (pending, completed, rejected)
+    return _orders.where((o) => o['status'] == status).toList();
   }
 
   @override
