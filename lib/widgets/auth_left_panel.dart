@@ -139,23 +139,32 @@ class AuthLeftPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // 4 Trust badges — centered with subtitles
-                  Center(
-                    child: SizedBox(
-                      width: 270,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _trust(Icons.shield_rounded, 'Data Protected & Secure', 'End-to-end encrypted health records'),
-                          const SizedBox(height: 18),
-                          _trust(Icons.verified_user_rounded, 'Verified Doctors Only', 'All providers are PMDC credentialed'),
-                          const SizedBox(height: 18),
-                          _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital', 'Consult, prescribe & manage all-in-one'),
-                          const SizedBox(height: 18),
-                          _trust(Icons.people_rounded, 'Trusted Nationwide', 'Thousands of patients across Pakistan'),
-                        ],
+                  // 4 Trust badges — 2 left, 2 right
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _trust(Icons.shield_rounded, 'Data Protected', 'End-to-end encrypted', const Color(0xFF10B981)),
+                            const SizedBox(height: 18),
+                            _trust(Icons.verified_user_rounded, 'Verified Doctors', 'PMDC credentialed', const Color(0xFF14B1FF)),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _trust(Icons.medical_services_rounded, 'Virtual Hospital', 'All-in-one platform', const Color(0xFFF59E0B)),
+                            const SizedBox(height: 18),
+                            _trust(Icons.people_rounded, 'Trusted Nationwide', 'Patients across Pakistan', const Color(0xFFFF4D00)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -166,21 +175,20 @@ class AuthLeftPanel extends StatelessWidget {
     );
   }
 
-  Widget _trust(IconData icon, String title, String subtitle) {
+  Widget _trust(IconData icon, String title, String subtitle, Color iconColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 42, height: 42,
+          width: 40, height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            color: iconColor,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 10),
         Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +198,7 @@ class AuthLeftPanel extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.1,
                 ),
@@ -199,8 +207,8 @@ class AuthLeftPanel extends StatelessWidget {
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.60),
-                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 10,
                   fontWeight: FontWeight.w400,
                   height: 1.3,
                 ),

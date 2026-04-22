@@ -1421,11 +1421,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           width: 44, height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.22),
+            color: iconColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: iconColor.withOpacity(0.5), width: 1.5),
           ),
-          child: Icon(icon, color: iconColor, size: 22),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
         const SizedBox(width: 14),
         Expanded(
