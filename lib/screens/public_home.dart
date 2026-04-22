@@ -1947,7 +1947,7 @@ class _HowItWorksSteps extends StatelessWidget {
               ],
             ),
           ),
-          // Branch fork from step 5 — two diagonal arrows to the right
+          // Branch fork from step 5 — two diagonal lines (blue) connected to step 5
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Column(
@@ -1958,7 +1958,8 @@ class _HowItWorksSteps extends StatelessWidget {
                 _BranchForkItem(
                   label: 'Lab Test',
                   icon: Icons.biotech_rounded,
-                  color: const Color(0xFFFF4D00),
+                  color: const Color(0xFF0036BC),
+                  labelColor: const Color(0xFFFF4D00),
                   angleUp: true,
                 ),
                 const SizedBox(height: 20),
@@ -1966,7 +1967,8 @@ class _HowItWorksSteps extends StatelessWidget {
                 _BranchForkItem(
                   label: 'Pharmacy',
                   icon: Icons.local_pharmacy_rounded,
-                  color: const Color(0xFF10B981),
+                  color: const Color(0xFF0036BC),
+                  labelColor: const Color(0xFF10B981),
                   angleUp: false,
                 ),
               ],
@@ -1981,9 +1983,16 @@ class _HowItWorksSteps extends StatelessWidget {
 class _BranchForkItem extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
+  final Color color;       // line color (blue)
+  final Color labelColor;  // badge color (orange/green)
   final bool angleUp;
-  const _BranchForkItem({required this.label, required this.icon, required this.color, required this.angleUp});
+  const _BranchForkItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.labelColor,
+    required this.angleUp,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1993,14 +2002,22 @@ class _BranchForkItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Diagonal blue line connected from step 5
           Transform.rotate(
             angle: angleUp ? -0.45 : 0.45,
             child: Container(
-              width: 44,
-              height: 2.5,
+              width: 52,
+              height: 3,
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: BorderRadius.circular(2),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
             ),
           ),
@@ -2008,16 +2025,16 @@ class _BranchForkItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: labelColor.withOpacity(0.10),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.35), width: 1.5),
+              border: Border.all(color: labelColor.withOpacity(0.45), width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: color, size: 13),
+                Icon(icon, color: labelColor, size: 13),
                 const SizedBox(width: 4),
-                Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+                Text(label, style: TextStyle(color: labelColor, fontSize: 11, fontWeight: FontWeight.w700)),
               ],
             ),
           ),

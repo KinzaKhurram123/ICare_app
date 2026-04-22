@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
@@ -10,6 +9,7 @@ import 'package:icare/services/user_service.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/auth_left_panel.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -548,52 +548,112 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
     }
 
-    // Mobile
+
+    // Mobile — same layout as login mobile
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFD),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0036BC)),
-          onPressed: () => Navigator.pop(context),
+      body: Container(
+        width: Utils.windowWidth(context),
+        height: Utils.windowHeight(context),
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(ImagePaths.backgroundImage),
+            fit: BoxFit.cover,
+          ),
         ),
-        title: Row(
+        child: Stack(
           children: [
-            SvgPicture.asset(ImagePaths.logo, width: 30, height: 30, colorFilter: null),
-            const SizedBox(width: 8),
-            Text(
-              _isPatient ? 'Sign Up' : '${widget.role} Sign Up',
-              style: const TextStyle(color: Color(0xFF0036BC), fontWeight: FontWeight.w800, fontSize: 17, fontFamily: 'Gilroy-Bold'),
+            // Top text area
+            Padding(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 60,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _isPatient ? 'Create Your Account' : 'Join as ${widget.role}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0036BC),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Sign up to enjoy the best healthcare experience',
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+            // Bottom form container — dark/opaque background
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                height: Utils.windowHeight(context) * 0.72,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.97),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(40),
+                    topRight: Radius.circular(40),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ..._buildFields(),
+                        const SizedBox(height: 8),
+                        _submitBtn(height: 50),
+                        const SizedBox(height: 20),
+                        _signInLink(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Back button
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 12,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back_rounded, color: Color(0xFF0036BC), size: 15),
+                      SizedBox(width: 5),
+                      Text('Back', style: TextStyle(color: Color(0xFF0036BC), fontSize: 12, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _isPatient ? 'Create Your Account' : 'Join as ${widget.role}',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0B2D6E), fontFamily: 'Gilroy-Bold'),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _isPatient ? 'Sign up for a better healthcare experience' : _roleDescription,
-                style: TextStyle(fontSize: 13, color: Colors.grey[500], fontFamily: 'Gilroy-Medium'),
-              ),
-              const SizedBox(height: 24),
-              ..._buildFields(),
-              const SizedBox(height: 8),
-              _submitBtn(height: 50),
-              const SizedBox(height: 20),
-              _signInLink(),
-              const SizedBox(height: 20),
-            ],
-          ),
         ),
       ),
     );
