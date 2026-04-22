@@ -899,14 +899,14 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              // 2. Doctor image — right side, clean (walkthrough1 has white bg)
+              // 2. Doctor image — right side (sara.png with transparent background)
               Positioned(
                 right: 0,
                 top: 0,
                 bottom: 0,
                 width: isMobile ? w * 0.52 : w * 0.40,
                 child: Image.asset(
-                  'assets/images/walkthrough1.png',
+                  'assets/sara.png',
                   fit: BoxFit.contain,
                   alignment: Alignment.bottomCenter,
                   filterQuality: FilterQuality.high,
