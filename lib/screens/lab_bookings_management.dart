@@ -99,6 +99,12 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         status: _selectedFilter == 'all' ? null : _selectedFilter,
       );
 
+      // Sort by date — oldest first (date-wise priority)
+      bookings.sort((a, b) {
+        final dateA = DateTime.tryParse(a['date'] ?? a['createdAt'] ?? '') ?? DateTime.now();
+        final dateB = DateTime.tryParse(b['date'] ?? b['createdAt'] ?? '') ?? DateTime.now();
+        return dateA.compareTo(dateB);
+      });
       setState(() {
         _bookings = bookings;
         _isLoading = false;
@@ -208,10 +214,19 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   void _showCreateOrderDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
+    final ageController = TextEditingController();
     final contactController = TextEditingController();
-    final addressController = TextEditingController();
+    final locationController = TextEditingController();
+    final mrNumberController = TextEditingController();
+    final prescriptionDateController = TextEditingController();
+    final referredByController = TextEditingController();
     final testController = TextEditingController();
-    String collectionType = 'in-house';
+    final specimenControllers = <TextEditingController>[TextEditingController()];
+    String collectionType = 'in-lab';
+    String gender = 'Male';
+    bool isUrgent = false;
+    String normalTurnaround = '1 Day';
+    String urgentTurnaround = '4 Hours';
     bool isSubmitting = false;
 
     showModalBottomSheet(
@@ -270,13 +285,59 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // Patient Details
+                  _buildSectionLabel('Patient Details'),
+                  const SizedBox(height: 12),
                   _buildFormField(
                     controller: nameController,
                     label: 'Patient Name',
                     icon: Icons.person_rounded,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFormField(
+                          controller: ageController,
+                          label: 'Age',
+                          icon: Icons.cake_rounded,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              value: gender,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.wc_rounded, size: 18, color: primaryColor),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                              ),
+                              items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                              onChanged: (v) => setModalState(() => gender = v!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: mrNumberController,
+                    label: 'MR Number (Medical Record Number)',
+                    icon: Icons.badge_rounded,
+                    hint: 'Permanent patient ID',
+                  ),
+                  const SizedBox(height: 12),
                   _buildFormField(
                     controller: contactController,
                     label: 'Contact Number',
@@ -284,40 +345,90 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     keyboardType: TextInputType.phone,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildFormField(
-                    controller: addressController,
-                    label: 'Address',
+                    controller: locationController,
+                    label: 'Location',
                     icon: Icons.location_on_rounded,
-                    maxLines: 2,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+                  // Referred By
+                  _buildSectionLabel('Referred By'),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: referredByController,
+                    label: 'Referring Doctor Name',
+                    icon: Icons.medical_services_rounded,
+                    hint: 'Doctor who referred this test',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: prescriptionDateController,
+                    label: 'Test Prescription Date',
+                    icon: Icons.calendar_today_rounded,
+                    hint: 'DD/MM/YYYY',
+                    keyboardType: TextInputType.datetime,
+                  ),
+                  const SizedBox(height: 20),
+                  // Tests Required
+                  _buildSectionLabel('Test(s) Required'),
+                  const SizedBox(height: 12),
                   _buildFormField(
                     controller: testController,
-                    label: 'Test(s) Required',
+                    label: 'Test Name(s)',
                     icon: Icons.science_rounded,
                     hint: 'e.g. CBC, Blood Sugar, Lipid Profile',
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Collection Type',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
+                  // Specimen Information
+                  _buildSectionLabel('Specimen Information'),
+                  const SizedBox(height: 12),
+                  ...specimenControllers.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final ctrl = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildFormField(
+                              controller: ctrl,
+                              label: 'Specimen ID ${specimenControllers.length > 1 ? '#${i + 1}' : ''}',
+                              icon: Icons.qr_code_rounded,
+                              hint: 'Unique ID on test tube/container',
+                            ),
+                          ),
+                          if (specimenControllers.length > 1) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => setModalState(() => specimenControllers.removeAt(i)),
+                              icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  TextButton.icon(
+                    onPressed: () => setModalState(() => specimenControllers.add(TextEditingController())),
+                    icon: const Icon(Icons.add_circle_rounded, size: 18),
+                    label: const Text('Add Another Specimen'),
+                    style: TextButton.styleFrom(foregroundColor: primaryColor),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+                  // Collection Type
+                  _buildSectionLabel('Collection Type'),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: _buildCollectionOption(
-                          label: 'In-house',
+                          label: 'In-Lab',
                           icon: Icons.business_rounded,
-                          value: 'in-house',
+                          value: 'in-lab',
                           selected: collectionType,
-                          onTap: () => setModalState(() => collectionType = 'in-house'),
+                          onTap: () => setModalState(() => collectionType = 'in-lab'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -330,6 +441,73 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                           onTap: () => setModalState(() => collectionType = 'home'),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Urgency & Turnaround
+                  _buildSectionLabel('Urgency & Turnaround Time'),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Is this test urgent?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                      Switch(
+                        value: isUrgent,
+                        activeColor: const Color(0xFFFF4D00),
+                        onChanged: (v) => setModalState(() => isUrgent = v),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Normal Turnaround', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              value: normalTurnaround,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                              ),
+                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '5 Days', '7 Days']
+                                  .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                              onChanged: (v) => setModalState(() => normalTurnaround = v!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isUrgent) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Urgent Turnaround', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFFF4D00))),
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<String>(
+                                value: urgentTurnaround,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: const Color(0xFFFF4D00).withOpacity(0.5))),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: const Color(0xFFFF4D00).withOpacity(0.5))),
+                                  filled: true,
+                                  fillColor: const Color(0xFFFFF5F0),
+                                ),
+                                items: ['1 Hour', '2 Hours', '4 Hours', '6 Hours', '12 Hours', '24 Hours']
+                                    .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Color(0xFFFF4D00))))).toList(),
+                                onChanged: (v) => setModalState(() => urgentTurnaround = v!),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 28),
@@ -440,6 +618,16 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Row(
+      children: [
+        Container(width: 3, height: 16, decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), fontFamily: 'Gilroy-Bold')),
+      ],
     );
   }
 
@@ -723,7 +911,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Doctor Ordered${doctorName != null ? ' by Dr. $doctorName' : ''}',
+                          'Ordered by${doctorName != null ? ' Dr. $doctorName' : ' Doctor'}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,

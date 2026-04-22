@@ -309,7 +309,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'PRICE (\$)',
+                      'PRICE (PKR)',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,

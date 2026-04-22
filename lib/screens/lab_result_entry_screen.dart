@@ -26,6 +26,14 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
   PlatformFile? _selectedFile;
   final TextEditingController _notesController = TextEditingController();
 
+  // Doctor approval
+  String? _selectedDoctor;
+  final List<Map<String, String>> _doctors = [
+    {'name': 'Dr. Ahmed Khan', 'qualification': 'MBBS, FCPS', 'designation': 'Pathologist'},
+    {'name': 'Dr. Sarah Ali', 'qualification': 'MBBS, MPhil', 'designation': 'Clinical Pathologist'},
+    {'name': 'Dr. Usman Malik', 'qualification': 'MBBS, FCPS', 'designation': 'Consultant Pathologist'},
+  ];
+
   static const Color primaryColor = Color(0xFF0B2D6E);
   static const Color secondaryColor = Color(0xFF1565C0);
   static const Color backgroundColor = Color(0xFFF8FAFC);
@@ -275,6 +283,43 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
             return _buildParameterRow(i, p);
           }),
           const SizedBox(height: 20),
+          const Text('Approved by Doctor', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE8ECF5)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedDoctor,
+                hint: const Text('Select verifying doctor', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down_rounded, color: primaryColor),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                items: _doctors.map((doctor) {
+                  return DropdownMenuItem<String>(
+                    value: doctor['name'],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(doctor['name']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        Text('${doctor['qualification']} - ${doctor['designation']}',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedDoctor = value);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           const Text('Notes (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
           const SizedBox(height: 8),
           Container(
@@ -294,6 +339,40 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
               ),
             ),
           ),
+          if (_selectedDoctor != null) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: primaryColor.withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_rounded, color: primaryColor, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Electronic Report Verification',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'This is an electronically generated report verified by ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['name']}, ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['qualification']}, ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['designation']}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -445,6 +524,43 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
             ),
           ],
           const SizedBox(height: 20),
+          const Text('Approved by Doctor', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE8ECF5)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedDoctor,
+                hint: const Text('Select verifying doctor', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down_rounded, color: primaryColor),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                items: _doctors.map((doctor) {
+                  return DropdownMenuItem<String>(
+                    value: doctor['name'],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(doctor['name']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        Text('${doctor['qualification']} - ${doctor['designation']}',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedDoctor = value);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           const Text('Notes (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
           const SizedBox(height: 8),
           Container(
@@ -464,6 +580,40 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
               ),
             ),
           ),
+          if (_selectedDoctor != null) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: primaryColor.withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_rounded, color: primaryColor, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Electronic Report Verification',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'This is an electronically generated report verified by ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['name']}, ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['qualification']}, ${_doctors.firstWhere((d) => d['name'] == _selectedDoctor)['designation']}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,

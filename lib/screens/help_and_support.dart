@@ -264,7 +264,30 @@ class _WebHelpAndSupport extends StatelessWidget {
                           title: "Call Us",
                           subtitle: "+923068961564",
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 20),
+                        // WhatsApp Support Button
+                        if (isLaboratory || isPharmacy) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF25D366),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Connecting to iCare support on WhatsApp...'), backgroundColor: Color(0xFF25D366)),
+                                );
+                              },
+                              icon: const Icon(Icons.chat_rounded, size: 20),
+                              label: const Text('WhatsApp Support', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           height: 48,

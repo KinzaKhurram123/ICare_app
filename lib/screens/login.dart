@@ -337,23 +337,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                           ),
                           const SizedBox(height: 28),
-                          const Text(
-                            "iCare",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 32, fontWeight: FontWeight.w800,
-                              color: Colors.white, letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "by RM Health Solution",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500,
-                              color: Colors.white.withOpacity(0.75),
-                              letterSpacing: 0.3,
-                            ),
+                          // Logo + By + RM Health Solutions logo (no text)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "by",
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white70),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                height: 36,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Image.asset(
+                                  'assets/images/health.jpeg',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Text('RM Health Solutions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0036BC))),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 14),
                           Container(
@@ -397,9 +403,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records"),
+                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records", color: const Color(0xFF0036BC)),
                                     const SizedBox(height: 18),
-                                    _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only", "All providers are PMDC credentialed"),
+                                    _buildHeroTrust(Icons.verified_user_rounded, "HIPAA Compliant", "Meeting US healthcare data security standards", color: const Color(0xFF10B981)),
                                   ],
                                 ),
                               ),
@@ -410,9 +416,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital", "Consult, prescribe & manage all-in-one"),
+                                    _buildHeroTrust(Icons.local_hospital_rounded, "Complete Digital Health Care Platform", "Consult, prescribe & manage all-in-one", color: const Color(0xFF8B5CF6)),
                                     const SizedBox(height: 18),
-                                    _buildHeroTrust(Icons.people_rounded, "Trusted Nationwide", "Thousands of patients across Pakistan"),
+                                    _buildHeroTrust(Icons.people_rounded, "Open for Everyone", "For patients, doctors & healthcare providers", color: const Color(0xFFF59E0B)),
                                   ],
                                 ),
                               ),
@@ -1435,20 +1441,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildHeroTrust(IconData icon, String title, String subtitle) {
+  Widget _buildHeroTrust(IconData icon, String title, String subtitle, {Color? color}) {
+    final iconBg = color ?? Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 42, height: 42,
+          width: 44, height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            color: iconBg.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: iconBg.withOpacity(0.35), width: 1.5),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: color != null ? Colors.white : Colors.white, size: 22),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -1469,7 +1476,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.60),
+                  color: Colors.white.withOpacity(0.65),
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
                   height: 1.3,

@@ -15,6 +15,7 @@ class _LabAnalyticsState extends State<LabAnalytics>
   bool _isLoading = true;
   Map<String, dynamic>? _analytics;
   String _selectedPeriod = 'This Month';
+  DateTimeRange? _customDateRange;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -235,51 +236,125 @@ class _LabAnalyticsState extends State<LabAnalytics>
   Widget _buildPeriodSelector() {
     final periods = ['This Week', 'This Month', 'This Year'];
 
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(color: Colors.grey.withOpacity(0.1)),
           ),
-        ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: periods.map((period) {
-          final isSelected = period == _selectedPeriod;
-          return Expanded(
-            child: InkWell(
-              onTap: () {
-                setState(() => _selectedPeriod = period);
-                _loadAnalytics();
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? primaryColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  period,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+          child: Row(
+            children: periods.map((period) {
+              final isSelected = period == _selectedPeriod && _customDateRange == null;
+              return Expanded(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedPeriod = period;
+                      _customDateRange = null;
+                    });
+                    _loadAnalytics();
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? primaryColor : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      period,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                      ),
+                    ),
                   ),
                 ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Custom Date Range Picker
+        InkWell(
+          onTap: () async {
+            final picked = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime(2023),
+              lastDate: DateTime.now(),
+              initialDateRange: _customDateRange,
+              builder: (context, child) => Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(primary: primaryColor),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) {
+              setState(() {
+                _customDateRange = picked;
+                _selectedPeriod = 'Custom';
+              });
+              _loadAnalytics();
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: _customDateRange != null ? primaryColor.withOpacity(0.08) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _customDateRange != null ? primaryColor : Colors.grey.withOpacity(0.2),
               ),
             ),
-          );
-        }).toList(),
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.date_range_rounded, size: 18, color: _customDateRange != null ? primaryColor : Colors.grey[500]),
+                const SizedBox(width: 8),
+                Text(
+                  _customDateRange != null
+                      ? '${_customDateRange!.start.day}/${_customDateRange!.start.month}/${_customDateRange!.start.year}  →  ${_customDateRange!.end.day}/${_customDateRange!.end.month}/${_customDateRange!.end.year}'
+                      : 'Custom Date Range',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _customDateRange != null ? primaryColor : Colors.grey[500],
+                  ),
+                ),
+                if (_customDateRange != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _customDateRange = null;
+                        _selectedPeriod = 'This Month';
+                      });
+                      _loadAnalytics();
+                    },
+                    child: const Icon(Icons.close_rounded, size: 16, color: Colors.red),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -412,86 +487,101 @@ class _LabAnalyticsState extends State<LabAnalytics>
   }
 
   Widget _buildRevenueCard() {
-    final revenue = _analytics?['revenue'] ?? 0;
-    final avgPerDay = _analytics?['avgBookingsPerDay'] ?? 0;
+    final totalRevenue = (_analytics?['revenue'] ?? 0).toDouble();
+    final platformFeePercent = 0.20;
+    final platformFee = totalRevenue * platformFeePercent;
+    final remaining = totalRevenue - platformFee;
+    // Estimate: 40% of revenue is cash (held with lab), 60% by card
+    final revenueByCard = totalRevenue * 0.60;
+    final revenueByCash = totalRevenue * 0.40;
+    final amountPayable = remaining - revenueByCash;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primaryColor, secondaryColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4)),
         ],
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          const Text('Revenue Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 20),
+          // Card vs Cash row
+          Row(
+            children: [
+              Expanded(
+                child: _buildRevenueBox('Total Revenue by Card', revenueByCard, Icons.credit_card_rounded, const Color(0xFF0036BC), 'Received by iCare platform'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildRevenueBox('Total Revenue by Cash', revenueByCash, Icons.payments_rounded, const Color(0xFF10B981), 'Held with laboratory'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Calculation breakdown
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Estimated Revenue',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'PKR ${revenue.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${avgPerDay.toStringAsFixed(1)} bookings/day avg',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                _buildCalcRow('Total Revenue', totalRevenue, false),
+                const Divider(height: 16, thickness: 0.5),
+                _buildCalcRow('Platform Fee (20%)', -platformFee, false, color: Colors.red[600]),
+                const Divider(height: 16, thickness: 0.5),
+                _buildCalcRow('Remaining Balance', remaining, false, isBold: true),
+                const Divider(height: 16, thickness: 0.5),
+                _buildCalcRow('Cash Held with Lab', -revenueByCash, false, color: Colors.orange[700]),
+                const Divider(height: 16, thickness: 1.5),
+                _buildCalcRow('Amount Payable to Lab', amountPayable, true),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: const Icon(
-              Icons.bar_chart_rounded,
-              size: 56,
-              color: Colors.white,
-            ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRevenueBox(String title, double amount, IconData icon, Color color, String subtitle) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 10),
+          Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(height: 4),
+          Text('PKR ${amount.toStringAsFixed(0)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalcRow(String label, double amount, bool isTotal, {Color? color, bool isBold = false}) {
+    final displayAmount = amount < 0 ? '- PKR ${(-amount).toStringAsFixed(0)}' : 'PKR ${amount.toStringAsFixed(0)}';
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: isBold || isTotal ? FontWeight.w700 : FontWeight.w500, color: color ?? const Color(0xFF374151))),
+        Text(displayAmount, style: TextStyle(fontSize: 13, fontWeight: isTotal ? FontWeight.w900 : FontWeight.w600, color: isTotal ? primaryColor : (color ?? const Color(0xFF374151)))),
+      ],
     );
   }
 

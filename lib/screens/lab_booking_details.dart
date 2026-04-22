@@ -167,16 +167,33 @@ class LabBookingDetails extends ConsumerWidget {
           const Divider(height: 24),
           _buildInfoRow(
             Icons.person_rounded,
-            'Patient',
-            patient?['name'] ?? 'N/A',
+            'Patient Name',
+            patient?['name'] ?? booking['patientName'] ?? 'N/A',
           ),
           _buildInfoRow(
             Icons.calendar_today_rounded,
-            'Date',
+            'Test Date',
             DateFormat('MMM dd, yyyy').format(date),
           ),
+          if ((booking['referredBy'] ?? booking['referred_by'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.medical_services_rounded,
+              'Referred By',
+              booking['referredBy'] ?? booking['referred_by'] ?? 'N/A',
+            ),
           _buildInfoRow(
-            Icons.attach_money_rounded,
+            Icons.location_on_rounded,
+            'Collection Type',
+            (booking['collectionType'] ?? booking['collection_type'] ?? booking['type'] ?? 'In-Lab').toString().replaceAll('in-house', 'In-Lab').replaceAll('in-lab', 'In-Lab').replaceAll('home', 'Home Collection'),
+          ),
+          if ((booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.notes_rounded,
+              "Doctor's Notes",
+              booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '',
+            ),
+          _buildInfoRow(
+            Icons.currency_rupee_rounded,
             'Price',
             'PKR ${booking['price'] ?? 0}',
           ),

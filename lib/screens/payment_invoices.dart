@@ -29,7 +29,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {
         switch (_tabController.index) {
@@ -38,12 +38,6 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
             break;
           case 1:
             _selectedFilter = "Paid";
-            break;
-          case 2:
-            _selectedFilter = "Pending";
-            break;
-          case 3:
-            _selectedFilter = "Overdue";
             break;
         }
       });
@@ -310,36 +304,6 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                   const SizedBox(width: 20),
                   Expanded(
                     child: _buildSummaryCard(
-                      title: "Pending",
-                      amount: "PKR ${_totalPending.toStringAsFixed(0)}",
-                      subtitle:
-                          "${_invoices.where((i) => i['status'] == 'Pending').length} awaiting payment",
-                      icon: Icons.schedule_rounded,
-                      gradientColors: [
-                        const Color(0xFFF59E0B),
-                        const Color(0xFFD97706),
-                      ],
-                      bgAccent: const Color(0xFFFEF3C7),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildSummaryCard(
-                      title: "Overdue",
-                      amount: "PKR ${_totalOverdue.toStringAsFixed(0)}",
-                      subtitle:
-                          "${_invoices.where((i) => i['status'] == 'Overdue').length} need attention",
-                      icon: Icons.warning_rounded,
-                      gradientColors: [
-                        const Color(0xFFEF4444),
-                        const Color(0xFFDC2626),
-                      ],
-                      bgAccent: const Color(0xFFFEE2E2),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildSummaryCard(
                       title: "Total Invoices",
                       amount: "${_invoices.length}",
                       subtitle: "This month",
@@ -404,14 +368,6 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
                                 Tab(
                                   text:
                                       "Paid (${_invoices.where((i) => i['status'] == 'Paid').length})",
-                                ),
-                                Tab(
-                                  text:
-                                      "Pending (${_invoices.where((i) => i['status'] == 'Pending').length})",
-                                ),
-                                Tab(
-                                  text:
-                                      "Overdue (${_invoices.where((i) => i['status'] == 'Overdue').length})",
                                 ),
                               ],
                             ),

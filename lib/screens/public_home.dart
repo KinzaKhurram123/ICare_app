@@ -109,7 +109,7 @@ class PublicHome extends StatelessWidget {
                     child: Column(
                       children: [
                         _SectionHeader(
-                          title: 'Consult Available Doctors',
+                          title: 'Consult Available Doctors Now',
                           subtitle: 'Talk to a verified doctor within minutes from the comfort of your home',
                           onTap: () {
                             Navigator.of(context).push(
@@ -118,61 +118,56 @@ class PublicHome extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 24),
-                        // Search bar moved here from banner
+                        _DoctorsSlider(),
+                        const SizedBox(height: 40),
+                        // Browse by Specialty
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Browse by Specialty',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0036BC),
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _BrowseSearchField(
+                                hint: 'Search by specialty (e.g. Cardiologist, Dermatologist...)',
+                                icon: Icons.local_hospital_rounded,
+                                onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DoctorsList())),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                'Browse by Condition',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0036BC),
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _BrowseSearchField(
+                                hint: 'Search by condition (e.g. Diabetes, Fever, Back Pain...)',
+                                icon: Icons.health_and_safety_rounded,
+                                onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DoctorsList())),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                        // Main search bar below browse sections
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: DoctorSearchBar(isMobile: MediaQuery.of(context).size.width < 700),
                         ),
-                        const SizedBox(height: 40),
-                        _DoctorsSlider(),
                       ],
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 60),
-
-                // 2. Browse by Specialty Section (moved before pharmacy/labs)
-                _CenteredSection(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _SectionHeader(
-                        title: 'Browse by Specialty',
-                        subtitle: 'Find the right specialist for your health needs',
-                      ),
-                      const SizedBox(height: 16),
-                      // Search by condition
-                      _ConditionSearchBar(),
-                      const SizedBox(height: 24),
-                      _SpecialtyGrid(),
-                      const SizedBox(height: 24),
-                      // See All Speciality centered button
-                      Center(
-                        child: GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const DoctorsList()),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
-                            ),
-                            child: const Text(
-                              'See All Speciality',
-                              style: TextStyle(
-                                color: Color(0xFF0036BC),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                fontFamily: 'Gilroy-Bold',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
 
@@ -186,6 +181,7 @@ class PublicHome extends StatelessWidget {
                       _SectionHeader(
                         title: 'Order Medicines',
                         subtitle: 'Order medicines from trusted pharmacies near you',
+                        titleColor: const Color(0xFF96BF48),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
@@ -213,6 +209,7 @@ class PublicHome extends StatelessWidget {
                         _SectionHeader(
                           title: 'Book a Lab Test',
                           subtitle: 'Book lab tests and get results delivered at home',
+                          titleColor: const Color(0xFFFF4D00),
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -224,28 +221,7 @@ class PublicHome extends StatelessWidget {
                         const SizedBox(height: 24),
                         _LaboratoriesGrid(),
                         const SizedBox(height: 20),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LabsListScreen())),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
-                              ),
-                              child: const Text(
-                                'Book Lab',
-                                style: TextStyle(
-                                  color: Color(0xFF8B5CF6),
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  fontFamily: 'Gilroy-Bold',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        Center(child: _FlashingBookLabButton()),
                       ],
                     ),
                   ),
@@ -267,7 +243,7 @@ class PublicHome extends StatelessWidget {
                       children: [
                         _SectionHeader(
                           title: 'How iCare Works',
-                          subtitle: 'Get quality healthcare in 4 simple steps',
+                          subtitle: 'Get quality healthcare in 5 simple steps',
                         ),
                         const SizedBox(height: 40),
                         _HowItWorksSteps(),
@@ -296,6 +272,112 @@ class PublicHome extends StatelessWidget {
 }
 
 
+
+// ── Browse Search Field (Specialty / Condition) ──────────────────────────────
+class _BrowseSearchField extends StatelessWidget {
+  final String hint;
+  final IconData icon;
+  final VoidCallback onSearch;
+  const _BrowseSearchField({required this.hint, required this.icon, required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECF5), width: 1.5),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+          prefixIcon: Icon(icon, color: const Color(0xFF0036BC), size: 20),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF0036BC), size: 20),
+            onPressed: onSearch,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+        ),
+        onSubmitted: (_) => onSearch(),
+      ),
+    );
+  }
+}
+
+// ── Flashing Book Lab Button ──────────────────────────────────────────────────
+class _FlashingBookLabButton extends StatefulWidget {
+  @override
+  State<_FlashingBookLabButton> createState() => _FlashingBookLabButtonState();
+}
+
+class _FlashingBookLabButtonState extends State<_FlashingBookLabButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _opacityAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacityAnim,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacityAnim.value,
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LabsListScreen())),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF4D00),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF4D00).withOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: const Text(
+            'Book Lab Test',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              fontFamily: 'Gilroy-Bold',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // ── Search Bars ───────────────────────────────────────────────────────────────
 class _ConditionSearchBar extends StatefulWidget {
@@ -515,10 +597,8 @@ class _LabSearchBarState extends State<_LabSearchBar> {
 // ── Courses Section ───────────────────────────────────────────────────────────
 class _CoursesSection extends StatelessWidget {
   static const _courses = [
-    {'title': 'Diet Plan & Health Courses', 'desc': 'For Patients - Learn healthy eating habits', 'icon': Icons.restaurant_menu_rounded, 'color': 0xFF10B981, 'audience': 'patient'},
-    {'title': 'Health Programs', 'desc': 'For Patients - Manage your health', 'icon': Icons.health_and_safety_rounded, 'color': 0xFF6366F1, 'audience': 'patient'},
-    {'title': 'General Courses', 'desc': 'For Doctors - Medical education', 'icon': Icons.school_rounded, 'color': 0xFFEF4444, 'audience': 'doctor'},
-    {'title': 'Training Programs', 'desc': 'For Healthcare - Professional training', 'icon': Icons.medical_services_rounded, 'color': 0xFFF59E0B, 'audience': 'doctor'},
+    {'title': 'Diet Plan & Health Courses', 'desc': 'For Patients — Learn to manage your health', 'icon': Icons.restaurant_menu_rounded, 'color': 0xFF10B981, 'audience': 'patient'},
+    {'title': 'Training Programs and Courses', 'desc': 'For Healthcare Professionals', 'icon': Icons.school_rounded, 'color': 0xFFF59E0B, 'audience': 'doctor'},
   ];
 
   @override
@@ -811,29 +891,21 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              // 2. Decorative circles (desktop only)
-              if (!isMobile) ...[
+              // 2. iCare logo watermark behind doctor image
+              if (!isMobile)
                 Positioned(
-                  right: -30, top: 20,
-                  child: Container(
-                    width: 160, height: 160,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.07),
+                  right: 20, top: 0, bottom: 0,
+                  child: Opacity(
+                    opacity: 0.10,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 360,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   ),
                 ),
-                Positioned(
-                  right: 50, bottom: 20,
-                  child: Container(
-                    width: 90, height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.05),
-                    ),
-                  ),
-                ),
-              ],
               // 3. Row layout: text left | image right
               Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -854,8 +926,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         children: [
                           Text(
                             isMobile
-                                ? 'Consult Available\nDoctors'
-                                : 'Consult Available\nDoctors',
+                                ? 'Consult a\nDoctor'
+                                : 'Consult a\nDoctor',
                             textAlign: TextAlign.left,
                             style: TextStyle(
                               fontSize: isMobile ? 24 : 38,
@@ -868,8 +940,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                           SizedBox(height: isMobile ? 10 : 14),
                           Text(
                             isMobile
-                                ? 'Book appointments & consult\ntrusted doctors from home.'
-                                : 'Book appointments, consult trusted doctors,\nand access healthcare from home.',
+                                ? 'Consult trusted doctors, book appointments\nand access healthcare from home 24/7.'
+                                : 'Consult trusted doctors, book appointments and\naccess healthcare from home 24/7.',
                             textAlign: TextAlign.left,
                             style: TextStyle(
                               fontSize: isMobile ? 12 : 16,
@@ -1708,9 +1780,10 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
 class _HowItWorksSteps extends StatelessWidget {
   static const _steps = [
     {'num': '1', 'title': 'Search & Select', 'desc': 'Find the right doctor by specialty, condition, or name'},
-    {'num': '2', 'title': 'Book Appointment', 'desc': 'Choose a convenient time slot and confirm your booking'},
-    {'num': '3', 'title': 'Video Consult', 'desc': 'Connect via secure HD video call with your doctor'},
+    {'num': '2', 'title': 'Book Appointment', 'desc': 'Choose a convenient time slot and confirm your appointment'},
+    {'num': '3', 'title': 'Video Consult', 'desc': "Connect via secure HD video call with iCare's trusted doctor"},
     {'num': '4', 'title': 'Get Prescription', 'desc': 'Receive digital prescriptions and follow-up care plans'},
+    {'num': '5', 'title': 'Get Medicines & Lab Tests', 'desc': 'Get medicines and lab tests from the comfort of your home'},
   ];
 
   @override
@@ -1733,36 +1806,113 @@ class _HowItWorksSteps extends StatelessWidget {
       );
     }
 
+    // Desktop: steps 1-4 in a row, then branch arrows, then step 5
+    final firstFour = _steps.take(4).toList();
+    final stepFive = _steps[4];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Stack(
+      child: Column(
         children: [
-          // Connecting line
-          Positioned(
-            top: 28,
-            left: 80,
-            right: 80,
-            child: Container(
-              height: 2,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF14B1FF), Color(0xFF0036BC)],
+          // Steps 1-4
+          Stack(
+            children: [
+              // Connecting line
+              Positioned(
+                top: 28,
+                left: 80,
+                right: 80,
+                child: Container(
+                  height: 2,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF14B1FF), Color(0xFF0036BC)],
+                    ),
+                  ),
                 ),
+              ),
+              Row(
+                children: firstFour.map((step) => Expanded(
+                  child: _StepCard(
+                    number: step['num']!,
+                    title: step['title']!,
+                    description: step['desc']!,
+                  ),
+                )).toList(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Branch arrows: Lab Test & Pharmacy
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Expanded(child: SizedBox()),
+              const Expanded(child: SizedBox()),
+              const Expanded(child: SizedBox()),
+              Expanded(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _BranchArrow(label: 'Lab Test', icon: Icons.biotech_rounded, color: const Color(0xFFFF4D00)),
+                        const SizedBox(width: 16),
+                        _BranchArrow(label: 'Pharmacy', icon: Icons.local_pharmacy_rounded, color: const Color(0xFF10B981)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Step 5 centered
+          Center(
+            child: SizedBox(
+              width: 200,
+              child: _StepCard(
+                number: stepFive['num']!,
+                title: stepFive['title']!,
+                description: stepFive['desc']!,
               ),
             ),
           ),
-          // Steps
-          Row(
-            children: _steps.map((step) => Expanded(
-              child: _StepCard(
-                number: step['num']!,
-                title: step['title']!,
-                description: step['desc']!,
-              ),
-            )).toList(),
-          ),
         ],
       ),
+    );
+  }
+}
+
+class _BranchArrow extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  const _BranchArrow({required this.label, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(Icons.arrow_downward_rounded, color: color, size: 20),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 14),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2120,7 +2270,8 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
-  const _SectionHeader({required this.title, this.subtitle, this.onTap});
+  final Color? titleColor;
+  const _SectionHeader({required this.title, this.subtitle, this.onTap, this.titleColor});
 
   @override
   Widget build(BuildContext context) {
@@ -2131,10 +2282,10 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF0036BC),
+              color: titleColor ?? const Color(0xFF0036BC),
               fontFamily: 'Gilroy-Bold',
             ),
             textAlign: TextAlign.center,
@@ -2210,7 +2361,7 @@ class _Footer extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
+                  "Pakistan's leading telehealth platform connecting patients with top specialists for secured online consultations, lab tests and digital prescription.",
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[600],
@@ -2266,7 +2417,7 @@ class _Footer extends StatelessWidget {
       ),
       const SizedBox(height: 12),
       Text(
-        "Pakistan's leading virtual hospital platform. Connecting patients with top specialists for online consultations, lab tests, and digital prescriptions.",
+        "Pakistan's leading telehealth platform connecting patients with top specialists for secured online consultations, lab tests and digital prescription.",
         style: TextStyle(
           fontSize: 12,
           color: Colors.grey[600],

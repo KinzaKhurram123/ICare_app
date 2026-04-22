@@ -325,47 +325,47 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             MaterialPageRoute(builder: (ctx) => const LaboratoryDashboard()),
           );
         }),
-        _drawerItem('Test Requests', Icons.pending_actions_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
+        _drawerItem('New Requests', Icons.pending_actions_outlined, () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => const LabBookingsManagement(
+              title: 'New Requests',
+              initialFilter: 'pending',
+            ),
+          ));
+        }),
+        _drawerItem('Records', Icons.folder_copy_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
+          );
+        }),
+        _drawerItem('Orders', Icons.list_alt_outlined, () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => const LabBookingsManagement(),
+          ));
         }),
         _drawerItem('Test Catalog', Icons.science_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const LabTestsManagement()),
           );
         }),
-        _drawerItem('Result Entry', Icons.upload_file_outlined, () {
+        _drawerItem('Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
+            MaterialPageRoute(builder: (ctx) => const PaymentInvoices()),
           );
         }),
-        _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
-        }),
         _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics()));
-        }),
-        _drawerItem('Help & Support', Icons.help_outline_rounded, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const HelpAndSupport()));
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabAnalytics()),
+          );
         }),
         _drawerItem('Settings', Icons.settings_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
+          );
         }),
         _drawerItem('iCare Lab Support', Icons.headset_mic_rounded, () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Direct support chat coming soon. For now, email support@icare.com'),
-              duration: Duration(seconds: 3),
-            ),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const HelpAndSupport()),
           );
         }),
       ];
@@ -527,18 +527,21 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                       ] else if (selectedRole == 'Laboratory') ...[
                         _drawerActionItem(
                           context,
-                          'Test Requests',
+                          'New Requests',
                           const Color(0xFF6366F1),
                           Icons.pending_actions_outlined,
                           () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => LabBookingsManagement()),
+                            MaterialPageRoute(builder: (_) => const LabBookingsManagement(
+                              title: 'New Requests',
+                              initialFilter: 'pending',
+                            )),
                           ),
                         ),
                         _drawerActionItem(
                           context,
-                          'Result Entry',
+                          'Records',
                           const Color(0xFF0EA5E9),
-                          Icons.upload_file_outlined,
+                          Icons.folder_copy_outlined,
                           () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const LabReportsScreen()),
                           ),

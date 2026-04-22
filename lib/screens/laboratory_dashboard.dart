@@ -3,6 +3,7 @@ import '../services/laboratory_service.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_tests_management.dart';
+import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/lab_settings_screen.dart';
@@ -652,14 +653,24 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
               runSpacing: 16,
               children: [
                 _buildActionButton(
-                  'Awaiting Fulfillment',
-                  Icons.hourglass_empty_rounded,
+                  'New Requests',
+                  Icons.pending_actions_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (ctx) => const LabBookingsManagement(
-                        title: 'Awaiting Fulfillment',
+                        title: 'New Requests',
                         initialFilter: 'pending',
                       ),
+                    ),
+                  ),
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Records',
+                  Icons.folder_copy_rounded,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabReportsScreen(),
                     ),
                   ),
                   isMobile,
@@ -680,19 +691,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (ctx) => const LabTestsManagement(),
-                    ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Result Entry',
-                  Icons.biotech_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Result Entry',
-                        initialFilter: 'confirmed',
-                      ),
                     ),
                   ),
                   isMobile,
