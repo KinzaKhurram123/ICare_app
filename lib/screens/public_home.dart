@@ -903,17 +903,30 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              // 2. Dark overlay for text readability
+              // 2. Color overlay to hide gray top of image + text readability
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withOpacity(0.55),
-                      Colors.black.withOpacity(0.25),
+                      const Color(0xFF0036BC).withOpacity(0.85),
+                      const Color(0xFF0036BC).withOpacity(0.5),
                       Colors.transparent,
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+              // Top edge color fix — covers the gray/light top of the image
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF0036BC).withOpacity(0.7),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.center,
                   ),
                 ),
               ),
