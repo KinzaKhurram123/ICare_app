@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/pharmacy_service.dart';
 import 'pharmacist_dashboard.dart';
 import 'tabs.dart';
@@ -27,6 +29,14 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
 
   bool _deliveryAvailable = false;
   bool _drapCompliance = false;
+
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+    if (picked != null) setState(() => _profileImage = File(picked.path));
+  }
 
   @override
   void initState() {
@@ -135,6 +145,48 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Profile Photo Upload
+                    Center(
+                      child: GestureDetector(
+                        onTap: _pickProfileImage,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00897B).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF00897B).withOpacity(0.3), width: 3),
+                              ),
+                              child: ClipOval(
+                                child: _profileImage != null
+                                    ? Image.file(_profileImage!, fit: BoxFit.cover)
+                                    : const Icon(Icons.local_pharmacy_rounded, size: 44, color: Color(0xFF00897B)),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00897B),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Center(
+                      child: Text('Tap to upload pharmacy logo', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ),
+                    const SizedBox(height: 24),
                     _buildSection('Basic Information', Icons.info_outline, [
                       _buildTextField(
                         controller: _ownerNameController,

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/laboratory_service.dart';
 import 'laboratory_dashboard.dart';
 import 'tabs.dart';
@@ -33,6 +35,10 @@ class _LabProfileSetupState extends State<LabProfileSetup>
 
   bool _homeSampleAvailable = false;
   bool _drapCompliance = false;
+
+  // Profile Image
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   // Doctors Panel
   final List<Map<String, TextEditingController>> _doctors = [];
@@ -162,6 +168,11 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   }
 
   @override
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+    if (picked != null) setState(() => _profileImage = File(picked.path));
+  }
+
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
@@ -383,17 +394,39 @@ class _LabProfileSetupState extends State<LabProfileSetup>
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: const Icon(
-              Icons.science_rounded,
-              size: 48,
-              color: Colors.white,
+          GestureDetector(
+            onTap: _pickProfileImage,
+            child: Stack(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: _profileImage != null
+                        ? Image.file(_profileImage!, fit: BoxFit.cover)
+                        : const Icon(Icons.science_rounded, size: 40, color: Colors.white),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: primaryColor, width: 1.5),
+                    ),
+                    child: Icon(Icons.camera_alt, size: 14, color: primaryColor),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 20),
@@ -411,7 +444,7 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Complete your laboratory information to get started',
+                  'Tap the logo to upload your lab photo',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),

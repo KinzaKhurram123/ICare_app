@@ -120,47 +120,47 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             MaterialPageRoute(builder: (ctx) => const LaboratoryDashboard()),
           );
         }),
-        _drawerItem('Test Requests', Icons.pending_actions_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
+        _drawerItem('New Requests', Icons.pending_actions_outlined, () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => const LabBookingsManagement(
+              title: 'New Requests',
+              initialFilter: 'pending',
+            ),
+          ));
         }),
-        _drawerItem('Orders', Icons.receipt_long_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => LabBookingsManagement()));
+        _drawerItem('Records', Icons.folder_copy_outlined, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
+          );
+        }),
+        _drawerItem('Orders', Icons.list_alt_outlined, () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => const LabBookingsManagement(),
+          ));
         }),
         _drawerItem('Test Catalog', Icons.science_outlined, () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (ctx) => const LabTestsManagement()),
           );
         }),
-        _drawerItem('Result Entry', Icons.upload_file_outlined, () {
+        _drawerItem('Invoices', Icons.receipt_long_outlined, () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => const LabReportsScreen()),
+            MaterialPageRoute(builder: (ctx) => const PaymentInvoices()),
           );
         }),
-        _drawerItem('Payment Invoices', Icons.receipt_long_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const PaymentInvoices()));
-        }),
         _drawerItem('Revenue & Analytics', Icons.analytics_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const LabAnalytics()));
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const LabAnalytics()),
+          );
         }),
         _drawerItem('Settings', Icons.settings_outlined, () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => const SettingsScreen()));
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
+          );
         }),
         _drawerItem('iCare Lab Support', Icons.headset_mic_rounded, () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Direct support chat coming soon. For now, email support@icare.com'),
-              duration: Duration(seconds: 3),
-            ),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (ctx) => const HelpAndSupport()),
           );
         }),
       ];

@@ -5,6 +5,7 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HelpAndSupport extends ConsumerWidget {
   const HelpAndSupport({super.key});
@@ -33,6 +34,7 @@ class HelpAndSupport extends ConsumerWidget {
           color: AppColors.primaryColor,
         ),
       ),
+      floatingActionButton: _WhatsAppFab(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -83,6 +85,8 @@ class HelpAndSupport extends ConsumerWidget {
                     "Technical Desk",
                     "tech-support@icare.com",
                   ),
+                  const SizedBox(height: 20),
+                  _WhatsAppSupportButton(),
                 ],
               ),
             ),
@@ -170,6 +174,7 @@ class _WebHelpAndSupport extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
+      floatingActionButton: _WhatsAppFab(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -259,34 +264,14 @@ class _WebHelpAndSupport extends StatelessWidget {
                               : "support@icare.com",
                         ),
                         const SizedBox(height: 20),
+                        // WhatsApp Support Button — all roles
                         _WebContactItem(
                           icon: Icons.phone_outlined,
                           title: "Call Us",
                           subtitle: "+923068961564",
                         ),
                         const SizedBox(height: 20),
-                        // WhatsApp Support Button
-                        if (isLaboratory || isPharmacy) ...[
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF25D366),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Connecting to iCare support on WhatsApp...'), backgroundColor: Color(0xFF25D366)),
-                                );
-                              },
-                              icon: const Icon(Icons.chat_rounded, size: 20),
-                              label: const Text('WhatsApp Support', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
+                        _WhatsAppSupportButton(),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
@@ -588,6 +573,77 @@ class _WebFaqCardState extends State<_WebFaqCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WhatsAppFab extends StatelessWidget {
+  _WhatsAppFab();
+
+  Future<void> _open(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://wa.me/923068961564?text=${Uri.encodeComponent("Hello! I need help with iCare.")}',
+    );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () => _open(context),
+      backgroundColor: const Color(0xFF25D366),
+      icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 22),
+      label: const Text(
+        'WhatsApp',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+      ),
+    );
+  }
+}
+
+class _WhatsAppSupportButton extends StatelessWidget {
+  const _WhatsAppSupportButton();
+
+  Future<void> _openWhatsApp(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://wa.me/923068961564?text=${Uri.encodeComponent("Hello! I need help with iCare.")}',
+    );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to open WhatsApp.'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF25D366),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 0,
+        ),
+        onPressed: () => _openWhatsApp(context),
+        icon: const Icon(Icons.chat_rounded, size: 20),
+        label: const Text(
+          'WhatsApp Support',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
     );
