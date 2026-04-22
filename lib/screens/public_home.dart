@@ -888,27 +888,35 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Full background banner image
-              Image.asset(
-                'assets/images/banner_doctor.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
-                filterQuality: FilterQuality.high,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0026A0), Color(0xFF0036BC)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+              // 1. Blue gradient background
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
               ),
-              // 2. Text + buttons — left side overlay
+              // 2. Doctor image — right side, clean (walkthrough1 has white bg)
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: isMobile ? w * 0.52 : w * 0.40,
+                child: Image.asset(
+                  'assets/images/walkthrough1.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomCenter,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+              // 3. Text + buttons — left side
               Padding(
                 padding: EdgeInsets.only(
                   left: isMobile ? 20 : 52,
-                  right: isMobile ? w * 0.40 : w * 0.45,
+                  right: isMobile ? w * 0.38 : w * 0.42,
                   top: isMobile ? 24 : 44,
                   bottom: isMobile ? 24 : 44,
                 ),
@@ -917,24 +925,17 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Consult a\nDoctor',
+                      'Consult a Doctor',
                       textAlign: TextAlign.left,
                       style: TextStyle(
-                        fontSize: isMobile ? 26 : 42,
+                        fontSize: isMobile ? 24 : 40,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                         fontFamily: 'Gilroy-Bold',
                         height: 1.15,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                     ),
-                    SizedBox(height: isMobile ? 10 : 16),
+                    SizedBox(height: isMobile ? 10 : 14),
                     Text(
                       'Consult trusted doctors, book appointments\nand access healthcare from home 24/7.',
                       textAlign: TextAlign.left,
