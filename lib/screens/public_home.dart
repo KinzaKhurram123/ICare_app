@@ -27,18 +27,18 @@ class PublicHome extends StatelessWidget {
             elevation: 0,
             pinned: true,
             floating: true,
-            toolbarHeight: 72,
+            toolbarHeight: isMobile ? 76 : 88,
             surfaceTintColor: Colors.white,
             shadowColor: const Color(0x1A0036BC),
             flexibleSpace: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1)),
+                border: Border(bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1.5)),
               ),
               child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 12 : 24,
-                    vertical: 4,
+                    vertical: 2,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -46,9 +46,10 @@ class PublicHome extends StatelessWidget {
                       // Left: iCare logo
                       Image.asset(
                         'assets/images/logo.png',
-                        height: isMobile ? 60 : 72,
+                        height: isMobile ? 70 : 84,
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.high,
+                        isAntiAlias: true,
                       ),
                       // Right: nav buttons
                       Row(
@@ -117,6 +118,11 @@ class PublicHome extends StatelessWidget {
                             );
                           },
                         ),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: DoctorSearchBar(isMobile: MediaQuery.of(context).size.width < 700),
+                        ),
                         const SizedBox(height: 24),
                         _DoctorsSlider(),
                         const SizedBox(height: 40),
@@ -128,7 +134,7 @@ class PublicHome extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0036BC),
+                              color: Color(0xFF7C3AED),
                               fontFamily: 'Gilroy-Bold',
                             ),
                           ),
@@ -152,7 +158,7 @@ class PublicHome extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0036BC),
+                              color: Color(0xFF0891B2),
                               fontFamily: 'Gilroy-Bold',
                             ),
                           ),
@@ -167,12 +173,7 @@ class PublicHome extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
                         _ConditionGrid(),
-                        const SizedBox(height: 28),
-                        // Main search bar below browse sections
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: DoctorSearchBar(isMobile: MediaQuery.of(context).size.width < 700),
-                        ),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
@@ -188,7 +189,7 @@ class PublicHome extends StatelessWidget {
                       _SectionHeader(
                         title: 'Order Medicines',
                         subtitle: 'Order medicines from trusted pharmacies near you',
-                        titleColor: const Color(0xFF96BF48),
+                        titleColor: const Color(0xFF10B981),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
@@ -1503,7 +1504,7 @@ class _LaboratoriesGrid extends StatelessWidget {
           subtitle: l['area']!,
           rating: l['rating']!,
           icon: Icons.biotech_rounded,
-          iconColor: const Color(0xFF8B5CF6),
+          iconColor: const Color(0xFFFF4D00),
           width: double.infinity,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => LabsListScreen()),
@@ -1699,13 +1700,13 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _hovered ? const Color(0xFF14B1FF) : const Color(0xFFF3F3F3),
+              color: _hovered ? const Color(0xFF7C3AED) : const Color(0xFFF3F3F3),
               width: 2,
             ),
             boxShadow: [
               if (_hovered)
                 BoxShadow(
-                  color: const Color(0xFF14B1FF).withOpacity(0.16),
+                  color: const Color(0xFF7C3AED).withOpacity(0.16),
                   blurRadius: 24,
                   offset: const Offset(0, 6),
                 ),
@@ -1718,10 +1719,10 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F4FF),
+                  color: const Color(0xFFF3F0FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(widget.icon, color: const Color(0xFF0036BC), size: 22),
+                child: Icon(widget.icon, color: const Color(0xFF7C3AED), size: 22),
               ),
               const SizedBox(height: 8),
               Text(
@@ -1826,13 +1827,13 @@ class _ConditionCardState extends State<_ConditionCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _hovered ? const Color(0xFF10B981) : const Color(0xFFF3F3F3),
+              color: _hovered ? const Color(0xFF0891B2) : const Color(0xFFF3F3F3),
               width: 2,
             ),
             boxShadow: [
               if (_hovered)
                 BoxShadow(
-                  color: const Color(0xFF10B981).withOpacity(0.16),
+                  color: const Color(0xFF0891B2).withOpacity(0.16),
                   blurRadius: 24,
                   offset: const Offset(0, 6),
                 ),
@@ -1845,10 +1846,10 @@ class _ConditionCardState extends State<_ConditionCard> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
+                  color: const Color(0xFFE0F7FA),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(widget.icon, color: const Color(0xFF10B981), size: 22),
+                child: Icon(widget.icon, color: const Color(0xFF0891B2), size: 22),
               ),
               const SizedBox(height: 8),
               Text(
