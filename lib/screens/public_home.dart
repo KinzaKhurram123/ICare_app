@@ -1910,116 +1910,92 @@ class _HowItWorksSteps extends StatelessWidget {
       );
     }
 
-    // Desktop: ALL 5 steps in one horizontal row + two branches out of step 5
+    // Desktop: ALL 5 steps in one horizontal row + fork from step 5
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // All 5 steps with connecting line
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Horizontal connecting line through all 5
-              Positioned(
-                top: 28,
-                left: 40,
-                right: 40,
-                child: Container(
-                  height: 3,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF0036BC),
-                  ),
+          // Steps 1–5 with horizontal connecting line
+          Expanded(
+            child: Stack(
+              children: [
+                // Horizontal blue line — goes all the way to right edge (into fork)
+                Positioned(
+                  top: 28,
+                  left: 40,
+                  right: 0,
+                  child: Container(height: 3, color: const Color(0xFF0036BC)),
                 ),
-              ),
-              Row(
-                children: _steps.asMap().entries.map((entry) {
-                  final step = entry.value;
-                  final isLast = entry.key == _steps.length - 1;
-                  return Expanded(
+                Row(
+                  children: _steps.map((step) => Expanded(
                     child: _StepCard(
                       number: step['num']!,
                       title: step['title']!,
                       description: step['desc']!,
-                      isLarger: isLast,
                     ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-          // Branch lines from step 5 (positioned at the right end)
-          Positioned(
-            right: 0,
-            top: 28,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Upper diagonal line to Lab Test
-                CustomPaint(
-                  size: const Size(100, 80),
-                  painter: _DiagonalLinePainter(
-                    startX: 0,
-                    startY: 40,
-                    endX: 70,
-                    endY: 10,
-                    color: const Color(0xFF0036BC),
-                  ),
-                ),
-                // Lower diagonal line to Pharmacy
-                CustomPaint(
-                  size: const Size(100, 80),
-                  painter: _DiagonalLinePainter(
-                    startX: 0,
-                    startY: 40,
-                    endX: 70,
-                    endY: 70,
-                    color: const Color(0xFF0036BC),
-                  ),
+                  )).toList(),
                 ),
               ],
             ),
           ),
-          // Lab Test label
-          Positioned(
-            right: -80,
-            top: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF0036BC), width: 2),
-              ),
-              child: const Text(
-                'Lab Test',
-                style: TextStyle(
-                  color: Color(0xFF0036BC),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+          // Fork widget — two diagonal lines from step 5 + labels
+          SizedBox(
+            width: 150,
+            height: 130,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Draw the two diagonal blue lines
+                CustomPaint(
+                  size: const Size(150, 130),
+                  painter: _ForkPainter(color: const Color(0xFF0036BC)),
                 ),
-              ),
-            ),
-          ),
-          // Pharmacy label
-          Positioned(
-            right: -90,
-            top: 80,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF0036BC), width: 2),
-              ),
-              child: const Text(
-                'Pharmacy',
-                style: TextStyle(
-                  color: Color(0xFF0036BC),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                // Lab Test label — top right
+                Positioned(
+                  right: 0,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF0036BC), width: 2),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.biotech_rounded, color: Color(0xFFFF4D00), size: 13),
+                        SizedBox(width: 4),
+                        Text('Lab Test',
+                          style: TextStyle(color: Color(0xFF0036BC), fontSize: 11, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                // Pharmacy label — bottom right
+                Positioned(
+                  right: 0,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF0036BC), width: 2),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 13),
+                        SizedBox(width: 4),
+                        Text('Pharmacy',
+                          style: TextStyle(color: Color(0xFF0036BC), fontSize: 11, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -2129,25 +2105,20 @@ class _StepCard extends StatelessWidget {
   final String number;
   final String title;
   final String description;
-  final bool isLarger;
 
   const _StepCard({
     required this.number,
     required this.title,
     required this.description,
-    this.isLarger = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final circleSize = isLarger ? 70.0 : 56.0;
-    final fontSize = isLarger ? 24.0 : 20.0;
-
     return Column(
       children: [
         Container(
-          width: circleSize,
-          height: circleSize,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             color: const Color(0xFF0036BC),
             shape: BoxShape.circle,
@@ -2163,8 +2134,8 @@ class _StepCard extends StatelessWidget {
           child: Center(
             child: Text(
               number,
-              style: TextStyle(
-                fontSize: fontSize,
+              style: const TextStyle(
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 fontFamily: 'Gilroy-Bold',
@@ -2201,34 +2172,28 @@ class _StepCard extends StatelessWidget {
   }
 }
 
-// Custom painter for diagonal lines
-class _DiagonalLinePainter extends CustomPainter {
-  final double startX;
-  final double startY;
-  final double endX;
-  final double endY;
+// Fork painter — draws 2 diagonal lines from (0, 28) to top-right and bottom-right
+// Starts at y=28 to align perfectly with the horizontal connecting line
+class _ForkPainter extends CustomPainter {
   final Color color;
-
-  _DiagonalLinePainter({
-    required this.startX,
-    required this.startY,
-    required this.endX,
-    required this.endY,
-    required this.color,
-  });
+  const _ForkPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    canvas.drawLine(
-      Offset(startX, startY),
-      Offset(endX, endY),
-      paint,
-    );
+    // Start point — same vertical level as horizontal line (top: 28)
+    const origin = Offset(0, 28);
+
+    // Upper branch → Lab Test (top-right)
+    canvas.drawLine(origin, Offset(size.width * 0.65, size.height * 0.18), paint);
+
+    // Lower branch → Pharmacy (bottom-right)
+    canvas.drawLine(origin, Offset(size.width * 0.65, size.height * 0.82), paint);
   }
 
   @override
