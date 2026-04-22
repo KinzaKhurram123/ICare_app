@@ -1883,11 +1883,11 @@ class _ConditionCardState extends State<_ConditionCard> {
 // ── How It Works Steps ──────────────────────────────────────────────────────
 class _HowItWorksSteps extends StatelessWidget {
   static const _steps = [
-    {'num': '1', 'title': 'Search & Select', 'desc': 'Find the right doctor by specialty, condition, or name'},
+    {'num': '1', 'title': 'Search and Select', 'desc': 'Find the right doctor by specialty, condition, or name'},
     {'num': '2', 'title': 'Book Appointment', 'desc': 'Choose a convenient time slot and confirm your appointment'},
     {'num': '3', 'title': 'Video Consult', 'desc': "Connect via secure HD video call with iCare's trusted doctor"},
     {'num': '4', 'title': 'Get Prescription', 'desc': 'Receive digital prescriptions and follow-up care plans'},
-    {'num': '5', 'title': 'Get Medicines & Lab Tests', 'desc': 'Get medicines and lab tests from the comfort of your home'},
+    {'num': '5', 'title': 'Get Medicines and Lab Tests', 'desc': 'Get medicines and lab tests from the comfort of your home'},
   ];
 
   @override
@@ -1910,76 +1910,115 @@ class _HowItWorksSteps extends StatelessWidget {
       );
     }
 
-    // Desktop: steps 1-4 in a row, then branch arrows, then step 5
-    final firstFour = _steps.take(4).toList();
-    final stepFive = _steps[4];
-
+    // Desktop: ALL 5 steps in one horizontal row + two branches out of step 5
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Steps 1-4
-          Stack(
-            children: [
-              // Connecting line
-              Positioned(
-                top: 28,
-                left: 80,
-                right: 80,
-                child: Container(
-                  height: 2,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF14B1FF), Color(0xFF0036BC)],
+          // All 5 steps with connecting line
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Horizontal connecting line through all 5
+                Positioned(
+                  top: 28,
+                  left: 40,
+                  right: 0,
+                  child: Container(
+                    height: 2,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF14B1FF), Color(0xFF0036BC)],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Row(
-                children: firstFour.map((step) => Expanded(
-                  child: _StepCard(
-                    number: step['num']!,
-                    title: step['title']!,
-                    description: step['desc']!,
-                  ),
-                )).toList(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Branch arrows: Lab Test & Pharmacy
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Expanded(child: SizedBox()),
-              const Expanded(child: SizedBox()),
-              const Expanded(child: SizedBox()),
-              Expanded(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _BranchArrow(label: 'Lab Test', icon: Icons.biotech_rounded, color: const Color(0xFFFF4D00)),
-                        const SizedBox(width: 16),
-                        _BranchArrow(label: 'Pharmacy', icon: Icons.local_pharmacy_rounded, color: const Color(0xFF10B981)),
-                      ],
+                Row(
+                  children: _steps.map((step) => Expanded(
+                    child: _StepCard(
+                      number: step['num']!,
+                      title: step['title']!,
+                      description: step['desc']!,
                     ),
-                  ],
+                  )).toList(),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          // Step 5 centered
-          Center(
-            child: SizedBox(
-              width: 200,
-              child: _StepCard(
-                number: stepFive['num']!,
-                title: stepFive['title']!,
-                description: stepFive['desc']!,
+          // Branch fork from step 5 — two diagonal arrows to the right
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Upper branch → Lab Test
+                _BranchForkItem(
+                  label: 'Lab Test',
+                  icon: Icons.biotech_rounded,
+                  color: const Color(0xFFFF4D00),
+                  angleUp: true,
+                ),
+                const SizedBox(height: 20),
+                // Lower branch → Pharmacy
+                _BranchForkItem(
+                  label: 'Pharmacy',
+                  icon: Icons.local_pharmacy_rounded,
+                  color: const Color(0xFF10B981),
+                  angleUp: false,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BranchForkItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool angleUp;
+  const _BranchForkItem({required this.label, required this.icon, required this.color, required this.angleUp});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(0, angleUp ? -10 : 10),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Transform.rotate(
+            angle: angleUp ? -0.45 : 0.45,
+            child: Container(
+              width: 44,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: color.withOpacity(0.35), width: 1.5),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 13),
+                const SizedBox(width: 4),
+                Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
             ),
           ),
         ],
@@ -2781,7 +2820,7 @@ class PublicHomeBody extends StatelessWidget {
               children: [
                 _SectionHeader(
                   title: 'How iCare Works',
-                  subtitle: 'Get quality healthcare in 4 simple steps',
+                  subtitle: 'Get quality healthcare in 5 simple steps',
                 ),
                 const SizedBox(height: 40),
                 _HowItWorksSteps(),

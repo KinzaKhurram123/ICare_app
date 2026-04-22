@@ -336,32 +336,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                             child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                           ),
-                          const SizedBox(height: 28),
-                          // Logo + By + RM Health Solutions logo (no text)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "by",
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white70),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                height: 36,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Image.asset(
-                                  'assets/images/health.jpeg',
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Text('RM Health Solutions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0036BC))),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 16),
+                          // "by" text only
+                          const Text(
+                            "by",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white70),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
+                          // RM Health Solutions logo below "by"
                           Container(
                             height: 44,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -372,6 +354,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             child: Image.asset(
                               'assets/images/health.jpeg',
                               fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Text('RM Health Solutions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0036BC))),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -926,22 +909,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   ],
                                 ),
                                 const SizedBox(height: 24),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _webSocialButton(
-                                        ImagePaths.google_icon,
-                                        "Google",
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _webSocialButton(
-                                        ImagePaths.facebook_icon,
-                                        "Facebook",
-                                      ),
-                                    ),
-                                  ],
+                                _webSocialButton(
+                                  ImagePaths.google_icon,
+                                  "Continue with Google",
                                 ),
                               ],
                             ],
@@ -1442,7 +1412,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildHeroTrust(IconData icon, String title, String subtitle, {Color? color}) {
-    final iconBg = color ?? Colors.white;
+    final iconColor = color ?? Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1451,11 +1421,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           width: 44, height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: iconBg.withOpacity(0.18),
+            color: iconColor.withOpacity(0.22),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: iconBg.withOpacity(0.35), width: 1.5),
+            border: Border.all(color: iconColor.withOpacity(0.5), width: 1.5),
           ),
-          child: Icon(icon, color: color != null ? Colors.white : Colors.white, size: 22),
+          child: Icon(icon, color: iconColor, size: 22),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -1495,14 +1465,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 25),
         const Text("Or Continue With", style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 15),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _socialButton(ImagePaths.facebook_icon, "Facebook"),
-            const SizedBox(width: 20),
-            _socialButton(ImagePaths.google_icon, "Google"),
-          ],
-        ),
+        _socialButton(ImagePaths.google_icon, "Google"),
       ],
     );
   }
