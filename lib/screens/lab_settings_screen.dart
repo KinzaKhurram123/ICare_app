@@ -37,11 +37,7 @@ class _LabSettingsScreenState extends State<LabSettingsScreen> {
 
   // Notifications
   bool _notifyNewBooking = true;
-  bool _notifyBookingCancellation = true;
-  bool _notifyPayment = true;
   bool _notifyUrgentTest = true;
-  bool _notifyLowSupply = false;
-  bool _notifyDailyReport = false;
 
   static const Color primaryColor = Color(0xFF0B2D6E);
   static const Color secondaryColor = Color(0xFF1565C0);
@@ -83,11 +79,7 @@ class _LabSettingsScreenState extends State<LabSettingsScreen> {
 
       final prefs = profile['notificationPreferences'] as Map<String, dynamic>? ?? {};
       _notifyNewBooking = prefs['newBooking'] != false;
-      _notifyBookingCancellation = prefs['bookingCancellation'] != false;
-      _notifyPayment = prefs['payment'] != false;
       _notifyUrgentTest = prefs['urgentTest'] != false;
-      _notifyLowSupply = prefs['lowSupply'] == true;
-      _notifyDailyReport = prefs['dailyReport'] == true;
     } catch (_) {
       // Use defaults on error
     }
@@ -114,11 +106,7 @@ class _LabSettingsScreenState extends State<LabSettingsScreen> {
         'homeSampleAvailable': _homeSampleCollection,
         'notificationPreferences': {
           'newBooking': _notifyNewBooking,
-          'bookingCancellation': _notifyBookingCancellation,
-          'payment': _notifyPayment,
           'urgentTest': _notifyUrgentTest,
-          'lowSupply': _notifyLowSupply,
-          'dailyReport': _notifyDailyReport,
         },
       });
       if (mounted) {
