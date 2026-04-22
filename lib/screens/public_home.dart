@@ -888,82 +888,27 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Solid blue gradient base
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF0554D4)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-              // 2. Watermark decorative circles (right side, behind doctor)
-              Positioned(
-                right: isMobile ? w * 0.02 : w * 0.04,
-                top: isMobile ? -h * 0.15 : -h * 0.2,
-                child: Container(
-                  width: isMobile ? h * 0.9 : h * 1.1,
-                  height: isMobile ? h * 0.9 : h * 1.1,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.10),
-                      width: isMobile ? 28 : 45,
+              // 1. Full background banner image
+              Image.asset(
+                'assets/images/banner_doctor.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.centerRight,
+                filterQuality: FilterQuality.high,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0026A0), Color(0xFF0036BC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                   ),
                 ),
               ),
-              Positioned(
-                right: isMobile ? w * 0.08 : w * 0.10,
-                top: isMobile ? h * 0.05 : h * 0.08,
-                child: Container(
-                  width: isMobile ? h * 0.55 : h * 0.65,
-                  height: isMobile ? h * 0.55 : h * 0.65,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.07),
-                      width: isMobile ? 18 : 28,
-                    ),
-                  ),
-                ),
-              ),
-              // 3. Doctor image — right side, contain so full body visible
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                width: isMobile ? w * 0.55 : w * 0.42,
-                child: Image.asset(
-                  'assets/images/doctor_banner2.png',
-                  fit: BoxFit.contain,
-                  alignment: Alignment.bottomRight,
-                  filterQuality: FilterQuality.high,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-              // 4. Left-to-right fade — text area solid blue, smooth blend into doctor
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF0036BC),
-                      const Color(0xFF0036BC),
-                      const Color(0xFF0036BC).withOpacity(0.85),
-                      const Color(0xFF0036BC).withOpacity(0.0),
-                    ],
-                    stops: const [0.0, 0.32, 0.50, 0.65],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
-              ),
-              // 5. Text + buttons — left aligned, vertically centered
+              // 2. Text + buttons — left side overlay
               Padding(
                 padding: EdgeInsets.only(
                   left: isMobile ? 20 : 52,
-                  right: isMobile ? w * 0.45 : w * 0.38,
+                  right: isMobile ? w * 0.40 : w * 0.45,
                   top: isMobile ? 24 : 44,
                   bottom: isMobile ? 24 : 44,
                 ),
