@@ -8,7 +8,9 @@ import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
-  const ProductDetailsScreen({super.key});
+  final Map<String, dynamic> product;
+
+  const ProductDetailsScreen({super.key, required this.product});
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
@@ -20,6 +22,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
+    final product = widget.product;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -52,15 +55,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : double.infinity),
-            child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
+            child: isDesktop ? _buildDesktopLayout(product) : _buildMobileLayout(product),
           ),
         ),
       ),
-      bottomNavigationBar: !isDesktop ? _buildBottomAction(context) : null,
+      bottomNavigationBar: !isDesktop ? _buildBottomAction(context, product) : null,
     );
   }
 
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(Map<String, dynamic> product) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
       child: Row(
@@ -86,8 +89,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   child: Center(
                     child: Hero(
-                      tag: 'product_image_capsule',
-                      child: Image.asset(ImagePaths.capsule, fit: BoxFit.contain, height: 350),
+                      tag: 'product_image_${product['_id']}',
+                      child: Icon(
+                        Icons.medication_liquid_rounded,
+                        size: 200,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
                   ),
                 ),
@@ -103,7 +110,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: i == 0 ? AppColors.primaryColor : Colors.transparent, width: 2),
                     ),
-                    child: Center(child: Image.asset(ImagePaths.capsule, height: 50)),
+                    child: Icon(
+                      Icons.medication_liquid_rounded,
+                      size: 40,
+                      color: AppColors.primaryColor.withOpacity(0.5),
+                    ),
                   )),
                 ),
               ],
@@ -116,22 +127,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductBadge(),
+                _buildProductBadge(product),
                 const SizedBox(height: 16),
                 CustomText(
-                  text: "Liver Cleanse Capsule",
+                  text: product['productName'] ?? "Liver Cleanse Capsule",
                   fontSize: 42,
                   fontWeight: FontWeight.w900,
                   color: const Color(0xFF1E293B),
                 ),
                 const SizedBox(height: 12),
-                _buildRatingPriceRow(),
+                _buildRatingPriceRow(product),
                 const SizedBox(height: 32),
-                _buildDescriptionSection(),
+                _buildDescriptionSection(product),
                 const SizedBox(height: 40),
                 _buildQuantitySelector(),
                 const SizedBox(height: 48),
-                _buildDesktopActions(),
+                _buildDesktopActions(product),
               ],
             ),
           ),
@@ -140,7 +151,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(Map<String, dynamic> product) {
     return Column(
       children: [
         Container(
@@ -149,8 +160,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           color: Colors.white,
           child: Center(
             child: Hero(
-              tag: 'product_image_capsule',
-              child: Image.asset(ImagePaths.capsule, fit: BoxFit.contain, height: 250),
+              tag: 'product_image_${product['_id']}',
+              child: Icon(
+                Icons.medication_liquid_rounded,
+                size: 150,
+                color: AppColors.primaryColor,
+              ),
             ),
           ),
         ),
@@ -163,18 +178,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProductBadge(),
+              _buildProductBadge(product),
               const SizedBox(height: 12),
               CustomText(
-                text: "Liver Cleanse Capsule",
+                text: product['productName'] ?? "Liver Cleanse Capsule",
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
                 color: const Color(0xFF1E293B),
               ),
               const SizedBox(height: 8),
-              _buildRatingPriceRow(),
+              _buildRatingPriceRow(product),
               const SizedBox(height: 24),
-              _buildDescriptionSection(),
+              _buildDescriptionSection(product),
               const SizedBox(height: 100), // Space for bottom bar
             ],
           ),
@@ -183,7 +198,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildProductBadge() {
+  Widget _buildProductBadge(Map<String, dynamic> product) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -191,7 +206,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: CustomText(
-        text: "Best Seller • Recommended",
+        text: product['medicineType'] ?? "Prescription Required",
         fontSize: 12,
         fontWeight: FontWeight.w800,
         color: AppColors.primaryColor,
@@ -200,7 +215,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildRatingPriceRow() {
+  Widget _buildRatingPriceRow(Map<String, dynamic> product) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -214,7 +229,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ],
         ),
         CustomText(
-          text: "Rs. 2,000",
+          text: "Rs. ${product['price'] ?? 0.0}",
           fontSize: 28,
           fontWeight: FontWeight.w900,
           color: AppColors.primaryColor,
@@ -223,14 +238,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildDescriptionSection() {
+  Widget _buildDescriptionSection(Map<String, dynamic> product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CustomText(text: "Product Details", fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF0F172A)),
         const SizedBox(height: 12),
         CustomText(
-          text: "Premium quality capsules designed for effective liver detoxification and support. Contains natural extracts that help maintain healthy liver function and promote overall well-being. Formulated with high-potency ingredients for maximum efficacy.",
+          text: product['description'] ?? "Premium quality pharmaceutical product designed for effective health support. Formulated with high-potency ingredients for maximum efficacy.",
           fontSize: 15,
           color: const Color(0xFF64748B),
           lineHeight: 1.6,
@@ -282,7 +297,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildDesktopActions() {
+  Widget _buildDesktopActions(Map<String, dynamic> product) {
     return Row(
       children: [
         Expanded(
@@ -304,7 +319,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (ctx) => const SelectPaymentMethod(amount: 2000.0),
+                  builder: (ctx) => SelectPaymentMethod(amount: (product['price'] ?? 0.0).toDouble()),
                 ),
               );
             },
@@ -314,7 +329,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildBottomAction(BuildContext context) {
+  Widget _buildBottomAction(BuildContext context, Map<String, dynamic> product) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -341,13 +356,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: CustomButton(
-              label: "Get for Rs. 2,000",
+              label: "Get for Rs. ${product['price'] ?? 0}",
               height: 56,
               borderRadius: 16,
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (ctx) => const SelectPaymentMethod(amount: 2000.0),
+                    builder: (ctx) => SelectPaymentMethod(amount: (product['price'] ?? 0.0).toDouble()),
                   ),
                 );
               },

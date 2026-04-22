@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 
 class LessonPlayer extends StatefulWidget {
   final Map<String, dynamic> lesson;
@@ -27,6 +28,62 @@ class LessonPlayer extends StatefulWidget {
 class _LessonPlayerState extends State<LessonPlayer> {
   bool _isCompleted = false;
   bool _isSaving = false;
+  
+  VideoPlayerController? _videoPlayerController;
+  ChewieController? _chewieController;
+  bool _isVideoLoading = true;
+  String? _videoError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    final videoUrl = widget.lesson['videoUrl'] as String?;
+    if (videoUrl == null || videoUrl.isEmpty) {
+      setState(() => _isVideoLoading = false);
+      return;
+    }
+
+    try {
+      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      await _videoPlayerController!.initialize();
+      
+      _chewieController = ChewieController(
+        videoPlayerController: _videoPlayerController!,
+        autoPlay: false,
+        looping: false,
+        aspectRatio: 16 / 9,
+        showControls: true,
+        placeholder: Container(color: Colors.black),
+        materialProgressColors: ChewieProgressColors(
+          playedColor: AppColors.primaryColor,
+          handleColor: AppColors.primaryColor,
+          backgroundColor: Colors.grey,
+          bufferedColor: Colors.grey.withOpacity(0.5),
+        ),
+      );
+
+      setState(() {
+        _isVideoLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Video init error: $e');
+      setState(() {
+        _isVideoLoading = false;
+        _videoError = 'Could not load video';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _videoPlayerController?.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
 
   Future<void> _markComplete() async {
     if (_isCompleted || _isSaving) return;
@@ -60,19 +117,6 @@ class _LessonPlayerState extends State<LessonPlayer> {
     }
   }
 
-  Future<void> _openVideo(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open video')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final title = widget.lesson['title'] ?? 'Lesson';
@@ -99,61 +143,15 @@ class _LessonPlayerState extends State<LessonPlayer> {
             // Video section
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: GestureDetector(
-                onTap: hasVideo ? () => _openVideo(videoUrl) : null,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Thumbnail background
-                      if (hasVideo && videoUrl.contains('youtube'))
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.network(
-                            _getYoutubeThumbnail(videoUrl),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (_, __, ___) => const SizedBox(),
-                          ),
-                        ),
-                      // Dark overlay
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      // Play button
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: hasVideo ? AppColors.primaryColor : Colors.white24,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              hasVideo ? Icons.play_arrow_rounded : Icons.videocam_off_rounded,
-                              color: Colors.white,
-                              size: 48,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            hasVideo ? 'Tap to watch video' : 'No video available',
-                            style: const TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: _buildVideoContent(hasVideo),
                 ),
               ),
             ),
@@ -244,13 +242,38 @@ class _LessonPlayerState extends State<LessonPlayer> {
     );
   }
 
-  String _getYoutubeThumbnail(String url) {
-    // Extract video ID from YouTube URL
-    final regExp = RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([^&\n?#]+)');
-    final match = regExp.firstMatch(url);
-    if (match != null) {
-      return 'https://img.youtube.com/vi/${match.group(1)}/hqdefault.jpg';
+  Widget _buildVideoContent(bool hasVideo) {
+    if (!hasVideo) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.videocam_off_rounded, color: Colors.white24, size: 48),
+          SizedBox(height: 12),
+          Text('No video available', style: TextStyle(color: Colors.white70, fontSize: 14)),
+        ],
+      );
     }
-    return '';
+
+    if (_isVideoLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+
+    if (_videoError != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Colors.white54, size: 48),
+          const SizedBox(height: 12),
+          Text(_videoError!, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        ],
+      );
+    }
+
+    if (_chewieController != null) {
+      return Chewie(controller: _chewieController!);
+    }
+
+    return const SizedBox();
   }
 }
+

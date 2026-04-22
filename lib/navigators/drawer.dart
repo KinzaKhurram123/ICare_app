@@ -393,18 +393,6 @@ class CustomDrawer extends ConsumerWidget {
             MaterialPageRoute(builder: (ctx) => InstructorDashboardScreen()),
           );
         }),
-        _drawerItem('Manage Courses', Icons.library_books_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => InstructorCoursesManagementScreen(),
-            ),
-          );
-        }),
-        _drawerItem('Assigned Learners', Icons.group_rounded, () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (ctx) => InstructorLearnersScreen()),
-          );
-        }),
         _drawerItem('Health Precautions', Icons.health_and_safety_rounded, () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -696,14 +684,27 @@ class CustomDrawer extends ConsumerWidget {
                           'Manage Courses',
                           const Color(0xFF8B5CF6),
                           Icons.school_rounded,
-                          () {},
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    InstructorCoursesManagementScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _drawerActionItem(
                           context,
                           'My Learners',
                           const Color(0xFF0EA5E9),
                           Icons.people_rounded,
-                          () {},
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => InstructorLearnersScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ] else if (selectedRole == 'Doctor') ...[
                         _drawerActionItem(
@@ -747,6 +748,48 @@ class CustomDrawer extends ConsumerWidget {
                     ],
 
                     if (selectedRole == 'Admin') ...[
+                      // ── NAVIGATION section ──────────────────────────────
+                      _drawerItem('Home', Icons.home_rounded, () {}),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
+                        child: Divider(color: Color(0xFFF1F5F9), height: 1),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        child: CustomText(
+                          text: "OVERVIEW",
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF94A3B8),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+
+                      _drawerItem('Pharmacy Order', Icons.local_pharmacy_outlined, () {}),
+                      _drawerItem('Lab Orders', Icons.biotech_outlined, () {}),
+                      _drawerItem("Doctor's Appointments", Icons.medical_services_outlined, () {}),
+                      _drawerItem('Courses', Icons.school_outlined, () {}),
+                      _drawerItem('Instructor', Icons.cast_for_education_rounded, () {}),
+                      _drawerItem('Student', Icons.person_outlined, () {}),
+                      _drawerItem('Privacy Policy', Icons.policy_outlined, () {}),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
+                        child: Divider(color: Color(0xFFF1F5F9), height: 1),
+                      ),
+
+                      // ── ADMIN MANAGEMENT section ─────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,

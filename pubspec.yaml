@@ -71,6 +71,8 @@ dependencies:
   fl_chart: ^0.70.2
   speech_to_text: ^7.0.0
   easy_localization: ^3.0.7
+  video_player: ^2.11.1
+  chewie: ^1.13.1
 
 dev_dependencies:
   flutter_test:

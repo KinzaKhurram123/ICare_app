@@ -109,6 +109,7 @@ class _InstructorPrecautionsManagementScreenState
           _loadPrecautions();
         },
         backgroundColor: AppColors.primaryColor,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('New Health Tip'),
       ),

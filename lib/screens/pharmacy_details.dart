@@ -426,7 +426,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (ctx) => ProductDetailsScreen()),
+          MaterialPageRoute(
+            builder: (ctx) => ProductDetailsScreen(product: med),
+          ),
         );
       },
       borderRadius: BorderRadius.circular(24),

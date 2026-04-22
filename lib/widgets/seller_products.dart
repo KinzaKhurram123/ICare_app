@@ -16,6 +16,49 @@ class SellerProducts extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 900;
 
+    final List<Map<String, dynamic>> dummyProducts = [
+      {
+        '_id': 'p1',
+        'productName': 'Liver Cleanse Capsule',
+        'price': 2000,
+        'brand': 'NAN Pharma',
+        'description': 'Effective liver detoxification and support with natural extracts.',
+        'medicineType': 'OTC'
+      },
+      {
+        '_id': 'p2',
+        'productName': 'Vitamin C Booster',
+        'price': 1500,
+        'brand': 'HealthPlus',
+        'description': 'Immune system support with high-potency Vitamin C.',
+        'medicineType': 'OTC'
+      },
+      {
+        '_id': 'p3',
+        'productName': 'Muscle Relief Gel',
+        'price': 800,
+        'brand': 'BioRelief',
+        'description': 'Fast-acting gel for joint and muscle pain relief.',
+        'medicineType': 'OTC'
+      },
+      {
+        '_id': 'p4',
+        'productName': 'Omega-3 Fish Oil',
+        'price': 2500,
+        'brand': 'PureSea',
+        'description': 'Heart and brain health support with pure Omega-3.',
+        'medicineType': 'Prescription Required'
+      },
+      {
+        '_id': 'p5',
+        'productName': 'Herbal Sleep Aid',
+        'price': 1200,
+        'brand': 'NightRest',
+        'description': 'Natural herbal formula for better sleep quality.',
+        'medicineType': 'OTC'
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -26,7 +69,7 @@ class SellerProducts extends StatelessWidget {
           ),
         ],
         GridView.builder(
-          itemCount: 5,
+          itemCount: dummyProducts.length,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: isDesktop
@@ -42,10 +85,14 @@ class SellerProducts extends StatelessWidget {
             mainAxisSpacing: isDesktop ? 24 : 20,
           ),
           itemBuilder: (ctx, i) {
+            final product = dummyProducts[i];
             return ProductCard(
+              product: product,
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (ctx) => ProductDetailsScreen()),
+                  MaterialPageRoute(
+                    builder: (ctx) => ProductDetailsScreen(product: product),
+                  ),
                 );
               },
               showAddToCart: true,
@@ -60,6 +107,7 @@ class SellerProducts extends StatelessWidget {
 class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
+    required this.product,
     this.showAddToCart = false,
     this.showRemove = false,
     this.onAdd,
@@ -67,6 +115,7 @@ class ProductCard extends StatelessWidget {
     this.onTap,
   });
 
+  final Map<String, dynamic> product;
   final bool showAddToCart;
   final bool showRemove;
   final VoidCallback? onRemove;
@@ -117,13 +166,15 @@ class ProductCard extends StatelessWidget {
                   ),
                   CustomText(
                     width: double.infinity,
-                    text: "Liver Cleanse Capsule",
+                    text: product['productName'] ?? "Liver Cleanse Capsule",
                     fontFamily: "Gilroy-SemiBold",
                     fontWeight: FontWeight.w400,
                     fontSize: 12,
                     color: AppColors.primary500,
                     lineHeight: 1.0,
                     letterSpacing: -0.3,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: ScallingConfig.verticalScale(5)),
                   Row(
@@ -133,13 +184,15 @@ class ProductCard extends StatelessWidget {
                         color: AppColors.darkGray500,
                         letterSpacing: -0.6,
                         lineHeight: 1.0,
+                        fontSize: 10,
                       ),
                       CustomText(
-                        text: "NAN Pharma",
+                        text: product['brand'] ?? "NAN Pharma",
                         color: AppColors.primaryColor,
                         underline: true,
                         letterSpacing: -0.6,
                         lineHeight: 1.0,
+                        fontSize: 10,
                       ),
                     ],
                   ),
@@ -149,10 +202,10 @@ class ProductCard extends StatelessWidget {
                     children: [
                       const IconText(
                         icon: ImagePaths.star_filled,
-                        text: "4.9 (2.75)",
+                        text: "4.9 (2.7k)",
                       ),
                       CustomText(
-                        text: "Rs. 2000",
+                        text: "Rs. ${product['price'] ?? 0}",
                         fontFamily: "Gilroy-SemiBold",
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -235,7 +288,7 @@ class ProductCard extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(22),
                           child: Hero(
-                            tag: 'product_image_${onTap.hashCode}',
+                            tag: 'product_image_${product['_id']}',
                             child: Image.asset(
                               ImagePaths.capsule,
                               fit: BoxFit.contain,
@@ -309,7 +362,7 @@ class ProductCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8), // Reduced from 12
                       CustomText(
-                        text: "Liver Cleanse Capsule",
+                        text: product['productName'] ?? "Liver Cleanse Capsule",
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF1E293B),
@@ -326,7 +379,7 @@ class ProductCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           CustomText(
-                            text: "Premium Pharma",
+                            text: product['brand'] ?? "Premium Pharma",
                             fontSize: 13,
                             color: AppColors.primaryColor,
                             fontWeight: FontWeight.w600,
@@ -342,7 +395,7 @@ class ProductCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Rs. 2,400",
+                                "Rs. ${(product['price'] ?? 0) + 400}",
                                 style: TextStyle(
                                   color: Colors.grey[400],
                                   fontSize: 12,
@@ -351,7 +404,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               CustomText(
-                                text: "Rs. 2,000",
+                                text: "Rs. ${product['price'] ?? 0}",
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 color: const Color(0xFF0F172A),
