@@ -888,41 +888,71 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Solid blue base
+              // 1. Solid blue gradient base
               Container(
-                color: const Color(0xFF0036BC),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF0554D4)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
               ),
-              // 2. Doctor image with multiply blend — white bg becomes blue automatically
+              // 2. Watermark decorative circles (behind doctor)
+              Positioned(
+                right: isMobile ? -30 : w * 0.08,
+                top: isMobile ? -40 : -60,
+                child: Container(
+                  width: isMobile ? 260 : 420,
+                  height: isMobile ? 260 : 420,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.12),
+                      width: 40,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: isMobile ? 20 : w * 0.14,
+                top: isMobile ? 20 : 30,
+                child: Container(
+                  width: isMobile ? 160 : 280,
+                  height: isMobile ? 160 : 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                      width: 25,
+                    ),
+                  ),
+                ),
+              ),
+              // 3. Doctor image — right side, full height, no shade/tint
               Positioned(
                 right: 0,
                 top: 0,
                 bottom: 0,
-                width: isMobile ? w * 0.65 : w * 0.52,
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    const Color(0xFF0036BC).withOpacity(0.18),
-                    BlendMode.multiply,
-                  ),
-                  child: Image.asset(
-                    'assets/images/icarebanner.png',
-                    fit: BoxFit.contain,
-                    alignment: Alignment.centerRight,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
+                width: isMobile ? w * 0.58 : w * 0.44,
+                child: Image.asset(
+                  'assets/images/doctor_banner.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-              // 3. Left-to-right blue fade — text area solid, smooth blend into doctor
+              // 4. Left-to-right fade — blends doctor into blue (no shade on doctor face)
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       const Color(0xFF0036BC),
                       const Color(0xFF0036BC),
-                      const Color(0xFF0036BC).withOpacity(0.85),
-                      const Color(0xFF0036BC).withOpacity(0.15),
-                      Colors.transparent,
+                      const Color(0xFF0036BC).withOpacity(0.9),
+                      const Color(0xFF0036BC).withOpacity(0.0),
                     ],
-                    stops: const [0.0, 0.28, 0.44, 0.60, 0.75],
+                    stops: const [0.0, 0.30, 0.48, 0.62],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
