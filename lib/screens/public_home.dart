@@ -892,7 +892,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               Image.asset(
                 'assets/images/icarebanner.png',
                 fit: BoxFit.cover,
-                alignment: Alignment.center,
+                alignment: Alignment.topCenter,
                 errorBuilder: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
