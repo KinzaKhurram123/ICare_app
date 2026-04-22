@@ -888,62 +888,61 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Full banner image — covers entire area
-              Image.asset(
-                'assets/images/icarebanner.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
-                width: double.infinity,
-                height: double.infinity,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0036BC), Color(0xFF0554D4)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+              // 1. Solid blue base — always visible behind image
+              Container(
+                color: const Color(0xFF0036BC),
+              ),
+              // 2. Doctor image — top-right aligned so face is always visible
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/icarebanner.png',
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0.6, -0.3),
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-              // 2. Strong left-side blue overlay for text area
+              // 3. Left-to-right blue fade — text area solid, blends into image
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       const Color(0xFF0036BC),
                       const Color(0xFF0036BC),
-                      const Color(0xFF0036BC).withOpacity(0.85),
-                      const Color(0xFF0036BC).withOpacity(0.2),
+                      const Color(0xFF0036BC).withOpacity(0.9),
+                      const Color(0xFF0036BC).withOpacity(0.3),
                       Colors.transparent,
                     ],
-                    stops: const [0.0, 0.25, 0.45, 0.65, 0.85],
+                    stops: const [0.0, 0.3, 0.48, 0.65, 0.82],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                 ),
               ),
-              // 3. Top edge polish
+              // 4. Top edge — solid blue so no image bleed at rounded corners
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF0036BC).withOpacity(0.8),
+                      const Color(0xFF0036BC),
+                      const Color(0xFF0036BC).withOpacity(0.6),
                       Colors.transparent,
                     ],
+                    stops: const [0.0, 0.15, 0.35],
                     begin: Alignment.topCenter,
-                    end: Alignment.center,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
               ),
-              // 4. Bottom edge polish
+              // 5. Bottom edge polish
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      const Color(0xFF0036BC).withOpacity(0.5),
+                      const Color(0xFF0036BC).withOpacity(0.55),
                     ],
-                    begin: Alignment.center,
+                    stops: const [0.65, 1.0],
+                    begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
