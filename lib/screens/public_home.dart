@@ -898,71 +898,72 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              // 2. Watermark decorative circles (behind doctor)
+              // 2. Watermark decorative circles (right side, behind doctor)
               Positioned(
-                right: isMobile ? -30 : w * 0.08,
-                top: isMobile ? -40 : -60,
+                right: isMobile ? w * 0.02 : w * 0.04,
+                top: isMobile ? -h * 0.15 : -h * 0.2,
                 child: Container(
-                  width: isMobile ? 260 : 420,
-                  height: isMobile ? 260 : 420,
+                  width: isMobile ? h * 0.9 : h * 1.1,
+                  height: isMobile ? h * 0.9 : h * 1.1,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.12),
-                      width: 40,
+                      color: Colors.white.withOpacity(0.10),
+                      width: isMobile ? 28 : 45,
                     ),
                   ),
                 ),
               ),
               Positioned(
-                right: isMobile ? 20 : w * 0.14,
-                top: isMobile ? 20 : 30,
+                right: isMobile ? w * 0.08 : w * 0.10,
+                top: isMobile ? h * 0.05 : h * 0.08,
                 child: Container(
-                  width: isMobile ? 160 : 280,
-                  height: isMobile ? 160 : 280,
+                  width: isMobile ? h * 0.55 : h * 0.65,
+                  height: isMobile ? h * 0.55 : h * 0.65,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
-                      width: 25,
+                      color: Colors.white.withOpacity(0.07),
+                      width: isMobile ? 18 : 28,
                     ),
                   ),
                 ),
               ),
-              // 3. Doctor image — right side, full height, no shade/tint
+              // 3. Doctor image — right side, contain so full body visible
               Positioned(
                 right: 0,
                 top: 0,
                 bottom: 0,
-                width: isMobile ? w * 0.58 : w * 0.44,
+                width: isMobile ? w * 0.55 : w * 0.42,
                 child: Image.asset(
-                  'assets/images/doctor_banner.jpg',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
+                  'assets/images/doctor_banner2.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomRight,
+                  filterQuality: FilterQuality.high,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-              // 4. Left-to-right fade — blends doctor into blue (no shade on doctor face)
+              // 4. Left-to-right fade — text area solid blue, smooth blend into doctor
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       const Color(0xFF0036BC),
                       const Color(0xFF0036BC),
-                      const Color(0xFF0036BC).withOpacity(0.9),
+                      const Color(0xFF0036BC).withOpacity(0.85),
                       const Color(0xFF0036BC).withOpacity(0.0),
                     ],
-                    stops: const [0.0, 0.30, 0.48, 0.62],
+                    stops: const [0.0, 0.32, 0.50, 0.65],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                 ),
               ),
-              // 3. Text + buttons overlay (left-aligned)
+              // 5. Text + buttons — left aligned, vertically centered
               Padding(
                 padding: EdgeInsets.only(
                   left: isMobile ? 20 : 52,
-                  right: isMobile ? 20 : 4,
+                  right: isMobile ? w * 0.45 : w * 0.38,
                   top: isMobile ? 24 : 44,
                   bottom: isMobile ? 24 : 44,
                 ),
@@ -981,8 +982,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         height: 1.15,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 8,
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -990,30 +991,21 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                     ),
                     SizedBox(height: isMobile ? 10 : 16),
                     Text(
-                      isMobile
-                          ? 'Consult trusted doctors, book appointments\nand access healthcare from home 24/7.'
-                          : 'Consult trusted doctors, book appointments and\naccess healthcare from home 24/7.',
+                      'Consult trusted doctors, book appointments\nand access healthcare from home 24/7.',
                       textAlign: TextAlign.left,
                       style: TextStyle(
-                        fontSize: isMobile ? 12 : 16,
-                        color: Colors.white.withOpacity(0.92),
-                        height: 1.5,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 6,
-                          ),
-                        ],
+                        fontSize: isMobile ? 12 : 15,
+                        color: Colors.white.withOpacity(0.90),
+                        height: 1.55,
                       ),
                     ),
                     SizedBox(height: isMobile ? 22 : 30),
-                    // Two CTA buttons — left aligned
                     Wrap(
                       alignment: WrapAlignment.start,
                       spacing: 12,
                       runSpacing: 12,
                       children: [
-                        // Pulsing Connect button
+                        // Connect button (white filled)
                         AnimatedBuilder(
                           animation: _pulseAnimation,
                           builder: (context, child) {
@@ -1023,9 +1015,9 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.white.withOpacity(0.5 * g),
-                                    blurRadius: 20,
-                                    spreadRadius: 4 * g,
+                                    color: Colors.white.withOpacity(0.4 * g),
+                                    blurRadius: 18,
+                                    spreadRadius: 3 * g,
                                   ),
                                 ],
                               ),
@@ -1039,10 +1031,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: const Color(0xFF0036BC),
-                              minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 16 : 32,
-                              ),
+                              minimumSize: Size(isMobile ? 145 : 185, isMobile ? 46 : 52),
+                              padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 28),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 0,
                             ),
@@ -1050,14 +1040,13 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                               'Connect to a Doctor Now',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: isMobile ? 12 : 15,
+                                fontSize: isMobile ? 12 : 14,
                                 fontFamily: 'Gilroy-Bold',
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
-                        // Book Appointment button
+                        // Book Appointment button (outlined)
                         OutlinedButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const DoctorsList()),
@@ -1065,17 +1054,15 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white, width: 2),
-                            minimumSize: Size(isMobile ? 150 : 190, isMobile ? 48 : 54),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 22 : 32,
-                            ),
+                            minimumSize: Size(isMobile ? 145 : 185, isMobile ? 46 : 52),
+                            padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 28),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: Text(
                             'Book Appointment',
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: isMobile ? 13 : 15,
+                              fontSize: isMobile ? 12 : 14,
                               fontFamily: 'Gilroy-Bold',
                             ),
                           ),
