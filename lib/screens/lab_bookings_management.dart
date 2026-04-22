@@ -523,7 +523,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                                 await _labService.createWalkInOrder(
                                   patientName: nameController.text.trim(),
                                   contact: contactController.text.trim(),
-                                  address: addressController.text.trim(),
+                                  address: locationController.text.trim(),
                                   tests: testController.text.trim(),
                                   collectionType: collectionType,
                                 );
