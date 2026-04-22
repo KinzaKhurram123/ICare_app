@@ -38,7 +38,7 @@ class PublicHome extends StatelessWidget {
               child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: isMobile ? 12 : 24,
-                    vertical: 14,
+                    vertical: 4,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -46,7 +46,7 @@ class PublicHome extends StatelessWidget {
                       // Left: iCare logo
                       Image.asset(
                         'assets/images/logo.png',
-                        height: isMobile ? 44 : 56,
+                        height: isMobile ? 60 : 72,
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.high,
                       ),
@@ -2465,8 +2465,8 @@ class _Footer extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/images/logo.png',
-                  width: 72,
-                  height: 72,
+                  width: 100,
+                  height: 100,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                 ),
@@ -2519,8 +2519,8 @@ class _Footer extends StatelessWidget {
         children: [
           Image.asset(
             'assets/images/logo.png',
-            width: 60,
-            height: 60,
+            width: 84,
+            height: 84,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
