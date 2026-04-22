@@ -1913,63 +1913,133 @@ class _HowItWorksSteps extends StatelessWidget {
     // Desktop: ALL 5 steps in one horizontal row + two branches out of step 5
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // All 5 steps with connecting line
-          Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Horizontal connecting line through all 5
-                Positioned(
-                  top: 28,
-                  left: 40,
-                  right: 0,
-                  child: Container(
-                    height: 2,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF14B1FF), Color(0xFF0036BC)],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // All 5 steps with connecting line
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Horizontal connecting line through all 5
+                    Positioned(
+                      top: 28,
+                      left: 40,
+                      right: 40,
+                      child: Container(
+                        height: 3,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0036BC),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Row(
-                  children: _steps.map((step) => Expanded(
-                    child: _StepCard(
-                      number: step['num']!,
-                      title: step['title']!,
-                      description: step['desc']!,
+                    Row(
+                      children: _steps.map((step) => Expanded(
+                        child: _StepCard(
+                          number: step['num']!,
+                          title: step['title']!,
+                          description: step['desc']!,
+                        ),
+                      )).toList(),
                     ),
-                  )).toList(),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Branch fork from step 5 — two diagonal lines (blue) connected to step 5
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Branch fork from step 5 — two diagonal blue lines connected to horizontal line
+          Positioned(
+            right: 20,
+            top: 28,
+            child: Row(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Upper branch → Lab Test
-                _BranchForkItem(
-                  label: 'Lab Test',
-                  icon: Icons.biotech_rounded,
-                  color: const Color(0xFF0036BC),
-                  labelColor: const Color(0xFFFF4D00),
-                  angleUp: true,
-                ),
-                const SizedBox(height: 20),
-                // Lower branch → Pharmacy
-                _BranchForkItem(
-                  label: 'Pharmacy',
-                  icon: Icons.local_pharmacy_rounded,
-                  color: const Color(0xFF0036BC),
-                  labelColor: const Color(0xFF10B981),
-                  angleUp: false,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Upper branch → Lab Test
+                    Transform.translate(
+                      offset: const Offset(0, -35),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Diagonal blue line going up
+                          Transform.rotate(
+                            angle: -0.52,
+                            child: Container(
+                              width: 60,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0036BC),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF4D00).withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFFF4D00).withOpacity(0.45), width: 1.5),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.biotech_rounded, color: Color(0xFFFF4D00), size: 13),
+                                SizedBox(width: 4),
+                                Text('Lab Test', style: TextStyle(color: Color(0xFFFF4D00), fontSize: 11, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Lower branch → Pharmacy
+                    Transform.translate(
+                      offset: const Offset(0, 35),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Diagonal blue line going down
+                          Transform.rotate(
+                            angle: 0.52,
+                            child: Container(
+                              width: 60,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0036BC),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.45), width: 1.5),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 13),
+                                SizedBox(width: 4),
+                                Text('Pharmacy', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

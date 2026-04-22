@@ -412,6 +412,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Logo
                     Container(
                       width: 110, height: 110,
                       padding: const EdgeInsets.all(18),
@@ -426,33 +427,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                     ),
                     const SizedBox(height: 28),
-                    const Text('iCare Virtual Hospital',
+                    // "by" text
+                    Text('by',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5),
-                    ),
-                    const SizedBox(height: 10),
-                    Text('Your Virtual Healthcare Platform',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.9)),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.75)),
                     ),
                     const SizedBox(height: 8),
-                    Text('Secure consultations, prescriptions\n& health records',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7), height: 1.6),
+                    // RM Health Solution logo
+                    Image.asset(
+                      'assets/images/rm_health_solution_logo.png',
+                      height: 48,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Text(
+                        'RM Health Solution',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white.withOpacity(0.95)),
+                      ),
                     ),
-                    const SizedBox(height: 44),
+                    const SizedBox(height: 32),
                     IntrinsicWidth(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _trust(Icons.shield_rounded, 'Data Protected & Secure'),
+                          _trust(Icons.shield_rounded, 'Data Protected & Secure', const Color(0xFF10B981)),
                           const SizedBox(height: 14),
-                          _trust(Icons.verified_user_rounded, 'Verified Doctors Only'),
+                          _trust(Icons.verified_user_rounded, 'Verified Doctors Only', const Color(0xFF14B1FF)),
                           const SizedBox(height: 14),
-                          _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital'),
+                          _trust(Icons.medical_services_rounded, 'Complete Virtual Hospital', const Color(0xFFF59E0B)),
                           const SizedBox(height: 14),
-                          _trust(Icons.people_rounded, 'Trusted by Patients Nationwide'),
+                          _trust(Icons.people_rounded, 'Trusted by Patients Nationwide', const Color(0xFFFF4D00)),
                         ],
                       ),
                     ),
@@ -472,17 +475,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ),
       );
 
-  Widget _trust(IconData icon, String text) => Row(
+  Widget _trust(IconData icon, String text, Color iconColor) => Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
+          Container(
             width: 34,
             height: 34,
-            child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
           ),
           const SizedBox(width: 12),
-          Text(text, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(text, style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       );
 
@@ -554,15 +561,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       body: Container(
         width: Utils.windowWidth(context),
         height: Utils.windowHeight(context),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(ImagePaths.backgroundImage),
+            image: const AssetImage(ImagePaths.backgroundImage),
             fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.25),
+              BlendMode.darken,
+            ),
           ),
         ),
         child: Stack(
           children: [
-            // Top text area
+            // Top text area with dark overlay for better readability
             Padding(
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 60,
@@ -585,12 +596,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Sign up to enjoy the best healthcare experience',
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-            // Bottom form container — dark/opaque background
+            // Bottom form container
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
@@ -638,7 +649,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withOpacity(0.92),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
                   ),
