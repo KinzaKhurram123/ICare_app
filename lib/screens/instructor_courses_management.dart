@@ -54,15 +54,18 @@ class _InstructorCoursesManagementScreenState
   List<dynamic> get _filteredCourses {
     if (_filter == 'published') {
       return _courses.where((c) {
+        final visibility = c['visibility'];
         final isPublished = c['isPublished'];
-        // Handle boolean, string, or any truthy value
-        return isPublished == true || isPublished == 'true' || isPublished == 1;
+        // Backend uses visibility field: 'public' means published
+        return visibility == 'public' || isPublished == true || isPublished == 'true';
       }).toList();
     } else if (_filter == 'unpublished') {
       return _courses.where((c) {
+        final visibility = c['visibility'];
         final isPublished = c['isPublished'];
-        // Handle boolean, string, or any falsy value
-        return isPublished == false || isPublished == 'false' || isPublished == 0 || isPublished == null;
+        // private/students = unpublished
+        return visibility == 'private' || visibility == 'students' ||
+            isPublished == false || isPublished == 'false' || isPublished == null;
       }).toList();
     }
     return _courses;
@@ -109,19 +112,20 @@ class _InstructorCoursesManagementScreenState
 
   Future<void> _togglePublishStatus(dynamic course) async {
     try {
-      final isPublished = course['isPublished'] == true;
+      final isPublic = course['visibility'] == 'public';
       await _instructorService.updateCourse(
         course['_id'],
-        {'isPublished': !isPublished},
+        {'visibility': isPublic ? 'private' : 'public'},
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isPublished
+              isPublic
                   ? 'Course unpublished successfully'
                   : 'Course published successfully',
             ),
+            backgroundColor: isPublic ? Colors.orange : Colors.green,
           ),
         );
       }
@@ -262,9 +266,9 @@ class _InstructorCoursesManagementScreenState
       0,
       (sum, m) => sum + ((m['lessons'] as List? ?? []).length),
     );
-    final isPublished = course['isPublished'] == true;
+    final isPublished = course['visibility'] == 'public';
     final title = course['title'] ?? 'Untitled';
-    final description = course['description'] ?? '';
+    final description = course['description'] ?? course['caption'] ?? '';
     final category = course['category'] ?? 'HealthProgram';
 
     return Container(
