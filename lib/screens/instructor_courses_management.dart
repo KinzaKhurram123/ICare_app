@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/screens/instructor_create_course.dart';
-import 'package:icare/services/course_service.dart';
+import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
@@ -16,8 +16,8 @@ class InstructorCoursesManagementScreen extends StatefulWidget {
 
 class _InstructorCoursesManagementScreenState
     extends State<InstructorCoursesManagementScreen> {
-  final CourseService _courseService = CourseService();
-  List<Course> _courses = [];
+  final InstructorService _instructorService = InstructorService();
+  List<dynamic> _courses = [];
   bool _isLoading = true;
   String _filter = 'all'; // all, published, unpublished
 
@@ -30,7 +30,7 @@ class _InstructorCoursesManagementScreenState
   Future<void> _loadCourses() async {
     setState(() => _isLoading = true);
     try {
-      final courses = await _courseService.getMyCourses();
+      final courses = await _instructorService.getMyCourses();
       if (mounted) {
         setState(() {
           _courses = courses;
@@ -47,21 +47,21 @@ class _InstructorCoursesManagementScreenState
     }
   }
 
-  List<Course> get _filteredCourses {
+  List<dynamic> get _filteredCourses {
     if (_filter == 'published') {
-      return _courses.where((c) => c.isPublished).toList();
+      return _courses.where((c) => c['isPublished'] == true).toList();
     } else if (_filter == 'unpublished') {
-      return _courses.where((c) => !c.isPublished).toList();
+      return _courses.where((c) => c['isPublished'] != true).toList();
     }
     return _courses;
   }
 
-  Future<void> _deleteCourse(Course course) async {
+  Future<void> _deleteCourse(dynamic course) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Program'),
-        content: Text('Are you sure you want to delete "${course.title}"?'),
+        content: Text('Are you sure you want to delete "${course['title']}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -78,7 +78,7 @@ class _InstructorCoursesManagementScreenState
 
     if (confirm == true) {
       try {
-        await _courseService.deleteCourse(course.id);
+        await _instructorService.deleteCourse(course['_id']);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Course deleted successfully')),
@@ -95,22 +95,23 @@ class _InstructorCoursesManagementScreenState
     }
   }
 
-  Future<void> _togglePublishStatus(Course course) async {
+  Future<void> _togglePublishStatus(dynamic course) async {
     try {
-      if (course.isPublished) {
-        await _courseService.unpublishCourse(course.id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Course unpublished successfully')),
-          );
-        }
-      } else {
-        await _courseService.publishCourse(course.id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Course published successfully')),
-          );
-        }
+      final isPublished = course['isPublished'] == true;
+      await _instructorService.updateCourse(
+        course['_id'],
+        {'isPublished': !isPublished},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isPublished
+                  ? 'Course unpublished successfully'
+                  : 'Course published successfully',
+            ),
+          ),
+        );
       }
       _loadCourses();
     } catch (e) {
@@ -242,12 +243,17 @@ class _InstructorCoursesManagementScreenState
     );
   }
 
-  Widget _buildCourseCard(Course course) {
-    final moduleCount = course.modules.length;
-    final lessonCount = course.modules.fold<int>(
+  Widget _buildCourseCard(dynamic course) {
+    final modules = course['modules'] as List? ?? [];
+    final moduleCount = modules.length;
+    final lessonCount = modules.fold<int>(
       0,
-      (sum, m) => sum + m.lessons.length,
+      (sum, m) => sum + ((m['lessons'] as List? ?? []).length),
     );
+    final isPublished = course['isPublished'] == true;
+    final title = course['title'] ?? 'Untitled';
+    final description = course['description'] ?? '';
+    final category = course['category'] ?? 'HealthProgram';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -290,7 +296,7 @@ class _InstructorCoursesManagementScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        course.title,
+                        title,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -299,7 +305,7 @@ class _InstructorCoursesManagementScreenState
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        course.description,
+                        description,
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
@@ -313,7 +319,7 @@ class _InstructorCoursesManagementScreenState
                         runSpacing: 4,
                         children: [
                           _buildBadge(
-                            course.category.displayName,
+                            category,
                             Icons.category_outlined,
                             const Color(0xFF8B5CF6),
                           ),
@@ -328,11 +334,11 @@ class _InstructorCoursesManagementScreenState
                             const Color(0xFF3B82F6),
                           ),
                           _buildBadge(
-                            course.isPublished ? 'Published' : 'Draft',
-                            course.isPublished
+                            isPublished ? 'Published' : 'Draft',
+                            isPublished
                                 ? Icons.public
                                 : Icons.lock_outline,
-                            course.isPublished
+                            isPublished
                                 ? const Color(0xFF10B981)
                                 : const Color(0xFF64748B),
                           ),
@@ -353,12 +359,12 @@ class _InstructorCoursesManagementScreenState
                 TextButton.icon(
                   onPressed: () => _togglePublishStatus(course),
                   icon: Icon(
-                    course.isPublished ? Icons.unpublished : Icons.publish,
+                    isPublished ? Icons.unpublished : Icons.publish,
                     size: 18,
                   ),
-                  label: Text(course.isPublished ? 'Unpublish' : 'Publish'),
+                  label: Text(isPublished ? 'Unpublish' : 'Publish'),
                   style: TextButton.styleFrom(
-                    foregroundColor: course.isPublished
+                    foregroundColor: isPublished
                         ? const Color(0xFFF59E0B)
                         : const Color(0xFF10B981),
                   ),
@@ -369,7 +375,7 @@ class _InstructorCoursesManagementScreenState
                     final result = await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (ctx) =>
-                            InstructorCreateCourseScreen(course: course),
+                            InstructorCreateCourseScreen(course: Course.fromJson(course)),
                       ),
                     );
                     if (result == true) _loadCourses();
