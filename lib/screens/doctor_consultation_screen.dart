@@ -110,6 +110,9 @@ class _DoctorConsultationScreenState
       if (mounted) setState(() => _isLoadingLabs = false);
     }
   }
+
+  @override
+  void dispose() {
     // Dispose all controllers
     _chiefComplaintController.dispose();
     _hpiController.dispose();

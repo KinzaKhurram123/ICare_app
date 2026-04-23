@@ -317,7 +317,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                       ],
                     ),
                   ),
-                  if (selectedTest != null) ..[
+                  if (selectedTest != null) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -399,7 +399,7 @@ class _LabTestsManagementState extends State<LabTestsManagement>
                       ),
                     ],
                   ),
-                  if (urgentAvailable) ..[
+                  if (urgentAvailable) ...[
                     const SizedBox(height: 16),
                     const Text('URGENT TURNAROUND TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFFF4D00), letterSpacing: 1.0)),
                     const SizedBox(height: 8),

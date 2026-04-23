@@ -245,8 +245,8 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                             border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 3),
                           ),
                           child: ClipOval(
-                            child: _profileImage != null
-                                ? Image.file(_profileImage!, fit: BoxFit.cover)
+                            child: _imageBytes != null
+                                ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                                 : Icon(Icons.person_rounded, size: 44, color: AppColors.primaryColor),
                           ),
                         ),
@@ -450,8 +450,8 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                                     border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 3),
                                   ),
                                   child: ClipOval(
-                                    child: _profileImage != null
-                                        ? Image.file(_profileImage!, fit: BoxFit.cover)
+                                    child: _imageBytes != null
+                                        ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                                         : Icon(Icons.person_rounded, size: 50, color: AppColors.primaryColor),
                                   ),
                                 ),

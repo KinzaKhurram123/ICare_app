@@ -324,6 +324,8 @@ class PatientProfile extends ConsumerWidget {
         ),
       ),
     );
+  }
+
   Widget _infoChip(IconData icon, String label, String value) {
     return Expanded(
       child: Container(

@@ -162,14 +162,14 @@ class HealthcareWorkflowService {
     final vitals = exam?.vitalSigns;
     if (vitals != null) {
       final Map<String, dynamic> vitalMap = {};
-      if (vitals.bloodPressureSystolic > 0) {
+      if (vitals.bloodPressureSystolic != null && vitals.bloodPressureSystolic! > 0) {
         vitalMap['bloodPressure'] =
             '${vitals.bloodPressureSystolic}/${vitals.bloodPressureDiastolic}';
       }
-      if (vitals.heartRate > 0) vitalMap['heartRate'] = vitals.heartRate;
-      if (vitals.temperature > 0) vitalMap['temperature'] = vitals.temperature;
-      if (vitals.weight > 0) vitalMap['weight'] = vitals.weight;
-      if (vitals.height > 0) vitalMap['height'] = vitals.height;
+      if (vitals.heartRate != null && vitals.heartRate! > 0) vitalMap['heartRate'] = vitals.heartRate;
+      if (vitals.temperature != null && vitals.temperature! > 0) vitalMap['temperature'] = vitals.temperature;
+      if (vitals.weight != null && vitals.weight! > 0) vitalMap['weight'] = vitals.weight;
+      if (vitals.height != null && vitals.height! > 0) vitalMap['height'] = vitals.height;
       if (vitalMap.isNotEmpty) data['vitalSigns'] = vitalMap;
     }
 
