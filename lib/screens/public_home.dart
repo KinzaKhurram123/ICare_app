@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:icare/screens/connect_now_waiting_screen.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/lab_list.dart';
@@ -971,7 +972,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                           },
                           child: ElevatedButton(
                             onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const DoctorsList()),
+                              MaterialPageRoute(builder: (_) => const ConnectNowWaitingScreen()),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,

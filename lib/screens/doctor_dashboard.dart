@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/connect_now_service.dart';
 import 'package:icare/services/doctor_service.dart';
+import 'package:icare/screens/doctor_connect_now_screen.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/screens/doctor_appointments.dart';
@@ -34,14 +37,121 @@ class DoctorDashboard extends ConsumerStatefulWidget {
 class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   final AppointmentService _appointmentService = AppointmentService();
   final DoctorService _doctorService = DoctorService();
+  final ConnectNowService _connectNowService = ConnectNowService();
   List<AppointmentDetail> _appointments = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
+
+  // Connect Now polling
+  Timer? _connectNowPollTimer;
+  Map<String, dynamic>? _pendingConnectRequest;
+  bool _connectNowAlertShown = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _startConnectNowPolling();
+  }
+
+  void _startConnectNowPolling() {
+    _connectNowPollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+      try {
+        final requests = await _connectNowService.getDoctorPendingRequests();
+        if (!mounted) return;
+        if (requests.isNotEmpty && !_connectNowAlertShown) {
+          final req = requests.first;
+          setState(() {
+            _pendingConnectRequest = req;
+            _connectNowAlertShown = true;
+          });
+          _showConnectNowBanner(req);
+        } else if (requests.isEmpty) {
+          setState(() {
+            _pendingConnectRequest = null;
+            _connectNowAlertShown = false;
+          });
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _showConnectNowBanner(Map<String, dynamic> req) {
+    if (!mounted) return;
+    final patientName = req['patient']?['name'] ?? 'Patient';
+    final channelName = req['channelName'] ?? '';
+    final requestId = req['_id'] ?? '';
+    final expiresAt = req['expiresAt'] != null
+        ? DateTime.tryParse(req['expiresAt'].toString()) ?? DateTime.now().add(const Duration(minutes: 3))
+        : DateTime.now().add(const Duration(minutes: 3));
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF0A1628),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.video_call, color: Colors.green, size: 28),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Instant Consultation',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '$patientName is requesting an instant consultation right now.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              setState(() => _connectNowAlertShown = false);
+            },
+            child: const Text('Ignore', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DoctorConnectNowScreen(
+                    requestId: requestId.toString(),
+                    patientName: patientName,
+                    channelName: channelName,
+                    expiresAt: expiresAt,
+                  ),
+                ),
+              ).then((_) => setState(() => _connectNowAlertShown = false));
+            },
+            child: const Text('Respond', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _connectNowPollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
