@@ -53,9 +53,17 @@ class _InstructorCoursesManagementScreenState
 
   List<dynamic> get _filteredCourses {
     if (_filter == 'published') {
-      return _courses.where((c) => c['isPublished'] == true).toList();
+      return _courses.where((c) {
+        final isPublished = c['isPublished'];
+        // Handle boolean, string, or any truthy value
+        return isPublished == true || isPublished == 'true' || isPublished == 1;
+      }).toList();
     } else if (_filter == 'unpublished') {
-      return _courses.where((c) => c['isPublished'] != true).toList();
+      return _courses.where((c) {
+        final isPublished = c['isPublished'];
+        // Handle boolean, string, or any falsy value
+        return isPublished == false || isPublished == 'false' || isPublished == 0 || isPublished == null;
+      }).toList();
     }
     return _courses;
   }
