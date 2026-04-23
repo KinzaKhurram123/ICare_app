@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
-import 'package:icare/services/course_service.dart';
+import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -19,7 +19,7 @@ class InstructorCreateCourseScreen extends StatefulWidget {
 class _InstructorCreateCourseScreenState
     extends State<InstructorCreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CourseService _courseService = CourseService();
+  final InstructorService _instructorService = InstructorService();
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
@@ -95,9 +95,9 @@ class _InstructorCreateCourseScreenState
       };
 
       if (_isEditing) {
-        await _courseService.updateCourse(widget.course!.id!, courseData);
+        await _instructorService.updateCourse(widget.course!.id!, courseData);
       } else {
-        await _courseService.createCourse(courseData);
+        await _instructorService.createCourse(courseData);
       }
 
       if (mounted) {
