@@ -882,33 +882,35 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
     final isMobile = w < 700;
     final h = isMobile ? 360.0 : (w < 900 ? 380.0 : 480.0);
 
-    return ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(22),
-          bottomRight: Radius.circular(22),
-        ),
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 30,
+        vertical: isMobile ? 12 : 10,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(isMobile ? 20 : 28),
         child: SizedBox(
-      width: double.infinity,
-      height: h,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. New banner image as background — edge to edge
-          Image.asset(
-            'assets/newban.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (_, __, ___) => Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          width: double.infinity,
+          height: h,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 1. New banner image as background — edge to edge
+              Image.asset(
+                'assets/newban.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.high,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
           // 2. Blue-tinted overlay for text readability (no grey)
           Container(
             decoration: BoxDecoration(
@@ -1031,7 +1033,8 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
             ),
           ],
         ),
-        ),
+      ),
+      ),
     );
   }
 }

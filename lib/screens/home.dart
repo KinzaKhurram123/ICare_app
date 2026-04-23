@@ -228,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       Opacity(
                                         opacity: 0.35,
                                         child: Image.asset(
-                                          ImagePaths.banner,
+                                          ImagePaths.newBanner,
                                           fit: BoxFit.cover,
                                         ),
                                       ),
@@ -248,7 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       ),
                                       Positioned.fill(
                                         child: Image.asset(
-                                          ImagePaths.banner,
+                                          ImagePaths.newBanner,
                                           fit: BoxFit.contain,
                                         ),
                                       ),
@@ -298,11 +298,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         SizedBox(
                           width: Utils.windowWidth(context) * 0.8,
                           height: Utils.windowHeight(context) * 0.15,
-                          child: Image.asset(ImagePaths.banner),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(ImagePaths.newBanner),
+                          ),
                         ),
                         SizedBox(
                           width: Utils.windowWidth(context) * 0.8,
-                          child: Image.asset(ImagePaths.banner),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(ImagePaths.newBanner),
+                          ),
                         ),
                       ],
                     ),

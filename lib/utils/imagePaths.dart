@@ -3,6 +3,7 @@ class ImagePaths {
 
   static const logo = '$basePath/icare-Logo.svg';
   static const banner = '$basePath/icare-banner.png';
+  static const newBanner = '$basePath/newban.png';
   static const backgroundImage = '$basePath/bgImage.jpeg';
 
   static const google = '$basePath/google.svg';
