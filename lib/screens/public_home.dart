@@ -918,7 +918,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               top: isMobile ? 24 : 44,
               bottom: isMobile ? 24 : 44,
             ),
-                child: Column(
+            child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1015,10 +1015,9 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
