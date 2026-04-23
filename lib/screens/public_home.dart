@@ -44,12 +44,10 @@ class PublicHome extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Left: iCare logo
-                      Image.asset(
-                        'assets/images/logo.png',
-                        height: isMobile ? 70 : 84,
+                      SvgPicture.asset(
+                        'assets/Asset 1.svg',
+                        height: isMobile ? 52 : 64,
                         fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                        isAntiAlias: true,
                       ),
                       // Right: nav buttons
                       Row(
@@ -876,57 +874,50 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
     final isMobile = w < 700;
     final h = isMobile ? 360.0 : (w < 900 ? 380.0 : 480.0);
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : 12,
-        vertical: isMobile ? 8 : 14,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isMobile ? 18 : 22),
-        child: SizedBox(
-          width: double.infinity,
-          height: h,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // 1. New banner image as background
-              Image.asset(
-                'assets/newban.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                filterQuality: FilterQuality.high,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+    return SizedBox(
+      width: double.infinity,
+      height: h,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. New banner image as background — edge to edge
+          Image.asset(
+            'assets/newban.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, __, ___) => Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
-              // 2. Dark overlay for text readability
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withOpacity(0.55),
-                      Colors.black.withOpacity(0.20),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
+            ),
+          ),
+          // 2. Dark overlay for text readability
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.55),
+                  Colors.black.withOpacity(0.20),
+                  Colors.transparent,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              // 3. Text + buttons — left side
-              Padding(
-                padding: EdgeInsets.only(
-                  left: isMobile ? 20 : 52,
-                  right: isMobile ? w * 0.10 : w * 0.42,
-                  top: isMobile ? 24 : 44,
-                  bottom: isMobile ? 24 : 44,
-                ),
+            ),
+          ),
+          // 3. Text + buttons — left side
+          Padding(
+            padding: EdgeInsets.only(
+              left: isMobile ? 20 : 52,
+              right: isMobile ? w * 0.10 : w * 0.42,
+              top: isMobile ? 24 : 44,
+              bottom: isMobile ? 24 : 44,
+            ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1027,7 +1018,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -2578,12 +2569,10 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 100,
-                  height: 100,
+                SvgPicture.asset(
+                  'assets/Asset 1.svg',
+                  height: 60,
                   fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -2630,16 +2619,10 @@ class _Footer extends StatelessWidget {
 
   List<Widget> _buildMobileFooter() {
     return [
-      Row(
-        children: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 84,
-            height: 84,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          ),
-        ],
+      SvgPicture.asset(
+        'assets/Asset 1.svg',
+        height: 48,
+        fit: BoxFit.contain,
       ),
       const SizedBox(height: 12),
       Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/bookings.dart';
 import 'package:icare/screens/bookings_history.dart';
@@ -754,12 +755,10 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // iCare logo only
-          Image.asset(
-            'assets/images/logo.png',
-            width: 52,
-            height: 52,
+          SvgPicture.asset(
+            'assets/Asset 1.svg',
+            height: 48,
             fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
           ),
           const SizedBox(height: 16),
           Container(height: 1, color: const Color(0xFFE8ECF5)),

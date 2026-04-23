@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Shared branded left panel used on all auth screens.
 /// Matches the login screen exactly: iCare logo, RM Health Solution branding,
@@ -50,26 +51,10 @@ class AuthLeftPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // iCare Logo
-                  Container(
-                    width: 110, height: 110,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.18),
-                          blurRadius: 32,
-                          offset: const Offset(0, 8),
-                        ),
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                  SvgPicture.asset(
+                    'assets/Asset 1.svg',
+                    height: 80,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 16),
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/lab_profile_setup.dart';
@@ -413,18 +414,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Logo
-                    Container(
-                      width: 110, height: 110,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 32, spreadRadius: 0, offset: Offset(0, 8)),
-                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, spreadRadius: 0, offset: Offset(0, 2)),
-                        ],
-                      ),
-                      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                    SvgPicture.asset(
+                      'assets/Asset 1.svg',
+                      height: 80,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 28),
                     // "by" text
