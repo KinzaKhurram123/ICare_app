@@ -71,9 +71,10 @@ class _AccountActivatedScreenState extends State<AccountActivatedScreen>
                 children: [
                   // Logo
                   Image.asset(
-                    'assets/images/logo.png',
+                    'assets/Asset 1.png',
                     height: 80,
                     fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                   const SizedBox(height: 40),
                   // Main Card

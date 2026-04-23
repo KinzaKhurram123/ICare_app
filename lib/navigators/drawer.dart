@@ -755,10 +755,11 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // iCare logo only
-          SvgPicture.asset(
-            'assets/Asset 1.svg',
-            height: 48,
+          Image.asset(
+            'assets/Asset 1.png',
+            height: 56,
             fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
           const SizedBox(height: 16),
           Container(height: 1, color: const Color(0xFFE8ECF5)),

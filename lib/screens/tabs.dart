@@ -445,7 +445,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
           const SizedBox(height: 30),
           // ── Brand logo ─────────────────────────────────────────────────
           Image.asset(
-            'assets/images/logo.png',
+            'assets/Asset 1.png',
             height: 64,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,

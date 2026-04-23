@@ -51,10 +51,11 @@ class AuthLeftPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // iCare Logo
-                  SvgPicture.asset(
-                    'assets/Asset 1.svg',
+                  Image.asset(
+                    'assets/Asset 1.png',
                     height: 80,
                     fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                   const SizedBox(height: 16),
 

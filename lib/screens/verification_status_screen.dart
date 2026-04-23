@@ -74,9 +74,10 @@ class _VerificationStatusScreenState extends State<VerificationStatusScreen> {
                 children: [
                   // Logo
                   Image.asset(
-                    'assets/images/logo.png',
+                    'assets/Asset 1.png',
                     height: 80,
                     fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                   const SizedBox(height: 40),
 

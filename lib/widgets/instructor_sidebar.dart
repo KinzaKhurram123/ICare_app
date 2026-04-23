@@ -100,7 +100,7 @@ class InstructorSidebar extends StatelessWidget {
       child: Column(
         children: [
           Image.asset(
-            'assets/images/logo.png',
+            'assets/Asset 1.png',
             height: 64,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
