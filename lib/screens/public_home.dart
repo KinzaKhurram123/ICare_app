@@ -876,7 +876,10 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
     final h = isMobile ? 360.0 : (w < 900 ? 380.0 : 480.0);
 
     return ClipRRect(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
         child: SizedBox(
       width: double.infinity,
       height: h,
@@ -2573,7 +2576,7 @@ class _Footer extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/Asset 1.png',
-                  height: 60,
+                  height: 90,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                 ),
@@ -2624,7 +2627,7 @@ class _Footer extends StatelessWidget {
     return [
       Image.asset(
         'assets/Asset 1.png',
-        height: 48,
+        height: 72,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),
