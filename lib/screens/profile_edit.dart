@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/user.dart' as app_user;
@@ -26,7 +26,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final TextEditingController addressController = TextEditingController();
   final UserService _userService = UserService();
   bool isLoading = false;
-  File? _selectedImage;
+  Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
@@ -45,7 +45,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   imageQuality: 80,
                   maxWidth: 600,
                 );
-                if (picked != null) setState(() => _selectedImage = File(picked.path));
+                if (picked != null) {
+                  final bytes = await picked.readAsBytes();
+                  setState(() => _imageBytes = bytes);
+                }
               },
             ),
             ListTile(
@@ -58,7 +61,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   imageQuality: 80,
                   maxWidth: 600,
                 );
-                if (picked != null) setState(() => _selectedImage = File(picked.path));
+                if (picked != null) {
+                  final bytes = await picked.readAsBytes();
+                  setState(() => _imageBytes = bytes);
+                }
               },
             ),
           ],
@@ -187,9 +193,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           ),
                         ),
                         child: ClipOval(
-                          child: _selectedImage != null
-                              ? Image.file(
-                                  _selectedImage!,
+                          child: _imageBytes != null
+                              ? Image.memory(
+                                  _imageBytes!,
                                   fit: BoxFit.cover,
                                   width: 120,
                                   height: 120,

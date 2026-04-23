@@ -49,7 +49,7 @@ class AuthLeftPanel extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo card
+                  // iCare Logo
                   Container(
                     width: 110, height: 110,
                     padding: const EdgeInsets.all(18),
@@ -71,30 +71,18 @@ class AuthLeftPanel extends StatelessWidget {
                     ),
                     child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                  // iCare title
-                  const Text(
-                    'iCare',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.w800,
-                      color: Colors.white, letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // RM Health Solution subtitle
+                  // "by" text
                   Text(
-                    'by RM Health Solution',
+                    'by',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w500,
                       color: Colors.white.withOpacity(0.75),
-                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // RM Health Solution logo image
                   Container(
@@ -107,6 +95,10 @@ class AuthLeftPanel extends StatelessWidget {
                     child: Image.asset(
                       'assets/images/health.jpeg',
                       fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Text(
+                        'RM Health Solution',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0036BC)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -139,7 +131,7 @@ class AuthLeftPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // 4 Trust badges — 2 left, 2 right
+                  // 4 Trust badges — 2 left, 2 right (same as login screen)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -147,9 +139,9 @@ class AuthLeftPanel extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _trust(Icons.shield_rounded, 'Data Protected', 'End-to-end encrypted', const Color(0xFF10B981)),
+                            _trust(Icons.shield_rounded, 'Data Protected & Secure', 'End-to-end encrypted health records', const Color(0xFFEF4444)),
                             const SizedBox(height: 18),
-                            _trust(Icons.verified_user_rounded, 'Verified Doctors', 'PMDC credentialed', const Color(0xFF14B1FF)),
+                            _trust(Icons.verified_user_rounded, 'HIPAA Compliant', 'Meeting US healthcare data security standards', const Color(0xFF10B981)),
                           ],
                         ),
                       ),
@@ -158,9 +150,9 @@ class AuthLeftPanel extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _trust(Icons.medical_services_rounded, 'Virtual Hospital', 'All-in-one platform', const Color(0xFFF59E0B)),
+                            _trust(Icons.local_hospital_rounded, 'Complete Digital Health Care Platform', 'Consult, prescribe & manage all-in-one', const Color(0xFF8B5CF6)),
                             const SizedBox(height: 18),
-                            _trust(Icons.people_rounded, 'Trusted Nationwide', 'Patients across Pakistan', const Color(0xFFFF4D00)),
+                            _trust(Icons.people_rounded, 'Open for Everyone', 'For patients, doctors & healthcare providers', const Color(0xFFF59E0B)),
                           ],
                         ),
                       ),

@@ -386,7 +386,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records", color: const Color(0xFF0036BC)),
+                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records", color: const Color(0xFFEF4444)),
                                     const SizedBox(height: 18),
                                     _buildHeroTrust(Icons.verified_user_rounded, "HIPAA Compliant", "Meeting US healthcare data security standards", color: const Color(0xFF10B981)),
                                   ],
