@@ -157,7 +157,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CreateReferralScreen(
+              builder: (context) => CreateReferralScreen(
                 patient: null, // Will need to select patient
               ),
             ),
@@ -380,7 +380,7 @@ class _DoctorReferralsListScreenState extends State<DoctorReferralsListScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        referral.reason,
+                        referral.reasonForReferral,
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF0F172A),

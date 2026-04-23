@@ -40,7 +40,7 @@ class PatientProfile extends ConsumerWidget {
                   MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
                 );
               } else if (value == 'logout') {
-                ref.read(authProvider.notifier).logout();
+                ref.read(authProvider.notifier).setUserLogout();
                 Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
               }
             },

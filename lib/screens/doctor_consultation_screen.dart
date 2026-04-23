@@ -1370,9 +1370,9 @@ class _DoctorConsultationScreenState
         ),
         examination: PhysicalExamination(
           vitalSigns: VitalSigns(
-            bloodPressureSystolic: int.tryParse(_bpSystolicController.text) ?? 0,
-            bloodPressureDiastolic: int.tryParse(_bpDiastolicController.text) ?? 0,
-            heartRate: int.tryParse(_heartRateController.text) ?? 0,
+            bloodPressureSystolic: double.tryParse(_bpSystolicController.text) ?? 0,
+            bloodPressureDiastolic: double.tryParse(_bpDiastolicController.text) ?? 0,
+            heartRate: double.tryParse(_heartRateController.text) ?? 0,
             temperature: double.tryParse(_temperatureController.text) ?? 0,
             oxygenSaturation: double.tryParse(_oxygenSaturationController.text) ?? 0,
             weight: double.tryParse(_weightController.text) ?? 0,

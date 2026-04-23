@@ -1018,7 +1018,6 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
             ),
           ],
         ),
-      )
     );
   }
 }
