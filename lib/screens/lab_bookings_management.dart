@@ -733,10 +733,13 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
           _buildFilterChip('Urgent', 'urgent', Icons.priority_high_rounded),
           _buildFilterChip('Pending', 'pending', Icons.schedule_rounded),
           _buildFilterChip(
-            'Confirmed',
+            'Accepted',
             'confirmed',
             Icons.check_circle_outline_rounded,
           ),
+          _buildFilterChip('Sample Collected', 'sample_collected', Icons.science_outlined),
+          _buildFilterChip('Awaiting Reports', 'awaiting_reports', Icons.hourglass_empty_rounded),
+          _buildFilterChip('Reporting Done', 'reporting_done', Icons.assignment_turned_in_rounded),
           _buildFilterChip('Completed', 'completed', Icons.done_all_rounded),
           _buildFilterChip('Cancelled', 'cancelled', Icons.cancel_outlined),
         ],
@@ -1086,13 +1089,24 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                   TextButton.icon(
                     onPressed: () => _updateStatus(booking['_id'], 'confirmed'),
                     icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                    label: const Text('Confirm'),
+                    label: const Text('Accept'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                if (status.toLowerCase() == 'confirmed')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'sample_collected'),
+                    icon: const Icon(Icons.science_outlined, size: 18),
+                    label: const Text('Sample Collected'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
-                if (status.toLowerCase() == 'confirmed' ||
+                if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'awaiting_reports' ||
                     status.toLowerCase() == 'completed')
                   TextButton.icon(
                     onPressed: () async {
@@ -1140,7 +1154,13 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
       case 'pending':
         return Colors.orange;
       case 'confirmed':
+        return Colors.green;
+      case 'sample_collected':
         return Colors.blue;
+      case 'awaiting_reports':
+        return const Color(0xFF8B5CF6);
+      case 'reporting_done':
+        return const Color(0xFF10B981);
       case 'completed':
         return Colors.green;
       case 'cancelled':
