@@ -19,6 +19,49 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // Master test list - standardized across all labs
+  static const List<Map<String, String>> masterTestList = [
+    {'name': 'Complete Blood Count (CBC)', 'shortForm': 'CBC'},
+    {'name': 'Lipid Profile', 'shortForm': 'Lipid'},
+    {'name': 'Liver Function Test (LFT)', 'shortForm': 'LFT'},
+    {'name': 'Kidney Function Test (KFT)', 'shortForm': 'KFT'},
+    {'name': 'Thyroid Profile', 'shortForm': 'Thyroid'},
+    {'name': 'HbA1c (Glycated Hemoglobin)', 'shortForm': 'HbA1c'},
+    {'name': 'Blood Sugar Fasting', 'shortForm': 'BSF'},
+    {'name': 'Blood Sugar Random', 'shortForm': 'BSR'},
+    {'name': 'Urine Complete Examination', 'shortForm': 'UCE'},
+    {'name': 'Stool Complete Examination', 'shortForm': 'SCE'},
+    {'name': 'COVID-19 PCR Test', 'shortForm': 'COVID PCR'},
+    {'name': 'COVID-19 Rapid Antigen Test', 'shortForm': 'COVID RAT'},
+    {'name': 'Vitamin D Test', 'shortForm': 'Vit D'},
+    {'name': 'Vitamin B12 Test', 'shortForm': 'Vit B12'},
+    {'name': 'Hepatitis B Surface Antigen (HBsAg)', 'shortForm': 'HBsAg'},
+    {'name': 'Hepatitis C Antibody (Anti-HCV)', 'shortForm': 'Anti-HCV'},
+    {'name': 'HIV Screening Test', 'shortForm': 'HIV'},
+    {'name': 'Dengue NS1 Antigen', 'shortForm': 'Dengue NS1'},
+    {'name': 'Dengue IgG/IgM Antibodies', 'shortForm': 'Dengue Ab'},
+    {'name': 'Malaria Parasite Test', 'shortForm': 'MP'},
+    {'name': 'Typhoid Test (Widal)', 'shortForm': 'Widal'},
+    {'name': 'Pregnancy Test (Beta hCG)', 'shortForm': 'Beta hCG'},
+    {'name': 'Prostate Specific Antigen (PSA)', 'shortForm': 'PSA'},
+    {'name': 'Electrocardiogram (ECG)', 'shortForm': 'ECG'},
+    {'name': 'X-Ray Chest', 'shortForm': 'CXR'},
+    {'name': 'Ultrasound Abdomen', 'shortForm': 'USG Abd'},
+  ];
+
+  // Turnaround time options
+  static const List<String> turnaroundOptions = [
+    '2 Hours',
+    '4 Hours',
+    '6 Hours',
+    '12 Hours',
+    '1 Day',
+    '2 Days',
+    '3 Days',
+    '5 Days',
+    '7 Days',
+  ];
+
   List<Map<String, dynamic>> get _filteredTests {
     if (_searchQuery.isEmpty) return _tests;
     return _tests.where((t) {
@@ -81,13 +124,15 @@ class _LabTestsManagementState extends State<LabTestsManagement>
     }
   }
 
-  Future<void> _addTest(String testName, double price, String turnaroundTime, String sampleType) async {
+  Future<void> _addTest(String testName, double price, String turnaroundTime, String collectionType, {bool urgentAvailable = false, String? urgentTurnaround}) async {
     try {
       final newTest = {
         'name': testName,
         'price': price,
         'turnaroundTime': turnaroundTime,
-        'sampleType': sampleType,
+        'collectionType': collectionType,
+        'urgentAvailable': urgentAvailable,
+        if (urgentTurnaround != null) 'urgentTurnaround': urgentTurnaround,
       };
       final updatedTests = [..._tests, newTest];
       await _labService.updateProfile({'availableTests': updatedTests});
@@ -143,348 +188,305 @@ class _LabTestsManagementState extends State<LabTestsManagement>
   }
 
   void _showAddTestDialog() {
-    final nameController = TextEditingController();
+    String? selectedTest;
+    String testSearchQuery = '';
     final priceController = TextEditingController();
-    final turnaroundController = TextEditingController();
-    final sampleController = TextEditingController();
+    String normalTurnaround = '1 Day';
+    String urgentTurnaround = '4 Hours';
+    String collectionType = 'Home and Lab';
+    bool urgentAvailable = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(32),
-              topRight: Radius.circular(32),
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.science_rounded,
+                          size: 32,
+                          color: primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add New Test',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Select from standardized test catalog',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'TEST NAME',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        TextField(
+                          onChanged: (v) => setModalState(() => testSearchQuery = v),
+                          decoration: InputDecoration(
+                            hintText: 'Search test name...',
+                            prefixIcon: const Icon(Icons.search_rounded, color: primaryColor),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(16),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: masterTestList
+                                .where((test) => testSearchQuery.isEmpty || test['name']!.toLowerCase().contains(testSearchQuery.toLowerCase()))
+                                .map((test) => ListTile(
+                                      title: Text(test['name']!),
+                                      selected: selectedTest == test['name'],
+                                      selectedTileColor: primaryColor.withOpacity(0.1),
+                                      onTap: () => setModalState(() => selectedTest = test['name']),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (selectedTest != null) ..[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Selected: $selectedTest',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: primaryColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  const Text('PRICE (PKR)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: priceController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., 1500',
+                      prefixIcon: const Icon(Icons.attach_money_rounded, color: primaryColor),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('SAMPLE COLLECTION TYPE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCollectionOption('Home Only', 'Home Only', collectionType, (v) => setModalState(() => collectionType = v)),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildCollectionOption('Lab Only', 'Lab Only', collectionType, (v) => setModalState(() => collectionType = v)),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildCollectionOption('Both', 'Home and Lab', collectionType, (v) => setModalState(() => collectionType = v)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('NORMAL TURNAROUND TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: normalTurnaround,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.schedule_rounded, color: primaryColor),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                    ),
+                    items: turnaroundOptions.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                    onChanged: (v) => setModalState(() => normalTurnaround = v!),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Urgent Test Available?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                      Switch(
+                        value: urgentAvailable,
+                        activeColor: const Color(0xFFFF4D00),
+                        onChanged: (v) => setModalState(() => urgentAvailable = v),
+                      ),
+                    ],
+                  ),
+                  if (urgentAvailable) ..[
+                    const SizedBox(height: 16),
+                    const Text('URGENT TURNAROUND TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFFF4D00), letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: urgentTurnaround,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.priority_high_rounded, color: Color(0xFFFF4D00)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF4D00))),
+                        filled: true,
+                        fillColor: const Color(0xFFFFF5F0),
+                      ),
+                      items: turnaroundOptions.where((t) => t.contains('Hour') || t == '1 Day').map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Color(0xFFFF4D00))))).toList(),
+                      onChanged: (v) => setModalState(() => urgentTurnaround = v!),
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            side: const BorderSide(color: Color(0xFFE2E8F0), width: 2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: selectedTest == null
+                              ? null
+                              : () {
+                                  final priceText = priceController.text.trim();
+                                  if (priceText.isNotEmpty) {
+                                    final price = double.tryParse(priceText) ?? 0.0;
+                                    _addTest(
+                                      selectedTest!,
+                                      price,
+                                      normalTurnaround,
+                                      collectionType,
+                                      urgentAvailable: urgentAvailable,
+                                      urgentTurnaround: urgentAvailable ? urgentTurnaround : null,
+                                    );
+                                    Navigator.pop(ctx);
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Text('Add Test', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header Gradient Strip
-              Container(
-                height: 12,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryColor, secondaryColor],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    topRight: Radius.circular(32),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 24,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top handle
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.science_rounded,
-                            size: 32,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Add New Test',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Expand your laboratory services',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'TEST NAME',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: nameController,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., Blood Sugar',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(
-                            Icons.medical_services_rounded,
-                            color: primaryColor,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.all(20),
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'PRICE (PKR)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF64748B),
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: priceController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'e.g., 20.00',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(
-                            Icons.attach_money_rounded,
-                            color: primaryColor,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.all(20),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('TURNAROUND TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 4))]),
-                      child: TextField(
-                        controller: turnaroundController,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., 4 Hours, 24 Hours, Same Day',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.schedule_rounded, color: primaryColor),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
-                          filled: true, fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.all(20),
-                        ),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('SAMPLE TYPE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 1.0)),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 4))]),
-                      child: TextField(
-                        controller: sampleController,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., Blood, Urine, Stool, Swab',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.colorize_rounded, color: primaryColor),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
-                          filled: true, fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.all(20),
-                        ),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              side: const BorderSide(color: Color(0xFFE2E8F0), width: 2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 2,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [primaryColor, secondaryColor], begin: Alignment.centerLeft, end: Alignment.centerRight),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                final name = nameController.text.trim();
-                                final priceText = priceController.text.trim();
-                                if (name.isNotEmpty && priceText.isNotEmpty) {
-                                  final price = double.tryParse(priceText) ?? 0.0;
-                                  _addTest(name, price, turnaroundController.text.trim(), sampleController.text.trim());
-                                  Navigator.pop(context);
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 18,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_circle_outline_rounded,
-                                    color: Colors.white,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Add Test',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollectionOption(String label, String value, String selected, Function(String) onTap) {
+    final isSelected = selected == value;
+    return GestureDetector(
+      onTap: () => onTap(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? primaryColor : const Color(0xFFE2E8F0), width: 2),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
           ),
         ),
       ),

@@ -165,6 +165,12 @@ class LabBookingDetails extends ConsumerWidget {
             ],
           ),
           const Divider(height: 24),
+          if ((booking['doctor']?['name'] ?? booking['orderedBy'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.medical_services_rounded,
+              'Ordered By',
+              'Dr. ${booking['doctor']?['name'] ?? booking['orderedBy'] ?? 'N/A'}',
+            ),
           _buildInfoRow(
             Icons.person_rounded,
             'Patient Name',
@@ -172,14 +178,14 @@ class LabBookingDetails extends ConsumerWidget {
           ),
           _buildInfoRow(
             Icons.calendar_today_rounded,
-            'Test Date',
+            'Test Prescription Date',
             DateFormat('MMM dd, yyyy').format(date),
           ),
           if ((booking['referredBy'] ?? booking['referred_by'] ?? '').toString().isNotEmpty)
             _buildInfoRow(
               Icons.medical_services_rounded,
               'Referred By',
-              booking['referredBy'] ?? booking['referred_by'] ?? 'N/A',
+              'Dr. ${booking['referredBy'] ?? booking['referred_by'] ?? 'N/A'}',
             ),
           _buildInfoRow(
             Icons.location_on_rounded,
@@ -192,22 +198,26 @@ class LabBookingDetails extends ConsumerWidget {
               "Doctor's Notes",
               booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '',
             ),
-          _buildInfoRow(
-            Icons.currency_rupee_rounded,
-            'Price',
-            'PKR ${booking['price'] ?? 0}',
-          ),
+          if ((booking['sampleCollectedBy'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.person_outline_rounded,
+              'Sample Collected By',
+              booking['sampleCollectedBy'] ?? 'N/A',
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData? icon, String label, String value, {String? customIconPath}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF64748B)),
+          if (customIconPath != null)
+            Image.asset(customIconPath, width: 18, height: 18, color: const Color(0xFF64748B))
+          else if (icon != null)
+            Icon(icon, size: 18, color: const Color(0xFF64748B)),
           const SizedBox(width: 12),
           Text(
             '$label:',
@@ -413,23 +423,39 @@ class LabBookingDetails extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        if (currentStatus.toLowerCase() == 'pending')
-          _buildActionButton(
-            context,
-            'Confirm Appointment',
-            Icons.check_circle_outline_rounded,
-            Colors.blue,
-            () => _updateStatus(context, 'confirmed'),
+        if (currentStatus.toLowerCase() == 'pending' || currentStatus.toLowerCase() == 'new request')
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  context,
+                  'Accept',
+                  Icons.check_circle_outline_rounded,
+                  Colors.green,
+                  () => _updateStatus(context, 'accepted'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionButton(
+                  context,
+                  'Decline',
+                  Icons.cancel_outlined,
+                  Colors.red,
+                  () => _updateStatus(context, 'declined'),
+                ),
+              ),
+            ],
           ),
-        if (currentStatus.toLowerCase() == 'confirmed')
+        if (currentStatus.toLowerCase() == 'accepted' || currentStatus.toLowerCase() == 'confirmed')
           _buildActionButton(
             context,
             'Mark Sample Collected',
             Icons.science_rounded,
             Colors.orange,
-            () => _updateStatus(context, 'completed'), // Simplified for now
+            () => _updateStatus(context, 'sample_collected'),
           ),
-        if (currentStatus.toLowerCase() == 'completed' || currentStatus.toLowerCase() == 'confirmed')
+        if (currentStatus.toLowerCase() == 'sample_collected' || currentStatus.toLowerCase() == 'sample collected')
           _buildActionButton(
             context,
             'Enter Results',
@@ -446,6 +472,14 @@ class LabBookingDetails extends ConsumerWidget {
                 Navigator.pop(context);
               }
             },
+          ),
+        if (currentStatus.toLowerCase() == 'awaiting_reports' || currentStatus.toLowerCase() == 'awaiting reports')
+          _buildActionButton(
+            context,
+            'Mark Reporting Done',
+            Icons.done_all_rounded,
+            Colors.green,
+            () => _updateStatus(context, 'reporting_done'),
           ),
       ],
     );

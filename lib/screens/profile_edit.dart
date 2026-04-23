@@ -109,6 +109,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         height: heightController.text.trim().isEmpty ? null : heightController.text.trim(),
         weight: weightController.text.trim().isEmpty ? null : weightController.text.trim(),
         address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+        profileImage: _imageBytes,
       );
 
       if (result['success']) {
@@ -199,6 +200,25 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                   fit: BoxFit.cover,
                                   width: 120,
                                   height: 120,
+                                )
+                              : user?.profilePicture != null && user!.profilePicture!.isNotEmpty
+                              ? Image.network(
+                                  user.profilePicture!,
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        user.name.substring(0, 1).toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 )
                               : Center(
                                   child: Text(

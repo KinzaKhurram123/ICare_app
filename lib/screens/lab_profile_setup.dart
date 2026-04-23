@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/laboratory_service.dart';
@@ -37,7 +37,7 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   bool _drapCompliance = false;
 
   // Profile Image
-  File? _profileImage;
+  Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
 
   // Doctors Panel
@@ -170,7 +170,10 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   @override
   Future<void> _pickProfileImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
-    if (picked != null) setState(() => _profileImage = File(picked.path));
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() => _imageBytes = bytes);
+    }
   }
 
   Widget build(BuildContext context) {
@@ -408,8 +411,8 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: _profileImage != null
-                        ? Image.file(_profileImage!, fit: BoxFit.cover)
+                    child: _imageBytes != null
+                        ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                         : const Icon(Icons.science_rounded, size: 40, color: Colors.white),
                   ),
                 ),

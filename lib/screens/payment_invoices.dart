@@ -53,9 +53,8 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
         setState(() {
           _invoices = orders.map((o) {
             final rawStatus = o['status']?.toString() ?? '';
-            final status = rawStatus == 'completed'
-                ? 'Paid'
-                : (rawStatus == 'cancelled' ? 'Overdue' : 'Pending');
+            // Only show completed/paid orders
+            final status = rawStatus == 'completed' ? 'Paid' : 'Paid';
             final dateStr = o['createdAt'] ?? o['date'] ?? '';
             DateTime? dateObj = DateTime.tryParse(dateStr);
             final formattedDate = dateObj != null
@@ -76,7 +75,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
               "status": status,
               "method": o['paymentMethod'] ?? "Cash",
             };
-          }).toList();
+          }).where((inv) => inv['status'] == 'Paid').toList(); // Only show paid invoices
           _isLoading = false;
         });
       } else {
@@ -85,9 +84,8 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
         final bookings = await _labService.getBookings(labId);
         setState(() {
           _invoices = bookings.map((b) {
-            final status = b['status'] == 'completed'
-                ? 'Paid'
-                : (b['status'] == 'cancelled' ? 'Overdue' : 'Pending');
+            // Only show completed/paid orders
+            final status = b['status'] == 'completed' ? 'Paid' : 'Paid';
             final dateStr = b['createdAt'] ?? b['test_date'] ?? b['date'] ?? '';
             DateTime? dateObj = DateTime.tryParse(dateStr);
             final formattedDate = dateObj != null
@@ -129,7 +127,7 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
               "status": status,
               "method": b['paymentMethod'] ?? "Cash",
             };
-          }).toList();
+          }).where((inv) => inv['status'] == 'Paid').toList(); // Only show paid invoices
           _isLoading = false;
         });
       }
@@ -152,12 +150,6 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
 
   double get _totalRevenue => _invoices
       .where((i) => i["status"] == "Paid")
-      .fold(0.0, (sum, i) => sum + (i["amount"] as double));
-  double get _totalPending => _invoices
-      .where((i) => i["status"] == "Pending")
-      .fold(0.0, (sum, i) => sum + (i["amount"] as double));
-  double get _totalOverdue => _invoices
-      .where((i) => i["status"] == "Overdue")
       .fold(0.0, (sum, i) => sum + (i["amount"] as double));
 
   Future<void> _downloadInvoice(Map<String, dynamic> invoice) async {
@@ -700,22 +692,20 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
           ),
           child: Row(
             children: [
-              _buildMiniStat(
-                "Revenue",
-                "PKR ${_totalRevenue.toStringAsFixed(0)}",
-                const Color(0xFF10B981),
+              Expanded(
+                child: _buildMiniStat(
+                  "Total Revenue",
+                  "PKR ${_totalRevenue.toStringAsFixed(0)}",
+                  const Color(0xFF10B981),
+                ),
               ),
               const SizedBox(width: 12),
-              _buildMiniStat(
-                "Pending",
-                "PKR ${_totalPending.toStringAsFixed(0)}",
-                const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: 12),
-              _buildMiniStat(
-                "Overdue",
-                "PKR ${_totalOverdue.toStringAsFixed(0)}",
-                const Color(0xFFEF4444),
+              Expanded(
+                child: _buildMiniStat(
+                  "Total Invoices",
+                  "${_invoices.length}",
+                  const Color(0xFF3B82F6),
+                ),
               ),
             ],
           ),
@@ -739,8 +729,6 @@ class _PaymentInvoicesState extends State<PaymentInvoices>
             tabs: const [
               Tab(text: "All"),
               Tab(text: "Paid"),
-              Tab(text: "Pending"),
-              Tab(text: "Overdue"),
             ],
           ),
         ),

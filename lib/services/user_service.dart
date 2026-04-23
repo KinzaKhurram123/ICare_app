@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'api_service.dart';
 import 'api_config.dart';
 
@@ -49,6 +50,7 @@ class UserService {
     required String name,
     required String phoneNumber,
     String? profilePicture,
+    Uint8List? profileImage,
     String? cnic,
     String? age,
     String? height,
@@ -56,10 +58,16 @@ class UserService {
     String? address,
   }) async {
     try {
+      String? imageBase64;
+      if (profileImage != null) {
+        imageBase64 = 'data:image/jpeg;base64,${base64Encode(profileImage)}';
+      }
+
       final response = await _apiService.put('/users/profile', {
         'name': name,
         'phoneNumber': phoneNumber,
-        if (profilePicture != null) 'profilePicture': profilePicture,
+        if (imageBase64 != null) 'profilePicture': imageBase64,
+        if (profilePicture != null && imageBase64 == null) 'profilePicture': profilePicture,
         if (cnic != null) 'cnic': cnic,
         if (age != null) 'age': age,
         if (height != null) 'height': height,

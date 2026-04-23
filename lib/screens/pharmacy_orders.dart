@@ -524,7 +524,6 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Doctor-referred badge
                 if (isDoctorReferred)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -546,7 +545,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                         ),
                         SizedBox(width: 6),
                         Text(
-                          'Doctor Prescribed',
+                          'Ordered By',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -584,11 +583,22 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                             ),
                           ),
                           const SizedBox(height: 4),
+                          const Text(
+                            'Patient Name',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             order['customerName'],
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF64748B),
+                              color: Color(0xFF0F172A),
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

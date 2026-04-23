@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/doctor_service.dart';
@@ -28,12 +28,15 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   final TextEditingController startTimeController = TextEditingController();
   final TextEditingController endTimeController = TextEditingController();
 
-  File? _profileImage;
+  Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickProfileImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
-    if (picked != null) setState(() => _profileImage = File(picked.path));
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() => _imageBytes = bytes);
+    }
   }
 
   // Available days selection
