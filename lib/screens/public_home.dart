@@ -20,8 +20,13 @@ class PublicHome extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          CustomScrollView(
-        padding: EdgeInsets.zero,
+          MediaQuery.removePadding(
+            context: context,
+            removeLeft: true,
+            removeRight: true,
+            removeTop: true,
+            removeBottom: true,
+            child: CustomScrollView(
         slivers: [
           SliverAppBar(
             backgroundColor: Colors.white,
@@ -272,6 +277,7 @@ class PublicHome extends StatelessWidget {
           ),
         ],
         ),
+          ),
           const WhatsAppFloatingButton(),
         ],
       ),
