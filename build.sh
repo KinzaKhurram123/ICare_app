@@ -10,8 +10,16 @@ if ! command -v flutter &> /dev/null; then
     flutter precache --web
 fi
 
+# Get dependencies
+echo "Getting dependencies..."
+flutter pub get
+
+# Run analyzer to catch errors early
+echo "Running Dart analyzer..."
+flutter analyze --no-pub || true
+
 # Build Flutter web
 echo "Building Flutter web..."
-flutter build web --release
+flutter build web --release --verbose
 
 echo "Build complete!"
