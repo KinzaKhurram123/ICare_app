@@ -32,6 +32,10 @@ class _InstructorCoursesManagementScreenState
     try {
       final courses = await _instructorService.getMyCourses();
       if (mounted) {
+        // Debug: Print course data to see isPublished values
+        for (var course in courses) {
+          print('Course: ${course['title']}, isPublished: ${course['isPublished']}, type: ${course['isPublished'].runtimeType}');
+        }
         setState(() {
           _courses = courses;
           _isLoading = false;
