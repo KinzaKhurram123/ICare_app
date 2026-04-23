@@ -1207,7 +1207,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                               return DropdownMenuItem<String>(
                                 value: pharmacy['_id'],
                                 child: Text(
-                                  "${pharmacy['pharmacyName']} (${pharmacy['city']})",
+                                  "${pharmacy['user']?['name'] ?? 'Pharmacy'} (${pharmacy['city'] ?? ''})",
                                 ),
                               );
                             }).toList(),

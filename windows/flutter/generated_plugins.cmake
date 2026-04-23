@@ -5,8 +5,10 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   agora_rtc_engine
   file_selector_windows
+  firebase_auth
   firebase_core
   iris_method_channel
+  local_auth_windows
   permission_handler_windows
   speech_to_text_windows
   url_launcher_windows

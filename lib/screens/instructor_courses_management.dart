@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/screens/instructor_create_course.dart';
 import 'package:icare/services/course_service.dart';
@@ -6,16 +8,16 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
 
-class InstructorCoursesManagementScreen extends StatefulWidget {
+class InstructorCoursesManagementScreen extends ConsumerStatefulWidget {
   const InstructorCoursesManagementScreen({super.key});
 
   @override
-  State<InstructorCoursesManagementScreen> createState() =>
+  ConsumerState<InstructorCoursesManagementScreen> createState() =>
       _InstructorCoursesManagementScreenState();
 }
 
 class _InstructorCoursesManagementScreenState
-    extends State<InstructorCoursesManagementScreen> {
+    extends ConsumerState<InstructorCoursesManagementScreen> {
   final CourseService _courseService = CourseService();
   List<Course> _courses = [];
   bool _isLoading = true;
@@ -30,7 +32,10 @@ class _InstructorCoursesManagementScreenState
   Future<void> _loadCourses() async {
     setState(() => _isLoading = true);
     try {
-      final courses = await _courseService.getMyCourses();
+      final user = ref.read(authProvider).user;
+      final courses = await _courseService.getCourses(
+        instructorId: user?.id,
+      );
       if (mounted) {
         setState(() {
           _courses = courses;
@@ -156,7 +161,8 @@ class _InstructorCoursesManagementScreenState
           if (result == true) _loadCourses();
         },
         backgroundColor: AppColors.primaryColor,
-        icon: const Icon(Icons.add),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Program'),
       ),
       body: Column(

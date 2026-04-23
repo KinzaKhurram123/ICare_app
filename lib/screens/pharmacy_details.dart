@@ -11,6 +11,7 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
+import 'package:icare/screens/product_details.dart';
 
 class PharmacyDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> pharmacy;
@@ -422,88 +423,101 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _buildMedicineCard(dynamic med) {
     final id = med['_id']?.toString() ?? '';
     final isAdding = _addingToCart.contains(id);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => ProductDetailsScreen(product: med),
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Center(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.medication_liquid_rounded,
-                  size: 50,
-                  color: AppColors.primaryColor,
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Hero(
+                    tag: 'product_image_capsule',
+                    child: Icon(
+                      Icons.medication_liquid_rounded,
+                      size: 50,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          CustomText(
-            text: med['productName'] ?? 'Medicine Name',
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            med['brand'] ?? 'Pharma Co.',
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CustomText(
-                text: "Rs ${med['price'] ?? 0.0}",
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
-              GestureDetector(
-                onTap: isAdding ? null : () => _addToCart(med),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isAdding ? Colors.grey[300] : AppColors.primaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: isAdding
-                      ? const Padding(
-                          padding: EdgeInsets.all(6),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+            const SizedBox(height: 12),
+            CustomText(
+              text: med['productName'] ?? 'Medicine Name',
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              med['brand'] ?? 'Pharma Co.',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CustomText(
+                  text: "Rs ${med['price'] ?? 0.0}",
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
                 ),
-              ),
-            ],
-          ),
-        ],
+                GestureDetector(
+                  onTap: isAdding ? null : () => _addToCart(med),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isAdding ? Colors.grey[300] : AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: isAdding
+                        ? const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

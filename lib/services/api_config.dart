@@ -1,9 +1,9 @@
 class ApiConfig {
   // Production backend URL
-  static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
+  // static const String baseUrl = 'https://api.icare-virtual-hospital.com/api';
 
   // For local development (web/Chrome):
-  // static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://localhost:5000/api';
 
   // For local development (Android emulator):
   // static const String baseUrl = 'http://10.0.2.2:5000/api';

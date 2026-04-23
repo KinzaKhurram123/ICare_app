@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'api_config.dart';
 import '../utils/shared_pref.dart';
 import 'package:flutter/foundation.dart';

@@ -7,6 +7,7 @@ import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/chat_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/services/appointment_service.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -23,10 +24,12 @@ class BookingCard extends ConsumerWidget {
     required this.appointment,
     this.showActions = true,
     this.onTap,
+    this.onCancelled,
   });
   final AppointmentDetail appointment;
   final bool showActions;
   final VoidCallback? onTap;
+  final VoidCallback? onCancelled;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRole = ref.watch(authProvider).userRole;
@@ -169,6 +172,7 @@ class BookingCard extends ConsumerWidget {
             onTap: onTap,
             showActions: showActions,
             selectedRole: selectedRole,
+            onCancelled: onCancelled,
           )
         : GestureDetector(
             onTap: onTap ?? () {},
@@ -288,12 +292,14 @@ class _WebBookingCard extends StatefulWidget {
   final VoidCallback? onTap;
   final bool showActions;
   final String selectedRole;
+  final VoidCallback? onCancelled;
 
   const _WebBookingCard({
     required this.appointment,
     this.onTap,
     required this.showActions,
     required this.selectedRole,
+    this.onCancelled,
   });
 
   @override
@@ -303,6 +309,94 @@ class _WebBookingCard extends StatefulWidget {
 class _WebBookingCardState extends State<_WebBookingCard> {
   bool _isHovered = false;
   bool _remindMe = true;
+
+  Future<void> _confirmCancel(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.cancel_outlined, color: Color(0xFFEF4444), size: 32),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Cancel Appointment',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Are you sure you want to cancel this appointment? This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Yes, Cancel Appointment', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                    side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('No, Keep It', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final result = await AppointmentService().cancelAppointment(
+      appointmentId: widget.appointment.id,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result['success'] == true ? 'Appointment cancelled' : (result['message'] ?? 'Failed to cancel')),
+        backgroundColor: result['success'] == true ? const Color(0xFF10B981) : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (result['success'] == true) {
+      widget.onCancelled?.call();
+      // Pop back to bookings screen so it reloads with fresh data
+      if (mounted) Navigator.of(context).pop();
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -591,7 +685,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               'confirmed') ...[
                         _buildWebButton(
                           "Cancel Appointment",
-                          onPressed: () {},
+                          onPressed: () => _confirmCancel(context),
                           isOutlined: true,
                         ),
                         const SizedBox(width: 12),

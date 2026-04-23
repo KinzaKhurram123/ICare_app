@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/doctor_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
@@ -27,18 +26,13 @@ class _DoctorReviewsState extends ConsumerState<DoctorReviews> {
   Future<void> _loadReviews() async {
     setState(() => _isLoading = true);
 
-    final userId = ref.read(authProvider).user?.id;
-    if (userId == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    final result = await _doctorService.getDoctorById(userId);
+    final result = await _doctorService.getMyProfile();
 
     if (result['success'] && mounted) {
       final doctor = result['doctor'];
       setState(() {
-        _ratings = List<String>.from(doctor['ratings'] ?? []);
+        _ratings = List<String>.from(
+            (doctor['ratings'] as List? ?? []).map((r) => r.toString()));
         _reviews = List<String>.from(doctor['reviews'] ?? []);
         _isLoading = false;
       });

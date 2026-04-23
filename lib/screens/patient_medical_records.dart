@@ -8,7 +8,10 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
 class PatientMedicalRecords extends ConsumerStatefulWidget {
-  const PatientMedicalRecords({super.key});
+  final String? patientId;
+  final String? patientName;
+
+  const PatientMedicalRecords({super.key, this.patientId, this.patientName});
 
   @override
   ConsumerState<PatientMedicalRecords> createState() =>
@@ -31,7 +34,9 @@ class _PatientMedicalRecordsState extends ConsumerState<PatientMedicalRecords> {
     setState(() => _isLoading = true);
     try {
       debugPrint('🔍 Loading medical records...');
-      final result = await _medicalRecordService.getMyRecords();
+      final result = widget.patientId != null
+          ? await _medicalRecordService.getPatientRecords(widget.patientId!)
+          : await _medicalRecordService.getMyRecords();
 
       debugPrint('📦 API Response: ${result['success']}');
       debugPrint('📦 Records count: ${result['records']?.length ?? 0}');
@@ -100,9 +105,11 @@ class _PatientMedicalRecordsState extends ConsumerState<PatientMedicalRecords> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: const CustomBackButton(),
-        title: const Text(
-          'My Medical Records',
-          style: TextStyle(
+        title: Text(
+          widget.patientName != null
+              ? '${widget.patientName}\'s Records'
+              : 'My Medical Records',
+          style: const TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
             fontWeight: FontWeight.w900,

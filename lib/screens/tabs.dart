@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:icare/screens/public_home.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
 import 'package:icare/screens/admin_dashboard.dart';
@@ -19,6 +21,11 @@ import 'package:icare/screens/login.dart';
 import 'package:icare/screens/profile.dart';
 import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/screens/upload_prescription.dart';
+import 'package:icare/screens/patient_medical_records.dart';
+import 'package:icare/screens/lab_reports_screen.dart';
+import 'package:icare/screens/courses.dart';
+import 'package:icare/screens/patient_lab_orders.dart';
+import 'package:icare/providers/navigation_provider.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -55,7 +62,7 @@ import 'package:icare/screens/community_forum_screen.dart';
 import 'package:icare/screens/health_journey_screen.dart';
 import 'package:icare/screens/lifestyle_tracker_screen.dart';
 import 'package:icare/screens/manage_dependents_screen.dart';
-import 'package:icare/screens/prescription_templates_screen.dart';
+import 'package:icare/screens/prescription_templates.dart';
 import 'package:icare/screens/security_audit_log_screen.dart';
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/resource_library_screen.dart';
@@ -83,6 +90,11 @@ import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
 import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
+import 'package:icare/screens/privacy_policy.dart';
+import 'package:icare/screens/admin_home_screen.dart';
+import 'package:icare/screens/admin_pharmacy_orders_screen.dart';
+import 'package:icare/screens/admin_students_screen.dart';
+import 'package:icare/screens/admin_student_detail_screen.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   final String? initialAdminTab;
@@ -93,14 +105,38 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   var currentIndex = 0;
+  int _profileKey = 0; // increments each time profile tab is selected → forces fresh rebuild
+
+  // null  → show AdminHomeScreen
+  // 'Pending' / 'Student' / etc. → show AdminDashboard with that tab
+  String? _adminManagementTab;
+  String? _selectedStudentName;
+
+  @override
+  void initState() {
+    super.initState();
+    _adminManagementTab = widget.initialAdminTab;
+  }
+
   void _selectPage(int index) {
+    ref.read(navigationProvider.notifier).setIndex(index);
     setState(() {
-      currentIndex = index;
+      if (index == 3 && ref.read(navigationProvider) != 3) {
+        _profileKey++; // force ProfileScreen to rebuild when switching to profile tab
+      }
+      // Clicking Home (index 0) from the admin sidebar always returns to HomeScreen
+      if (index == 0) {
+        _adminManagementTab = null;
+      }
+      if (index != 15) {
+        _selectedStudentName = null;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    currentIndex = ref.watch(navigationProvider);
     final role = ref.watch(authProvider).userRole;
 
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -117,7 +153,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = const PharmacyInventory();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Laboratory") {
       if (currentIndex == 0) {
@@ -127,7 +163,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = const LabReportsScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Doctor") {
       if (currentIndex == 0) {
@@ -137,17 +173,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Instructor") {
       if (currentIndex == 0) {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
-        activePage = const InstructorCoursesManagementScreen();
+        activePage = InstructorCoursesManagementScreen();
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -157,34 +193,55 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       }
     } else if (role == "Admin") {
-      if (currentIndex == 0) {
-        activePage = AdminDashboard(
-          initialTab: widget.initialAdminTab ?? 'Pending',
+      if (_selectedStudentName != null) {
+        activePage = AdminStudentDetailScreen(
+          name: _selectedStudentName!,
+          onBack: () => setState(() => _selectedStudentName = null),
+        );
+      } else if (_adminManagementTab != null) {
+        if (_adminManagementTab == 'Student') {
+          activePage = AdminStudentsScreen(
+            onViewProfile: (name) => setState(() => _selectedStudentName = name),
+          );
+        } else if (_adminManagementTab == 'Pharmacy') {
+          activePage = const AdminPharmacyOrdersScreen();
+        } else {
+          // A management tab was explicitly selected → show the admin panel
+          activePage = AdminDashboard(initialTab: _adminManagementTab!);
+        }
+      } else if (currentIndex == 0) {
+        // Home selected (or first load with no management tab) → show home screen
+        activePage = const AdminHomeScreen();
+      } else if (currentIndex == 10) {
+        activePage = const AdminPharmacyOrdersScreen();
+      } else if (currentIndex == 15) {
+        activePage = AdminStudentsScreen(
+          onViewProfile: (name) => setState(() => _selectedStudentName = name),
         );
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       } else {
-        activePage = AdminDashboard(
-          initialTab: widget.initialAdminTab ?? 'Pending',
-        );
+        activePage = const AdminHomeScreen();
       }
     } else {
       // Default to Patient dashboard
       if (currentIndex == 0) {
-        activePage = const PatientDashboard();
+        activePage = const HomeScreen();
       } else if (currentIndex == 1) {
         activePage = BookingsScreen(tabs: true);
       } else if (currentIndex == 2) {
         activePage = ChatListScreen();
       } else if (currentIndex == 3) {
-        activePage = ProfileScreen();
+        activePage = ProfileScreen(key: ValueKey(_profileKey));
       } else if (currentIndex == 4) {
         activePage = const Courses(myPurchased: true);
+      } else if (currentIndex == 5) {
+        activePage = PatientMedicalRecords();
       }
     }
 
@@ -358,7 +415,16 @@ class _WebSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<_SidebarItem> items;
     if (role == 'Admin') {
-      items = <_SidebarItem>[];
+      items = [
+        _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
+        _SidebarItem(icon: Icons.local_pharmacy_outlined, label: 'Pharmacy Order', index: 10),
+        _SidebarItem(icon: Icons.biotech_outlined, label: 'Lab Orders', index: 11),
+        _SidebarItem(icon: Icons.medical_services_outlined, label: "Doctor's Appointments", index: 12),
+        _SidebarItem(icon: Icons.school_outlined, label: 'Courses', index: 13),
+        _SidebarItem(icon: Icons.cast_for_education_rounded, label: 'Instructor', index: 14),
+        _SidebarItem(icon: Icons.person_outline_rounded, label: 'Student', index: 15),
+        _SidebarItem(icon: Icons.policy_outlined, label: 'Privacy Policy', index: 16),
+      ];
     } else if (role == 'Instructor') {
       items = [
         _SidebarItem(
@@ -377,22 +443,9 @@ class _WebSidebar extends ConsumerWidget {
     } else if (role == 'Patient') {
       items = [
         _SidebarItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-        _SidebarItem(
-          icon: Icons.calendar_month_rounded,
-          label: 'Appointments',
-          index: 1,
-        ),
-        _SidebarItem(
-          icon: Icons.chat_bubble_rounded,
-          label: 'Messages',
-          index: 2,
-        ),
-        _SidebarItem(
-          icon: Icons.health_and_safety_rounded,
-          label: 'Health Programs',
-          index: 4,
-        ),
-        _SidebarItem(icon: Icons.person_rounded, label: 'My Profile', index: 3),
+        _SidebarItem(icon: Icons.folder_shared_rounded, label: 'Medical Records', index: 5), // Added index 5 for Records
+        _SidebarItem(icon: Icons.calendar_month_rounded, label: 'My Appointments', index: 1),
+        _SidebarItem(icon: Icons.health_and_safety_rounded, label: 'Health Programs', index: 4),
       ];
     } else {
       items = [
@@ -455,10 +508,24 @@ class _WebSidebar extends ConsumerWidget {
       ];
     }
 
+    final bool isLight = role == 'Admin';
+
     return Container(
       width: 260,
       height: double.infinity,
-      decoration: const BoxDecoration(gradient: _gradient),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white : null,
+        gradient: isLight ? null : _gradient,
+        boxShadow: isLight
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(4, 0),
+                ),
+              ]
+            : null,
+      ),
       child: Column(
         children: [
           const SizedBox(height: 30),
@@ -467,145 +534,79 @@ class _WebSidebar extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'iCare',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'PRO',
-                    style: TextStyle(
+                if (role == 'Patient' || role == 'Doctor') ...[
+                  // iCare logo image — white bg so colors show correctly
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      ImagePaths.logo,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.local_hospital_rounded,
+                        color: Color(0xFF0B2D6E),
+                        size: 24,
+                      ),
                     ),
                   ),
-                ),
+                ] else ...[
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: isLight ? const Color(0xFF1CB0F6).withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      color: isLight ? const Color(0xFF1CB0F6) : Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'iCare',
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF2D3748) : Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isLight ? const Color(0xFF1CB0F6).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'PRO',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
 
-          // ── Profile card ───────────────────────────────────────────────
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: AssetImage(ImagePaths.user7),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final userName =
-                                ref.watch(authProvider).user?.name ?? 'User';
-                            return Text(
-                              userName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            role.isNotEmpty
-                                ? role == 'Laboratory'
-                                      ? 'Lab Technician'
-                                      : role == 'Pharmacy'
-                                      ? 'Pharmacist'
-                                      : role[0].toUpperCase() +
-                                            role.substring(1)
-                                : role,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Colors.white54,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── Quick Action Buttons (Show for all roles except Admin) ───────────
-          if (role.isNotEmpty && role != 'Admin') ...[
+          // ── Quick Action Buttons (Show for all roles except Admin, Patient and Doctor) ───────────
+          if (role.isNotEmpty && role != 'Admin' && role != 'Patient' && role != 'Doctor') ...[
             Padding(
               padding: const EdgeInsets.only(left: 24, bottom: 8),
               child: Align(
@@ -613,7 +614,7 @@ class _WebSidebar extends ConsumerWidget {
                 child: Text(
                   'QUICK ACTIONS',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: isLight ? const Color(0xFF718096) : Colors.white.withValues(alpha: 0.45),
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.5,
@@ -640,6 +641,8 @@ class _WebSidebar extends ConsumerWidget {
                             ),
                           ),
                         );
+                      } else if (role == 'Instructor') {
+                        onSelect(1); // Go to Manage Courses
                       } else {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -661,6 +664,8 @@ class _WebSidebar extends ConsumerWidget {
                                     ? AppColors.secondaryColor
                                     : role == 'Laboratory'
                                     ? const Color(0xFF0EA5E9)
+                                    : role == 'Instructor'
+                                    ? const Color(0xFF8B5CF6)
                                     : const Color(0xFF0EA5E9))
                                 .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
@@ -670,6 +675,8 @@ class _WebSidebar extends ConsumerWidget {
                                       ? AppColors.secondaryColor
                                       : role == 'Laboratory'
                                       ? const Color(0xFF0EA5E9)
+                                      : role == 'Instructor'
+                                      ? const Color(0xFF8B5CF6)
                                       : const Color(0xFF0EA5E9))
                                   .withValues(alpha: 0.3),
                         ),
@@ -683,6 +690,8 @@ class _WebSidebar extends ConsumerWidget {
                                   ? AppColors.secondaryColor
                                   : role == 'Laboratory'
                                   ? const Color(0xFF0EA5E9)
+                                  : role == 'Instructor'
+                                  ? const Color(0xFF8B5CF6)
                                   : const Color(0xFF0EA5E9),
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -691,6 +700,8 @@ class _WebSidebar extends ConsumerWidget {
                                   ? Icons.explore_rounded
                                   : role == 'Laboratory'
                                   ? Icons.list_alt_rounded
+                                  : role == 'Instructor'
+                                  ? Icons.school_rounded
                                   : Icons.biotech_rounded,
                               color: Colors.white,
                               size: 18,
@@ -703,6 +714,8 @@ class _WebSidebar extends ConsumerWidget {
                                   ? 'Browse Programs'
                                   : role == 'Laboratory'
                                   ? 'Manage Test Requests'
+                                  : role == 'Instructor'
+                                  ? 'Manage Courses'
                                   : 'View Lab Reports',
                               style: const TextStyle(
                                 color: Colors.white,
@@ -732,9 +745,9 @@ class _WebSidebar extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'NAVIGATION',
+                role == 'Patient' || role == 'Doctor' ? 'MY ACCOUNT' : 'NAVIGATION',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: isLight ? const Color(0xFF718096) : Colors.white.withValues(alpha: 0.45),
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
@@ -761,12 +774,12 @@ class _WebSidebar extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.white.withValues(alpha: 0.18)
+                            ? (isLight ? const Color(0xFF1CB0F6).withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.18))
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(14),
                         border: isSelected
                             ? Border.all(
-                                color: Colors.white.withValues(alpha: 0.25),
+                                color: isLight ? const Color(0xFF1CB0F6).withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.25),
                               )
                             : null,
                       ),
@@ -776,8 +789,8 @@ class _WebSidebar extends ConsumerWidget {
                             item.icon,
                             size: 20,
                             color: isSelected
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.55),
+                                ? (isLight ? const Color(0xFF1CB0F6) : Colors.white)
+                                : (isLight ? const Color(0xFF718096) : Colors.white.withValues(alpha: 0.55)),
                           ),
                           const SizedBox(width: 14),
                           Text(
@@ -788,8 +801,8 @@ class _WebSidebar extends ConsumerWidget {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: isSelected
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.6),
+                                  ? (role == 'Admin' ? const Color(0xFF2D3748) : Colors.white)
+                                  : (role == 'Admin' ? const Color(0xFF4A5568) : Colors.white.withValues(alpha: 0.6)),
                             ),
                           ),
                           if (isSelected) ...[
@@ -797,8 +810,8 @@ class _WebSidebar extends ConsumerWidget {
                             Container(
                               width: 6,
                               height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
+                              decoration: BoxDecoration(
+                                color: isLight ? const Color(0xFF1CB0F6) : Colors.white,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -836,20 +849,8 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.monitor_heart_rounded,
-                    'Lifestyle Tracker',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LifestyleTrackerScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.family_restroom_rounded,
-                    'Manage Dependents',
+                    'Emergency Contacts',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -860,18 +861,8 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.task_alt_rounded,
-                    'Wellness Goals',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.science_rounded,
-                    'Diagnostics Support',
+                    'Book a Lab Test',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (ctx) => LabsListScreen()),
@@ -881,15 +872,11 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.biotech_rounded,
-                    role == 'Patient'
-                        ? 'Lab Results/Reports'
-                        : 'Management Dashboard',
+                    'Lab Results/Reports',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => role == 'Patient'
-                              ? LabReportsScreen()
-                              : LabBookingsManagement(),
+                          builder: (ctx) => LabReportsScreen(),
                         ),
                       );
                     },
@@ -897,7 +884,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.calendar_month_rounded,
-                    'My Appointment',
+                    'Booking Details',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -909,7 +896,7 @@ class _WebSidebar extends ConsumerWidget {
                   _buildExtraNavItem(
                     context,
                     Icons.medication_rounded,
-                    'Medication Fulfillment',
+                    'Order Medicines',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -942,17 +929,11 @@ class _WebSidebar extends ConsumerWidget {
                       );
                     },
                   ),
-                  _buildExtraNavItem(
+                  // Lifestyle Tracker — coming soon
+                  _buildComingSoonNavItem(
                     context,
-                    Icons.health_and_safety_outlined,
-                    'My Care Plans',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
+                    Icons.monitor_heart_rounded,
+                    'Lifestyle Tracker',
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1011,7 +992,7 @@ class _WebSidebar extends ConsumerWidget {
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const PrescriptionTemplatesScreen(),
+                          builder: (ctx) => const PrescriptionTemplates(),
                         ),
                       );
                     },
@@ -1060,30 +1041,6 @@ class _WebSidebar extends ConsumerWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const DoctorNotifications(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.person_rounded,
-                    'My Profile',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorProfileSetup(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.calendar_month_rounded,
-                    'My Appointments',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const DoctorAppointmentsScreen(),
                         ),
                       );
                     },
@@ -1142,13 +1099,7 @@ class _WebSidebar extends ConsumerWidget {
                     context,
                     Icons.library_books_rounded,
                     'Manage Courses',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => InstructorCoursesManagementScreen(),
-                        ),
-                      );
-                    },
+                    () => onSelect(1),
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1491,91 +1442,9 @@ class _WebSidebar extends ConsumerWidget {
                   ),
                 ],
 
-                if (role == 'Instructor') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
-                    ),
-                    child: Divider(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      height: 1,
-                    ),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.medication_rounded,
-                    'Pharmacies',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PharmaciesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.biotech_rounded,
-                    'Reports/Lab Results',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => LabReportsScreen()),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.favorite_rounded,
-                    'My Health Journey',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.assignment_rounded,
-                    'My Care Plans',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.help_outline_rounded,
-                    'Help & Support',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const HelpAndSupport(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.settings_rounded,
-                    'Settings',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
 
-                if (role == 'Student' || role == 'Instructor') ...[
+
+                if (role == 'Student') ...[
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -1586,42 +1455,6 @@ class _WebSidebar extends ConsumerWidget {
                       color: Colors.white.withValues(alpha: 0.15),
                       height: 1,
                     ),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.school_rounded,
-                    role == 'Student' ? 'My Courses' : 'Manage Courses',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.workspace_premium_rounded,
-                    role == 'Student' ? 'My Certificates' : 'Certifications',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const CertificatesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.library_books_rounded,
-                    'Resource Library',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const ResourceLibraryScreen(),
-                        ),
-                      );
-                    },
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1649,13 +1482,23 @@ class _WebSidebar extends ConsumerWidget {
 
                 if (role == 'Admin') ...[
                   const SizedBox(height: 8),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Divider(color: Color(0xFFE2E8F0), height: 1),
+                  ),
                   _buildExtraNavItem(
                     context,
                     Icons.verified_user_rounded,
                     'Verify Applications',
                     () {
-                      onSelect(0); // Trigger reload with tab
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (ctx) =>
+                              const TabsScreen(initialAdminTab: 'Pending'),
+                        ),
+                      );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1670,6 +1513,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1683,6 +1527,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1696,6 +1541,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1709,6 +1555,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1721,6 +1568,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1733,6 +1581,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                   _buildExtraNavItem(
                     context,
@@ -1745,6 +1594,7 @@ class _WebSidebar extends ConsumerWidget {
                         ),
                       );
                     },
+                    isLight: isLight,
                   ),
                 ],
               ],
@@ -1754,49 +1604,53 @@ class _WebSidebar extends ConsumerWidget {
           // ── Divider ────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+            child: Divider(color: isLight ? const Color(0xFFE2E8F0) : Colors.white.withValues(alpha: 0.15)),
           ),
 
-          // ── Logout ─────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (ctx) => LoginScreen()),
-                );
-              },
+          if (role == 'Admin')
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.3),
-                  ),
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFE4E6)),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Logout',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      ref.read(authProvider.notifier).setUserLogout();
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, color: Color(0xFFE11D48), size: 20),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: Color(0xFFE11D48),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right_rounded, color: Color(0xFFFDA4AF), size: 18),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -1806,8 +1660,9 @@ class _WebSidebar extends ConsumerWidget {
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool isLight = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1819,14 +1674,16 @@ class _WebSidebar extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.55)),
+            Icon(icon,
+                size: 20,
+                color: isLight ? const Color(0xFF718096) : Colors.white.withValues(alpha: 0.55)),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: Colors.white.withValues(alpha: 0.6),
+                color: isLight ? const Color(0xFF4A5568) : Colors.white.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -1834,10 +1691,96 @@ class _WebSidebar extends ConsumerWidget {
       ),
     );
   }
+  Widget _buildComingSoonNavItem(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    bool isLight = false,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (_) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF6366F1), size: 32),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Coming Soon!',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                  const SizedBox(height: 8),
+                  Text('$label is under development.\nWe\'ll notify you when it\'s ready.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      child: Opacity(
+        opacity: 0.45,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(icon,
+                  size: 20,
+                  color: isLight ? const Color(0xFF718096) : Colors.white.withValues(alpha: 0.55)),
+              const SizedBox(width: 14),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: isLight ? const Color(0xFF4A5568) : Colors.white.withValues(alpha: 0.6))),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Soon', style: TextStyle(fontSize: 9, color: Colors.white70, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Web Top Navbar
 // ═══════════════════════════════════════════════════════════════════════════
 class _WebTopBar extends ConsumerWidget {
   const _WebTopBar({required this.role});
@@ -1860,29 +1803,48 @@ class _WebTopBar extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         children: [
-          // Page title
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0B2D6E),
+          if (role == 'Admin')
+            Container(
+              width: 400,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F6FA),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
-              Text(
-                'Welcome back! Here\'s your overview.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w400,
+            )
+          else
+            // Page title
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0B2D6E),
+                  ),
                 ),
-              ),
-            ],
-          ),
+                Text(
+                  'Welcome back! Here\'s your overview.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
           const Spacer(),
           // Notification bell
           GestureDetector(
@@ -1932,61 +1894,133 @@ class _WebTopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Avatar + greeting
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Row(
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          // Avatar + greeting — dropdown with Edit Profile & Logout
+          Consumer(
+            builder: (context, ref, child) {
+              final user = ref.watch(authProvider).user;
+              final pic = user?.profilePicture;
+
+              Widget avatar;
+              if (pic != null && pic.isNotEmpty) {
+                try {
+                  final bytes = pic.contains(',')
+                      ? base64Decode(pic.split(',').last)
+                      : base64Decode(pic);
+                  avatar = CircleAvatar(
+                    radius: 20,
+                    backgroundImage: MemoryImage(bytes),
+                  );
+                } catch (_) {
+                  avatar = _defaultAvatar(user?.name);
+                }
+              } else {
+                avatar = _defaultAvatar(user?.name);
+              }
+
+              return PopupMenuButton<String>(
+                offset: const Offset(0, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    final role = ref.read(authProvider).userRole;
+                    if (role == 'Doctor') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()));
+                    } else if (role == 'Laboratory') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const LabProfileSetup()));
+                    } else if (role == 'Pharmacy') {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()));
+                    } else {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()));
+                    }
+                  } else if (value == 'logout') {
+                    ref.read(authProvider.notifier).setUserLogout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (ctx) => const PublicHome()),
+                      (route) => false,
+                    );
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18,
+                            color: Color(0xFF0B2D6E)),
+                        SizedBox(width: 10),
+                        Text('Edit Profile'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout_rounded, size: 18,
+                            color: Colors.redAccent),
+                        SizedBox(width: 10),
+                        Text('Logout',
+                            style: TextStyle(color: Colors.redAccent)),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Row(
                   children: [
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final userName =
-                            ref.watch(authProvider).user?.name ?? 'User';
-                        return Text(
-                          userName,
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          user?.name ?? 'User',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                             color: Color(0xFF1A1A2E),
                           ),
-                        );
-                      },
+                        ),
+                        Text(
+                          role.isNotEmpty
+                              ? role == 'Laboratory'
+                                    ? 'Lab Technician'
+                                    : role == 'Pharmacy'
+                                    ? 'Pharmacist'
+                                    : role[0].toUpperCase() + role.substring(1)
+                              : role,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF888888),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      role.isNotEmpty
-                          ? role == 'Laboratory'
-                                ? 'Lab Technician'
-                                : role == 'Pharmacy'
-                                ? 'Pharmacist'
-                                : role[0].toUpperCase() + role.substring(1)
-                          : role,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF888888),
-                      ),
-                    ),
+                    const SizedBox(width: 10),
+                    avatar,
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down,
+                        color: Color(0xFF888888), size: 18),
                   ],
                 ),
-                const SizedBox(width: 10),
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage(ImagePaths.user7),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
+
+Widget _defaultAvatar(String? name) => CircleAvatar(
+      radius: 20,
+      backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
+      child: Text(
+        (name != null && name.isNotEmpty) ? name[0].toUpperCase() : 'U',
+        style: const TextStyle(
+            fontWeight: FontWeight.w700, color: Color(0xFF6366F1)),
+      ),
+    );
 
 class _SidebarItem {
   final IconData icon;

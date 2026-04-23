@@ -11,16 +11,19 @@ import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/navigation_provider.dart';
+import 'package:icare/navigators/drawer.dart';
 
-class InstructorDashboardScreen extends StatefulWidget {
+class InstructorDashboardScreen extends ConsumerStatefulWidget {
   const InstructorDashboardScreen({super.key});
 
   @override
-  State<InstructorDashboardScreen> createState() =>
+  ConsumerState<InstructorDashboardScreen> createState() =>
       _InstructorDashboardScreenState();
 }
 
-class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
+class _InstructorDashboardScreenState extends ConsumerState<InstructorDashboardScreen> {
   final InstructorService _instructorService = InstructorService();
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
@@ -146,12 +149,17 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       Icons.health_and_safety_rounded,
                       const Color(0xFF6366F1),
                       () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorCoursesManagementScreen(),
-                          ),
-                        );
+                        final bool isWeb = MediaQuery.of(context).size.width > 600;
+                        if (isWeb) {
+                          ref.read(navigationProvider.notifier).setIndex(1);
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) =>
+                                  const InstructorCoursesManagementScreen(),
+                            ),
+                          );
+                        }
                       },
                     ),
 
@@ -229,12 +237,17 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       Icons.settings_rounded,
                       const Color(0xFF64748B),
                       () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorProfileSetupScreen(),
-                          ),
-                        );
+                        final bool isWeb = MediaQuery.of(context).size.width > 600;
+                        if (isWeb) {
+                          ref.read(navigationProvider.notifier).setIndex(3);
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) =>
+                                  const InstructorProfileSetupScreen(),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],

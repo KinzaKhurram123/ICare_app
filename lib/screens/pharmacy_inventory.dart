@@ -58,12 +58,10 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading products: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to load data. Please try again.')));
       }
     }
   }
@@ -85,7 +83,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: const Text('Unable to complete action. Please try again.')),
+                SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
               );
             }
           }

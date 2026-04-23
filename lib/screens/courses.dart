@@ -52,10 +52,11 @@ class _CoursesState extends ConsumerState<Courses>
   void initState() {
     super.initState();
     final role = ref.read(authProvider).userRole;
+    final int tabLength = role == "Instructor" ? 1 : 3;
     controller = TabController(
-      length: role == "Instructor" ? 1 : 3,
+      length: tabLength,
       vsync: this,
-      initialIndex: widget.myPurchased ? 1 : 0,
+      initialIndex: (widget.myPurchased && tabLength > 1) ? 1 : 0,
     );
   }
 

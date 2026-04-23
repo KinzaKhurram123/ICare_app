@@ -2,6 +2,7 @@ class ImagePaths {
   static const basePath = "assets/images";
 
   static const logo = '$basePath/logo.png';
+  static const banner = '$basePath/icare-banner.png'; // falls back to gradient if missing
   static const backgroundImage = '$basePath/bgImage.jpeg';
 
   static const google = '$basePath/google.svg';

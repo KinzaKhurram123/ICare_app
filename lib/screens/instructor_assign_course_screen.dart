@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/services/instructor_service.dart';
@@ -97,9 +98,16 @@ class _InstructorAssignCourseScreenState
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Failed to assign program';
+        if (e is DioException && e.response?.data != null) {
+          errorMessage = e.response?.data['message'] ?? errorMessage;
+        } else {
+          errorMessage = e.toString();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Login failed. Please check your credentials.'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );

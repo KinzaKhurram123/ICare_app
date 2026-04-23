@@ -33,6 +33,8 @@ class _CreateReminderState extends State<CreateReminder> {
   var _selectedDate = '';
   String? _selectedDisease;
   bool _isSubmitting = false;
+  bool _syncToCalendar = false;
+  bool _isDoctorAssigned = false; // For classification
 
   @override
   void dispose() {
@@ -57,14 +59,11 @@ class _CreateReminderState extends State<CreateReminder> {
     setState(() => _isSubmitting = true);
 
     final data = {
-      "patientEmail": _emailController.text,
-      "patientName": _nameController.text,
       "title": _titleController.text,
-      "disease": _selectedDisease,
-      "tablets": [_tabletController.text],
-      "instructions": _instructionsController.text,
       "time": _selectedTime,
       "date": _selectedDate,
+      "isManual": true, // Mark as self-created
+      "syncToCalendar": _syncToCalendar,
     };
 
     final result = await _reminderService.createReminder(data);
@@ -126,192 +125,198 @@ class _CreateReminderState extends State<CreateReminder> {
         ),
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CustomText(
-              textAlign: TextAlign.left,
-              width: Utils.windowWidth(context) * 0.9,
-              text: "Reminder for Patient",
-              color: AppColors.themeDarkGrey,
-              fontSize: 16,
-              fontFamily: "Gilroy-Medium",
-            ),
-            CustomInputField(
-              controller: _emailController,
-              hintText: "Patient Email",
-              hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
+            const Text(
+              "Set a Reminder",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
               ),
-              borderRadius: 30,
-              borderColor: AppColors.grayColor.withAlpha(70),
-              width: Utils.windowWidth(context) * 0.9,
             ),
+            const SizedBox(height: 8),
+            const Text(
+              "Schedule your medication or health tasks",
+              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 32),
+
+            // Label Input
+            const Text(
+              "Reminder Label",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
             CustomInputField(
               controller: _titleController,
-              hintText: "Title",
-              hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-              borderRadius: 30,
-              borderColor: AppColors.grayColor.withAlpha(70),
-              width: Utils.windowWidth(context) * 0.9,
+              hintText: "e.g. Morning Medicine, Checkup",
+              borderRadius: 14,
+              borderColor: const Color(0xFFE2E8F0),
             ),
-            CustomInputField(
-              controller: _nameController,
-              hintText: "Patient Name",
-              hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-              borderRadius: 30,
-              borderColor: AppColors.grayColor.withAlpha(70),
-              width: Utils.windowWidth(context) * 0.9,
-            ),
+            const SizedBox(height: 24),
 
-            CustomDropdown<String>(
-              title: "disease",
-              showTitle: false,
-              textColor: AppColors.grayColor.withAlpha(60),
-              selectedItem: _selectedDisease,
-              margin: EdgeInsets.symmetric(
-                vertical: ScallingConfig.verticalScale(6),
-              ),
-              items: diseaseList,
-              onChanged: (value) {
-                setState(() {
-                  _selectedDisease = value;
-                });
-              },
-            ),
-            CustomInputField(
-              controller: _tabletController,
-              hintText: "tablet Name",
-              hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-              borderRadius: 30,
-              borderColor: AppColors.grayColor.withAlpha(70),
-              width: Utils.windowWidth(context) * 0.9,
-            ),
-            CustomInputField(
-              controller: _instructionsController,
-              width: Utils.windowWidth(context) * 0.9,
-              hintText: "What Patient have to do...",
-              hintStyle: TextStyle(
-                color: AppColors.grayColor.withAlpha(60),
-                fontFamily: "Gilroy-SemiBold",
-                fontSize: 12,
-              ),
-              padding: EdgeInsets.only(
-                left: ScallingConfig.scale(25),
-                top: ScallingConfig.scale(10),
-              ),
-              height: Utils.windowHeight(context) * 0.15,
-              maxLines: 5,
-              borderRadius: 25,
-              borderColor: AppColors.grayColor.withAlpha(70),
-            ),
-
-            SizedBox(height: ScallingConfig.scale(12)),
+            // Date & Time
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CustomButton(
-                  boxShadow: BoxShadow(offset: Offset(0, 0)),
-                  labelWidth: Utils.windowWidth(context) * 0.35,
-                  borderRadius: 35,
-                  borderColor: AppColors.veryLightGrey,
-                  height: Utils.windowHeight(context) * 0.045,
-                  width: Utils.windowWidth(context) * 0.45,
-                  bgColor: AppColors.veryLightGrey,
-                  label: _selectedTime.isNotEmpty
-                      ? _selectedTime
-                      : 'Select Time',
-                  labelColor: AppColors.primaryColor,
-                  labelSize: 11,
-                  onPressed: () async {
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (time != null) {
-                      setState(() {
-                        _selectedTime = time.format(context);
-                      });
-                    }
-                  },
-                  trailingIcon: SvgWrapper(assetPath: ImagePaths.clock),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Date",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      _pickerTrigger(
+                        label: _selectedDate.isNotEmpty ? _selectedDate : "Select Date",
+                        icon: Icons.calendar_today_rounded,
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2030),
+                          );
+                          if (date != null) {
+                            setState(() {
+                              _selectedDate = DateFormat("yyyy-MM-dd").format(date);
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(width: ScallingConfig.scale(10)),
-                CustomButton(
-                  boxShadow: BoxShadow(offset: Offset(0, 0)),
-                  borderRadius: 35,
-                  labelWidth: Utils.windowWidth(context) * 0.35,
-                  borderColor: AppColors.veryLightGrey,
-                  height: Utils.windowHeight(context) * 0.045,
-                  width: Utils.windowWidth(context) * 0.45,
-                  bgColor: AppColors.veryLightGrey,
-
-                  label: _selectedDate.isNotEmpty
-                      ? _selectedDate
-                      : "Select Date",
-                  labelColor: AppColors.primaryColor,
-                  labelSize: 11,
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2030),
-                    );
-                    if (date != null) {
-                      setState(() {
-                        _selectedDate = DateFormat("yyyy/MM/dd").format(date);
-                      });
-                    }
-                  },
-                  trailingIcon: Align(
-                    child: SvgWrapper(assetPath: ImagePaths.calendar),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Time",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      _pickerTrigger(
+                        label: _selectedTime.isNotEmpty ? _selectedTime : "Select Time",
+                        icon: Icons.access_time_rounded,
+                        onTap: () async {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                          );
+                          if (time != null) {
+                            setState(() {
+                              _selectedTime = time.format(context);
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: ScallingConfig.scale(10)),
-            DottedButton(
-              width: Utils.windowWidth(context) * 0.9,
-              title: "Uplaod Prescription",
-              onPressed: () {},
+            const SizedBox(height: 32),
+
+            // Google Calendar Toggle
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4285F4).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.sync_rounded, color: Color(0xFF4285F4), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Google Calendar Sync",
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "Coming Soon",
+                          style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _syncToCalendar,
+                    onChanged: null, // Disabled: Coming Soon
+                    activeColor: const Color(0xFF4285F4),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: ScallingConfig.scale(15)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CustomButton(
-                  width: Utils.windowWidth(context) * 0.45,
-                  borderRadius: 30,
-                  labelSize: 15,
-                  label: _isSubmitting
-                      ? "Processing..."
-                      : (widget.isEdit ? "Edit Reminder" : "Create Reminder"),
-                  onPressed: _isSubmitting ? null : _submitReminder,
+
+            const SizedBox(height: 48),
+            CustomButton(
+              width: double.infinity,
+              borderRadius: 14,
+              label: _isSubmitting ? "Processing..." : "Add Reminder",
+              onPressed: _isSubmitting ? null : _submitReminder,
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  "View All Reminders",
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
-                SizedBox(width: ScallingConfig.scale(10)),
-                CustomButton(
-                  borderRadius: 30,
-                  labelSize: 15,
-                  labelColor: AppColors.primaryColor,
-                  width: Utils.windowWidth(context) * 0.45,
-                  label: "Reminder List",
-                  outlined: true,
-                  onPressed: () {},
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pickerTrigger({required String label, required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primaryColor, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: label.startsWith("Select") ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -438,121 +443,8 @@ class _CreateReminderState extends State<CreateReminder> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
-                                    Icons.person_outline_rounded,
+                                    Icons.alarm_add_rounded,
                                     color: AppColors.primaryColor,
-                                    size: 22,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                const Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Patient Information",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1E293B),
-                                        fontFamily: "Gilroy-Bold",
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      "Enter the patient details for the reminder",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF94A3B8),
-                                        fontFamily: "Gilroy-Medium",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-
-                            // Row 1: Patient Email + Title
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _webField(
-                                    "Patient Email",
-                                    inputHintStyle,
-                                    inputBorderColor,
-                                    inputRadius,
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: _webField(
-                                    "Title",
-                                    inputHintStyle,
-                                    inputBorderColor,
-                                    inputRadius,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Row 2: Patient Name + Disease
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _webField(
-                                    "Patient Name",
-                                    inputHintStyle,
-                                    inputBorderColor,
-                                    inputRadius,
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: CustomDropdown<String>(
-                                    title: "disease",
-                                    showTitle: false,
-                                    textColor: const Color(0xFF94A3B8),
-                                    selectedItem: _selectedDisease,
-                                    margin: EdgeInsets.zero,
-                                    items: diseaseList,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedDisease = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Row 3: Tablet Name
-                            _webField(
-                              "Tablet Name",
-                              inputHintStyle,
-                              inputBorderColor,
-                              inputRadius,
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Separator
-                            const Divider(color: Color(0xFFF1F5F9), height: 1),
-                            const SizedBox(height: 28),
-
-                            // Section: Details
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF22C55E,
-                                    ).withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.description_outlined,
-                                    color: Color(0xFF22C55E),
                                     size: 22,
                                   ),
                                 ),
@@ -571,7 +463,7 @@ class _CreateReminderState extends State<CreateReminder> {
                                     ),
                                     SizedBox(height: 2),
                                     Text(
-                                      "Describe the instructions and schedule",
+                                      "Set the label and schedule for your health task",
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: Color(0xFF94A3B8),
@@ -582,77 +474,151 @@ class _CreateReminderState extends State<CreateReminder> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
-                            // Instructions textarea
-                            CustomInputField(
-                              hintText: "What Patient have to do...",
-                              hintStyle: inputHintStyle,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
+                            // Reminder Label
+                            const Text(
+                              "Reminder Label",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
                               ),
-                              height: 140,
-                              maxLines: 50,
-                              borderRadius: inputRadius,
-                              borderColor: inputBorderColor,
-                              bgColor: const Color(0xFFF8FAFC),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 12),
+                            _webField(
+                              "e.g. Morning Medicine, Checkup",
+                              inputHintStyle,
+                              inputBorderColor,
+                              inputRadius,
+                            ),
+                            const SizedBox(height: 28),
 
-                            // Time & Date Row
+                            // Row: Date + Time
                             Row(
                               children: [
                                 Expanded(
-                                  child: _webPickerButton(
-                                    label: _selectedTime.isNotEmpty
-                                        ? _selectedTime
-                                        : "Select Time",
-                                    icon: Icons.access_time_rounded,
-                                    onTap: () async {
-                                      final time = await showTimePicker(
-                                        context: context,
-                                        initialTime: TimeOfDay.now(),
-                                      );
-                                      if (time != null) {
-                                        setState(() {
-                                          _selectedTime = time.format(context);
-                                        });
-                                      }
-                                    },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Date",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _webPickerButton(
+                                        label: _selectedDate.isNotEmpty
+                                            ? _selectedDate
+                                            : "Select Date",
+                                        icon: Icons.calendar_today_rounded,
+                                        onTap: () async {
+                                          final date = await showDatePicker(
+                                            context: context,
+                                            firstDate: DateTime.now(),
+                                            lastDate: DateTime(2030),
+                                          );
+                                          if (date != null) {
+                                            setState(() {
+                                              _selectedDate = DateFormat(
+                                                "yyyy-MM-dd",
+                                              ).format(date);
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(
-                                  child: _webPickerButton(
-                                    label: _selectedDate.isNotEmpty
-                                        ? _selectedDate
-                                        : "Select Date",
-                                    icon: Icons.calendar_today_rounded,
-                                    onTap: () async {
-                                      final date = await showDatePicker(
-                                        context: context,
-                                        firstDate: DateTime.now(),
-                                        lastDate: DateTime(2030),
-                                      );
-                                      if (date != null) {
-                                        setState(() {
-                                          _selectedDate = DateFormat(
-                                            "yyyy/MM/dd",
-                                          ).format(date);
-                                        });
-                                      }
-                                    },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Time",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _webPickerButton(
+                                        label: _selectedTime.isNotEmpty
+                                            ? _selectedTime
+                                            : "Select Time",
+                                        icon: Icons.access_time_rounded,
+                                        onTap: () async {
+                                          final time = await showTimePicker(
+                                            context: context,
+                                            initialTime: TimeOfDay.now(),
+                                          );
+                                          if (time != null) {
+                                            setState(() {
+                                              _selectedTime = time.format(context);
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
-                            // Upload prescription
-                            DottedButton(
-                              title: "Upload Prescription",
-                              onPressed: () {},
+                            // Google Calendar Sync
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF4285F4).withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.sync_rounded, color: Color(0xFF4285F4), size: 24),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Sync with Google Calendar",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          "Auto-add reminders to your calendar for better tracking",
+                                          style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Text(
+                                    "Coming Soon",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF94A3B8),
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Switch(
+                                    value: _syncToCalendar,
+                                    onChanged: null,
+                                    activeColor: const Color(0xFF4285F4),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -746,6 +712,7 @@ class _CreateReminderState extends State<CreateReminder> {
     double radius,
   ) {
     return CustomInputField(
+      controller: _titleController,
       hintText: hint,
       hintStyle: hintStyle,
       borderRadius: radius,

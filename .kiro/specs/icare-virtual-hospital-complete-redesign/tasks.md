@@ -844,7 +844,7 @@ This implementation plan breaks down the complete redesign of the iCare Virtual 
   - Track completed modules and lessons
   - Track quiz scores
   - Calculate overall progress percentage
-  - _Requirements: 14.10_
+  - _Requirements: 14.
 
 - [ ] 19.5 Implement patient learning dashboard
   - Display assigned health programs

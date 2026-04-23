@@ -1,8 +1,14 @@
+import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/user_service.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
@@ -17,8 +23,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController cnicController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
+  final TextEditingController emergencyContact1Controller = TextEditingController();
+  final TextEditingController emergencyContact2Controller = TextEditingController();
   final UserService _userService = UserService();
+  final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
+  File? _selectedImage;
+  Uint8List? _selectedImageBytes; // for web
+  String? _uploadedImageUrl;
 
   @override
   void initState() {
@@ -27,39 +45,275 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (user != null) {
       nameController.text = user.name;
       phoneController.text = user.phoneNumber;
+      _uploadedImageUrl = user.profilePicture;
     }
+    _loadFullProfile();
+  }
+
+  // Auto-format CNIC as XXXXX-XXXXXXX-X
+  String _formatCnic(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 5) return digits;
+    if (digits.length <= 12) return '${digits.substring(0, 5)}-${digits.substring(5)}';
+    return '${digits.substring(0, 5)}-${digits.substring(5, 12)}-${digits.substring(12, digits.length.clamp(0, 13))}';
+  }
+
+  void _onCnicChanged(String value) {
+    final formatted = _formatCnic(value);
+    if (formatted != cnicController.text) {
+      cnicController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
+
+  String? _validateCnic(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final digits = value.replaceAll('-', '');
+    if (digits.length != 13) return 'CNIC must be 13 digits (XXXXX-XXXXXXX-X)';
+    return null;
+  }
+
+  Future<void> _loadFullProfile() async {
+    try {
+      final result = await UserService().getUserProfile();
+      if (result['success'] == true && mounted) {
+        final data = result['user'] as Map<String, dynamic>;
+        setState(() {
+          if ((data['name'] as String?)?.isNotEmpty == true) nameController.text = data['name'];
+          if ((data['phoneNumber'] as String?)?.isNotEmpty == true) phoneController.text = data['phoneNumber'];
+          cnicController.text = data['cnic'] ?? '';
+          heightController.text = data['height']?.toString() ?? '';
+          weightController.text = data['weight']?.toString() ?? '';
+          addressController.text = data['address'] ?? '';
+          ageController.text = data['age']?.toString() ?? '';
+          bioController.text = data['bio'] ?? '';
+          emergencyContact1Controller.text = data['emergencyContact1'] ?? '';
+          emergencyContact2Controller.text = data['emergencyContact2'] ?? '';
+          final pic = data['profileImage'] ?? data['profilePicture'];
+          if (pic != null && (pic as String).isNotEmpty) {
+            debugPrint('🖼️ Profile image found: ${pic.toString().substring(0, 30)}...');
+            _uploadedImageUrl = pic;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
+    cnicController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    addressController.dispose();
+    ageController.dispose();
+    bioController.dispose();
+    emergencyContact1Controller.dispose();
+    emergencyContact2Controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // drag handle
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Update Profile Photo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Choose how you want to update your photo',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _photoOption(
+                    icon: Icons.photo_library_rounded,
+                    label: 'Gallery',
+                    color: const Color(0xFF6366F1),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+                      if (picked != null) {
+                        if (kIsWeb) {
+                          final bytes = await picked.readAsBytes();
+                          setState(() => _selectedImageBytes = bytes);
+                          await _uploadImage(null, bytes: bytes);
+                        } else {
+                          setState(() => _selectedImage = File(picked.path));
+                          await _uploadImage(File(picked.path));
+                        }
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _photoOption(
+                    icon: Icons.camera_alt_rounded,
+                    label: 'Camera',
+                    color: const Color(0xFF0EA5E9),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final picked = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 600);
+                      if (picked != null) {
+                        if (kIsWeb) {
+                          final bytes = await picked.readAsBytes();
+                          setState(() => _selectedImageBytes = bytes);
+                          await _uploadImage(null, bytes: bytes);
+                        } else {
+                          setState(() => _selectedImage = File(picked.path));
+                          await _uploadImage(File(picked.path));
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                ),
+                child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _photoOption({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 26),
+            ),
+            const SizedBox(height: 10),
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadImage(File? file, {Uint8List? bytes}) async {
+    try {
+      setState(() => isLoading = true);
+      final imageBytes = bytes ?? await file!.readAsBytes();
+      final base64Str = 'data:image/jpeg;base64,${_encodeBase64(imageBytes)}';
+      final response = await ApiService().put('/users/profile', {
+        'profilePicture': base64Str,
+      });
+      if (response.statusCode == 200 && mounted) {
+        setState(() => _uploadedImageUrl = base64Str);
+        // Update auth provider so image persists across screens
+        final updatedUser = app_user.User.fromJson(
+          Map<String, dynamic>.from(response.data as Map),
+        );
+        ref.read(authProvider.notifier).setUser(updatedUser);
+      }
+    } catch (e) {
+      debugPrint('Image upload error: $e');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  String _encodeBase64(List<int> bytes) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    final result = StringBuffer();
+    for (var i = 0; i < bytes.length; i += 3) {
+      final b0 = bytes[i];
+      final b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      final b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+      result.write(chars[(b0 >> 2) & 0x3F]);
+      result.write(chars[((b0 << 4) | (b1 >> 4)) & 0x3F]);
+      result.write(i + 1 < bytes.length ? chars[((b1 << 2) | (b2 >> 6)) & 0x3F] : '=');
+      result.write(i + 2 < bytes.length ? chars[b2 & 0x3F] : '=');
+    }
+    return result.toString();
   }
 
   void _handleUpdate() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => isLoading = true);
-
     try {
       final result = await _userService.updateProfile(
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
+        cnic: cnicController.text.trim(),
+        height: heightController.text.trim(),
+        weight: weightController.text.trim(),
+        address: addressController.text.trim(),
+        age: ageController.text.trim(),
+        bio: bioController.text.trim(),
+        emergencyContact1: emergencyContact1Controller.text.trim(),
+        emergencyContact2: emergencyContact2Controller.text.trim(),
       );
-
       if (result['success']) {
-        final userData = result['user'];
-        final user = app_user.User.fromJson(userData);
-        ref.read(authProvider.notifier).setUser(user);
-
+        // Build updated user — merge new fields into existing user
+        final existing = ref.read(authProvider).user;
+        final updated = app_user.User(
+          id: existing?.id ?? '',
+          name: nameController.text.trim(),
+          email: existing?.email ?? '',
+          phoneNumber: phoneController.text.trim(),
+          role: existing?.role ?? '',
+          profilePicture: _uploadedImageUrl ?? existing?.profilePicture,
+          cnic: cnicController.text.trim(),
+          height: heightController.text.trim(),
+          weight: weightController.text.trim(),
+          address: addressController.text.trim(),
+        );
+        ref.read(authProvider.notifier).setUser(updated);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
+            const SnackBar(content: Text('Profile updated successfully'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
           );
           Navigator.pop(context);
         }
@@ -76,11 +330,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -97,14 +347,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
+        title: const Text('Edit Profile',
+            style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -113,125 +357,101 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
-                // Profile Picture
-                Stack(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primaryColor.withOpacity(0.1),
-                        border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
-                          width: 3,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
+                // ── Profile Picture with upload ──
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
+                          color: AppColors.primaryColor.withValues(alpha: 0.1),
+                          border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2), width: 3),
                         ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
+                        child: ClipOval(
+                          child: _selectedImageBytes != null
+                              ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
+                              : _selectedImage != null && !kIsWeb
+                                  ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                                  : (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty)
+                                      ? _uploadedImageUrl!.startsWith('data:')
+                                          ? Image.memory(
+                                              _tryDecodeBase64(_uploadedImageUrl!),
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _avatarFallback(user?.name),
+                                            )
+                                          : Image.network(_uploadedImageUrl!, fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => _avatarFallback(user?.name))
+                                      : _avatarFallback(user?.name),
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(width: 16, height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 8),
+                const Text('Tap to change photo',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                 const SizedBox(height: 32),
 
-                // Form
+                // ── Form ──
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
                   ),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Personal Information',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
+                        const Text('Personal Information',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
                         const SizedBox(height: 20),
                         CustomInputField(
                           hintText: 'Full Name',
-                          leadingIcon: const Icon(
-                            Icons.person_outline,
-                            color: Color(0xFF94A3B8),
-                          ),
+                          leadingIcon: const Icon(Icons.person_outline, color: Color(0xFF94A3B8)),
                           controller: nameController,
                           bgColor: const Color(0xFFF8FAFC),
                           borderRadius: 14,
                           borderColor: const Color(0xFFE2E8F0),
                           borderWidth: 1.5,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return 'Please enter your name';
-                            }
-                            return null;
-                          },
+                          validator: (val) => (val == null || val.isEmpty) ? 'Please enter your name' : null,
                         ),
                         const SizedBox(height: 16),
                         CustomInputField(
                           hintText: 'Phone Number',
-                          leadingIcon: const Icon(
-                            Icons.phone_outlined,
-                            color: Color(0xFF94A3B8),
-                          ),
+                          leadingIcon: const Icon(Icons.phone_outlined, color: Color(0xFF94A3B8)),
                           controller: phoneController,
                           bgColor: const Color(0xFFF8FAFC),
                           borderRadius: 14,
                           borderColor: const Color(0xFFE2E8F0),
                           borderWidth: 1.5,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return 'Please enter your phone number';
-                            }
-                            return null;
-                          },
+                          validator: (val) => (val == null || val.isEmpty) ? 'Please enter your phone number' : null,
                         ),
                         const SizedBox(height: 16),
-                        // Email (read-only)
                         CustomInputField(
                           hintText: user?.email ?? '',
-                          leadingIcon: const Icon(
-                            Icons.email_outlined,
-                            color: Color(0xFF94A3B8),
-                          ),
+                          leadingIcon: const Icon(Icons.email_outlined, color: Color(0xFF94A3B8)),
                           controller: TextEditingController(text: user?.email),
                           bgColor: const Color(0xFFF1F5F9),
                           borderRadius: 14,
@@ -240,45 +460,110 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           enabled: false,
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Email cannot be changed',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
-                          ),
+                        const Text('Email cannot be changed',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'CNIC Number (e.g. 12345-1234567-1)',
+                          leadingIcon: const Icon(Icons.credit_card_outlined, color: Color(0xFF94A3B8)),
+                          controller: cnicController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.number,
+                          onChanged: _onCnicChanged,
+                          validator: _validateCnic,
                         ),
-                        const SizedBox(height: 24),
-                        // Role Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.badge_outlined,
-                                color: AppColors.primaryColor,
-                                size: 20,
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Age',
+                                leadingIcon: const Icon(Icons.cake_outlined, color: Color(0xFF94A3B8)),
+                                controller: ageController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Role: ${user?.role ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
-                                ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Height (cm)',
+                                leadingIcon: const Icon(Icons.height_rounded, color: Color(0xFF94A3B8)),
+                                controller: heightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: CustomInputField(
+                                hintText: 'Weight (kg)',
+                                leadingIcon: const Icon(Icons.monitor_weight_outlined, color: Color(0xFF94A3B8)),
+                                controller: weightController,
+                                bgColor: const Color(0xFFF8FAFC),
+                                borderRadius: 14,
+                                borderColor: const Color(0xFFE2E8F0),
+                                borderWidth: 1.5,
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Address',
+                          leadingIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8)),
+                          controller: addressController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Bio (optional)',
+                          leadingIcon: const Icon(Icons.description_outlined, color: Color(0xFF94A3B8)),
+                          controller: bioController,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('Emergency Contacts',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        const SizedBox(height: 12),
+                        CustomInputField(
+                          hintText: 'Emergency Number 1',
+                          leadingIcon: const Icon(Icons.emergency_rounded, color: Color(0xFFEF4444)),
+                          controller: emergencyContact1Controller,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInputField(
+                          hintText: 'Emergency Number 2',
+                          leadingIcon: const Icon(Icons.emergency_rounded, color: Color(0xFFEF4444)),
+                          controller: emergencyContact2Controller,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 14,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                          keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 32),
-                        // Update Button
                         SizedBox(
                           width: double.infinity,
                           height: 54,
@@ -286,28 +571,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               elevation: 0,
                             ),
                             onPressed: isLoading ? null : _handleUpdate,
                             child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Update Profile',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                                ? const SizedBox(height: 20, width: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Text('Update Profile',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                           ),
                         ),
                       ],
@@ -320,5 +592,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         ),
       ),
     );
+  }
+
+  Widget _avatarFallback(String? name) {
+    return Center(
+      child: Text(
+        name?.isNotEmpty == true ? name![0].toUpperCase() : 'U',
+        style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: AppColors.primaryColor),
+      ),
+    );
+  }
+
+  Uint8List _tryDecodeBase64(String data) {
+    try {
+      final base64Str = data.contains(',') ? data.split(',').last : data;
+      final bytes = base64Decode(base64Str);
+      debugPrint('✅ Base64 decoded: ${bytes.length} bytes');
+      return bytes;
+    } catch (e) {
+      debugPrint('❌ Base64 decode failed: $e');
+      return Uint8List(0);
+    }
   }
 }

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:icare/models/medical_record.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/patient_profile_view.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
-class MedicalRecordDetailScreen extends StatelessWidget {
+class MedicalRecordDetailScreen extends ConsumerWidget {
   final MedicalRecord record;
 
   const MedicalRecordDetailScreen({super.key, required this.record});
@@ -156,7 +158,10 @@ class MedicalRecordDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role = ref.read(authProvider).userRole ?? 'Patient';
+    final isDoctor = role == 'Doctor' || role == 'Physician';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -248,6 +253,28 @@ class MedicalRecordDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
+            // Pharmacy Referral
+            if (record.selectedPharmacyName != null) ...[
+              _buildSectionCard(
+                'Referred Pharmacy',
+                Icons.medication_rounded,
+                const Color(0xFF10B981),
+                'Your prescription has been sent to: ${record.selectedPharmacyName!}',
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Laboratory Referral
+            if (record.referredLaboratoryName != null) ...[
+              _buildSectionCard(
+                'Referred Laboratory',
+                Icons.biotech_rounded,
+                const Color(0xFF0EA5E9),
+                'Your lab tests have been referred to: ${record.referredLaboratoryName!}',
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // Assigned Health Programs (Task 19.3)
             if (record.assignedCourses.isNotEmpty) ...[
               _buildHealthProgramsCard(),
@@ -260,8 +287,8 @@ class MedicalRecordDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
-            // CRITICAL FIX: Display SOAP Notes for Patient
-            if (record.soapNotes != null) ...[
+            // CRITICAL: SOAP Notes are HIDDEN from patients (Doctor only)
+            if (isDoctor && record.soapNotes != null) ...[
               _buildSoapNotesCard(),
               const SizedBox(height: 16),
             ],

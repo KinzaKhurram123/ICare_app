@@ -1,7 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/services/user_service.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -12,18 +15,19 @@ import 'package:icare/widgets/custom_text_input.dart';
 import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:image_picker/image_picker.dart';
 
-class CreateProfile extends StatefulWidget {
+class CreateProfile extends ConsumerStatefulWidget {
   const CreateProfile({super.key, this.isEdit = false});
   final bool isEdit;
 
   @override
-  State<CreateProfile> createState() => _CreateProfileState();
+  ConsumerState<CreateProfile> createState() => _CreateProfileState();
 }
 
-class _CreateProfileState extends State<CreateProfile> {
+class _CreateProfileState extends ConsumerState<CreateProfile> {
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _isFetching = true;
 
-  // Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -32,7 +36,96 @@ class _CreateProfileState extends State<CreateProfile> {
   final TextEditingController ageController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _prefillFromCache();
+    _loadFromBackend();
+  }
+
+  void _prefillFromCache() {
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      nameController.text = user.name;
+      emailController.text = user.email;
+      phoneController.text = user.phoneNumber;
+    }
+  }
+
+  Future<void> _loadFromBackend() async {
+    try {
+      final result = await UserService().getUserProfile();
+      if (result['success'] == true && mounted) {
+        final u = result['user'];
+        setState(() {
+          nameController.text = u['name'] ?? nameController.text;
+          emailController.text = u['email'] ?? emailController.text;
+          phoneController.text = u['phoneNumber'] ?? phoneController.text;
+          bioController.text = u['bio'] ?? '';
+          ageController.text = u['age'] ?? '';
+          qualificationController.text = u['qualification'] ?? '';
+          _isFetching = false;
+        });
+      } else {
+        if (mounted) setState(() => _isFetching = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isFetching = false);
+    }
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final apiService = ApiService();
+      final response = await apiService.put('/users/profile', {
+        'name': nameController.text.trim(),
+        'phoneNumber': phoneController.text.trim(),
+        'bio': bioController.text.trim(),
+        'age': ageController.text.trim(),
+        'qualification': qualificationController.text.trim(),
+      });
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (response.statusCode == 200) {
+          // Return the updated data directly — no modal, no extra API call needed
+          final updated = response.data is Map ? Map<String, dynamic>.from(response.data) : <String, dynamic>{};
+          Navigator.of(context).pop(updated);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to save profile')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    bioController.dispose();
+    qualificationController.dispose();
+    ageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isFetching) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     if (MediaQuery.of(context).size.width > 900) {
       return _WebCreateProfile(
         isEdit: widget.isEdit,
@@ -43,9 +136,11 @@ class _CreateProfileState extends State<CreateProfile> {
         bioController: bioController,
         qualificationController: qualificationController,
         ageController: ageController,
-        onSuccess: () => _showSuccessModal(context),
+        isLoading: _isLoading,
+        onSave: _save,
       );
     }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.bgColor,
@@ -79,10 +174,7 @@ class _CreateProfileState extends State<CreateProfile> {
                     children: [
                       CustomInputField(
                         hintText: "Name",
-                        leadingIcon: const Icon(
-                          Icons.person_outline,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.person_outline, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
@@ -90,21 +182,16 @@ class _CreateProfileState extends State<CreateProfile> {
                       ),
                       CustomInputField(
                         hintText: "Email",
-                        leadingIcon: const Icon(
-                          Icons.email_outlined,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.email_outlined, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
                         controller: emailController,
+                        enabled: false,
                       ),
                       CustomInputField(
                         hintText: "Phone Number",
-                        leadingIcon: const Icon(
-                          Icons.phone_outlined,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.phone_outlined, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
@@ -112,10 +199,7 @@ class _CreateProfileState extends State<CreateProfile> {
                       ),
                       CustomInputField(
                         hintText: "Type your bio here....",
-                        leadingIcon: const Icon(
-                          Icons.text_snippet_outlined,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.text_snippet_outlined, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
@@ -123,10 +207,7 @@ class _CreateProfileState extends State<CreateProfile> {
                       ),
                       CustomInputField(
                         hintText: "Add Qualification",
-                        leadingIcon: const Icon(
-                          Icons.school_outlined,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.school_outlined, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
@@ -134,10 +215,7 @@ class _CreateProfileState extends State<CreateProfile> {
                       ),
                       CustomInputField(
                         hintText: "Age",
-                        leadingIcon: const Icon(
-                          Icons.calendar_today_outlined,
-                          color: AppColors.lightGrey200,
-                        ),
+                        leadingIcon: const Icon(Icons.calendar_today_outlined, color: AppColors.lightGrey200),
                         bgColor: AppColors.bgColor,
                         borderRadius: 30,
                         borderColor: AppColors.lightGrey200,
@@ -150,23 +228,15 @@ class _CreateProfileState extends State<CreateProfile> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              _showSuccessModal(context);
-                            }
-                          },
-                          child: Text(
-                            widget.isEdit ? "Update Profile" : "Create Profile",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
+                          onPressed: _isLoading ? null : _save,
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  widget.isEdit ? "Update Profile" : "Create Profile",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                                ),
                         ),
                       ),
                     ],
@@ -181,6 +251,7 @@ class _CreateProfileState extends State<CreateProfile> {
   }
 }
 
+// ─── Web layout ───────────────────────────────────────────────────────────────
 class _WebCreateProfile extends StatelessWidget {
   final bool isEdit;
   final GlobalKey<FormState> formKey;
@@ -190,7 +261,8 @@ class _WebCreateProfile extends StatelessWidget {
   final TextEditingController bioController;
   final TextEditingController qualificationController;
   final TextEditingController ageController;
-  final VoidCallback onSuccess;
+  final bool isLoading;
+  final VoidCallback onSave;
 
   const _WebCreateProfile({
     required this.isEdit,
@@ -201,7 +273,8 @@ class _WebCreateProfile extends StatelessWidget {
     required this.bioController,
     required this.qualificationController,
     required this.ageController,
-    required this.onSuccess,
+    required this.isLoading,
+    required this.onSave,
   });
 
   @override
@@ -210,35 +283,20 @@ class _WebCreateProfile extends StatelessWidget {
       backgroundColor: const Color(0xFFF4F6FB),
       body: Row(
         children: [
-          // ── Left Side: Aesthetic Panel (Premium Visual) ──
           Container(
             width: 450,
             color: AppColors.primaryColor,
             child: Stack(
               children: [
                 Positioned(
-                  top: -100,
-                  left: -100,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  top: -100, left: -100,
+                  child: Container(width: 300, height: 300,
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle)),
                 ),
                 Positioned(
-                  bottom: -50,
-                  right: -50,
-                  child: Container(
-                    width: 250,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  bottom: -50, right: -50,
+                  child: Container(width: 250, height: 250,
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle)),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(60),
@@ -247,8 +305,8 @@ class _WebCreateProfile extends StatelessWidget {
                     children: [
                       const CustomBackButton(color: Colors.white),
                       const Spacer(),
-                      const CustomText(
-                        text: "Complete Your\nProfessional Identity",
+                      CustomText(
+                        text: isEdit ? "Update Your\nProfile" : "Complete Your\nProfessional Identity",
                         fontSize: 38,
                         fontFamily: "Gilroy-Bold",
                         color: Colors.white,
@@ -256,12 +314,8 @@ class _WebCreateProfile extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        "Your profile is your digital business card in the ICare platform. Fill out the details to get started with patients.",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 18,
-                          height: 1.6,
-                        ),
+                        "Your profile is your digital identity in the iCare platform.",
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 18, height: 1.6),
                       ),
                       const Spacer(flex: 2),
                     ],
@@ -270,8 +324,6 @@ class _WebCreateProfile extends StatelessWidget {
               ],
             ),
           ),
-
-          // ── Right Side: Scrollable Form ──
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(80),
@@ -291,23 +343,11 @@ class _WebCreateProfile extends StatelessWidget {
                               children: [
                                 Text(
                                   isEdit ? "Update Your Info" : "Profile Setup",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primaryColor,
-                                    letterSpacing: 2,
-                                  ),
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primaryColor, letterSpacing: 2),
                                 ),
                                 const SizedBox(height: 8),
-                                const Text(
-                                  "Personal Details",
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF1E293B),
-                                    fontFamily: "Gilroy-Bold",
-                                  ),
-                                ),
+                                const Text("Personal Details",
+                                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontFamily: "Gilroy-Bold")),
                               ],
                             ),
                           ),
@@ -320,65 +360,21 @@ class _WebCreateProfile extends StatelessWidget {
                         key: formKey,
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildInput(
-                                    label: "Full Name",
-                                    controller: nameController,
-                                    icon: Icons.person_outline_rounded,
-                                    hint: "Enter your legal name",
-                                  ),
-                                ),
-                                const SizedBox(width: 32),
-                                Expanded(
-                                  child: _buildInput(
-                                    label: "Official Email",
-                                    controller: emailController,
-                                    icon: Icons.alternate_email_rounded,
-                                    hint: "example@icare.com",
-                                  ),
-                                ),
-                              ],
-                            ),
+                            Row(children: [
+                              Expanded(child: _buildInput(label: "Full Name", controller: nameController, icon: Icons.person_outline_rounded, hint: "Enter your name")),
+                              const SizedBox(width: 32),
+                              Expanded(child: _buildInput(label: "Email", controller: emailController, icon: Icons.alternate_email_rounded, hint: "email@example.com", enabled: false)),
+                            ]),
                             const SizedBox(height: 32),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildInput(
-                                    label: "Phone Number",
-                                    controller: phoneController,
-                                    icon: Icons.phone_android_rounded,
-                                    hint: "+1 (555) 000-0000",
-                                  ),
-                                ),
-                                const SizedBox(width: 32),
-                                Expanded(
-                                  child: _buildInput(
-                                    label: "Age",
-                                    controller: ageController,
-                                    icon: Icons.calendar_today_rounded,
-                                    hint: "24",
-                                  ),
-                                ),
-                              ],
-                            ),
+                            Row(children: [
+                              Expanded(child: _buildInput(label: "Phone Number", controller: phoneController, icon: Icons.phone_android_rounded, hint: "+1 (555) 000-0000")),
+                              const SizedBox(width: 32),
+                              Expanded(child: _buildInput(label: "Age", controller: ageController, icon: Icons.calendar_today_rounded, hint: "e.g. 28")),
+                            ]),
                             const SizedBox(height: 32),
-                            _buildInput(
-                              label: "Bio & Description",
-                              controller: bioController,
-                              icon: Icons.description_outlined,
-                              hint:
-                                  "Tell us about your professional background...",
-                              maxLines: 4,
-                            ),
+                            _buildInput(label: "Bio & Description", controller: bioController, icon: Icons.description_outlined, hint: "Tell us about yourself...", maxLines: 4),
                             const SizedBox(height: 32),
-                            _buildInput(
-                              label: "Qualifications",
-                              controller: qualificationController,
-                              icon: Icons.school_outlined,
-                              hint: "MBBS, MD, etc.",
-                            ),
+                            _buildInput(label: "Qualifications", controller: qualificationController, icon: Icons.school_outlined, hint: "e.g. MBBS, BSc Nursing"),
                             const SizedBox(height: 60),
                             SizedBox(
                               width: double.infinity,
@@ -386,27 +382,16 @@ class _WebCreateProfile extends StatelessWidget {
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   elevation: 0,
                                 ),
-                                onPressed: () {
-                                  if (formKey.currentState!.validate()) {
-                                    onSuccess();
-                                  }
-                                },
-                                child: Text(
-                                  isEdit
-                                      ? "Update Changes"
-                                      : "Create My Profile",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 18,
-                                    fontFamily: "Gilroy-Bold",
-                                  ),
-                                ),
+                                onPressed: isLoading ? null : onSave,
+                                child: isLoading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : Text(
+                                        isEdit ? "Update Changes" : "Create My Profile",
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18, fontFamily: "Gilroy-Bold"),
+                                      ),
                               ),
                             ),
                           ],
@@ -429,47 +414,28 @@ class _WebCreateProfile extends StatelessWidget {
     required IconData icon,
     required String hint,
     int maxLines = 1,
+    bool enabled = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           maxLines: maxLines,
+          enabled: enabled,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
             prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 20),
             filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 18,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryColor,
-                width: 2,
-              ),
-            ),
+            fillColor: enabled ? Colors.white : const Color(0xFFF1F5F9),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryColor, width: 2)),
+            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
           ),
         ),
       ],
@@ -477,9 +443,9 @@ class _WebCreateProfile extends StatelessWidget {
   }
 }
 
+// ─── Profile image picker ─────────────────────────────────────────────────────
 class ProfilePicker extends StatefulWidget {
   const ProfilePicker({super.key, required this.onPickImage});
-
   final void Function(File pickedImage) onPickImage;
 
   @override
@@ -491,50 +457,24 @@ class _ProfilePickerState extends State<ProfilePicker> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedImage = await _picker.pickImage(
-      source: source,
-      imageQuality: 80,
-      maxWidth: 600,
-    );
-
+    final pickedImage = await _picker.pickImage(source: source, imageQuality: 80, maxWidth: 600);
     if (pickedImage == null) return;
-
     final imageFile = File(pickedImage.path);
-
-    setState(() {
-      _selectedImage = imageFile;
-    });
-
+    setState(() => _selectedImage = imageFile);
     widget.onPickImage(imageFile);
   }
 
   void _showImageSourcePicker() {
     showModalBottomSheet(
       context: context,
-      builder: (_) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (_) => SafeArea(
+        child: Wrap(children: [
+          ListTile(leading: const Icon(Icons.photo_library), title: const Text('Gallery'),
+            onTap: () { Navigator.pop(context); _pickImage(ImageSource.gallery); }),
+          ListTile(leading: const Icon(Icons.camera_alt), title: const Text('Camera'),
+            onTap: () { Navigator.pop(context); _pickImage(ImageSource.camera); }),
+        ]),
+      ),
     );
   }
 
@@ -548,37 +488,19 @@ class _ProfilePickerState extends State<ProfilePicker> {
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: size,
-          height: height,
+          width: size, height: height,
           padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            border: Border.all(width: 2, color: AppColors.primaryColor),
-            borderRadius: BorderRadius.circular(35),
-          ),
+          decoration: BoxDecoration(border: Border.all(width: 2, color: AppColors.primaryColor), borderRadius: BorderRadius.circular(35)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(30),
             child: Container(
               color: AppColors.primaryColor,
-              width: double.infinity,
-              height: double.infinity,
               child: _selectedImage != null
-                  ? Image.file(
-                      _selectedImage!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    )
-                  : Center(
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: Colors.white,
-                        size: 45,
-                      ),
-                    ),
+                  ? Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+                  : const Center(child: Icon(Icons.person_outline, color: Colors.white, size: 45)),
             ),
           ),
         ),
-
         Positioned(
           right: ScallingConfig.scale(-5),
           bottom: ScallingConfig.scale(-5),
@@ -589,10 +511,7 @@ class _ProfilePickerState extends State<ProfilePicker> {
             height: ScallingConfig.scale(25),
             borderRadius: 10,
             bgColor: AppColors.secondaryColor,
-            leadingIcon: SvgWrapper(
-              width: ScallingConfig.scale(20),
-              assetPath: ImagePaths.camera,
-            ),
+            leadingIcon: SvgWrapper(width: ScallingConfig.scale(20), assetPath: ImagePaths.camera),
           ),
         ),
       ],
@@ -600,74 +519,3 @@ class _ProfilePickerState extends State<ProfilePicker> {
   }
 }
 
-void _showSuccessModal(BuildContext ctx) {
-  showDialog(
-    context: ctx,
-    // barrierDismissible: false,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: 70,
-                width: 70,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 40),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Successful",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "You have complete your profile setup successfully.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 25),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                  },
-                  // onPressed: () {
-                  // Navigator.pop(context); // Close modal
-                  //   Navigator.pop(context); // Go back to login screen
-                  // },
-                  child: const Text(
-                    "Go Back",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}

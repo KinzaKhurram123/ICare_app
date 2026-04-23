@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:flutter/foundation.dart';
@@ -87,6 +89,25 @@ class CourseService {
   Future<Course> unpublishCourse(String id) async {
     final response = await _apiService.post('/courses/$id/unpublish', {});
     return Course.fromJson(response.data['course']);
+  }
+
+  /// Upload a video file for a lesson
+  Future<String> uploadVideo(String? filePath, {List<int>? bytes, String? filename}) async {
+    MultipartFile file;
+    if (kIsWeb) {
+      if (bytes == null) throw Exception('Bytes required for web upload');
+      file = MultipartFile.fromBytes(bytes, filename: filename);
+    } else {
+      if (filePath == null) throw Exception('File path required for mobile upload');
+      file = await MultipartFile.fromFile(filePath, filename: filename);
+    }
+
+    final formData = FormData.fromMap({
+      'video': file,
+    });
+
+    final response = await _apiService.postMultipart('/videos/upload', formData);
+    return response.data['videoUrl'];
   }
 
   // ═══════════════════════════════════════════════════════════════════════

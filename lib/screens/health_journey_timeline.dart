@@ -74,6 +74,29 @@ class _HealthJourneyTimelineState extends State<HealthJourneyTimeline> {
       ),
       body: Column(
         children: [
+          // Coming Soon banner
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFED7AA)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.construction_rounded, color: Color(0xFFF97316), size: 20),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Coming Soon — Full health journey tracking is on the way.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF9A3412), fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
           _buildHeader(),
           _buildFilterChips(),
           Expanded(

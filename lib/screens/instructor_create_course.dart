@@ -5,6 +5,7 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/widgets/custom_text_input.dart';
+import 'package:file_picker/file_picker.dart';
 
 class InstructorCreateCourseScreen extends StatefulWidget {
   final Course? course;
@@ -712,6 +713,48 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _videoUrlController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  bool _isUploading = false;
+
+  Future<void> _pickAndUploadVideo() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+      );
+
+      if (result != null) {
+        final file = result.files.single;
+        setState(() => _isUploading = true);
+
+        final videoUrl = await CourseService().uploadVideo(
+          file.path,
+          bytes: file.bytes,
+          filename: file.name,
+        );
+
+        setState(() {
+          _videoUrlController.text = videoUrl;
+          _isUploading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Video uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -787,10 +830,48 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 validator: (val) => val?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              CustomInputField(
-                controller: _videoUrlController,
-                hintText: 'Video URL (optional)',
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: CustomInputField(
+                      controller: _videoUrlController,
+                      hintText: 'Video URL (YouTube or Uploaded)',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 54, // Matches CustomInputField height roughly
+                    child: ElevatedButton(
+                      onPressed: _isUploading ? null : _pickAndUploadVideo,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isUploading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.upload_file, color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
+              if (_isUploading)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'Uploading video... Please wait.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
               const SizedBox(height: 16),
               CustomInputField(
                 controller: _durationController,

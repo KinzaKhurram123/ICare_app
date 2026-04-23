@@ -27,7 +27,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _fetchReports();
   }
 
@@ -76,7 +76,10 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         .where((b) => b['status'] == 'completed')
         .toList();
     final pending = _completedBookings
-        .where((b) => b['status'] != 'completed' && b['status'] != 'cancelled')
+        .where((b) => b['status'] == 'pending' || b['status'] == 'confirmed')
+        .toList();
+    final advised = _completedBookings
+        .where((b) => b['status'] == 'advised')
         .toList();
 
     return Scaffold(
@@ -126,6 +129,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                   tabs: [
                     Tab(text: 'COMPLETED (${completed.length})'),
                     Tab(text: 'PENDING (${pending.length})'),
+                    Tab(text: 'ADVISED (${advised.length})'),
                   ],
                 ),
               ),
@@ -153,6 +157,12 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                       showResults: false,
                       isDesktop: isDesktop,
                     ),
+                    _buildReportList(
+                      advised,
+                      showResults: false,
+                      isDesktop: isDesktop,
+                      isEmptyAdvised: true,
+                    ),
                   ],
                 ),
               ),
@@ -164,6 +174,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     List<dynamic> bookings, {
     required bool showResults,
     required bool isDesktop,
+    bool isEmptyAdvised = false,
   }) {
     if (bookings.isEmpty) {
       return Center(
@@ -177,16 +188,20 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                showResults
-                    ? Icons.receipt_long_rounded
-                    : Icons.hourglass_empty_rounded,
+                isEmptyAdvised 
+                    ? Icons.assignment_turned_in_rounded
+                    : (showResults
+                        ? Icons.receipt_long_rounded
+                        : Icons.hourglass_empty_rounded),
                 size: 48,
                 color: primaryColor.withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              showResults ? 'No completed tests yet' : 'No pending tests',
+              isEmptyAdvised
+                  ? 'No advised tests'
+                  : (showResults ? 'No completed tests yet' : 'No pending tests'),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -195,9 +210,11 @@ class _LabReportsScreenState extends State<LabReportsScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              showResults
-                  ? 'Completed test results will appear here'
-                  : 'All pending bookings will appear here',
+              isEmptyAdvised
+                  ? 'Tests prescribed by your doctor will show here'
+                  : (showResults
+                    ? 'Completed test results will appear here'
+                    : 'All pending bookings will appear here'),
               style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
             ),
           ],

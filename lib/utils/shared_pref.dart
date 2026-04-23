@@ -11,9 +11,20 @@ class SharedPref {
 
   SharedPreferences? _prefs;
 
-  Future<SharedPreferences> get prefs async {
-    _prefs ??= await SharedPreferences.getInstance();
-    return _prefs!;
+  Future<SharedPreferencesWithCache> get _prefs async {
+    _cache ??= await SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{
+          'auth',
+          'userData',
+          'token',
+          'userRole',
+          'walkthrough',
+          'biometric_enabled',
+        },
+      ),
+    );
+    return _cache!;
   }
 
   Future<void> setUserData(User userData) async {
@@ -35,13 +46,17 @@ class SharedPref {
   Future<void> setToken(String token) async {
     final SharedPreferences pref = await prefs;
     await pref.setString('token', token);
-    debugPrint('✅ Token saved: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
+    debugPrint(
+      '✅ Token saved: ${token.substring(0, token.length > 20 ? 20 : token.length)}...',
+    );
   }
 
   Future<String?> getToken() async {
     final SharedPreferences pref = await prefs;
     final token = pref.getString('token');
-    debugPrint('🔑 Token retrieved: ${token != null ? "Yes (length: ${token.length})" : "No"}');
+    debugPrint(
+      '🔑 Token retrieved: ${token != null ? "Yes (length: ${token.length})" : "No"}',
+    );
     return token;
   }
 
@@ -84,5 +99,15 @@ class SharedPref {
     final hasToken = pref.containsKey('token');
     debugPrint("Is logged in: $hasToken");
     return hasToken;
+  }
+
+  Future<void> setBiometricEnabled(bool value) async {
+    final pref = await _prefs;
+    await pref.setBool('biometric_enabled', value);
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    final pref = await _prefs;
+    return pref.getBool('biometric_enabled') ?? false;
   }
 }

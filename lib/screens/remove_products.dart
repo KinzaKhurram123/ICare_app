@@ -43,12 +43,20 @@ class RemoveProductsScreen extends ConsumerWidget {
         ),
 
         itemBuilder: (ctx, i) {
+          final product = {
+            '_id': 'remove_$i',
+            'productName': 'Medicine Item ${i + 1}',
+            'price': 1000 + (i * 200),
+            'brand': 'Pharma Co.',
+            'description': 'Description for item ${i + 1}',
+          };
           return (ProductCard(
+            product: product,
             showRemove: true,
             onRemove: () {
               AppDialogs.showWarningDialog(
                 context,
-                "Are  you sure do you want to remove this item from phamacy?",
+                "Are you sure do you want to remove this item from pharmacy?",
                 null,
                 ["Out of stock", "Backend Issue", "Other"],
                 numOfActions: 2,
@@ -62,7 +70,6 @@ class RemoveProductsScreen extends ConsumerWidget {
                   );
                 },
               );
-              // log("message : Remove product at index $i");
             },
           ));
         },

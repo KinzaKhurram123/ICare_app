@@ -1,6 +1,15 @@
+import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:icare/models/user.dart' as app_user;
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/services/doctor_service.dart';
+import 'package:icare/services/user_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 
@@ -15,12 +24,80 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+  // Profile picture
+  final ImagePicker _picker = ImagePicker();
+  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  String? _uploadedImageUrl;
+
+  // Basic info controllers
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill basic info from auth provider
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      nameController.text = user.name;
+      phoneController.text = user.phoneNumber;
+      emailController.text = user.email;
+      _uploadedImageUrl = user.profilePicture;
+    }
+    _loadExistingProfile();
+  }
+
+  Future<void> _loadExistingProfile() async {
+    try {
+      final result = await DoctorService().getMyProfile();
+      if (result['success'] == true && mounted) {
+        final doc = result['doctor'] as Map<String, dynamic>;
+        setState(() {
+          if ((doc['specialization'] as String?)?.isNotEmpty == true) {
+            specializationController.text = doc['specialization'];
+          }
+          if (doc['degrees'] is List && (doc['degrees'] as List).isNotEmpty) {
+            degreesController.text = (doc['degrees'] as List).join(', ');
+          }
+          if ((doc['experience'] as String?)?.isNotEmpty == true) {
+            experienceController.text = doc['experience'];
+          }
+          if ((doc['licenseNumber'] as String?)?.isNotEmpty == true) {
+            licenseController.text = doc['licenseNumber'];
+          }
+          if ((doc['pmdcNumber'] as String?)?.isNotEmpty == true) {
+            pmdcController.text = doc['pmdcNumber'];
+          }
+          if ((doc['clinicName'] as String?)?.isNotEmpty == true) {
+            clinicNameController.text = doc['clinicName'];
+          }
+          if ((doc['clinicAddress'] as String?)?.isNotEmpty == true) {
+            clinicAddressController.text = doc['clinicAddress'];
+          }
+          if (doc['availability'] != null) {
+            final avail = doc['availability'] as Map<String, dynamic>;
+            startTimeController.text = avail['availableTime']?['start'] ?? '';
+            endTimeController.text = avail['availableTime']?['end'] ?? '';
+            if (avail['availableDays'] is List) {
+              for (final day in (avail['availableDays'] as List)) {
+                if (selectedDays.containsKey(day)) selectedDays[day] = true;
+              }
+            }
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
   // Controllers
   final TextEditingController specializationController =
       TextEditingController();
   final TextEditingController degreesController = TextEditingController();
   final TextEditingController experienceController = TextEditingController();
   final TextEditingController licenseController = TextEditingController();
+  final TextEditingController pmdcController = TextEditingController();
   final TextEditingController clinicNameController = TextEditingController();
   final TextEditingController clinicAddressController = TextEditingController();
   final TextEditingController startTimeController = TextEditingController();
@@ -39,10 +116,14 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
 
   @override
   void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
     specializationController.dispose();
     degreesController.dispose();
     experienceController.dispose();
     licenseController.dispose();
+    pmdcController.dispose();
     clinicNameController.dispose();
     clinicAddressController.dispose();
     startTimeController.dispose();
@@ -60,6 +141,168 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
         controller.text = picked.format(context);
       });
     }
+  }
+
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            const Text('Update Profile Photo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: _photoOption(Icons.photo_library_rounded, 'Gallery', const Color(0xFF6366F1), () async {
+                  Navigator.pop(context);
+                  final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+                  if (picked != null) {
+                    if (kIsWeb) {
+                      final bytes = await picked.readAsBytes();
+                      setState(() => _selectedImageBytes = bytes);
+                      await _uploadImage(null, bytes: bytes);
+                    } else {
+                      setState(() => _selectedImage = File(picked.path));
+                      await _uploadImage(File(picked.path));
+                    }
+                  }
+                })),
+                const SizedBox(width: 16),
+                Expanded(child: _photoOption(Icons.camera_alt_rounded, 'Camera', const Color(0xFF0EA5E9), () async {
+                  Navigator.pop(context);
+                  final picked = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 600);
+                  if (picked != null) {
+                    if (kIsWeb) {
+                      final bytes = await picked.readAsBytes();
+                      setState(() => _selectedImageBytes = bytes);
+                      await _uploadImage(null, bytes: bytes);
+                    } else {
+                      setState(() => _selectedImage = File(picked.path));
+                      await _uploadImage(File(picked.path));
+                    }
+                  }
+                })),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)))),
+                child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _photoOption(IconData icon, String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(children: [
+          Container(padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 26)),
+          const SizedBox(height: 10),
+          Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _uploadImage(File? file, {Uint8List? bytes}) async {
+    try {
+      setState(() => _isLoading = true);
+      final imageBytes = bytes ?? await file!.readAsBytes();
+      final base64Str = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
+      final response = await ApiService().put('/users/profile', {'profilePicture': base64Str});
+      if (response.statusCode == 200 && mounted) {
+        setState(() => _uploadedImageUrl = base64Str);
+        final updatedUser = app_user.User.fromJson(Map<String, dynamic>.from(response.data as Map));
+        ref.read(authProvider.notifier).setUser(updatedUser);
+      }
+    } catch (e) {
+      debugPrint('Image upload error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _buildAvatarPicker() {
+    Widget avatarChild;
+    if (_selectedImageBytes != null) {
+      avatarChild = Image.memory(_selectedImageBytes!, fit: BoxFit.cover);
+    } else if (_selectedImage != null && !kIsWeb) {
+      avatarChild = Image.file(_selectedImage!, fit: BoxFit.cover);
+    } else if (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty) {
+      try {
+        final base64Str = _uploadedImageUrl!.contains(',') ? _uploadedImageUrl!.split(',').last : _uploadedImageUrl!;
+        avatarChild = Image.memory(base64Decode(base64Str), fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _avatarInitial());
+      } catch (_) {
+        avatarChild = _avatarInitial();
+      }
+    } else {
+      avatarChild = _avatarInitial();
+    }
+
+    return Column(children: [
+      GestureDetector(
+        onTap: _pickImage,
+        child: Stack(children: [
+          Container(
+            width: 100, height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryColor.withValues(alpha: 0.1),
+              border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3), width: 3),
+            ),
+            child: ClipOval(child: avatarChild),
+          ),
+          Positioned(bottom: 0, right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(color: AppColors.primaryColor, shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2)),
+              child: _isLoading
+                ? const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+            )),
+        ]),
+      ),
+      const SizedBox(height: 6),
+      const Text('Tap to change photo', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+    ]);
+  }
+
+  Widget _avatarInitial() {
+    final name = nameController.text;
+    return Center(child: Text(
+      name.isNotEmpty ? name[0].toUpperCase() : 'D',
+      style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: AppColors.primaryColor),
+    ));
   }
 
   Future<void> _submitProfile() async {
@@ -81,6 +324,14 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
 
     setState(() => _isLoading = true);
 
+    // Save basic info (name, phone) first
+    if (nameController.text.trim().isNotEmpty) {
+      await UserService().updateProfile(
+        name: nameController.text.trim(),
+        phoneNumber: phoneController.text.trim(),
+      );
+    }
+
     final degrees = degreesController.text
         .split(',')
         .map((d) => d.trim())
@@ -92,6 +343,7 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       degrees: degrees,
       experience: experienceController.text,
       licenseNumber: licenseController.text,
+      pmdcNumber: pmdcController.text,
       clinicName: clinicNameController.text,
       clinicAddress: clinicAddressController.text,
       availableDays: availableDays,
@@ -217,7 +469,34 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionTitle("Basic Information"),
+                Center(child: _buildAvatarPicker()),
+                const SizedBox(height: 24),
+                _buildSectionTitle("Personal Information"),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: nameController,
+                  label: "Full Name",
+                  icon: Icons.person_outline,
+                  hint: "Your full name",
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: phoneController,
+                  label: "Phone Number",
+                  icon: Icons.phone_outlined,
+                  hint: "Your phone number",
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: emailController,
+                  label: "Email",
+                  icon: Icons.email_outlined,
+                  hint: "Your email address",
+                  enabled: false,
+                ),
+                const SizedBox(height: 32),
+                _buildSectionTitle("Professional Information"),
                 const SizedBox(height: 16),
                 _buildTextField(
                   controller: specializationController,
@@ -246,6 +525,13 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                   label: "License Number",
                   icon: Icons.badge_outlined,
                   hint: "Medical license number",
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: pmdcController,
+                  label: "PMDC Number",
+                  icon: Icons.verified_user_outlined,
+                  hint: "PMDC registration number",
                 ),
                 const SizedBox(height: 32),
                 _buildSectionTitle("Clinic Information"),
@@ -397,6 +683,64 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                           ),
                         ),
                         const SizedBox(height: 40),
+                        Center(child: _buildAvatarPicker()),
+                        const SizedBox(height: 40),
+                        const Text(
+                          "Personal Information",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: nameController,
+                                label: "Full Name",
+                                icon: Icons.person_outline,
+                                hint: "Your full name",
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: phoneController,
+                                label: "Phone Number",
+                                icon: Icons.phone_outlined,
+                                hint: "Your phone number",
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: emailController,
+                                label: "Email",
+                                icon: Icons.email_outlined,
+                                hint: "Your email address",
+                                enabled: false,
+                              ),
+                            ),
+                            const Expanded(child: SizedBox()),
+                          ],
+                        ),
+                        const SizedBox(height: 40),
+                        const Text(
+                          "Professional Information",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         Row(
                           children: [
                             Expanded(
@@ -438,6 +782,20 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                                 hint: "Medical license number",
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: pmdcController,
+                                label: "PMDC Number",
+                                icon: Icons.verified_user_outlined,
+                                hint: "PMDC registration number",
+                              ),
+                            ),
+                            const Expanded(child: SizedBox()),
                           ],
                         ),
                         const SizedBox(height: 40),
@@ -553,6 +911,7 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
     required String hint,
     int maxLines = 1,
     TextInputType? keyboardType,
+    bool enabled = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,18 +929,21 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'This field is required';
-            }
-            return null;
-          },
+          enabled: enabled,
+          validator: enabled
+              ? (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'This field is required';
+                  }
+                  return null;
+                }
+              : null,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
             prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 20),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: enabled ? Colors.white : const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
               vertical: 18,
@@ -591,6 +953,10 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),

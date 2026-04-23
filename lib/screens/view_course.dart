@@ -766,7 +766,17 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
               ),
             ),
             children: [
-              ...lessons.map((lesson) {
+              ...lessons.asMap().entries.map((lEntry) {
+                final lIndex = lEntry.key;
+                final lesson = lEntry.value;
+                // Calculate global lesson index across all modules
+                int globalIndex = 0;
+                for (int mi = 0; mi < mIndex; mi++) {
+                  globalIndex += (modules[mi]['lessons'] as List? ?? []).length;
+                }
+                globalIndex += lIndex;
+                // Total lessons across all modules
+                final totalLessons = modules.fold<int>(0, (sum, m) => sum + ((m['lessons'] as List?)?.length ?? 0));
                 return ListTile(
                   leading: const Icon(
                     Icons.play_circle_fill_rounded,
@@ -799,7 +809,12 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                       ? () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (ctx) => LessonPlayer(lesson: lesson),
+                              builder: (ctx) => LessonPlayer(
+                                lesson: lesson,
+                                enrollmentId: _currentEnrollmentId,
+                                lessonIndex: globalIndex,
+                                totalLessons: totalLessons,
+                              ),
                             ),
                           );
                         }

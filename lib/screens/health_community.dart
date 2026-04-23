@@ -61,14 +61,28 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         elevation: 0,
         centerTitle: false,
         leading: const CustomBackButton(),
-        title: const Text(
-          'Health Community',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png', // Assuming asset exists, otherwise use Icon
+              height: 32,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.favorite_rounded,
+                color: AppColors.primaryColor,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'iCare Community',
+              style: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
         ),
       ),
       body: Column(
@@ -204,10 +218,16 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   }
 
   Widget _buildPostCard(Map<String, dynamic> post) {
-    final authorName = post['authorName'] ?? post['author']?['name'] ?? 'User';
+    // Handle author being either an object {name, role} or a string (ObjectId)
+    final author = post['author'];
+    final authorName = post['authorName'] ??
+        (author is Map ? author['name'] : null) ??
+        'User';
     final initial = authorName.isNotEmpty ? authorName[0].toUpperCase() : 'U';
     final isExpert = post['isExpert'] ?? false;
-    final role = post['authorRole'] ?? post['author']?['role'] ?? 'Patient';
+    final role = post['authorRole'] ??
+        (author is Map ? author['role'] : null) ??
+        'Patient';
     final timeRaw = post['createdAt'] ?? post['updatedAt'];
     final time = timeRaw != null
         ? DateTime.parse(timeRaw.toString())
@@ -303,8 +323,12 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                   (post['likes'] ?? 0).toString(),
                   const Color(0xFFEF4444),
                   () async {
-                    await _courseService.likeForumPost(postId);
-                    _loadPosts(); // Refresh for accurate counts
+                    try {
+                      await _courseService.likeForumPost(postId);
+                      _loadPosts(); // Refresh for accurate counts
+                    } catch (e) {
+                      debugPrint("Like failed: $e");
+                    }
                   },
                 ),
                 const SizedBox(width: 24),
@@ -319,6 +343,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                   },
                 ),
                 const Spacer(),
+                const Icon(Icons.share_rounded, color: Color(0xFF94A3B8), size: 20),
               ],
             ),
             if (post['_showComments'] == true) ...[
@@ -375,18 +400,34 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                     size: 20,
                   ),
                   onPressed: () async {
-                    if (controller.text.trim().isEmpty) return;
+                    final text = controller.text.trim();
+                    if (text.isEmpty) return;
+                    controller.clear();
                     try {
-                      await _courseService.addForumComment(
-                        postId,
-                        controller.text,
-                      );
-                      _loadPosts(); // Refresh for latest comments
+                      await _courseService.addForumComment(postId, text);
+                      // Update local state — keep comment section open
+                      setState(() {
+                        final postIndex = _posts.indexWhere((p) => (p['_id'] ?? p['id']) == postId);
+                        if (postIndex != -1) {
+                          final post = Map<String, dynamic>.from(_posts[postIndex] as Map);
+                          final comments = List<dynamic>.from(post['comments'] ?? []);
+                          comments.add({
+                            'authorName': 'You',
+                            'content': text,
+                            'createdAt': DateTime.now().toIso8601String(),
+                          });
+                          post['comments'] = comments;
+                          post['replies'] = (post['replies'] ?? 0) + 1;
+                          post['_showComments'] = true;
+                          _posts[postIndex] = post;
+                        }
+                      });
                     } catch (e) {
-                      if (mounted)
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Something went wrong. Please try again.')),
+                        );
+                      }
                     }
                   },
                 ),
@@ -421,11 +462,13 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
           itemCount: comments.length,
           itemBuilder: (context, index) {
             final comment = comments[index];
-            final author = comment['authorName'] ?? 'User';
+            final author = comment['authorName'] ??
+                (comment['author'] is Map ? comment['author']['name'] : null) ??
+                'User';
             final content = comment['content'] ?? '';
             final timeRaw = comment['createdAt'];
             final time = timeRaw != null
-                ? DateTime.parse(timeRaw)
+                ? DateTime.tryParse(timeRaw.toString()) ?? DateTime.now()
                 : DateTime.now();
 
             return Padding(

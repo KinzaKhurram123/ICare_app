@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 import '../utils/error_handler.dart';
 

@@ -32,8 +32,10 @@ class Utils {
       message = "Server error. Our team is looking into it.";
     }
 
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        duration: const Duration(seconds: 3),
         content: Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.white, size: 20),
@@ -50,14 +52,10 @@ class Utils {
           ],
         ),
         backgroundColor: Colors.redAccent,
+        dismissDirection: DismissDirection.horizontal,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
-        action: SnackBarAction(
-          label: 'Retry',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
       ),
     );
   }

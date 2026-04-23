@@ -49,7 +49,7 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
               itemExtent: ScallingConfig.scale(70),
               itemBuilder:
                   (context, date, isSelected, isDisabled, isToday, onTap) {
-                    // debugPrint(_selectedDate);
+                    debugPrint(_selectedDate?.toString());
                     return InkWell(
                       onTap: () {
                         onTap();
@@ -91,7 +91,7 @@ class _UpcomingAppointmentsState extends State<UpcomingAppointments> {
                     );
                   },
               onDateChange: (date) {
-                // debugPrint(date);
+                debugPrint(date.toString());
                 setState(() {
                   log('$date ====      ');
                   _selectedDate = date;

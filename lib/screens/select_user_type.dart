@@ -20,8 +20,8 @@ class SelectUserType extends ConsumerStatefulWidget {
 }
 
 class _SelectUserTypeState extends ConsumerState<SelectUserType> {
-  // Only Patient & Doctor are shown publicly.
-  // Lab, Pharmacy, Instructor, Student accounts are created by Admin.
+  // Sign Up is for Patients only.
+  // Doctors, Pharmacy, Lab sign up via Work With Us.
   final List<Map<String, dynamic>> userTypes = [
     {
       "id": 1,
@@ -30,14 +30,6 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
           "Consult verified doctors, access prescriptions & manage your complete health journey.",
       "role": "patient",
       "image": ImagePaths.userType1,
-    },
-    {
-      "id": 2,
-      "title": "I am a Doctor",
-      "description":
-          "Manage patients, conduct consultations & issue digital prescriptions securely.",
-      "role": "doctor",
-      "image": ImagePaths.userType2,
     },
   ];
 
@@ -140,9 +132,6 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                             description: userTypes[i]["description"],
                             benefits: userTypes[i]["benefits"] ?? [],
                             onPressed: () {
-                              ref
-                                  .read(authProvider.notifier)
-                                  .setUserRole(userTypes[i]["role"]);
                               onSelect(userTypes[i]["id"]);
                             },
                             isSelected: selected_id == userTypes[i]["id"],
@@ -162,7 +151,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (ctx) => const LoginScreen(),
+                              builder: (ctx) => const LoginScreen(initialSignup: true, initialRole: 'Patient'),
                             ),
                           );
                         },
@@ -336,9 +325,6 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                             benefits: userTypes[i]["benefits"] ?? [],
                             isSelected: selected_id == userTypes[i]["id"],
                             onPressed: () {
-                              ref
-                                  .read(authProvider.notifier)
-                                  .setUserRole(userTypes[i]["role"]);
                               onSelect(userTypes[i]["id"]);
                             },
                           );
@@ -385,7 +371,7 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const LoginScreen(),
+                                        builder: (_) => const LoginScreen(initialSignup: true, initialRole: 'Patient'),
                                       ),
                                     );
                                   },

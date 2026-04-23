@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 

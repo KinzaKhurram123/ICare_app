@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'api_service.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +41,7 @@ class DoctorService {
     required List<String> degrees,
     required String experience,
     required String licenseNumber,
+    String? pmdcNumber,
     required String clinicName,
     required String clinicAddress,
     required List<String> availableDays,
@@ -60,6 +62,7 @@ class DoctorService {
         'degrees': degrees,
         'experience': experience,
         'licenseNumber': licenseNumber,
+        if (pmdcNumber != null && pmdcNumber.isNotEmpty) 'pmdcNumber': pmdcNumber,
         'clinicName': clinicName,
         'clinicAddress': clinicAddress,
         'availableDays': availableDays,
@@ -209,6 +212,18 @@ class DoctorService {
         'success': false,
         'message': e.response?.data['message'] ?? 'Network error',
       };
+    }
+  }
+
+  Future<Map<String, dynamic>> getMyProfile() async {
+    try {
+      final response = await _apiService.get('/doctors/me');
+      if (response.statusCode == 200) {
+        return {'success': true, 'doctor': response.data['doctor']};
+      }
+      return {'success': false, 'message': 'Profile not found'};
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.response?.data['message'] ?? 'Network error'};
     }
   }
 

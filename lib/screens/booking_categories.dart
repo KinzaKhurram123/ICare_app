@@ -17,9 +17,11 @@ class BookingCategories extends StatefulWidget {
     super.key,
     required this.appointments,
     this.initialTabIndex = 0,
+    this.onCancelled,
   });
   final List<AppointmentDetail> appointments;
   final int initialTabIndex;
+  final VoidCallback? onCancelled;
 
   @override
   State<BookingCategories> createState() => _BookingCategoriesState();
@@ -45,6 +47,7 @@ class _BookingCategoriesState extends State<BookingCategories>
       return _WebBookingCategories(
         tabController: controller,
         appointments: widget.appointments,
+        onCancelled: widget.onCancelled,
       );
     }
     return Scaffold(
@@ -110,9 +113,10 @@ class _BookingCategoriesState extends State<BookingCategories>
 }
 
 class UpcomingBOokingsList extends ConsumerWidget {
-  const UpcomingBOokingsList({super.key, this.data, this.status});
+  const UpcomingBOokingsList({super.key, this.data, this.status, this.onCancelled});
   final List<dynamic>? data;
   final BookingStatus? status;
+  final VoidCallback? onCancelled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -128,7 +132,7 @@ class UpcomingBOokingsList extends ConsumerWidget {
         final appointment = data![i] as AppointmentDetail;
         return (selectedRole == "lab_technician"
             ? TestAppointment(status: status)
-            : BookingCard(appointment: appointment));
+            : BookingCard(appointment: appointment, onCancelled: onCancelled));
       },
     );
   }
@@ -141,9 +145,11 @@ class UpcomingBOokingsList extends ConsumerWidget {
 class _WebBookingCategories extends StatefulWidget {
   final TabController tabController;
   final List<AppointmentDetail> appointments;
+  final VoidCallback? onCancelled;
   const _WebBookingCategories({
     required this.tabController,
     required this.appointments,
+    this.onCancelled,
   });
 
   @override
@@ -526,6 +532,7 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                           ),
                           child: _WebBookingList(
                             status: _tabs[_selectedTab]["status"],
+                            onCancelled: widget.onCancelled,
                             data: widget.appointments.where((a) {
                               if (_selectedTab == 0)
                                 return a.status.toLowerCase() == 'pending' ||
@@ -577,9 +584,10 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
 }
 
 class _WebBookingList extends ConsumerWidget {
-  const _WebBookingList({required this.status, required this.data});
+  const _WebBookingList({required this.status, required this.data, this.onCancelled});
   final BookingStatus status;
   final List<dynamic> data;
+  final VoidCallback? onCancelled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -595,7 +603,7 @@ class _WebBookingList extends ConsumerWidget {
         final appointment = data[i] as AppointmentDetail;
         return selectedRole == "lab_technician"
             ? TestAppointment(status: status)
-            : BookingCard(appointment: appointment);
+            : BookingCard(appointment: appointment, onCancelled: onCancelled);
       },
     );
   }

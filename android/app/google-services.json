@@ -14,7 +14,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "564788374793-ctggcd8ni9oq17gnbhvnednj74noqk9r.apps.googleusercontent.com",
+          "client_id": "564788374793-3secirjbbqvf96b5f1e6n7hgd3gngr8a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.icare",
+            "certificate_hash": "3b18aff0bb03030c7c1a16ea111de1f43d73c4cf"
+          }
+        },
+        {
+          "client_id": "564788374793-1eptqsl65ohkvsquqhc4qnhlia592v2f.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,7 +35,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "564788374793-ctggcd8ni9oq17gnbhvnednj74noqk9r.apps.googleusercontent.com",
+              "client_id": "564788374793-1eptqsl65ohkvsquqhc4qnhlia592v2f.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

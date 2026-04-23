@@ -10,16 +10,27 @@ import 'package:icare/screens/lab_profile_setup.dart';
 import 'package:icare/screens/pharmacy_profile_setup.dart';
 import 'package:icare/screens/student_profile_setup.dart';
 import 'package:icare/services/auth_service.dart';
+import 'package:icare/services/biometric_service.dart';
+import 'package:icare/services/google_auth_service.dart';
 import 'package:icare/services/user_service.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/utils/imagePaths.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:icare/widgets/custom_text_input.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final bool initialSignup;
+  final String initialRole;
+  final bool hideSignup;
+  const LoginScreen({
+    super.key,
+    this.initialSignup = false,
+    this.initialRole = 'Patient',
+    this.hideSignup = false,
+  });
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
@@ -43,14 +54,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
+  final BiometricService _biometricService = BiometricService();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
   bool rememberMe = false;
   bool isLogin = true;
   bool isLoading = false;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
   String selectedSignupRole = 'Patient';
 
   @override
   void initState() {
     super.initState();
+    // Apply initial signup mode and role if provided
+    if (widget.initialSignup) {
+      isLogin = false;
+      selectedSignupRole = widget.initialRole;
+    }
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -66,6 +86,91 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
     _logoController.forward();
     _checkExistingRole();
+    _initBiometric();
+  }
+
+  Future<void> _initBiometric() async {
+    final available = await _biometricService.isAvailable();
+    final enabled = await _biometricService.isEnabled();
+    if (mounted) setState(() { _biometricAvailable = available; _biometricEnabled = enabled; });
+    // Auto-prompt biometric if enabled and user has a saved token
+    if (available && enabled) {
+      final token = await SharedPref().getToken();
+      if (token != null && token.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 600));
+        _triggerBiometricLogin();
+      }
+    }
+  }
+
+  Future<void> _triggerBiometricLogin() async {
+    final label = await _biometricService.getBiometricLabel();
+    final success = await _biometricService.authenticate(
+      reason: 'Use $label to sign in to iCare',
+    );
+    if (!mounted) return;
+    if (!success) {
+      // User cancelled — just let them type manually, no error needed
+      return;
+    }
+    // Token already stored — just load profile and navigate
+    final token = await SharedPref().getToken();
+    if (token == null || token.isEmpty) {
+      // Token expired — ask user to login with password
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Session expired. Please login with your password.'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    setState(() => isLoading = true);
+    ref.read(authProvider.notifier).setUserToken(token);
+    final profileResult = await _userService.getUserProfile(token: token);
+    if (profileResult['success'] && mounted) {
+      final user = app_user.User.fromJson(profileResult['user']);
+      ref.read(authProvider.notifier).setUser(user);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const TabsScreen()),
+      );
+    } else {
+      if (mounted) setState(() => isLoading = false);
+        _showError('Could not load profile. Please login with password.');
+    }
+  }
+
+  Future<void> _offerBiometricEnrollment() async {
+    if (!_biometricAvailable || _biometricEnabled) return;
+    final label = await _biometricService.getBiometricLabel();
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Icon(Icons.fingerprint_rounded, color: AppColors.primaryColor, size: 28),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Enable $label Login')),
+        ]),
+        content: Text('Sign in faster next time using $label instead of your password.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Not Now'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _biometricService.enable();
+              if (mounted) setState(() => _biometricEnabled = true);
+              if (mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white),
+            child: Text('Enable $label'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -84,14 +189,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _checkExistingRole() async {
+    // Don't override if we're coming from Sign Up / Work With Us flow
+    if (widget.initialSignup) return;
+
     final authState = ref.read(authProvider);
     final existingRole = authState.userRole;
 
-    // If user has a role saved, skip to login directly
-    if (existingRole != null && existingRole.isNotEmpty) {
-      setState(() {
-        isLogin = true; // Force login mode
-      });
+    // If user has a role saved, keep login mode
+    if (existingRole != null && existingRole.isNotEmpty && mounted) {
+      // Don't change isLogin here — let the user decide
     }
   }
 
@@ -131,20 +237,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       );
     }
 
-    if (selectedSignupRole == 'Doctor') {
-      fields.add(
-        buildField(
-          isMobile ? "License No" : "Medical License Number",
+    switch (selectedSignupRole) {
+      case 'Doctor':
+        fields.add(buildField(
+          isMobile ? "License No." : "Medical License Number",
           Icons.badge_outlined,
           licenseController,
-        ),
-      );
-      fields.add(
-        buildField("Credentials", Icons.school_outlined, credentialsController),
-      );
+        ));
+        fields.add(buildField(
+          "Credentials (e.g. MBBS, MD)",
+          Icons.school_outlined,
+          credentialsController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Pharmacy':
+        fields.add(buildField(
+          "Pharmacy / Organization Name",
+          Icons.local_pharmacy_outlined,
+          orgNameController,
+        ));
+        fields.add(buildField(
+          "License Number",
+          Icons.badge_outlined,
+          licenseController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Laboratory':
+        fields.add(buildField(
+          "Lab / Organization Name",
+          Icons.biotech_outlined,
+          orgNameController,
+        ));
+        fields.add(buildField(
+          "License Number",
+          Icons.badge_outlined,
+          licenseController,
+        ));
+        fields.add(buildField(
+          "City / Location",
+          Icons.location_on_outlined,
+          locationController,
+        ));
+        break;
+      case 'Instructor':
+        fields.add(buildField(
+          "Credentials / Qualifications",
+          Icons.school_outlined,
+          credentialsController,
+        ));
+        fields.add(buildField(
+          "Organization / Institution",
+          Icons.business_outlined,
+          orgNameController,
+        ));
+        break;
+      case 'Student':
+        fields.add(buildField(
+          "Institution / University",
+          Icons.school_outlined,
+          orgNameController,
+        ));
+        break;
+      // Patient: no extra fields needed
     }
-    // Roles like Pharmacy, Laboratory, Instructor, Student are admin-managed
-    // and removed from public signup list.
+
     return fields;
   }
 
@@ -201,128 +367,107 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   child: Row(
                     children: [
                       // LEFT HERO PANEL
-                      // LEFT HERO PANEL - Updated to prevent overflow
                       Expanded(
                         flex: 1,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: IntrinsicHeight(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 60,
-                                      vertical: 40,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        ScaleTransition(
-                                          scale: _logoScaleAnimation,
-                                          child: Container(
-                                            width: 70,
-                                            height: 70,
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(0.1),
-                                                  blurRadius: 20,
-                                                  offset: const Offset(0, 10),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Image.asset(
-                                              ImagePaths.logo,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 30),
-                                        FadeTransition(
-                                          opacity: _fadeAnimation,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                "iCare Virtual\nHealthcare Platform",
-                                                style: TextStyle(
-                                                  fontSize: 36,
-                                                  fontWeight: FontWeight.w900,
-                                                  color: Colors.white,
-                                                  fontFamily: "Gilroy-Bold",
-                                                  height: 1.1,
-                                                  letterSpacing: -0.5,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 12),
-                                              const Text(
-                                                "Secure consultations, prescriptions & health records",
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: Colors.white70,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 30),
-                                              _buildFeatureItem(
-                                                Icons
-                                                    .check_circle_outline_rounded,
-                                                "Book doctors online anytime",
-                                              ),
-                                              const SizedBox(height: 12),
-                                              _buildFeatureItem(
-                                                Icons.medical_services_outlined,
-                                                "Get digital prescriptions",
-                                              ),
-                                              const SizedBox(height: 12),
-                                              _buildFeatureItem(
-                                                Icons.description_outlined,
-                                                "Access lab reports instantly",
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        FadeTransition(
-                                          opacity: _fadeAnimation,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 20,
-                                            ),
-                                            child: Column(
-                                              children: [
-                                                _buildTrustRow(
-                                                  Icons.shield_rounded,
-                                                  "Data Protected & Secure",
-                                                ),
-                                                const SizedBox(height: 12),
-                                                _buildTrustRow(
-                                                  Icons.verified_user_rounded,
-                                                  "Verified Doctors & Specialists",
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 60,
+                            vertical: 40,
+                          ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ScaleTransition(
+                                  scale: _logoScaleAnimation,
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
                                         ),
                                       ],
                                     ),
+                                    child: Image.asset(
+                                      ImagePaths.logo,
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                                const SizedBox(height: 32),
+                                FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "iCare Virtual\nHealthcare Platform",
+                                        style: TextStyle(
+                                          fontSize: 44,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          fontFamily: "Gilroy-Bold",
+                                          height: 1.1,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        "Secure consultations, prescriptions & health records",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 32),
+                                      _buildFeatureItem(
+                                        Icons.check_circle_outline_rounded,
+                                        "Book doctors online anytime",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildFeatureItem(
+                                        Icons.medical_services_outlined,
+                                        "Get digital prescriptions",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildFeatureItem(
+                                        Icons.description_outlined,
+                                        "Access lab reports instantly",
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+                                FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Column(
+                                    children: [
+                                      _buildTrustRow(
+                                        Icons.shield_rounded,
+                                        "Data Protected & Secure",
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildTrustRow(
+                                        Icons.verified_user_rounded,
+                                        "Verified Doctors & Specialists",
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
+                      // RIGHT FORM PANEL
                       Expanded(
                         flex: 1,
                         child: Container(
@@ -397,6 +542,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                             ),
                                           ),
                                         ),
+                                        if (!widget.hideSignup)
                                         Expanded(
                                           child: GestureDetector(
                                             onTap: () =>
@@ -507,78 +653,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                             return null;
                                           },
                                         ),
-                                        if (!isLogin) ...[
-                                          const SizedBox(height: 16),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF8FAFC),
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                              border: Border.all(
-                                                color: const Color(0xFFE2E8F0),
-                                                width: 1.5,
-                                              ),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                            ),
-                                            child: DropdownButtonHideUnderline(
-                                              child: DropdownButton<String>(
-                                                value: selectedSignupRole,
-                                                isExpanded: true,
-                                                icon: const Icon(
-                                                  Icons
-                                                      .keyboard_arrow_down_rounded,
-                                                  color: Color(0xFF94A3B8),
-                                                ),
-                                                items: const [
-                                                  DropdownMenuItem(
-                                                    value: 'Patient',
-                                                    child: Text(
-                                                      'Patient - Consult & Manage Health',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Doctor',
-                                                    child: Text(
-                                                      'Doctor - Manage Patients & Prescriptions',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Pharmacy',
-                                                    child: Text(
-                                                      'Pharmacy - Prescription Fulfillment',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Laboratory',
-                                                    child: Text(
-                                                      'Laboratory - Diagnostics & Reports',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Instructor',
-                                                    child: Text(
-                                                      'Instructor - Teach Health Programs',
-                                                    ),
-                                                  ),
-                                                  DropdownMenuItem(
-                                                    value: 'Student',
-                                                    child: Text(
-                                                      'Student - Learn & Grow',
-                                                    ),
-                                                  ),
-                                                ],
-                                                onChanged: (val) {
-                                                  if (val != null)
-                                                    setState(
-                                                      () => selectedSignupRole =
-                                                          val,
-                                                    );
-                                                },
-                                              ),
-                                            ),
-                                          ),
+                                        if (!isLogin) ...[ // end !initialSignup
                                           const SizedBox(height: 16),
                                           CustomInputField(
                                             hintText: "Email Address",
@@ -820,9 +895,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                           Row(
                                             children: [
                                               Expanded(
-                                                child: _webSocialButton(
-                                                  ImagePaths.google_icon,
-                                                  "Google",
+                                                child: GestureDetector(
+                                                  onTap: _handleGoogleSignIn,
+                                                  child: _webSocialButton(
+                                                    ImagePaths.google_icon,
+                                                    "Google",
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(width: 16),
@@ -897,7 +975,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: Utils.windowHeight(context) * 0.67,
+              constraints: BoxConstraints(
+                minHeight: Utils.windowHeight(context) * 0.67,
+                maxHeight: Utils.windowHeight(context) * 0.85,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.85),
                 borderRadius: const BorderRadius.only(
@@ -924,6 +1005,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Row(
                             children: [
                               _buildToggleButton(true, "Login"),
+                              if (!widget.hideSignup)
                               _buildToggleButton(false, "Sign up"),
                             ],
                           ),
@@ -934,8 +1016,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             children: [
                               if (!isLogin) ...[
-                                _buildRoleDropdown(),
-                                const SizedBox(height: 5),
                                 _buildMobileField(
                                   "Full Name",
                                   Icons.person_outline,
@@ -980,6 +1060,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               if (isLogin) _buildRememberForgotRow(),
                               const SizedBox(height: 20),
                               _buildSubmitButton(),
+                              if (isLogin && _biometricEnabled)
+                                _buildBiometricButton(),
                               if (isLogin) _buildMobileSocialRow(),
                             ],
                           ),
@@ -1021,29 +1103,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildRoleDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppColors.veryLightGrey, width: 2),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedSignupRole,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: 'Patient', child: Text('I am a Patient')),
-            DropdownMenuItem(value: 'Doctor', child: Text('I am a Doctor')),
-          ],
-          onChanged: (val) {
-            if (val != null) setState(() => selectedSignupRole = val);
-          },
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildMobileField(
     String hint,
@@ -1090,6 +1150,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
+  Widget _buildBiometricButton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: GestureDetector(
+        onTap: isLoading ? null : _triggerBiometricLogin,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.primaryColor.withOpacity(0.4)),
+            borderRadius: BorderRadius.circular(30),
+            color: AppColors.primaryColor.withOpacity(0.05),
+          ),
+          child: isLoading
+              ? const Center(child: SizedBox(height: 20, width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2)))
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.fingerprint_rounded, color: AppColors.primaryColor, size: 26),
+                    const SizedBox(width: 10),
+                    Text('Sign in with Biometric',
+                        style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w600, fontSize: 15)),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSubmitButton() {
     return SizedBox(
       width: double.infinity,
@@ -1125,9 +1215,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _socialButton(ImagePaths.facebook_icon, "Facebook"),
+            _socialButton(ImagePaths.facebook_icon, "Facebook", onTap: null),
             const SizedBox(width: 20),
-            _socialButton(ImagePaths.google_icon, "Google"),
+            _socialButton(ImagePaths.google_icon, "Google", onTap: _handleGoogleSignIn),
           ],
         ),
       ],
@@ -1160,20 +1250,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _socialButton(String assetPath, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Image.asset(assetPath, width: 24, height: 24),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
-        ],
+  Widget _socialButton(String assetPath, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Image.asset(assetPath, width: 24, height: 24),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
@@ -1221,6 +1314,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => isLoading = true);
+    try {
+      final result = await _googleAuthService.signInWithGoogle();
+      if (result['success'] == true && mounted) {
+        final userData = result['user'] as Map<String, dynamic>;
+        final token = result['data']['token']?.toString() ?? '';
+        ref.read(authProvider.notifier).setUserToken(token);
+        final user = app_user.User.fromJson(userData);
+        ref.read(authProvider.notifier).setUser(user);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const TabsScreen()),
+        );
+      } else if (mounted) {
+        final msg = result['message']?.toString() ?? 'Google sign in failed';
+        if (msg != 'Sign in cancelled') {
+          _showError(msg);
+        }
+      }
+    } catch (e) {
+      if (mounted) _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   void _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => isLoading = true);
@@ -1237,7 +1356,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             final user = app_user.User.fromJson(profileResult['user']);
             ref.read(authProvider.notifier).setUser(user);
             ref.read(authProvider.notifier).setUserToken(token);
-            Navigator.of(context).pushReplacement(
+            await _offerBiometricEnrollment();
+            if (mounted) Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (ctx) => const TabsScreen()),
             );
           } else {
@@ -1254,10 +1374,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           password: passwordController.text.trim(),
           role: backendRole,
           phoneNumber: phoneController.text.trim(),
-          licenseNumber: licenseController.text.trim(),
-          location: locationController.text.trim(),
-          organizationName: orgNameController.text.trim(),
-          credentials: credentialsController.text.trim(),
         );
         if (result['success']) {
           final isApproved = result['data']['isApproved'] ?? false;
