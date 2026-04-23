@@ -1,8 +1,12 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:icare/services/api_config.dart';
 import 'package:icare/services/api_service.dart';
+import 'package:icare/services/auth_service.dart';
 
 class InstructorService {
   final ApiService _apiService = ApiService();
+  final Dio _dio = Dio();
   String? _cachedInstructorId;
 
   // Q&A Management
@@ -248,6 +252,46 @@ class InstructorService {
     } catch (e) {
       debugPrint('Error getting assigned learners: $e');
       rethrow;
+    }
+  }
+
+  // Upload video file for course lessons
+  Future<Map<String, dynamic>> uploadVideo({
+    String? filePath,
+    List<int>? bytes,
+    required String fileName,
+  }) async {
+    try {
+      final token = await AuthService().getToken();
+
+      MultipartFile file;
+      if (kIsWeb) {
+        if (bytes == null) throw Exception('Bytes required for web upload');
+        file = MultipartFile.fromBytes(bytes, filename: fileName);
+      } else {
+        if (filePath == null) {
+          throw Exception('File path required for mobile upload');
+        }
+        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      }
+
+      final formData = FormData.fromMap({'video': file});
+
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/instructors/videos/upload',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (e) {
+      debugPrint('❌ Failed to upload video: $e');
+      throw Exception('Failed to upload video: $e');
     }
   }
 }

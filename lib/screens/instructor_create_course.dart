@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -712,6 +714,10 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _videoUrlController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  final InstructorService _instructorService = InstructorService();
+
+  bool _isUploadingVideo = false;
+  String? _uploadedVideoUrl;
 
   @override
   void initState() {
@@ -721,6 +727,62 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       _contentController.text = widget.lesson!.content;
       _videoUrlController.text = widget.lesson!.videoUrl ?? '';
       _durationController.text = widget.lesson!.duration?.toString() ?? '';
+      _uploadedVideoUrl = widget.lesson!.videoUrl;
+    }
+  }
+
+  Future<void> _pickAndUploadVideo() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+      );
+
+      if (result != null) {
+        setState(() => _isUploadingVideo = true);
+
+        final file = result.files.first;
+        Map<String, dynamic> uploadResult;
+
+        if (kIsWeb) {
+          uploadResult = await _instructorService.uploadVideo(
+            bytes: file.bytes,
+            fileName: file.name,
+          );
+        } else {
+          uploadResult = await _instructorService.uploadVideo(
+            filePath: file.path,
+            fileName: file.name,
+          );
+        }
+
+        if (uploadResult['videoUrl'] != null) {
+          setState(() {
+            _uploadedVideoUrl = uploadResult['videoUrl'];
+            _videoUrlController.text = uploadResult['videoUrl'];
+            _isUploadingVideo = false;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Video uploaded successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploadingVideo = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload video: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -787,10 +849,63 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 validator: (val) => val?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              CustomInputField(
-                controller: _videoUrlController,
-                hintText: 'Video URL (optional)',
+              Row(
+                children: [
+                  Expanded(
+                    child: CustomInputField(
+                      controller: _videoUrlController,
+                      hintText: 'Video URL (optional)',
+                      enabled: !_isUploadingVideo,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: _isUploadingVideo ? null : _pickAndUploadVideo,
+                    icon: _isUploadingVideo
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.upload_file, size: 20),
+                    label: Text(_isUploadingVideo ? 'Uploading...' : 'Upload'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (_uploadedVideoUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Video uploaded successfully',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
               CustomInputField(
                 controller: _durationController,
