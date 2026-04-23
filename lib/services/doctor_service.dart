@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'api_service.dart';
 
 class DoctorService {
@@ -45,6 +46,7 @@ class DoctorService {
     required List<String> availableDays,
     required String startTime,
     required String endTime,
+    Uint8List? profileImage,
   }) async {
     try {
       debugPrint('📋 Updating doctor profile...');
@@ -54,6 +56,12 @@ class DoctorService {
       debugPrint('Degrees: $degrees');
       debugPrint('Available Days: $availableDays');
       debugPrint('Time: $startTime - $endTime');
+
+      String? imageBase64;
+      if (profileImage != null) {
+        imageBase64 = 'data:image/jpeg;base64,${base64Encode(profileImage)}';
+        debugPrint('📸 Profile image encoded');
+      }
 
       final requestData = {
         'specialization': specialization,
@@ -65,6 +73,10 @@ class DoctorService {
         'availableDays': availableDays,
         'availableTime': {'start': startTime, 'end': endTime},
       };
+
+      if (imageBase64 != null) {
+        requestData['profilePicture'] = imageBase64;
+      }
 
       if (consultationType != null && consultationType.isNotEmpty) {
         requestData['consultationType'] = consultationType;

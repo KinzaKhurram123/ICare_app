@@ -110,6 +110,7 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       availableDays: availableDays,
       startTime: startTimeController.text,
       endTime: endTimeController.text,
+      profileImage: _imageBytes,
     );
 
     setState(() => _isLoading = false);
