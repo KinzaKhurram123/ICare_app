@@ -880,7 +880,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final isMobile = w < 700;
-    final h = isMobile ? 360.0 : (w < 900 ? 380.0 : 480.0);
+    final h = isMobile ? 400.0 : (w < 900 ? 450.0 : 500.0);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -899,7 +899,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               Image.asset(
                 'assets/newban.png',
                 fit: BoxFit.cover,
-                alignment: Alignment.center,
+                alignment: Alignment.centerRight,
                 filterQuality: FilterQuality.high,
                 errorBuilder: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
@@ -911,21 +911,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-          // 2. Blue-tinted overlay for text readability (no grey)
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF001A80).withOpacity(0.52),
-                  const Color(0xFF0036BC).withOpacity(0.18),
-                  Colors.transparent,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-            ),
-          ),
-          // 3. Text + buttons — left side
+          // 2. Text + buttons — left side
           Padding(
             padding: EdgeInsets.only(
               left: isMobile ? 20 : 52,
