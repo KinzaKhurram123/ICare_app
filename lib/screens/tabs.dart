@@ -410,7 +410,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     : Icons.chat_bubble_outline),
           label: role == 'Pharmacy'
               ? 'Inventory'
-              : (role == 'Laboratory' ? 'Upload Reports' : 'Messages'),
+              : (role == 'Laboratory' ? 'Records' : 'Messages'),
           index: 2,
         ),
       ];
@@ -966,21 +966,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                   _buildExtraNavItem(
                     context,
-                    Icons.hourglass_empty_outlined,
-                    'Awaiting Fulfillment',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabBookingsManagement(
-                            title: 'Awaiting Fulfillment',
-                            initialFilter: 'pending',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
                     Icons.list_alt_outlined,
                     'Orders',
                     () {
@@ -999,21 +984,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const LabTestsManagement(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.biotech_outlined,
-                    'Result Entry',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LabBookingsManagement(
-                            title: 'Result Entry',
-                            initialFilter: 'confirmed',
-                          ),
                         ),
                       );
                     },
