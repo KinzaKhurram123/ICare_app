@@ -43,23 +43,12 @@ class PublicHome extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Left: iCare logo with white background box
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 8 : 10,
-                          vertical: isMobile ? 4 : 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.2),
-                        ),
-                        child: Image.asset(
-                          'assets/Asset 1.png',
-                          height: isMobile ? 52 : 68,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                        ),
+                      // Left: iCare logo
+                      Image.asset(
+                        'assets/Asset 1.png',
+                        height: isMobile ? 56 : 72,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                       // Right: nav buttons
                       Row(
@@ -886,9 +875,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
     final isMobile = w < 700;
     final h = isMobile ? 360.0 : (w < 900 ? 380.0 : 480.0);
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 8),
-      child: ClipRRect(
+    return ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: SizedBox(
       width: double.infinity,
@@ -1035,7 +1022,6 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           ],
         ),
         ),
-      ),
     );
   }
 }
@@ -2585,19 +2571,11 @@ class _Footer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE8ECF5), width: 1.2),
-                  ),
-                  child: Image.asset(
-                    'assets/Asset 1.png',
-                    height: 60,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                  ),
+                Image.asset(
+                  'assets/Asset 1.png',
+                  height: 60,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -2644,19 +2622,11 @@ class _Footer extends StatelessWidget {
 
   List<Widget> _buildMobileFooter() {
     return [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE8ECF5), width: 1.2),
-        ),
-        child: Image.asset(
-          'assets/Asset 1.png',
-          height: 48,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-        ),
+      Image.asset(
+        'assets/Asset 1.png',
+        height: 48,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
       ),
       const SizedBox(height: 12),
       Text(
