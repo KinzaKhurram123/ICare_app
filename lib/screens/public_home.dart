@@ -21,6 +21,7 @@ class PublicHome extends StatelessWidget {
       body: Stack(
         children: [
           CustomScrollView(
+        padding: EdgeInsets.zero,
         slivers: [
           SliverAppBar(
             backgroundColor: Colors.white,
