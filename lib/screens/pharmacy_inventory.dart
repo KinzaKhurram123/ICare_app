@@ -502,7 +502,7 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                           crossAxisCount: isDesktop ? 4 : 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: isDesktop ? 1.05 : 0.88,
+                          mainAxisExtent: 182,
                         ),
                         itemCount: _products.length,
                         itemBuilder: (_, i) => _MedicineCard(product: _products[i]),
