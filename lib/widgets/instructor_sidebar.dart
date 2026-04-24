@@ -86,7 +86,7 @@ class InstructorSidebar extends StatelessWidget {
                 ],
               ),
             ),
-            _buildFooter(context),
+            // footer removed (no logout in drawer)
           ],
         ),
       ),
@@ -165,29 +165,10 @@ class InstructorSidebar extends StatelessWidget {
       onTap: () {
         Navigator.pop(context); // Close drawer
         if (!isSelected) {
-          Navigator.of(
-            context,
-          ).pushReplacement(MaterialPageRoute(builder: (ctx) => screen));
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => screen));
         }
       },
     );
   }
 
-  Widget _buildFooter(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          // Implement Logout
-        },
-        icon: const Icon(Icons.logout_rounded, size: 18),
-        label: const Text('Logout'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.red,
-          side: const BorderSide(color: Color(0xFFF1F5F9)),
-          minimumSize: const Size(double.infinity, 45),
-        ),
-      ),
-    );
-  }
 }
