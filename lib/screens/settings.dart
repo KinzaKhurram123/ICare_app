@@ -700,24 +700,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onToggleChanged: setState,
             )),
             const SizedBox(height: 24),
-            // Logout button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: _handleLogout,
-                icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.redAccent),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -945,28 +927,6 @@ class _WebSettingsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 48),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: OutlinedButton.icon(
-                            onPressed: onLogout,
-                            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-                            label: const Text(
-                              'Logout',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.redAccent,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.redAccent),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

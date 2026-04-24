@@ -452,8 +452,8 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
 
           const SizedBox(height: 28),
 
-          // ── Profile card (hidden for Patient, Doctor, Pharmacy, Laboratory) ───────────────
-          if (role != 'Patient' && role != 'Doctor' && role != 'Pharmacy' && role != 'Laboratory')
+          // ── Profile card (hidden for Patient, Doctor, Pharmacy, Laboratory, Student, Instructor) ───────────────
+          if (role != 'Patient' && role != 'Doctor' && role != 'Pharmacy' && role != 'Laboratory' && role != 'Student' && role != 'Instructor')
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
