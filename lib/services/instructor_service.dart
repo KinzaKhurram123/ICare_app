@@ -294,4 +294,44 @@ class InstructorService {
       throw Exception('Failed to upload video: $e');
     }
   }
+
+  // Upload thumbnail image for course
+  Future<Map<String, dynamic>> uploadThumbnail({
+    String? filePath,
+    List<int>? bytes,
+    required String fileName,
+  }) async {
+    try {
+      final token = await AuthService().getToken();
+
+      MultipartFile file;
+      if (kIsWeb) {
+        if (bytes == null) throw Exception('Bytes required for web upload');
+        file = MultipartFile.fromBytes(bytes, filename: fileName);
+      } else {
+        if (filePath == null) {
+          throw Exception('File path required for mobile upload');
+        }
+        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      }
+
+      final formData = FormData.fromMap({'thumbnail': file});
+
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/instructors/thumbnails/upload',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (e) {
+      debugPrint('❌ Failed to upload thumbnail: $e');
+      throw Exception('Failed to upload thumbnail: $e');
+    }
+  }
 }

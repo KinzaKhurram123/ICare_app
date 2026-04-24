@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/user.dart' as app_user;
@@ -30,6 +31,21 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
+    // On web, camera is not supported — go straight to gallery
+    if (kIsWeb) {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 600,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() => _imageBytes = bytes);
+      }
+      return;
+    }
+
+    // Mobile: offer gallery or camera
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -151,6 +167,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final role = ref.read(authProvider).userRole ?? '';
+    final isPatient = role == 'Patient';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
@@ -351,90 +369,92 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             color: Color(0xFF64748B),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        CustomInputField(
-                          hintText: 'CNIC Number (e.g. 42101-1234567-1)',
-                          leadingIcon: const Icon(
-                            Icons.credit_card_outlined,
-                            color: Color(0xFF94A3B8),
-                          ),
-                          controller: cnicController,
-                          bgColor: const Color(0xFFF8FAFC),
-                          borderRadius: 14,
-                          borderColor: const Color(0xFFE2E8F0),
-                          borderWidth: 1.5,
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Health Details',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomInputField(
-                                hintText: 'Age',
-                                leadingIcon: const Icon(
-                                  Icons.cake_outlined,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                controller: ageController,
-                                bgColor: const Color(0xFFF8FAFC),
-                                borderRadius: 14,
-                                borderColor: const Color(0xFFE2E8F0),
-                                borderWidth: 1.5,
-                              ),
+                        if (isPatient) ...[
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'CNIC Number (e.g. 42101-1234567-1)',
+                            leadingIcon: const Icon(
+                              Icons.credit_card_outlined,
+                              color: Color(0xFF94A3B8),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CustomInputField(
-                                hintText: 'Height (cm)',
-                                leadingIcon: const Icon(
-                                  Icons.height_rounded,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                controller: heightController,
-                                bgColor: const Color(0xFFF8FAFC),
-                                borderRadius: 14,
-                                borderColor: const Color(0xFFE2E8F0),
-                                borderWidth: 1.5,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CustomInputField(
-                                hintText: 'Weight (kg)',
-                                leadingIcon: const Icon(
-                                  Icons.monitor_weight_outlined,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                controller: weightController,
-                                bgColor: const Color(0xFFF8FAFC),
-                                borderRadius: 14,
-                                borderColor: const Color(0xFFE2E8F0),
-                                borderWidth: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInputField(
-                          hintText: 'Address',
-                          leadingIcon: const Icon(
-                            Icons.location_on_outlined,
-                            color: Color(0xFF94A3B8),
+                            controller: cnicController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
                           ),
-                          controller: addressController,
-                          bgColor: const Color(0xFFF8FAFC),
-                          borderRadius: 14,
-                          borderColor: const Color(0xFFE2E8F0),
-                          borderWidth: 1.5,
-                        ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Health Details',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Age',
+                                  leadingIcon: const Icon(
+                                    Icons.cake_outlined,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: ageController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Height (cm)',
+                                  leadingIcon: const Icon(
+                                    Icons.height_rounded,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: heightController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Weight (kg)',
+                                  leadingIcon: const Icon(
+                                    Icons.monitor_weight_outlined,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: weightController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'Address',
+                            leadingIcon: const Icon(
+                              Icons.location_on_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: addressController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
+                          ),
+                        ],
                         const SizedBox(height: 32),
                         // Update Button
                         SizedBox(

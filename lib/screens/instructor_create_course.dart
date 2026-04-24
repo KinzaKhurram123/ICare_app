@@ -34,6 +34,8 @@ class _InstructorCreateCourseScreenState
 
   bool _isLoading = false;
   bool _isEditing = false;
+  bool _isUploadingThumbnail = false;
+  String? _uploadedThumbnailUrl;
   List<String> _healthConditions = [];
   List<CourseModule> _modules = [];
 
@@ -59,6 +61,61 @@ class _InstructorCreateCourseScreenState
       _difficulty = widget.course!.difficulty;
       _healthConditions = List.from(widget.course!.healthConditions);
       _modules = List.from(widget.course!.modules);
+      _uploadedThumbnailUrl = widget.course!.thumbnail;
+    }
+  }
+
+  Future<void> _pickAndUploadThumbnail() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null) {
+        setState(() => _isUploadingThumbnail = true);
+
+        final file = result.files.first;
+        Map<String, dynamic> uploadResult;
+
+        if (kIsWeb) {
+          uploadResult = await _instructorService.uploadThumbnail(
+            bytes: file.bytes,
+            fileName: file.name,
+          );
+        } else {
+          uploadResult = await _instructorService.uploadThumbnail(
+            filePath: file.path,
+            fileName: file.name,
+          );
+        }
+
+        if (uploadResult['thumbnailUrl'] != null) {
+          setState(() {
+            _uploadedThumbnailUrl = uploadResult['thumbnailUrl'];
+            _thumbnailController.text = uploadResult['thumbnailUrl'];
+            _isUploadingThumbnail = false;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Thumbnail uploaded successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploadingThumbnail = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload thumbnail: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -243,9 +300,93 @@ class _InstructorCreateCourseScreenState
           ],
         ),
         const SizedBox(height: 16),
-        CustomInputField(
-          controller: _thumbnailController,
-          hintText: 'Thumbnail URL (optional)',
+        // Thumbnail upload
+        GestureDetector(
+          onTap: _isUploadingThumbnail ? null : _pickAndUploadThumbnail,
+          child: Container(
+            width: double.infinity,
+            height: 160,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _uploadedThumbnailUrl != null
+                    ? AppColors.primaryColor.withValues(alpha: 0.4)
+                    : const Color(0xFFE2E8F0),
+                width: 1.5,
+              ),
+            ),
+            child: _isUploadingThumbnail
+                ? const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Uploading thumbnail...', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                      ],
+                    ),
+                  )
+                : _uploadedThumbnailUrl != null
+                    ? Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(13),
+                            child: Image.network(
+                              _uploadedThumbnailUrl!,
+                              width: double.infinity,
+                              height: 160,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image_outlined, size: 40, color: Color(0xFFCBD5E1)),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: _pickAndUploadThumbnail,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.edit, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.add_photo_alternate_outlined, size: 32, color: AppColors.primaryColor),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Upload Course Thumbnail',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'JPG, PNG or WebP — max 5MB',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+          ),
         ),
       ],
     );
