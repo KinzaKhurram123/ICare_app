@@ -365,7 +365,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
     } else if (role == 'Patient') {
       items = [
         _SidebarItem(icon: Icons.home_outlined, label: 'Home', index: 0),
-        _SidebarItem(icon: Icons.health_and_safety_outlined, label: 'Health Programs', index: 4),
       ];
     } else if (role == 'Doctor') {
       items = [
@@ -635,16 +634,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                 // ── Role-specific extra nav items ──────────────────────────
                 if (role == 'Patient') ...[
                   const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
-                    ),
-                    child: Divider(
-                      color: const Color(0xFFE8ECF5),
-                      height: 1,
-                    ),
-                  ),
+                  // My Appointments — first item (before Home)
                   _buildExtraNavItem(
                     context,
                     Icons.calendar_month_outlined,
@@ -656,6 +646,16 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         ),
                       );
                     },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                    child: Divider(
+                      color: const Color(0xFFE8ECF5),
+                      height: 1,
+                    ),
                   ),
                   _buildExtraNavItem(
                     context,
@@ -690,16 +690,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         MaterialPageRoute(
                           builder: (ctx) => const EmergencyContactsScreen(),
                         ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.task_alt_outlined,
-                    'Wellness Goals',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => const TaskScreen()),
                       );
                     },
                   ),
