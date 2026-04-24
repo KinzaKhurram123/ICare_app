@@ -79,7 +79,7 @@ class Course {
       difficulty: json['difficulty'] != null
           ? CourseDifficultyExtension.fromString(json['difficulty'])
           : null,
-      duration: json['duration'],
+      duration: _parseDuration(json['duration']),
       modules:
           (json['modules'] as List?)
               ?.map((m) => CourseModule.fromJson(m))
@@ -99,6 +99,19 @@ class Course {
         json['updatedAt'] ?? DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  static int? _parseDuration(dynamic duration) {
+    if (duration == null) return null;
+    if (duration is int) return duration;
+    if (duration is String) {
+      // Handle strings like "15 minutes" or "2 hours"
+      final match = RegExp(r'(\d+)').firstMatch(duration);
+      if (match != null) {
+        return int.tryParse(match.group(1)!);
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
