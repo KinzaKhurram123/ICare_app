@@ -236,6 +236,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isPharmacy = role == 'Pharmacy';
     final isLaboratory = role == 'Laboratory';
     final isDoctor = role == 'Doctor';
+    final isStudent = role == 'Student';
+    final isInstructor = role == 'Instructor';
 
     // Sections: each section has a title + list of items
     final List<_SettingsSection> sections = [
@@ -304,50 +306,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
 
-      // Privacy & Data (removed Privacy Policy for patients per client request)
-      if (!isPatient)
-        _SettingsSection(
-          title: 'Privacy & Data',
-          icon: Icons.shield_rounded,
-          iconColor: const Color(0xFF8B5CF6),
-          iconBg: const Color(0xFFF5F3FF),
-          items: [
-            _SettingsItem(
-              title: 'Privacy Policy',
-              icon: Icons.privacy_tip_outlined,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => PrivacyPolicy()),
-              ),
+      // Privacy & Data
+      _SettingsSection(
+        title: 'Privacy & Data',
+        icon: Icons.shield_rounded,
+        iconColor: const Color(0xFF8B5CF6),
+        iconBg: const Color(0xFFF5F3FF),
+        items: [
+          _SettingsItem(
+            title: 'Privacy Policy',
+            icon: Icons.privacy_tip_outlined,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => PrivacyPolicy()),
             ),
-          ],
-        ),
+          ),
+          if (isPatient)
+            _SettingsItem(
+              title: 'Data Sharing Preferences',
+              icon: Icons.share_outlined,
+              onTap: () => _comingSoon(context, 'Data Sharing Preferences'),
+            ),
+          if (isPatient)
+            _SettingsItem(
+              title: 'Delete My Data',
+              icon: Icons.delete_outline_rounded,
+              onTap: () => _comingSoon(context, 'Delete My Data'),
+            ),
+        ],
+      ),
 
-      // About & Legal (removed for patients per client request)
-      if (!isPatient)
-        _SettingsSection(
-          title: 'About & Legal',
-          icon: Icons.info_rounded,
-          iconColor: const Color(0xFFF59E0B),
-          iconBg: const Color(0xFFFEF3C7),
-          items: [
-            _SettingsItem(
-              title: 'About iCare',
-              icon: Icons.info_outline_rounded,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => AboutUs()),
-              ),
+      // About & Legal
+      _SettingsSection(
+        title: 'About & Legal',
+        icon: Icons.info_rounded,
+        iconColor: const Color(0xFFF59E0B),
+        iconBg: const Color(0xFFFEF3C7),
+        items: [
+          _SettingsItem(
+            title: 'About iCare',
+            icon: Icons.info_outline_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => AboutUs()),
             ),
-            _SettingsItem(
-              title: 'Terms & Conditions',
-              icon: Icons.gavel_rounded,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => TermsAndConditions()),
-              ),
+          ),
+          _SettingsItem(
+            title: 'Terms & Conditions',
+            icon: Icons.gavel_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => TermsAndConditions()),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
 
-      // Health Profile — Patient only
+      // Health Profile — Patient only (placed after Security for better flow)
       if (isPatient)
         _SettingsSection(
           title: 'Health Profile',
@@ -374,6 +386,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Health Goals',
               icon: Icons.flag_outlined,
               onTap: () => _comingSoon(context, 'Health Goals'),
+            ),
+            _SettingsItem(
+              title: 'Family Profiles',
+              icon: Icons.group_outlined,
+              onTap: () => _comingSoon(context, 'Family Profiles'),
             ),
           ],
         ),
@@ -617,7 +634,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
 
       // Learning Settings — Patient, Student, Instructor only
-      if (!isPharmacy && !isLaboratory && !isDoctor)
+      if (isPatient || isStudent || isInstructor)
         _SettingsSection(
           title: 'Learning Settings',
           icon: Icons.school_rounded,
@@ -669,6 +686,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return _WebSettingsScreen(
         sections: sections,
         onLogout: _handleLogout,
+        role: role,
       );
     }
 
@@ -854,11 +872,28 @@ class _MobileSectionCard extends StatelessWidget {
 class _WebSettingsScreen extends StatelessWidget {
   final List<_SettingsSection> sections;
   final VoidCallback onLogout;
+  final String role;
 
   const _WebSettingsScreen({
     required this.sections,
     required this.onLogout,
+    required this.role,
   });
+
+  String get _settingsSubtitle {
+    switch (role) {
+      case 'Patient':
+        return 'Manage your health profile, appointments, notifications, privacy, and account preferences.';
+      case 'Doctor':
+        return 'Manage your professional profile, availability, consultation settings, and account preferences.';
+      case 'Pharmacy':
+        return 'Manage your business details, inventory alerts, delivery settings, and account preferences.';
+      case 'Laboratory':
+        return 'Manage your lab profile, test catalog, sample collection, and account preferences.';
+      default:
+        return 'Manage your profile, security, notifications, and legal preferences all in one place.';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -918,9 +953,9 @@ class _WebSettingsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          "Manage your profile, security, notifications, and legal preferences all in one place.",
-                          style: TextStyle(
+                        Text(
+                          _settingsSubtitle,
+                          style: const TextStyle(
                             fontSize: 15,
                             color: Color(0xFF64748B),
                             height: 1.5,
