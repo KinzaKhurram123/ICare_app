@@ -900,7 +900,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
               Image.asset(
                 'assets/newban.png',
                 fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
+                alignment: const Alignment(1.0, -0.85),
                 filterQuality: FilterQuality.high,
                 errorBuilder: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
