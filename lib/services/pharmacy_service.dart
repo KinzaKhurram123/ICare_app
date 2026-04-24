@@ -198,35 +198,13 @@ class PharmacyService {
     String orderId,
     String status,
   ) async {
-    try {
-      debugPrint('🔄 Updating order $orderId to status: $status');
-      final response = await _apiService.put(
-        '/pharmacy/update_order_status/$orderId',
-        {'status': status},
-      );
-      debugPrint('✅ Order status updated successfully');
-      return response.data['order'] ?? {};
-    } on DioException catch (e) {
-      debugPrint('⚠️ Primary endpoint failed: ${e.response?.statusCode}');
-      if (e.response?.statusCode == 404) {
-        debugPrint('🔄 Trying fallback endpoint: /pharmacy/orders/$orderId');
-        try {
-          final response = await _apiService.put(
-            '/pharmacy/orders/$orderId',
-            {'status': status},
-          );
-          debugPrint('✅ Fallback endpoint succeeded');
-          return response.data['order'] ?? {};
-        } on DioException catch (fallbackError) {
-          debugPrint('❌ Fallback also failed: ${fallbackError.response?.statusCode}');
-          if (fallbackError.response?.statusCode == 404) {
-            throw Exception('Order not found. It may have been deleted or does not belong to your pharmacy.');
-          }
-          rethrow;
-        }
-      }
-      rethrow;
-    }
+    debugPrint('🔄 Updating order $orderId to status: $status');
+    final response = await _apiService.put(
+      '/pharmacy/orders/$orderId/status',
+      {'status': status},
+    );
+    debugPrint('✅ Order status updated successfully');
+    return response.data['order'] ?? {};
   }
 
   Future<void> submitOrderRating(String orderId, int rating, String comment) async {
