@@ -49,6 +49,7 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -87,156 +88,83 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
               onRefresh: _loadStats,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(isDesktop ? 32 : 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Stats Grid
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.5,
-                      children: [
-                        _buildStatCard(
-                          'Total Programs',
-                          '${_stats['totalCourses'] ?? 0}',
-                          Icons.menu_book_rounded,
-                          const Color(0xFF6366F1),
-                        ),
-                        _buildStatCard(
-                          'Active Patients',
-                          '${_stats['totalStudents'] ?? 0}',
-                          Icons.group_rounded,
-                          const Color(0xFF10B981),
-                        ),
-                        _buildStatCard(
-                          'Avg. Rating',
-                          '${_stats['avgRating'] ?? 0}★',
-                          Icons.star_rounded,
-                          const Color(0xFFF59E0B),
-                        ),
-                        _buildStatCard(
-                          'Health Tips',
-                          '${_stats['totalPrecautions'] ?? 0}',
-                          Icons.health_and_safety_rounded,
-                          const Color(0xFF3B82F6),
-                        ),
-                      ],
-                    ),
+                    // Stats — horizontal row of compact cards
+                    if (isDesktop)
+                      Row(
+                        children: [
+                          _buildStatCard('Total Programs', '${_stats['totalCourses'] ?? 0}', Icons.menu_book_rounded, const Color(0xFF6366F1)),
+                          const SizedBox(width: 16),
+                          _buildStatCard('Active Patients', '${_stats['totalStudents'] ?? 0}', Icons.group_rounded, const Color(0xFF10B981)),
+                          const SizedBox(width: 16),
+                          _buildStatCard('Avg. Rating', '${_stats['avgRating'] ?? 0}★', Icons.star_rounded, const Color(0xFFF59E0B)),
+                          const SizedBox(width: 16),
+                          _buildStatCard('Health Tips', '${_stats['totalPrecautions'] ?? 0}', Icons.health_and_safety_rounded, const Color(0xFF3B82F6)),
+                        ],
+                      )
+                    else
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.8,
+                        children: [
+                          _buildStatCard('Total Programs', '${_stats['totalCourses'] ?? 0}', Icons.menu_book_rounded, const Color(0xFF6366F1)),
+                          _buildStatCard('Active Patients', '${_stats['totalStudents'] ?? 0}', Icons.group_rounded, const Color(0xFF10B981)),
+                          _buildStatCard('Avg. Rating', '${_stats['avgRating'] ?? 0}★', Icons.star_rounded, const Color(0xFFF59E0B)),
+                          _buildStatCard('Health Tips', '${_stats['totalPrecautions'] ?? 0}', Icons.health_and_safety_rounded, const Color(0xFF3B82F6)),
+                        ],
+                      ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
                     // Quick Actions
                     const Text(
                       'Quick Actions',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    _buildActionCard(
-                      'Manage Health Programs',
-                      'Create, edit, and manage your health programs',
-                      Icons.health_and_safety_rounded,
-                      const Color(0xFF6366F1),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorCoursesManagementScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
                     const SizedBox(height: 12),
 
-                    _buildActionCard(
-                      'Assign Programs',
-                      'Assign professional development to doctors or patients',
-                      Icons.assignment_ind_rounded,
-                      const Color(0xFF8B5CF6),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorAssignCourseScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildActionCard(
-                      'Assigned Learners',
-                      'Monitor patient and doctor progress',
-                      Icons.group_rounded,
-                      const Color(0xFF3B82F6),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const InstructorLearnersScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildActionCard(
-                      'Educational Analytics',
-                      'Track completions and learner engagement',
-                      Icons.analytics_rounded,
-                      const Color(0xFFF59E0B),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const InstructorAnalytics(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildActionCard(
-                      'Health Tips & Precautions',
-                      'Share health tips with your patients',
-                      Icons.tips_and_updates_rounded,
-                      const Color(0xFF10B981),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorPrecautionsManagementScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildActionCard(
-                      'Profile Settings',
-                      'Update your profile and availability',
-                      Icons.settings_rounded,
-                      const Color(0xFF64748B),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                const InstructorProfileSetupScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    if (isDesktop)
+                      // Desktop: 2-column grid for action cards
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 4.0,
+                        children: [
+                          _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
+                          _buildActionCard('Assign Programs', 'Assign development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
+                          _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
+                          _buildActionCard('Educational Analytics', 'Track completions and engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
+                          _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
+                          _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
+                        ],
+                      )
+                    else ...[
+                      _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
+                      const SizedBox(height: 10),
+                      _buildActionCard('Assign Programs', 'Assign professional development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
+                      const SizedBox(height: 10),
+                      _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
+                      const SizedBox(height: 10),
+                      _buildActionCard('Educational Analytics', 'Track completions and learner engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
+                      const SizedBox(height: 10),
+                      _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
+                      const SizedBox(height: 10),
+                      _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
+                    ],
                   ],
                 ),
               ),
@@ -250,40 +178,42 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     IconData icon,
     Color color,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+    final card = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.15)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 10,
+            color: color.withOpacity(0.08),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
+          const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 24,
+                style: TextStyle(
+                  fontSize: isDesktop ? 26 : 20,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF0F172A),
+                  color: const Color(0xFF0F172A),
                 ),
               ),
               Text(
@@ -299,6 +229,8 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
         ],
       ),
     );
+
+    return isDesktop ? Expanded(child: card) : card;
   }
 
   Widget _buildActionCard(

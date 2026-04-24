@@ -500,9 +500,9 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
                         padding: EdgeInsets.all(isDesktop ? 32 : 16),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: isDesktop ? 4 : 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: isDesktop ? 0.72 : 0.68,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: isDesktop ? 1.05 : 0.88,
                         ),
                         itemCount: _products.length,
                         itemBuilder: (_, i) => _MedicineCard(product: _products[i]),
@@ -590,9 +590,9 @@ class _MedicineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image area
+          // Image area — compact
           Container(
-            height: 110,
+            height: 80,
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -600,94 +600,86 @@ class _MedicineCard extends StatelessWidget {
             child: Stack(
               children: [
                 Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Image.network(
-                      _imageUrl,
-                      height: 72,
-                      width: 72,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(_typeIcon, size: 52, color: color.withOpacity(0.7)),
-                    ),
+                  child: Image.network(
+                    _imageUrl,
+                    height: 52,
+                    width: 52,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(_typeIcon, size: 38, color: color.withOpacity(0.7)),
                   ),
                 ),
                 // Category badge
                 Positioned(
-                  top: 8, left: 8,
+                  top: 6, left: 6,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-                    child: Text(product['category'], style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                    child: Text(product['category'], style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)),
                   ),
                 ),
-                // Controlled badge
                 if (isControlled)
                   Positioned(
-                    top: 8, right: 8,
+                    top: 6, right: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(20)),
-                      child: const Text('CONTROLLED', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                      child: const Text('CTRL', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
                     ),
                   )
-                // Stock badge
                 else if (isLow)
                   Positioned(
-                    top: 8, right: 8,
+                    top: 6, right: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(20)),
-                      child: const Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                      child: const Text('Low', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)),
                     ),
                   ),
               ],
             ),
           ),
-          // Info
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product['name'], maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                  if ((product['brand'] as String).isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(product['brand'], style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  ],
-                  if ((product['power'] as String).isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(product['power'], style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-                  ],
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Rs ${product['price'].toStringAsFixed(0)}',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: color)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text('Qty: $stock',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+          // Info — compact, no Spacer
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(product['name'], maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                if ((product['brand'] as String).isNotEmpty)
+                  Text(product['brand'], maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                if ((product['power'] as String).isNotEmpty)
+                  Text(product['power'],
+                      style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Rs ${product['price'].toStringAsFixed(0)}',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Icon(Icons.calendar_today_rounded, size: 11,
-                        color: expiringSoon ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8)),
-                    const SizedBox(width: 4),
-                    Text('Exp: ${DateFormat('MMM yy').format(expiry)}',
-                        style: TextStyle(fontSize: 10,
-                            color: expiringSoon ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8))),
-                  ]),
-                ],
-              ),
+                      child: Text('Qty: $stock',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(children: [
+                  Icon(Icons.calendar_today_rounded, size: 10,
+                      color: expiringSoon ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8)),
+                  const SizedBox(width: 3),
+                  Text('Exp: ${DateFormat('MMM yy').format(expiry)}',
+                      style: TextStyle(fontSize: 9,
+                          color: expiringSoon ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8))),
+                ]),
+              ],
             ),
           ),
         ],
