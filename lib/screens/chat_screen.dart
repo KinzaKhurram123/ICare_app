@@ -420,34 +420,32 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
-          if (!kIsWeb) ...[
-            IconButton(
-              icon: const Icon(Icons.videocam, color: Colors.black),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VideoCall(
-                    channelName: _buildChannelName(),
-                    remoteUserName: widget.userName,
-                    isAudioOnly: false,
-                  ),
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.black),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: _buildChannelName(),
+                  remoteUserName: widget.userName,
+                  isAudioOnly: false,
                 ),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.call, color: Colors.black),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VideoCall(
-                    channelName: _buildChannelName(),
-                    remoteUserName: widget.userName,
-                    isAudioOnly: true,
-                  ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.call, color: Colors.black),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: _buildChannelName(),
+                  remoteUserName: widget.userName,
+                  isAudioOnly: true,
                 ),
               ),
             ),
-          ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _refreshMessages,
