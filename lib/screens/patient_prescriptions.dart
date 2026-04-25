@@ -686,7 +686,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LabDetailScreen(lab: lab),
+            builder: (_) => LabDetails(labData: lab),
           ),
         );
       },
