@@ -322,11 +322,11 @@ class _VideoCallState extends State<VideoCall> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Remote video (full screen)
-          _buildRemoteVideo(),
+          // Main video: own camera until remote joins, then remote video
+          _buildMainVideo(),
 
-          // Local video (picture-in-picture, top right)
-          if (!widget.isAudioOnly) _buildLocalVideo(),
+          // PIP: small self-view in corner only when remote is present
+          _buildLocalPiP(),
 
           // Top bar
           _buildTopBar(),
@@ -338,7 +338,12 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
-  Widget _buildRemoteVideo() {
+  /// Main (full-screen) video layer.
+  /// • If remote has joined → show remote video (Zoom style)
+  /// • If remote not yet joined and we have local video → show OWN camera big
+  /// • Fallback → avatar placeholder
+  Widget _buildMainVideo() {
+    // ── Audio-only mode ──────────────────────────────────────────────────────
     if (widget.isAudioOnly) {
       return Container(
         color: const Color(0xFF1E293B),
@@ -367,9 +372,7 @@ class _VideoCallState extends State<VideoCall> {
               Text(
                 _remoteUserJoined ? 'Connected' : 'Calling...',
                 style: TextStyle(
-                  color: _remoteUserJoined
-                      ? Colors.greenAccent
-                      : Colors.white60,
+                  color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
                   fontSize: 14,
                 ),
               ),
@@ -379,7 +382,8 @@ class _VideoCallState extends State<VideoCall> {
       );
     }
 
-    if (_remoteUid != null) {
+    // ── Remote joined → remote video fills screen ────────────────────────────
+    if (_remoteUserJoined && _remoteUid != null) {
       return AgoraVideoView(
         controller: VideoViewController.remote(
           rtcEngine: _engine!,
@@ -389,6 +393,41 @@ class _VideoCallState extends State<VideoCall> {
       );
     }
 
+    // ── Waiting for remote: show OWN camera as main screen ───────────────────
+    if (_localUserJoined && !_isCameraOff) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AgoraVideoView(
+            controller: VideoViewController(
+              rtcEngine: _engine!,
+              canvas: const VideoCanvas(uid: 0),
+            ),
+          ),
+          // "Waiting" banner at bottom of own preview
+          Positioned(
+            bottom: 130,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Waiting for ${widget.remoteUserName} to join...',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // ── Fallback: avatar placeholder (camera off or not yet joined) ──────────
     return Container(
       color: const Color(0xFF1E293B),
       child: Center(
@@ -423,8 +462,13 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
-  Widget _buildLocalVideo() {
-    if (!_localUserJoined) return const SizedBox.shrink();
+  /// Small PIP overlay (top-right corner) — only visible when BOTH are in call.
+  /// Shows local camera so you can see yourself while watching the remote feed.
+  Widget _buildLocalPiP() {
+    // Only show PIP when remote user is present (otherwise own cam IS the main screen)
+    if (!_remoteUserJoined || !_localUserJoined || widget.isAudioOnly) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned(
       top: 80,
@@ -437,11 +481,7 @@ class _VideoCallState extends State<VideoCall> {
           child: _isCameraOff
               ? Container(
                   color: Colors.grey[800],
-                  child: const Icon(
-                    Icons.videocam_off,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: const Icon(Icons.videocam_off, color: Colors.white, size: 32),
                 )
               : AgoraVideoView(
                   controller: VideoViewController(
