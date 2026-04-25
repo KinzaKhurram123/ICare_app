@@ -122,7 +122,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 // ─── FALLBACK ─────────────────────────────────────────────────────────────────
-router.all('*', (req, res) => {
+router.all('/{*path}', (req, res) => {
   res.json({ success: true, users: [], count: 0 });
 });
 

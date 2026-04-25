@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
-const APP_ID = process.env.AGORA_APP_ID;
-const APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
+const APP_ID = (process.env.AGORA_APP_ID || '').trim();
+const APP_CERTIFICATE = (process.env.AGORA_APP_CERTIFICATE || '').trim();
 
 // Agora Access Token V2 — implemented using Node.js built-in crypto only
 // Reference: https://github.com/AgoraIO/Tools/tree/master/DynamicKey/AgoraDynamicKey

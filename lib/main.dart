@@ -9,6 +9,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:icare/services/fcm_service.dart';
+import 'package:icare/widgets/incoming_call_listener.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
@@ -58,14 +59,16 @@ class MyApp extends ConsumerWidget {
             ScallingConfig().init(context);
             return FlutterSmartDialog.init()(
               context,
-              ResponsiveBreakpoints.builder(
-                child: child ?? const SizedBox(),
-                breakpoints: const [
-                  Breakpoint(start: 0, end: 600, name: MOBILE),
-                  Breakpoint(start: 600, end: 900, name: TABLET),
-                  Breakpoint(start: 901, end: 1920, name: DESKTOP),
-                  Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-                ],
+              IncomingCallListener(
+                child: ResponsiveBreakpoints.builder(
+                  child: child ?? const SizedBox(),
+                  breakpoints: const [
+                    Breakpoint(start: 0, end: 600, name: MOBILE),
+                    Breakpoint(start: 600, end: 900, name: TABLET),
+                    Breakpoint(start: 901, end: 1920, name: DESKTOP),
+                    Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+                  ],
+                ),
               ),
             );
           },

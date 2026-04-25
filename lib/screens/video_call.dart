@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/agora_service.dart';
+import '../services/call_service.dart';
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -22,6 +23,7 @@ class VideoCall extends StatefulWidget {
 
 class _VideoCallState extends State<VideoCall> {
   final AgoraService _agoraService = AgoraService();
+  final CallService _callService = CallService();
 
   RtcEngine? _engine;
   bool _localUserJoined = false;
@@ -164,6 +166,7 @@ class _VideoCallState extends State<VideoCall> {
   }
 
   Future<void> _endCall() async {
+    await _callService.endCall(widget.channelName);
     await _engine?.leaveChannel();
     await _engine?.release();
     if (mounted) Navigator.pop(context);
