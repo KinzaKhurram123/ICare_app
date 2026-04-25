@@ -51,7 +51,8 @@ class SharedPref {
   /// Get authentication token
   Future<String?> getToken() async {
     final SharedPreferencesWithCache pref = await _prefs;
-    return pref.getString('token');
+    final token = pref.getString('token');
+    return token?.trim();
   }
 
   Future<void> setUserWalkthrough(bool value) async {

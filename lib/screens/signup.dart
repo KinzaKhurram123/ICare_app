@@ -112,13 +112,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
       if (result['success']) {
         final token = result['data']['token'];
-        ref.read(authProvider.notifier).setUserToken(token);
+        await ref.read(authProvider.notifier).setUserToken(token);
 
         final profileResult = await _userService.getUserProfile(token: token);
 
         if (profileResult['success'] && mounted) {
           final user = app_user.User.fromJson(profileResult['user']);
-          ref.read(authProvider.notifier).setUser(user);
+          await ref.read(authProvider.notifier).setUser(user);
 
           context.go('/dashboard');
         } else {

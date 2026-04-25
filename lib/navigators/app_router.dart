@@ -18,11 +18,15 @@ final authInitProvider = FutureProvider<void>((ref) async {
   try {
     final token = await SharedPref().getToken();
     if (token != null && token.isNotEmpty) {
-      ref.read(authProvider.notifier).setUserToken(token);
+      await ref.read(authProvider.notifier).setUserToken(token);
       final userRole = await SharedPref().getUserRole();
-      if (userRole != null) ref.read(authProvider.notifier).setUserRole(userRole);
+      if (userRole != null) {
+        await ref.read(authProvider.notifier).setUserRole(userRole);
+      }
       final userData = await SharedPref().getUserData();
-      if (userData != null) ref.read(authProvider.notifier).setUser(userData);
+      if (userData != null) {
+        await ref.read(authProvider.notifier).setUser(userData);
+      }
     }
   } catch (_) {}
 });

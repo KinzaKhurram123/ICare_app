@@ -1601,13 +1601,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               "👤 User object created: ${user.name}, ${user.email}, ${user.role}",
             );
 
-            ref.read(authProvider.notifier).setUser(user);
-            debugPrint("✅ User set in provider");
-
-            ref
+            // Save token first and await
+            await ref
                 .read(authProvider.notifier)
                 .setUserToken(result['data']['token']);
             debugPrint("✅ Token set in provider");
+
+            // Save user and await
+            await ref.read(authProvider.notifier).setUser(user);
+            debugPrint("✅ User set in provider");
 
             // Verify the role is set
             final currentRole = ref.read(authProvider).userRole;
@@ -1652,9 +1654,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // credentials: credentialsController.text.trim(),
         );
         if (result['success']) {
-          // Set token in provider first
+          // Set token in provider first and await
           final token = result['data']['token'];
-          ref.read(authProvider.notifier).setUserToken(token);
+          await ref.read(authProvider.notifier).setUserToken(token);
 
           // Fetch user profile after registration, passing token directly
           final profileResult = await _userService.getUserProfile(token: token);
@@ -1662,7 +1664,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           if (profileResult['success'] && mounted) {
             final userData = profileResult['user'];
             final user = app_user.User.fromJson(userData);
-            ref.read(authProvider.notifier).setUser(user);
+            await ref.read(authProvider.notifier).setUser(user);
 
             // Redirect based on user role
             if (user.role == 'Laboratory') {

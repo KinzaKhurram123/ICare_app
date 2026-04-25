@@ -7,7 +7,10 @@ class CallService {
   final Dio _dio = Dio();
   final SharedPref _sharedPref = SharedPref();
 
-  Future<String?> _getToken() => _sharedPref.getToken();
+  Future<String?> _getToken() async {
+    final token = await _sharedPref.getToken();
+    return token?.trim();
+  }
 
   Future<Map<String, dynamic>> initiateCall({
     required String receiverId,
