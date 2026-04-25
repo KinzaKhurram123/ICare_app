@@ -4,6 +4,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
+import '../utils/app_keys.dart';
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -190,10 +191,17 @@ class _VideoCallState extends State<VideoCall> {
   }
 
   Future<void> _endCall() async {
-    await _callService.endCall(widget.channelName);
-    await _engine?.leaveChannel();
-    await _engine?.release();
-    if (mounted) Navigator.pop(context);
+    try {
+      await _callService.endCall(widget.channelName);
+      await _engine?.leaveChannel();
+      await _engine?.release();
+    } catch (_) {}
+    // Use global navigator key — works regardless of where VideoCall was pushed from
+    if (appNavigatorKey.currentState?.canPop() == true) {
+      appNavigatorKey.currentState?.pop();
+    } else if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
   }
 
   Future<void> _toggleMute() async {
@@ -242,7 +250,7 @@ class _VideoCallState extends State<VideoCall> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _endCall,
                   child: const Text('Go Back'),
                 ),
               ],
