@@ -208,120 +208,52 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── MEDICINES ────────────────────────────────────────
+                // ── MEDICINES TILE (clickable) ────────────────────────
                 if (medicines.isNotEmpty) ...[
-                  _sectionHeader(
-                      Icons.medication_rounded,
-                      const Color(0xFF3B82F6),
-                      'Medications',
-                      '${medicines.length} prescribed'),
-                  const SizedBox(height: 12),
-                  ...medicines.map((med) => _buildMedicineItem(med)),
-                  const SizedBox(height: 12),
-                  // Find Pharmacies button
-                  _actionButton(
-                    icon: Icons.local_pharmacy_rounded,
-                    label: 'Find Pharmacies',
+                  _clickableTile(
+                    icon: Icons.medication_rounded,
                     color: const Color(0xFF3B82F6),
-                    onTap: () => _showFindPharmacies(context, medicines),
+                    bgColor: const Color(0xFFEFF6FF),
+                    title: 'Medicines',
+                    subtitle: '${medicines.length} prescribed by doctor',
+                    arrowColor: const Color(0xFF3B82F6),
+                    onTap: () => _showMedicinesDetail(context, medicines),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
 
-                // ── LAB TESTS ────────────────────────────────────────
+                // ── LAB TESTS TILE (clickable) ────────────────────────
                 if (labTests.isNotEmpty) ...[
-                  _sectionHeader(
-                      Icons.biotech_rounded,
-                      const Color(0xFF8B5CF6),
-                      'Lab Tests',
-                      '${labTests.length} ordered'),
-                  const SizedBox(height: 12),
-                  ...labTests.map((test) => _buildLabTestItem(test)),
-                  const SizedBox(height: 12),
-                  // Find Labs button
-                  _actionButton(
-                    icon: Icons.science_rounded,
-                    label: 'Find Labs',
+                  _clickableTile(
+                    icon: Icons.biotech_rounded,
                     color: const Color(0xFF8B5CF6),
-                    onTap: () => _showFindLabs(context, labTests),
+                    bgColor: const Color(0xFFF5F3FF),
+                    title: 'Lab Tests',
+                    subtitle: '${labTests.length} tests ordered',
+                    arrowColor: const Color(0xFF8B5CF6),
+                    onTap: () => _showLabTestsDetail(context, labTests),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
 
-                // ── SPECIALIST REFERRAL ──────────────────────────────
+                // ── SPECIALIST REFERRAL TILE ──────────────────────────
                 if (record['prescription']?['referral'] != null) ...[
-                  _sectionHeader(
-                      Icons.person_search_rounded,
-                      const Color(0xFFF59E0B),
-                      'Specialist Referral',
-                      null),
-                  const SizedBox(height: 12),
-                  InkWell(
+                  _clickableTile(
+                    icon: Icons.person_search_rounded,
+                    color: const Color(0xFFF59E0B),
+                    bgColor: const Color(0xFFFFFBEB),
+                    title: record['prescription']['referral']['specialty'] ?? 'Specialist Referral',
+                    subtitle: record['prescription']['referral']['reason'] ?? 'Referred by doctor',
+                    arrowColor: const Color(0xFFF59E0B),
                     onTap: () {
-                      final specialty =
-                          record['prescription']['referral']['specialty'];
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (ctx) => DoctorsListWithSpecialty(
-                                  specialty: specialty)));
+                      final specialty = record['prescription']['referral']['specialty'];
+                      Navigator.push(context, MaterialPageRoute(
+                          builder: (ctx) => DoctorsListWithSpecialty(specialty: specialty)));
                     },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFFBEB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B)
-                                  .withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.person_search_rounded,
-                                color: Color(0xFFF59E0B), size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  record['prescription']['referral']
-                                          ['specialty'] ??
-                                      'Specialist',
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF0F172A)),
-                                ),
-                                if (record['prescription']['referral']
-                                        ['reason'] !=
-                                    null)
-                                  Text(
-                                    record['prescription']['referral']
-                                        ['reason'],
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF64748B)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios_rounded,
-                              color: Color(0xFFF59E0B), size: 16),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
 
@@ -338,6 +270,257 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── CLICKABLE TILE ───────────────────────────────────────────────────────
+  Widget _clickableTile({
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required String title,
+    required String subtitle,
+    required Color arrowColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: color)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF64748B))),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, color: arrowColor, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── MEDICINES DETAIL SHEET ───────────────────────────────────────────────
+  void _showMedicinesDetail(BuildContext context, List<dynamic> medicines) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.medication_rounded,
+                          color: Color(0xFF3B82F6), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Prescribed Medicines',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A))),
+                          Text('Tap "Find Pharmacies" to order',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(),
+              // Medicines list
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  itemCount: medicines.length,
+                  itemBuilder: (_, i) => _buildMedicineItem(medicines[i]),
+                ),
+              ),
+              // Find Pharmacies button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showFindPharmacies(context, medicines);
+                    },
+                    icon: const Icon(Icons.local_pharmacy_rounded),
+                    label: const Text('Find Pharmacies',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── LAB TESTS DETAIL SHEET ───────────────────────────────────────────────
+  void _showLabTestsDetail(BuildContext context, List<dynamic> labTests) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.biotech_rounded,
+                          color: Color(0xFF8B5CF6), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ordered Lab Tests',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A))),
+                          Text('Tap "Find Labs" to book',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  itemCount: labTests.length,
+                  itemBuilder: (_, i) => _buildLabTestItem(labTests[i]),
+                ),
+              ),
+              // Find Labs button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showFindLabs(context, labTests);
+                    },
+                    icon: const Icon(Icons.science_rounded),
+                    label: const Text('Find Labs',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
