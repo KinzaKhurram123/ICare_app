@@ -6,6 +6,7 @@ import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/labb_details.dart';
+import 'package:icare/screens/pharmacy_details.dart';
 import 'package:intl/intl.dart';
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
@@ -109,6 +110,10 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     final date = DateTime.parse(record['createdAt']);
     final diagnosis = record['diagnosis'] ?? 'General Prescription';
     final doctorName = record['doctor']?['name'] ?? 'Unknown Doctor';
+    final rawId = (record['_id'] ?? record['id'] ?? '').toString();
+    final recordNumber = rawId.length >= 6
+        ? 'MR-${rawId.substring(rawId.length - 6).toUpperCase()}'
+        : 'MR-XXXXXX';
     final medicines =
         (record['prescription']?['medicines'] as List?) ?? [];
     final labTests =
@@ -170,12 +175,33 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                     ],
                   ),
                 ),
-                Text(
-                  DateFormat('MMM dd, yyyy').format(date),
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(date),
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        recordNumber,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -909,73 +935,87 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
     final address = pharmacy['address']?.toString() ?? pharmacy['location']?.toString() ?? '';
     final phone = pharmacy['phone']?.toString() ?? pharmacy['phoneNumber']?.toString() ?? '';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.local_pharmacy_rounded,
-                color: Color(0xFF3B82F6), size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A))),
-                if (address.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Row(children: [
-                    const Icon(Icons.location_on_rounded,
-                        size: 13, color: Color(0xFF64748B)),
-                    const SizedBox(width: 3),
-                    Expanded(
-                        child: Text(address,
-                            style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF64748B)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis)),
-                  ]),
-                ],
-                if (phone.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Row(children: [
-                    const Icon(Icons.phone_rounded,
-                        size: 13, color: Color(0xFF64748B)),
-                    const SizedBox(width: 3),
-                    Text(phone,
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF64748B))),
-                  ]),
-                ],
-              ],
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyDetailsScreen(
+              pharmacy: Map<String, dynamic>.from(pharmacy is Map ? pharmacy : {}),
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 16, color: Color(0xFF94A3B8)),
-        ],
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.local_pharmacy_rounded,
+                  color: Color(0xFF3B82F6), size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A))),
+                  if (address.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      const Icon(Icons.location_on_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Expanded(
+                          child: Text(address,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis)),
+                    ]),
+                  ],
+                  if (phone.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      const Icon(Icons.phone_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Text(phone,
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF64748B))),
+                    ]),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 16, color: Color(0xFF94A3B8)),
+          ],
+        ),
       ),
     );
   }
