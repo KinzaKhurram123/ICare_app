@@ -6,8 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../utils/app_keys.dart';
-import 'dart:js_interop';
-import 'package:web/web.dart' as web;
+import '../utils/camera_permission.dart';
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -68,15 +67,7 @@ class _VideoCallState extends State<VideoCall> {
       } else {
         try {
           _setStatus('Requesting camera access...');
-          final stream = await web.window.navigator.mediaDevices
-              .getUserMedia(
-                  web.MediaStreamConstraints(video: true.toJS, audio: true.toJS))
-              .toDart;
-          // stop tracks — Agora will re-acquire them
-          final tracks = stream.getTracks().toDart;
-          for (final t in tracks) {
-            t.stop();
-          }
+          await requestWebCameraPermission();
         } catch (e) {
           _showError(
               'Camera/microphone access denied.\nPlease allow in browser settings and refresh.');
