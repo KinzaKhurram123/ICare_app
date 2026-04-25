@@ -164,13 +164,19 @@ class _VideoCallState extends State<VideoCall> {
 
       // Enable video if not audio-only
       if (!widget.isAudioOnly) {
-        debugPrint('🎥 [7] Enabling video module...');
+        debugPrint('🎥 Step 8: Enabling video module...');
         await _engine!.enableVideo();
+        // Explicitly enable local video track
         await _engine!.enableLocalVideo(true);
-        if (!kIsWeb) {
-          debugPrint('🎥 [7a] Starting local preview...');
-          await _engine!.startPreview();
-        }
+        // Configure video encoding
+        await _engine!.setVideoEncoderConfiguration(
+          const VideoEncoderConfiguration(
+            dimensions: VideoDimensions(width: 640, height: 480),
+            frameRate: 30,
+            bitrate: 1500,
+          ),
+        );
+        debugPrint('🎥 Step 8a: Video encoder configured');
       }
 
       // Set channel profile
@@ -444,7 +450,13 @@ class _VideoCallState extends State<VideoCall> {
           key: ValueKey('remote-$_remoteUid'),
           controller: VideoViewController.remote(
             rtcEngine: _engine!,
-            canvas: VideoCanvas(uid: _remoteUid),
+            canvas: VideoCanvas(
+              uid: _remoteUid,
+              renderMode: VideoRenderMode.hidden,
+              // Platform-specific optimizations
+              useAndroidSurfaceView: !kIsWeb,
+              useFlutterTexture: kIsWeb,
+            ),
             connection: RtcConnection(channelId: widget.channelName),
           ),
         ),
@@ -459,7 +471,12 @@ class _VideoCallState extends State<VideoCall> {
           AgoraVideoView(
             controller: VideoViewController(
               rtcEngine: _engine!,
-              canvas: const VideoCanvas(uid: 0),
+              canvas: VideoCanvas(
+                uid: 0,
+                renderMode: VideoRenderMode.hidden,
+                useAndroidSurfaceView: !kIsWeb,
+                useFlutterTexture: kIsWeb,
+              ),
             ),
           ),
           Positioned(
