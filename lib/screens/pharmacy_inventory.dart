@@ -1,7 +1,8 @@
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:icare/utils/web_download_helper.dart'
+    if (dart.library.html) 'package:icare/utils/web_download_helper_web.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -282,13 +283,13 @@ class _PharmacyInventoryState extends State<PharmacyInventory> {
   }
 
   void _triggerDownload(String content, String filename) {
-    final bytes = utf8.encode(content);
-    final blob = html.Blob([bytes], 'text/csv');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', filename)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    if (kIsWeb) {
+      triggerWebDownload(content, filename);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('CSV export is available on web only')),
+      );
+    }
   }
 
   Future<void> _importCSV() async {
