@@ -119,6 +119,8 @@ class _ChatScreenState extends State<ChatScreen> {
           channelName: channelName,
           remoteUserName: widget.userName,
           isAudioOnly: isAudioOnly,
+          currentUserId: _currentUserId,
+          currentUserName: _currentUserName,
         ),
       ),
     );
