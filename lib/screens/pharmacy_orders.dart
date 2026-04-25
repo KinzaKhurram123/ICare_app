@@ -68,23 +68,30 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'id': o['orderNumber'] ?? '#${orderId.substring(0, 8)}',
             'customerName': user?['name'] ?? user?['username'] ?? 'Patient',
             'customerPhone': user?['phoneNumber'] ?? user?['phone'] ?? 'N/A',
-            'items': (o['items'] as List?)?.length ?? 0,
+            'items': ((o['items'] as List?)?.length ?? 0) +
+                ((o['prescriptionItems'] as List?)?.length ?? 0),
             'itemsList': (o['items'] as List?) ?? [],
             'total': (o['totalAmount'] ?? 0).toDouble(),
             'status': o['status'] ?? 'pending',
             'date': o['createdAt'] != null
                 ? DateTime.parse(o['createdAt'])
                 : DateTime.now(),
-            'medicines': (o['items'] as List?)
-                    ?.map((item) {
-                      final name = (item['product_name'] ??
-                          item['productName'] ??
-                          item['name'] ??
-                          'Medicine').toString();
-                      return _sanitizeText(name) ?? name;
-                    })
-                    .toList() ??
-                [],
+            'orderType': o['orderType'] ?? 'cart',
+            'medicines': [
+              ...((o['items'] as List?) ?? []).map((item) {
+                final name = (item['product_name'] ??
+                    item['productName'] ??
+                    item['name'] ??
+                    'Medicine').toString();
+                return _sanitizeText(name) ?? name;
+              }),
+              ...((o['prescriptionItems'] as List?) ?? []).map((item) {
+                final name = (item['productName'] ??
+                    item['name'] ??
+                    'Medicine').toString();
+                return _sanitizeText(name) ?? name;
+              }),
+            ],
             'prescriptionText': _sanitizeText(o['prescriptionText']?.toString()),
             'medicalRecord': o['medicalRecord'],
             'prescriptionId': o['prescriptionId'],
@@ -486,6 +493,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     final statusColor = _getStatusColor(status);
     final date = order['date'] as DateTime;
     final isDoctorReferred = order['medicalRecord'] != null;
+    final isPrescriptionOrder = order['orderType'] == 'prescription';
     final hasPrescriptionText =
         order['prescriptionText'] != null &&
         order['prescriptionText'].toString().isNotEmpty;
@@ -524,7 +532,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isDoctorReferred)
+                if (isDoctorReferred || isPrescriptionOrder)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(
@@ -532,24 +540,34 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      color: isPrescriptionOrder
+                          ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                          : const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(
-                          Icons.medical_services_rounded,
+                          isPrescriptionOrder
+                              ? Icons.upload_file_rounded
+                              : Icons.medical_services_rounded,
                           size: 14,
-                          color: Color(0xFF10B981),
+                          color: isPrescriptionOrder
+                              ? const Color(0xFF8B5CF6)
+                              : const Color(0xFF10B981),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
-                          'Ordered By',
+                          isPrescriptionOrder
+                              ? 'Prescription Order'
+                              : 'Doctor Referred',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF10B981),
+                            color: isPrescriptionOrder
+                                ? const Color(0xFF8B5CF6)
+                                : const Color(0xFF10B981),
                           ),
                         ),
                       ],
