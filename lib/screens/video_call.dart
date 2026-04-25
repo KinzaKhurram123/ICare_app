@@ -7,7 +7,8 @@ import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../utils/app_keys.dart';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -74,9 +75,16 @@ class _VideoCallState extends State<VideoCall> {
       } else {
         try {
           debugPrint('🎥 [1a] Requesting web camera/mic permission...');
-          final stream = await html.window.navigator.mediaDevices!
-              .getUserMedia({'video': true, 'audio': true});
-          stream.getTracks().forEach((t) => t.stop());
+          final stream = await web.window.navigator.mediaDevices
+              .getUserMedia(web.MediaStreamConstraints(
+                video: true.toJS,
+                audio: true.toJS,
+              ))
+              .toDart;
+          final tracks = stream.getTracks().toDart;
+          for (final t in tracks) {
+            t.stop();
+          }
           debugPrint('🎥 [1a] Web permission granted ✅');
         } catch (e) {
           debugPrint('🎥 [1a] Web permission denied: $e');
@@ -256,7 +264,7 @@ class _VideoCallState extends State<VideoCall> {
           debugPrint(
               '🔈 Remote audio state: UID=$remoteUid, state=$state, reason=$reason');
         },
-        onFirstLocalVideoFrame: (width, height, elapsed) {
+        onFirstLocalVideoFrame: (source, width, height, elapsed) {
           debugPrint('📷 First local video frame: ${width}x$height');
         },
         onFirstRemoteVideoFrame:
