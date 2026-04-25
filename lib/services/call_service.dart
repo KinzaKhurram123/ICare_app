@@ -9,7 +9,10 @@ class CallService {
 
   Future<String?> _getToken() async {
     final token = await _sharedPref.getToken();
-    return token?.trim();
+    if (token == null) {
+      debugPrint('❌ CallService: No authentication token found');
+    }
+    return token;
   }
 
   Future<Map<String, dynamic>> initiateCall({

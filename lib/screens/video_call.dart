@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:js' as js;
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../utils/app_keys.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -31,200 +30,214 @@ class _VideoCallState extends State<VideoCall> {
   final CallService _callService = CallService();
 
   RtcEngine? _engine;
-  bool _localUserJoined = false;
+  bool _localVideoReady = false; // camera visible as soon as engine is ready
   bool _remoteUserJoined = false;
   int? _remoteUid;
   bool _isMuted = false;
   bool _isCameraOff = false;
-  bool _isSpeakerOn = true;
   bool _isLoading = true;
+  bool _isScreenSharing = false;
   String? _error;
-  String _appId = '';
+  String _statusText = 'Connecting...';
 
   int _callDuration = 0;
   StreamSubscription<int>? _timerSubscription;
-  bool _isScreenSharing = false;
-  int _networkQuality = 4;
 
   @override
   void initState() {
     super.initState();
-    _initAgora().catchError((e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Failed to start call: $e';
-          _isLoading = false;
-        });
-      }
-    });
     _startTimer();
+    _initAgora();
   }
 
-  void _startTimer() {
-    _timerSubscription = Stream.periodic(const Duration(seconds: 1), (i) => i).listen((duration) {
-      if (mounted && _remoteUserJoined) {
-        setState(() => _callDuration = duration);
-      }
-    });
-  }
-
-  String _formatDuration(int seconds) {
-    final mins = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
+  // ─── INIT ────────────────────────────────────────────────────────────────
 
   Future<void> _initAgora() async {
     try {
-      debugPrint('🎥 Step 1: Starting Agora init...');
-      // On mobile, request permissions via permission_handler
+      _setStatus('Requesting permissions...');
+
+      // 1. Permissions
       if (!kIsWeb) {
-        await [Permission.camera, Permission.microphone].request();
+        final status =
+            await [Permission.camera, Permission.microphone].request();
+        if (status[Permission.camera]?.isDenied == true ||
+            status[Permission.microphone]?.isDenied == true) {
+          _showError('Camera and microphone permissions are required.');
+          return;
+        }
       } else {
-        // On web, explicitly request browser camera+mic permission BEFORE Agora init.
-        // This forces Chrome to show the permission dialog and primes getUserMedia
-        // so that Agora can access the devices without a second prompt.
         try {
-          debugPrint('🎥 Step 1a: Requesting browser camera/mic permission...');
-          final stream = await html.window.navigator.mediaDevices!
-              .getUserMedia({'video': true, 'audio': true});
-          // Stop all tracks immediately — Agora will open its own stream.
-          stream.getTracks().forEach((t) => t.stop());
-          debugPrint('🎥 Step 1a: Permission granted ✅');
-        } catch (e) {
-          debugPrint('🎥 Step 1a: Permission denied or unavailable: $e');
-          if (mounted) {
-            setState(() {
-              _error = 'Camera/microphone access denied. Please allow in browser settings and try again.';
-              _isLoading = false;
-            });
+          _setStatus('Requesting camera access...');
+          final stream = await web.window.navigator.mediaDevices
+              .getUserMedia(
+                  web.MediaStreamConstraints(video: true.toJS, audio: true.toJS))
+              .toDart;
+          // stop tracks — Agora will re-acquire them
+          final tracks = stream.getTracks().toDart;
+          for (final t in tracks) {
+            t.stop();
           }
+        } catch (e) {
+          _showError(
+              'Camera/microphone access denied.\nPlease allow in browser settings and refresh.');
           return;
         }
       }
 
-      debugPrint('🎥 Step 2: Fetching token for channel: ${widget.channelName}');
-      // Fetch token from backend
-      final tokenResult = await _agoraService.getToken(
-        channelName: widget.channelName,
-      );
-      debugPrint('🎥 Step 3: Token result: $tokenResult');
+      // 2. Fetch token
+      _setStatus('Fetching call token...');
+      final tokenResult =
+          await _agoraService.getToken(channelName: widget.channelName);
+
       if (tokenResult['success'] != true) {
-        if (mounted) {
-          setState(() {
-            _error = 'Could not start call: ${tokenResult['message']}';
-            _isLoading = false;
-          });
-        }
+        _showError('Failed to get call token: ${tokenResult['message']}');
         return;
       }
 
       final data = tokenResult['data'] as Map;
       final token = data['token']?.toString() ?? '';
-      _appId = data['appId']?.toString() ?? '';
+      final appId = data['appId']?.toString() ?? '';
       final uid = (data['uid'] as num?)?.toInt() ?? 0;
-      debugPrint('🎥 Step 4: token=$token appId=$_appId uid=$uid');
 
-      if (token.isEmpty || _appId.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _error = 'Invalid token or appId from server';
-            _isLoading = false;
-          });
-        }
+      if (token.isEmpty || appId.isEmpty) {
+        _showError('Invalid token or App ID from server.');
         return;
       }
 
-      debugPrint('🎥 Step 5: Creating engine...');
-      // On web, iris_web_rtc bridge is injected asynchronously.
-      // Retry initialize() until the bridge is ready (up to 5 attempts).
+      // 3. Create + initialize engine (with retry for web bridge warm-up)
+      _setStatus('Initializing video engine...');
       _engine = createAgoraRtcEngine();
-      debugPrint('🎥 Step 6: Engine created, initializing with retry...');
+
       Exception? initError;
       for (int attempt = 1; attempt <= 5; attempt++) {
         try {
-          await _engine!.initialize(RtcEngineContext(appId: _appId));
+          await _engine!.initialize(RtcEngineContext(appId: appId));
           initError = null;
           break;
         } catch (e) {
           initError = e is Exception ? e : Exception(e.toString());
-          debugPrint('🎥 Init attempt $attempt failed: $e');
           if (attempt < 5) {
             await Future.delayed(Duration(milliseconds: 600 * attempt));
           }
         }
       }
       if (initError != null) throw initError;
-      debugPrint('🎥 Step 7: Engine initialized');
 
-      _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (connection, elapsed) {
-            if (mounted) setState(() => _localUserJoined = true);
-          },
-          onUserJoined: (connection, remoteUid, elapsed) {
-            if (mounted) {
-              setState(() {
-                _remoteUid = remoteUid;
-                _remoteUserJoined = true;
-              });
-            }
-          },
-          onUserOffline: (connection, remoteUid, reason) {
-            if (mounted) {
-              setState(() {
-                _remoteUid = null;
-                _remoteUserJoined = false;
-              });
-            }
-          },
-          onError: (err, msg) {
-            if (mounted) {
-              setState(() {
-                _error = 'Call error ($err): $msg';
-                _isLoading = false;
-              });
-            }
-          },
-        ),
-      );
+      // 4. Register event handlers
+      _registerHandlers();
 
+      // 5. Enable video
       if (!widget.isAudioOnly) {
-        debugPrint('🎥 Step 8: Enabling video...');
+        _setStatus('Starting camera...');
         await _engine!.enableVideo();
-        // startPreview is not supported on web
-        if (!kIsWeb) {
-          await _engine!.startPreview();
-        }
+        await _engine!.enableLocalVideo(true);
+        await _engine!.setVideoEncoderConfiguration(
+          const VideoEncoderConfiguration(
+            dimensions: VideoDimensions(width: 640, height: 480),
+            frameRate: 30,
+            bitrate: 0, // auto
+          ),
+        );
       }
 
-      debugPrint('🎥 Step 9: Setting client role...');
+      // 6. Channel profile + role
+      await _engine!
+          .setChannelProfile(ChannelProfileType.channelProfileCommunication);
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      debugPrint('🎥 Step 10: Joining channel: ${widget.channelName} uid=$uid');
+
+      // 7. Join channel
+      _setStatus('Joining call...');
       await _engine!.joinChannel(
         token: token,
         channelId: widget.channelName,
         uid: uid,
-        options: const ChannelMediaOptions(
+        options: ChannelMediaOptions(
           autoSubscribeAudio: true,
-          autoSubscribeVideo: true,
-          publishCameraTrack: true,
+          autoSubscribeVideo: !widget.isAudioOnly,
+          publishCameraTrack: !widget.isAudioOnly,
           publishMicrophoneTrack: true,
           clientRoleType: ClientRoleType.clientRoleBroadcaster,
         ),
       );
-      debugPrint('🎥 Step 11: Joined channel successfully!');
 
-      if (mounted) setState(() => _isLoading = false);
-    } catch (e, st) {
-      debugPrint('🎥 ❌ Agora init error at: $e');
-      debugPrint('🎥 Stack: $st');
+      // Show local camera IMMEDIATELY — don't wait for onJoinChannelSuccess
+      // (on web, the callback can be delayed)
       if (mounted) {
         setState(() {
-          _error = 'Failed to start call: $e';
           _isLoading = false;
+          _localVideoReady = !widget.isAudioOnly;
+          _statusText = 'Waiting for ${widget.remoteUserName}...';
         });
       }
+    } catch (e, st) {
+      debugPrint('🎥 ❌ Agora init error: $e\n$st');
+      _showError('Failed to start call.\n$e');
+    }
+  }
+
+  void _registerHandlers() {
+    _engine!.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          debugPrint('✅ Joined channel UID=${connection.localUid}');
+          if (mounted) {
+            setState(() {
+              _localVideoReady = !widget.isAudioOnly;
+              _statusText = 'Waiting for ${widget.remoteUserName}...';
+            });
+          }
+        },
+        onUserJoined: (connection, remoteUid, elapsed) {
+          debugPrint('✅ Remote joined: uid=$remoteUid');
+          if (mounted) {
+            setState(() {
+              _remoteUid = remoteUid;
+              _remoteUserJoined = true;
+            });
+          }
+        },
+        onUserOffline: (connection, remoteUid, reason) {
+          debugPrint('❌ Remote offline: uid=$remoteUid');
+          if (mounted) {
+            setState(() {
+              _remoteUid = null;
+              _remoteUserJoined = false;
+            });
+          }
+        },
+        onError: (err, msg) {
+          debugPrint('❌ Agora error [$err]: $msg');
+        },
+        onRemoteVideoStateChanged:
+            (connection, remoteUid, state, reason, elapsed) {
+          debugPrint('📺 Remote video state uid=$remoteUid state=$state');
+        },
+        onFirstLocalVideoFrame: (source, width, height, elapsed) {
+          debugPrint('📷 First local frame ${width}x$height');
+          if (mounted && !_localVideoReady) {
+            setState(() => _localVideoReady = true);
+          }
+        },
+        onFirstRemoteVideoFrame:
+            (connection, remoteUid, width, height, elapsed) {
+          debugPrint('📺 First remote frame uid=$remoteUid ${width}x$height');
+        },
+      ),
+    );
+  }
+
+  // ─── HELPERS ─────────────────────────────────────────────────────────────
+
+  void _setStatus(String msg) {
+    if (mounted) setState(() => _statusText = msg);
+  }
+
+  void _showError(String msg) {
+    if (mounted) {
+      setState(() {
+        _error = msg;
+        _isLoading = false;
+      });
     }
   }
 
@@ -233,8 +246,10 @@ class _VideoCallState extends State<VideoCall> {
       await _callService.endCall(widget.channelName);
       await _engine?.leaveChannel();
       await _engine?.release();
-    } catch (_) {}
-    // Use global navigator key — works regardless of where VideoCall was pushed from
+      _engine = null;
+    } catch (e) {
+      debugPrint('End call error: $e');
+    }
     if (appNavigatorKey.currentState?.canPop() == true) {
       appNavigatorKey.currentState?.pop();
     } else if (mounted) {
@@ -244,29 +259,32 @@ class _VideoCallState extends State<VideoCall> {
 
   Future<void> _toggleMute() async {
     setState(() => _isMuted = !_isMuted);
-    if (!kIsWeb) {
-      await _engine?.muteLocalAudioStream(_isMuted);
-    }
+    await _engine?.muteLocalAudioStream(_isMuted);
   }
 
   Future<void> _toggleCamera() async {
     setState(() => _isCameraOff = !_isCameraOff);
-    if (!kIsWeb) {
-      await _engine?.muteLocalVideoStream(_isCameraOff);
-    }
-  }
-
-  Future<void> _toggleSpeaker() async {
-    setState(() => _isSpeakerOn = !_isSpeakerOn);
-    if (!kIsWeb) {
-      await _engine?.setEnableSpeakerphone(_isSpeakerOn);
-    }
+    await _engine?.muteLocalVideoStream(_isCameraOff);
   }
 
   Future<void> _switchCamera() async {
-    if (!kIsWeb) {
+    try {
       await _engine?.switchCamera();
-    }
+    } catch (_) {}
+  }
+
+  void _startTimer() {
+    _timerSubscription =
+        Stream.periodic(const Duration(seconds: 1), (i) => i + 1)
+            .listen((s) {
+      if (mounted && _remoteUserJoined) setState(() => _callDuration = s);
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -274,185 +292,46 @@ class _VideoCallState extends State<VideoCall> {
     _timerSubscription?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
+    _engine = null;
     super.dispose();
   }
 
+  // ─── BUILD ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    if (_error != null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _endCall,
-                  child: const Text('Go Back'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(color: Colors.white),
-              const SizedBox(height: 24),
-              Text(
-                'Connecting to ${widget.remoteUserName}...',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (kIsWeb) {
-      return _buildWebVideoInterface();
-    }
+    if (_error != null) return _buildErrorScreen();
+    if (_isLoading) return _buildLoadingScreen();
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Main video: own camera until remote joins, then remote video
           _buildMainVideo(),
-
-          // PIP: small self-view in corner only when remote is present
-          _buildLocalPiP(),
-
-          // Top bar
+          if (!widget.isAudioOnly) _buildLocalPiP(),
           _buildTopBar(),
-          _buildControls(),
+          _buildBottomControls(),
         ],
       ),
     );
   }
 
-  /// Main (full-screen) video layer.
-  /// • If remote has joined → show remote video (Zoom style)
-  /// • If remote not yet joined and we have local video → show OWN camera big
-  /// • Fallback → avatar placeholder
-  Widget _buildMainVideo() {
-    // ── Audio-only mode ──────────────────────────────────────────────────────
-    if (widget.isAudioOnly) {
-      return Container(
-        color: const Color(0xFF1E293B),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  widget.remoteUserName[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 48, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                widget.remoteUserName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _remoteUserJoined ? 'Connected' : 'Calling...',
-                style: TextStyle(
-                  color: _remoteUserJoined ? Colors.greenAccent : Colors.white60,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+  // ─── LOADING ──────────────────────────────────────────────────────────────
 
-    // ── Remote joined → remote video fills screen ────────────────────────────
-    if (_remoteUserJoined && _remoteUid != null) {
-      return AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: _engine!,
-          canvas: VideoCanvas(uid: _remoteUid),
-          connection: RtcConnection(channelId: widget.channelName),
-        ),
-      );
-    }
-
-    // ── Waiting for remote: show OWN camera as main screen ───────────────────
-    if (_localUserJoined && !_isCameraOff) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          AgoraVideoView(
-            controller: VideoViewController(
-              rtcEngine: _engine!,
-              canvas: const VideoCanvas(uid: 0),
-            ),
-          ),
-          // "Waiting" banner at bottom of own preview
-          Positioned(
-            bottom: 130,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Waiting for ${widget.remoteUserName} to join...',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    // ── Fallback: avatar placeholder (camera off or not yet joined) ──────────
-    return Container(
-      color: const Color(0xFF1E293B),
-      child: Center(
+  Widget _buildLoadingScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.white24,
-              child: Text(
-                widget.remoteUserName[0].toUpperCase(),
-                style: const TextStyle(fontSize: 48, color: Colors.white),
-              ),
+            const CircleAvatar(
+              radius: 48,
+              backgroundColor: Color(0xFF1E3A8A),
+              child: Icon(Icons.videocam, color: Colors.white, size: 40),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Text(
               widget.remoteUserName,
               style: const TextStyle(
@@ -461,10 +340,19 @@ class _VideoCallState extends State<VideoCall> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Waiting for other person to join...',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+            const SizedBox(height: 12),
+            Text(
+              _statusText,
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+            const SizedBox(height: 32),
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                color: Color(0xFF3B82F6),
+                strokeWidth: 3,
+              ),
             ),
           ],
         ),
@@ -472,28 +360,271 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
-  /// Small PIP overlay (top-right corner) — only visible when BOTH are in call.
-  /// Shows local camera so you can see yourself while watching the remote feed.
+  // ─── ERROR ────────────────────────────────────────────────────────────────
+
+  Widget _buildErrorScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.withAlpha(30),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.error_outline,
+                    color: Colors.red, size: 56),
+              ),
+              const SizedBox(height: 24),
+              const Text('Call Failed',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60, fontSize: 14),
+              ),
+              const SizedBox(height: 36),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
+                onPressed: _endCall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── MAIN VIDEO ───────────────────────────────────────────────────────────
+
+  Widget _buildMainVideo() {
+    if (widget.isAudioOnly) {
+      return _buildAudioCallBg();
+    }
+
+    // Remote joined → remote video fills screen
+    if (_remoteUserJoined && _remoteUid != null) {
+      return AgoraVideoView(
+        key: ValueKey('remote-$_remoteUid'),
+        controller: VideoViewController.remote(
+          rtcEngine: _engine!,
+          canvas: VideoCanvas(uid: _remoteUid),
+          connection: RtcConnection(channelId: widget.channelName),
+        ),
+      );
+    }
+
+    // Own camera fills screen while waiting
+    if (_localVideoReady && _engine != null) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AgoraVideoView(
+            key: const ValueKey('local-main'),
+            controller: VideoViewController(
+              rtcEngine: _engine!,
+              canvas: const VideoCanvas(uid: 0),
+            ),
+          ),
+          // Dark gradient overlay at bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 200,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [Colors.black87, Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          // Waiting banner
+          Positioned(
+            bottom: 120,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(160),
+                  borderRadius: BorderRadius.circular(24),
+                  border:
+                      Border.all(color: Colors.white24),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Waiting for ${widget.remoteUserName}...',
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Camera off or engine not ready — dark bg with avatar
+    return _buildAvatarBg(label: 'Camera is off');
+  }
+
+  Widget _buildAudioCallBg() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 70,
+              backgroundColor: Colors.white.withAlpha(30),
+              child: Text(
+                widget.remoteUserName.isNotEmpty
+                    ? widget.remoteUserName[0].toUpperCase()
+                    : '?',
+                style:
+                    const TextStyle(fontSize: 52, color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(widget.remoteUserName,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            Text(
+              _remoteUserJoined
+                  ? _formatDuration(_callDuration)
+                  : 'Calling...',
+              style: const TextStyle(color: Colors.white60, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarBg({required String label}) {
+    return Container(
+      color: const Color(0xFF0F172A),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 64,
+              backgroundColor: Colors.white12,
+              child: Text(
+                widget.remoteUserName.isNotEmpty
+                    ? widget.remoteUserName[0].toUpperCase()
+                    : '?',
+                style:
+                    const TextStyle(fontSize: 44, color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(widget.remoteUserName,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white54, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── LOCAL PIP ────────────────────────────────────────────────────────────
+
   Widget _buildLocalPiP() {
-    // Only show PIP when remote user is present (otherwise own cam IS the main screen)
-    if (!_remoteUserJoined || !_localUserJoined || widget.isAudioOnly) {
+    // Only show PiP when remote user is in call
+    if (!_remoteUserJoined || _engine == null || widget.isAudioOnly) {
       return const SizedBox.shrink();
     }
 
     return Positioned(
-      top: 80,
-      right: 16,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: 110,
-          height: 150,
+      top: 96,
+      right: 12,
+      child: Container(
+        width: 108,
+        height: 148,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white30, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(100),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
           child: _isCameraOff
               ? Container(
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.videocam_off, color: Colors.white, size: 32),
+                  color: const Color(0xFF1E293B),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.videocam_off,
+                          color: Colors.white54, size: 28),
+                      SizedBox(height: 4),
+                      Text('Camera off',
+                          style: TextStyle(
+                              color: Colors.white38, fontSize: 10)),
+                    ],
+                  ),
                 )
               : AgoraVideoView(
+                  key: const ValueKey('local-pip'),
                   controller: VideoViewController(
                     rtcEngine: _engine!,
                     canvas: const VideoCanvas(uid: 0),
@@ -504,145 +635,169 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
+  // ─── TOP BAR ──────────────────────────────────────────────────────────────
+
   Widget _buildTopBar() {
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white),
-                  onPressed: _endCall,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.remoteUserName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _remoteUserJoined
-                                ? Colors.green
-                                : Colors.orange,
-                            shape: BoxShape.circle,
-                          ),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black87, Colors.transparent],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                // Back button
+                _topBtn(Icons.arrow_back_ios_new_rounded, _endCall),
+                const SizedBox(width: 12),
+                // Name + status
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.remoteUserName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _remoteUserJoined
-                              ? _formatDuration(_callDuration)
-                              : 'Connecting...',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: List.generate(
-                    5,
-                    (index) => Container(
-                      margin: const EdgeInsets.only(left: 2),
-                      width: 3,
-                      height: (index + 1) * 3.0,
-                      decoration: BoxDecoration(
-                        color: index < _networkQuality
-                            ? Colors.greenAccent
-                            : Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
                       ),
-                    ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _remoteUserJoined
+                                  ? Colors.greenAccent
+                                  : Colors.orangeAccent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            _remoteUserJoined
+                                ? 'Connected • ${_formatDuration(_callDuration)}'
+                                : _statusText,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              if (!widget.isAudioOnly)
-                IconButton(
-                  icon: const Icon(
-                    Icons.flip_camera_ios_rounded,
-                    color: Colors.white,
-                  ),
-                  onPressed: _switchCamera,
-                ),
-            ],
+                // Flip camera
+                if (!widget.isAudioOnly)
+                  _topBtn(Icons.flip_camera_ios_rounded, _switchCamera),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildControls() {
+  Widget _topBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black38,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  // ─── BOTTOM CONTROLS ──────────────────────────────────────────────────────
+
+  Widget _buildBottomControls() {
     return Positioned(
-      bottom: 40,
+      bottom: 0,
       left: 0,
       right: 0,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Colors.black, Colors.transparent],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _controlBtn(
+            _ctrlBtn(
               icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
               label: _isMuted ? 'Unmute' : 'Mute',
-              onTap: _toggleMute,
               active: _isMuted,
+              activeColor: Colors.red,
+              onTap: _toggleMute,
             ),
-            if (!widget.isAudioOnly) ...[
-              _controlBtn(
+            if (!widget.isAudioOnly)
+              _ctrlBtn(
                 icon: _isCameraOff
                     ? Icons.videocam_off_rounded
                     : Icons.videocam_rounded,
-                label: 'Camera',
-                onTap: _toggleCamera,
+                label: _isCameraOff ? 'Cam Off' : 'Camera',
                 active: _isCameraOff,
+                activeColor: Colors.red,
+                onTap: _toggleCamera,
               ),
-              _controlBtn(
-                icon: Icons.present_to_all_rounded,
-                label: 'Share',
+            // End call — big red button in center
+            GestureDetector(
+              onTap: _endCall,
+              child: Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withAlpha(100),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.call_end_rounded,
+                    color: Colors.white, size: 30),
+              ),
+            ),
+            if (!widget.isAudioOnly)
+              _ctrlBtn(
+                icon: _isScreenSharing
+                    ? Icons.stop_screen_share_rounded
+                    : Icons.present_to_all_rounded,
+                label: _isScreenSharing ? 'Stop' : 'Share',
+                active: _isScreenSharing,
+                activeColor: Colors.green,
                 onTap: () =>
                     setState(() => _isScreenSharing = !_isScreenSharing),
-                active: _isScreenSharing,
               ),
-            ],
-            _controlBtn(
-              icon: Icons.call_end_rounded,
-              label: 'End',
-              onTap: _endCall,
-              isEnd: true,
+            _ctrlBtn(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'Chat',
+              onTap: () {},
             ),
           ],
         ),
@@ -650,12 +805,12 @@ class _VideoCallState extends State<VideoCall> {
     );
   }
 
-  Widget _controlBtn({
+  Widget _ctrlBtn({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
     bool active = false,
-    bool isEnd = false,
+    Color activeColor = Colors.white,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -663,25 +818,32 @@ class _VideoCallState extends State<VideoCall> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: isEnd
-                  ? const Color(0xFFEF4444)
-                  : active
-                  ? Colors.white24
-                  : Colors.white12,
+              color: active
+                  ? activeColor.withAlpha(40)
+                  : Colors.white.withAlpha(25),
               shape: BoxShape.circle,
               border: Border.all(
-                color: active && !isEnd ? Colors.white54 : Colors.transparent,
+                color: active ? activeColor : Colors.white24,
+                width: 1.5,
               ),
             ),
-            child: Icon(icon, color: Colors.white, size: 26),
+            child: Icon(
+              icon,
+              color: active ? activeColor : Colors.white,
+              size: 24,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
+            style: TextStyle(
+              color: active ? activeColor : Colors.white60,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
