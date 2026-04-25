@@ -113,10 +113,25 @@ class _VideoCallState extends State<VideoCall> {
       }
 
       debugPrint('🎥 Step 5: Creating engine...');
-      // Init engine
+      // On web, iris_web_rtc bridge is injected asynchronously.
+      // Retry initialize() until the bridge is ready (up to 5 attempts).
       _engine = createAgoraRtcEngine();
-      debugPrint('🎥 Step 6: Engine created: $_engine, initializing...');
-      await _engine!.initialize(RtcEngineContext(appId: _appId));
+      debugPrint('🎥 Step 6: Engine created, initializing with retry...');
+      Exception? initError;
+      for (int attempt = 1; attempt <= 5; attempt++) {
+        try {
+          await _engine!.initialize(RtcEngineContext(appId: _appId));
+          initError = null;
+          break;
+        } catch (e) {
+          initError = e is Exception ? e : Exception(e.toString());
+          debugPrint('🎥 Init attempt $attempt failed: $e');
+          if (attempt < 5) {
+            await Future.delayed(Duration(milliseconds: 600 * attempt));
+          }
+        }
+      }
+      if (initError != null) throw initError;
       debugPrint('🎥 Step 7: Engine initialized');
 
       _engine!.registerEventHandler(
