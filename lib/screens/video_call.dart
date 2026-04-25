@@ -450,13 +450,7 @@ class _VideoCallState extends State<VideoCall> {
           key: ValueKey('remote-$_remoteUid'),
           controller: VideoViewController.remote(
             rtcEngine: _engine!,
-            canvas: VideoCanvas(
-              uid: _remoteUid,
-              renderMode: VideoRenderMode.hidden,
-              // Platform-specific optimizations
-              useAndroidSurfaceView: !kIsWeb,
-              useFlutterTexture: kIsWeb,
-            ),
+            canvas: VideoCanvas(uid: _remoteUid),
             connection: RtcConnection(channelId: widget.channelName),
           ),
         ),
@@ -471,12 +465,7 @@ class _VideoCallState extends State<VideoCall> {
           AgoraVideoView(
             controller: VideoViewController(
               rtcEngine: _engine!,
-              canvas: VideoCanvas(
-                uid: 0,
-                renderMode: VideoRenderMode.hidden,
-                useAndroidSurfaceView: !kIsWeb,
-                useFlutterTexture: kIsWeb,
-              ),
+              canvas: const VideoCanvas(uid: 0),
             ),
           ),
           Positioned(
