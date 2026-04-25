@@ -43,7 +43,14 @@ class _VideoCallState extends State<VideoCall> {
   @override
   void initState() {
     super.initState();
-    _initAgora();
+    _initAgora().catchError((e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to start call: $e';
+          _isLoading = false;
+        });
+      }
+    });
     _startTimer();
   }
 
