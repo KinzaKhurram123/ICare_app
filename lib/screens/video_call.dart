@@ -73,15 +73,18 @@ class _VideoCallState extends State<VideoCall> {
 
   Future<void> _initAgora() async {
     try {
+      debugPrint('🎥 Step 1: Starting Agora init...');
       // On mobile, request permissions; on web the browser handles this automatically
       if (!kIsWeb) {
         await [Permission.camera, Permission.microphone].request();
       }
 
+      debugPrint('🎥 Step 2: Fetching token for channel: ${widget.channelName}');
       // Fetch token from backend
       final tokenResult = await _agoraService.getToken(
         channelName: widget.channelName,
       );
+      debugPrint('🎥 Step 3: Token result: $tokenResult');
       if (tokenResult['success'] != true) {
         if (mounted) {
           setState(() {
@@ -92,13 +95,28 @@ class _VideoCallState extends State<VideoCall> {
         return;
       }
 
-      final token = tokenResult['data']['token'] as String;
-      _appId = tokenResult['data']['appId'] as String;
-      final uid = tokenResult['data']['uid'] as int;
+      final data = tokenResult['data'] as Map;
+      final token = data['token']?.toString() ?? '';
+      _appId = data['appId']?.toString() ?? '';
+      final uid = (data['uid'] as num?)?.toInt() ?? 0;
+      debugPrint('🎥 Step 4: token=$token appId=$_appId uid=$uid');
 
+      if (token.isEmpty || _appId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _error = 'Invalid token or appId from server';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      debugPrint('🎥 Step 5: Creating engine...');
       // Init engine
       _engine = createAgoraRtcEngine();
+      debugPrint('🎥 Step 6: Engine created: $_engine, initializing...');
       await _engine!.initialize(RtcEngineContext(appId: _appId));
+      debugPrint('🎥 Step 7: Engine initialized');
 
       _engine!.registerEventHandler(
         RtcEngineEventHandler(
@@ -133,6 +151,7 @@ class _VideoCallState extends State<VideoCall> {
       );
 
       if (!widget.isAudioOnly) {
+        debugPrint('🎥 Step 8: Enabling video...');
         await _engine!.enableVideo();
         // startPreview is not supported on web
         if (!kIsWeb) {
@@ -140,7 +159,9 @@ class _VideoCallState extends State<VideoCall> {
         }
       }
 
+      debugPrint('🎥 Step 9: Setting client role...');
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      debugPrint('🎥 Step 10: Joining channel: ${widget.channelName} uid=$uid');
       await _engine!.joinChannel(
         token: token,
         channelId: widget.channelName,
@@ -153,9 +174,12 @@ class _VideoCallState extends State<VideoCall> {
           clientRoleType: ClientRoleType.clientRoleBroadcaster,
         ),
       );
+      debugPrint('🎥 Step 11: Joined channel successfully!');
 
       if (mounted) setState(() => _isLoading = false);
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('🎥 ❌ Agora init error at: $e');
+      debugPrint('🎥 Stack: $st');
       if (mounted) {
         setState(() {
           _error = 'Failed to start call: $e';
