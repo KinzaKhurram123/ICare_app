@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:icare/services/fcm_service.dart';
 import 'package:icare/widgets/incoming_call_listener.dart';
+import 'package:icare/widgets/doctor_connect_now_listener.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
@@ -60,14 +61,16 @@ class MyApp extends ConsumerWidget {
             return FlutterSmartDialog.init()(
               context,
               IncomingCallListener(
-                child: ResponsiveBreakpoints.builder(
-                  child: child ?? const SizedBox(),
-                  breakpoints: const [
-                    Breakpoint(start: 0, end: 600, name: MOBILE),
-                    Breakpoint(start: 600, end: 900, name: TABLET),
-                    Breakpoint(start: 901, end: 1920, name: DESKTOP),
-                    Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-                  ],
+                child: DoctorConnectNowListener(
+                  child: ResponsiveBreakpoints.builder(
+                    child: child ?? const SizedBox(),
+                    breakpoints: const [
+                      Breakpoint(start: 0, end: 600, name: MOBILE),
+                      Breakpoint(start: 600, end: 900, name: TABLET),
+                      Breakpoint(start: 901, end: 1920, name: DESKTOP),
+                      Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+                    ],
+                  ),
                 ),
               ),
             );
