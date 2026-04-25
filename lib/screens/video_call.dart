@@ -63,17 +63,10 @@ class _VideoCallState extends State<VideoCall> {
   }
 
   Future<void> _initAgora() async {
-    if (kIsWeb) {
-      setState(() {
-        _error =
-            'Video calls are not supported on web.\nPlease use the mobile app.';
-        _isLoading = false;
-      });
-      return;
+    // On mobile, request permissions; on web the browser handles this automatically
+    if (!kIsWeb) {
+      await [Permission.camera, Permission.microphone].request();
     }
-
-    // Request permissions
-    await [Permission.camera, Permission.microphone].request();
 
     // Fetch token from backend
     final tokenResult = await _agoraService.getToken(
@@ -124,7 +117,10 @@ class _VideoCallState extends State<VideoCall> {
 
     if (!widget.isAudioOnly) {
       await _engine!.enableVideo();
-      await _engine!.startPreview();
+      // startPreview is not supported on web
+      if (!kIsWeb) {
+        await _engine!.startPreview();
+      }
     }
 
     await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
