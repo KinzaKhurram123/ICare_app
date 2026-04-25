@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../utils/app_keys.dart';
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
 class VideoCall extends StatefulWidget {
@@ -24,7 +25,7 @@ class VideoCall extends StatefulWidget {
   State<VideoCall> createState() => _VideoCallState();
 }
 
-class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
+class _VideoCallState extends State<VideoCall> {
   final AgoraService _agoraService = AgoraService();
   final CallService _callService = CallService();
 
@@ -36,34 +37,21 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
   bool _isCameraOff = false;
   bool _isSpeakerOn = true;
   bool _isLoading = true;
+  bool _isScreenSharing = false;
   String? _error;
 
   int _callDuration = 0;
   StreamSubscription<int>? _timerSubscription;
-  bool _isScreenSharing = false;
-  int _networkQuality = 4;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initAgora();
     _startTimer();
-    _reportCallStatus();
-  }
-
-  void _reportCallStatus() {
     debugPrint('📞 VideoCall initialized:');
     debugPrint('   channelName: ${widget.channelName}');
     debugPrint('   remoteUserName: ${widget.remoteUserName}');
     debugPrint('   isAudioOnly: ${widget.isAudioOnly}');
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('📱 App resumed - checking call state');
-    }
   }
 
   Future<void> _initAgora() async {
@@ -94,7 +82,8 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
           debugPrint('🎥 [1a] Web permission denied: $e');
           if (mounted) {
             setState(() {
-              _error = 'Camera/microphone access denied. Please allow in browser settings.';
+              _error =
+                  'Camera/microphone access denied. Please allow in browser settings.';
               _isLoading = false;
             });
           }
@@ -124,7 +113,8 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       final appId = data['appId']?.toString() ?? '';
       final uid = (data['uid'] as num?)?.toInt() ?? 0;
 
-      debugPrint('🎥 [4] Token received: ${token.isNotEmpty ? 'token=...' : 'MISSING'}');
+      debugPrint(
+          '🎥 [4] Token received: ${token.isNotEmpty ? 'OK' : 'MISSING'}');
       debugPrint('🎥 [4] AppId: $appId, UID: $uid');
 
       if (token.isEmpty || appId.isEmpty) {
@@ -140,18 +130,13 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       // Create Agora engine
       debugPrint('🎥 [5] Creating Agora engine...');
       _engine = createAgoraRtcEngine();
-      if (_engine == null) {
-        throw Exception('Failed to create Agora engine');
-      }
 
       // Initialize with retry (web needs bridge warm-up)
       Exception? initError;
       for (int attempt = 1; attempt <= 5; attempt++) {
         try {
           debugPrint('🎥 [5a] Init attempt $attempt...');
-          await _engine!.initialize(
-            RtcEngineContext(appId: appId),
-          );
+          await _engine!.initialize(RtcEngineContext(appId: appId));
           initError = null;
           break;
         } catch (e) {
@@ -171,33 +156,27 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
 
       // Enable video if not audio-only
       if (!widget.isAudioOnly) {
-        debugPrint('🎥 Step 8: Enabling video module...');
+        debugPrint('🎥 [7] Enabling video module...');
         await _engine!.enableVideo();
-        // Explicitly enable local video
         await _engine!.enableLocalVideo(true);
-        // startPreview is not supported on web
         if (!kIsWeb) {
-          debugPrint('🎥 Step 8a: Starting local preview...');
+          debugPrint('🎥 [7a] Starting local preview...');
           await _engine!.startPreview();
         }
       }
-      }
 
-      // Set channel profile for communication
+      // Set channel profile
       debugPrint('🎥 [8] Setting channel profile...');
-      await _engine!.setChannelProfile(ChannelProfileType.channelProfileCommunication);
-      debugPrint('🎥 [8] Channel profile set ✅');
+      await _engine!
+          .setChannelProfile(ChannelProfileType.channelProfileCommunication);
 
       // Set client role
       debugPrint('🎥 [9] Setting client role...');
-      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      debugPrint('🎥 [9] Client role set ✅');
+      await _engine!
+          .setClientRole(role: ClientRoleType.clientRoleBroadcaster);
 
       // Join channel
-      debugPrint('🎥 [9] Joining channel: ${widget.channelName}');
-      debugPrint('🎥 [9] Token length: ${token.length}');
-      debugPrint('🎥 [9] UID: $uid');
-
+      debugPrint('🎥 [10] Joining channel: ${widget.channelName}');
       await _engine!.joinChannel(
         token: token,
         channelId: widget.channelName,
@@ -211,18 +190,18 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
         ),
       );
 
-      debugPrint('🎥 [10] Channel join command sent ✅');
+      debugPrint('🎥 [11] Channel join command sent ✅');
 
       if (mounted) {
         setState(() => _isLoading = false);
       }
-      debugPrint('🎥 [11] VideoCall UI ready ✅');
+      debugPrint('🎥 [12] VideoCall UI ready ✅');
     } catch (e, st) {
       debugPrint('🎥 ❌ Agora init error: $e');
       debugPrint('🎥 Stack trace: $st');
       if (mounted) {
         setState(() {
-          _error = 'Failed to start call: $e.toString()';
+          _error = 'Failed to start call: $e';
           _isLoading = false;
         });
       }
@@ -233,21 +212,21 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (connection, elapsed) {
-          debugPrint('✅ onJoinChannelSuccess: UID=${connection.localUid}, elapsed=$elapsed');
+          debugPrint(
+              '✅ onJoinChannelSuccess: UID=${connection.localUid}, elapsed=$elapsed');
           if (mounted) {
             setState(() => _localUserJoined = true);
           }
         },
         onUserJoined: (connection, remoteUid, elapsed) {
-          debugPrint('✅ onUserJoined: remoteUid=$remoteUid, elapsed=$elapsed');
-          debugPrint('✅ Connection info: channelId=${connection.channelId}, localUid=${connection.localUid}');
+          debugPrint(
+              '✅ onUserJoined: remoteUid=$remoteUid, elapsed=$elapsed');
           if (mounted) {
             setState(() {
               _remoteUid = remoteUid;
               _remoteUserJoined = true;
             });
           }
-          debugPrint('✅ UI updated: remoteUserJoined=$_remoteUserJoined, remoteUid=$_remoteUid');
         },
         onUserOffline: (connection, remoteUid, reason) {
           debugPrint('❌ onUserOffline: remoteUid=$remoteUid, reason=$reason');
@@ -267,63 +246,23 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
             });
           }
         },
-        onWarning: (warn, msg) {
-          debugPrint('⚠️ Agora Warning [code=$warn]: $msg');
+        onRemoteVideoStateChanged:
+            (connection, remoteUid, state, reason, elapsed) {
+          debugPrint(
+              '📺 Remote video state: UID=$remoteUid, state=$state, reason=$reason');
         },
-        onRemoteVideoStateChanged: (connection, remoteUid, state, reason, elapsed) {
-          debugPrint('📺 Remote video state: UID=$remoteUid, state=$state, reason=$reason');
-          // State values: 0=stopped, 1=starting, 2=decoding, 3=frozen, 4=...
-        },
-        onRemoteAudioStateChanged: (connection, remoteUid, state, reason, elapsed) {
-          debugPrint('🔈 Remote audio state: UID=$remoteUid, state=$state, reason=$reason');
+        onRemoteAudioStateChanged:
+            (connection, remoteUid, state, reason, elapsed) {
+          debugPrint(
+              '🔈 Remote audio state: UID=$remoteUid, state=$state, reason=$reason');
         },
         onFirstLocalVideoFrame: (width, height, elapsed) {
           debugPrint('📷 First local video frame: ${width}x$height');
         },
-        onFirstRemoteVideoFrame: (connection, remoteUid, width, height, elapsed) {
-          debugPrint('📺 First remote video frame: UID=$remoteUid, ${width}x$height');
-        },
-        onRtcStats: (stats) {
-          debugPrint('📊 RTC Stats: duration=${stats.duration}, tx=${stats.txPacket}, rx=${stats.rxPacket}');
-        },
-      ),
-    );
-    debugPrint('🎯 Event handlers registered ✅');
-  }
-        },
-        onUserJoined: (connection, remoteUid, elapsed) {
-          debugPrint('✅ onUserJoined: remoteUid=$remoteUid');
-          if (mounted) {
-            setState(() {
-              _remoteUid = remoteUid;
-              _remoteUserJoined = true;
-            });
-          }
-          debugPrint('✅ UI updated: remoteUserJoined=$_remoteUserJoined, remoteUid=$_remoteUid');
-        },
-        onUserOffline: (connection, remoteUid, reason) {
-          debugPrint('❌ onUserOffline: remoteUid=$remoteUid, reason=$reason');
-          if (mounted) {
-            setState(() {
-              _remoteUid = null;
-              _remoteUserJoined = false;
-            });
-          }
-        },
-        onError: (err, msg) {
-          debugPrint('❌ Agora Error [$err]: $msg');
-          if (mounted) {
-            setState(() {
-              _error = 'Agora error ($err): $msg';
-              _isLoading = false;
-            });
-          }
-        },
-        onRemoteVideoStateChanged: (connection, remoteUid, state, reason, elapsed) {
-          debugPrint('📺 Remote video state changed: UID=$remoteUid, state=$state, reason=$reason');
-        },
-        onVideoDeviceStateChanged: (deviceId, deviceType, deviceState) {
-          debugPrint('📷 Video device state changed: $deviceId, $deviceType, $deviceState');
+        onFirstRemoteVideoFrame:
+            (connection, remoteUid, width, height, elapsed) {
+          debugPrint(
+              '📺 First remote video frame: UID=$remoteUid, ${width}x$height');
         },
       ),
     );
@@ -378,10 +317,11 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
   }
 
   void _startTimer() {
-    _timerSubscription = Stream.periodic(const Duration(seconds: 1), (i) => i)
-        .listen((duration) {
+    _timerSubscription =
+        Stream.periodic(const Duration(seconds: 1), (i) => i + 1)
+            .listen((seconds) {
       if (mounted && _remoteUserJoined) {
-        setState(() => _callDuration = duration);
+        setState(() => _callDuration = seconds);
       }
     });
   }
@@ -394,7 +334,6 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _timerSubscription?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
@@ -415,7 +354,7 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        fit: StackFit.expand, // Ensure main video fills entire screen
+        fit: StackFit.expand,
         children: [
           _buildMainVideo(),
           if (!widget.isAudioOnly) _buildLocalPiP(),
@@ -478,69 +417,34 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
     );
   }
 
+  /// Main video area:
+  /// - Audio-only → avatar placeholder
+  /// - Remote joined → remote video fills screen (Zoom style)
+  /// - Waiting for remote → own camera fills screen + "waiting" banner
+  /// - Fallback → dark placeholder
   Widget _buildMainVideo() {
-    // Audio-only mode: show avatar
     if (widget.isAudioOnly) {
-      return Container(
-        color: const Color(0xFF1E293B),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 80,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  widget.remoteUserName.isNotEmpty
-                      ? widget.remoteUserName[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(fontSize: 56, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                widget.remoteUserName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: _remoteUserJoined ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _remoteUserJoined ? Colors.green : Colors.orange,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _remoteUserJoined ? 'Connected' : 'Calling...',
-                  style: TextStyle(
-                    color: _remoteUserJoined ? Colors.greenAccent : Colors.orangeAccent,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+      return _buildAvatarPlaceholder(
+        label: _remoteUserJoined ? 'Connected' : 'Calling...',
+        connected: _remoteUserJoined,
+      );
+    }
+
+    if (_remoteUserJoined && _remoteUid != null) {
+      return SizedBox.expand(
+        child: AgoraVideoView(
+          key: ValueKey('remote-$_remoteUid'),
+          controller: VideoViewController.remote(
+            rtcEngine: _engine!,
+            canvas: VideoCanvas(uid: _remoteUid),
+            connection: RtcConnection(channelId: widget.channelName),
           ),
         ),
       );
     }
 
-    // Video mode: show remote video when available
-    if (_remoteUserJoined && _remoteUid != null) {
-      debugPrint('📺 Building remote video view for UID: $_remoteUid');
-      return _buildRemoteVideo();
-    }
-
-    // Not yet joined: show local preview or placeholder
     if (_localUserJoined && !_isCameraOff) {
-      debugPrint('📷 Building local preview (waiting for remote)');
+      // Own camera fills screen while waiting (Zoom style)
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -551,12 +455,13 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
             ),
           ),
           Positioned(
-            bottom: 100,
+            bottom: 110,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(24),
@@ -570,13 +475,15 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
                       height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'Waiting for ${widget.remoteUserName} to join...',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
                 ),
@@ -587,8 +494,19 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       );
     }
 
-    // Fallback: camera off or not joined
-    debugPrint('⏳ Building placeholder (localJoined: $_localUserJoined, cameraOff: $_isCameraOff)');
+    // Fallback — camera off or engine not ready yet
+    return _buildAvatarPlaceholder(
+      label: !_localUserJoined
+          ? 'Starting camera...'
+          : _isCameraOff
+              ? 'Camera is off'
+              : 'Waiting...',
+      connected: false,
+    );
+  }
+
+  Widget _buildAvatarPlaceholder(
+      {required String label, required bool connected}) {
     return Container(
       color: const Color(0xFF1E293B),
       child: Center(
@@ -615,40 +533,35 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 12),
-            if (!_localUserJoined)
-              const Text(
-                'Starting camera...',
-                style: TextStyle(color: Colors.white60, fontSize: 14),
-              )
-            else if (_isCameraOff)
-              const Text(
-                'Camera is off',
-                style: TextStyle(color: Colors.white60, fontSize: 14),
-              )
-            else
-              const Text(
-                'Waiting for remote user...',
-                style: TextStyle(color: Colors.white60, fontSize: 14),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: connected
+                    ? Colors.green.withOpacity(0.3)
+                    : Colors.orange.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: connected ? Colors.green : Colors.orange,
+                ),
               ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: connected ? Colors.greenAccent : Colors.orangeAccent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRemoteVideo() {
-    return SizedBox.expand(
-      child: AgoraVideoView(
-        key: ValueKey('remote-${_remoteUid}'),
-        controller: VideoViewController.remote(
-          rtcEngine: _engine!,
-          canvas: VideoCanvas(uid: _remoteUid),
-          connection: RtcConnection(channelId: widget.channelName),
-        ),
-      ),
-    );
-  }
-
+  /// PiP overlay — own camera small in top-right corner, only shown when
+  /// both users are connected (Zoom style).
   Widget _buildLocalPiP() {
     if (!_remoteUserJoined || !_localUserJoined || widget.isAudioOnly) {
       return const SizedBox.shrink();
@@ -657,28 +570,27 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
     return Positioned(
       top: 80,
       right: 16,
-      child: GestureDetector(
-        onTap: () {
-          // Could expand PIP to full screen
-        },
-        child: Container(
-          width: 120,
-          height: 160,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+      child: Container(
+        width: 120,
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
           child: _isCameraOff
               ? Container(
                   color: Colors.grey[900],
-                  child: const Icon(Icons.videocam_off, color: Colors.white54, size: 32),
+                  child: const Icon(Icons.videocam_off,
+                      color: Colors.white54, size: 32),
                 )
               : AgoraVideoView(
                   key: const ValueKey('local-pip'),
@@ -702,19 +614,18 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              // End call button
               Container(
                 decoration: BoxDecoration(
                   color: Colors.black26,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  icon:
+                      const Icon(Icons.close_rounded, color: Colors.white),
                   onPressed: _endCall,
                 ),
               ),
               const SizedBox(width: 12),
-              // Caller info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,7 +650,12 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
                                 : Colors.orange,
                             shape: BoxShape.circle,
                             boxShadow: _remoteUserJoined
-                                ? [BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 4)]
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.green.withOpacity(0.5),
+                                      blurRadius: 4,
+                                    )
+                                  ]
                                 : null,
                           ),
                         ),
@@ -759,32 +675,6 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              // Network quality
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: List.generate(
-                    5,
-                    (index) => Container(
-                      margin: const EdgeInsets.only(left: 2),
-                      width: 3,
-                      height: (index + 1) * 3.0,
-                      decoration: BoxDecoration(
-                        color: index < _networkQuality
-                            ? Colors.greenAccent
-                            : Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Flip camera (video only)
               if (!widget.isAudioOnly)
                 IconButton(
                   icon: const Icon(
@@ -805,13 +695,14 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       bottom: 40,
       left: 0,
       right: 0,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _controlBtn(
-              icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+              icon:
+                  _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
               label: _isMuted ? 'Unmute' : 'Mute',
               onTap: _toggleMute,
               active: _isMuted,
@@ -830,7 +721,8 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
               _controlBtn(
                 icon: Icons.present_to_all_rounded,
                 label: 'Share',
-                onTap: () => setState(() => _isScreenSharing = !_isScreenSharing),
+                onTap: () =>
+                    setState(() => _isScreenSharing = !_isScreenSharing),
                 active: _isScreenSharing,
                 color: _isScreenSharing ? Colors.green : Colors.white,
               ),
@@ -871,7 +763,9 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
                       : Colors.black.withOpacity(0.4),
               shape: BoxShape.circle,
               border: Border.all(
-                color: active && !isEnd ? (color ?? Colors.white) : Colors.transparent,
+                color: active && !isEnd
+                    ? (color ?? Colors.white)
+                    : Colors.transparent,
                 width: 2,
               ),
             ),
