@@ -63,81 +63,97 @@ class _VideoCallState extends State<VideoCall> {
   }
 
   Future<void> _initAgora() async {
-    // On mobile, request permissions; on web the browser handles this automatically
-    if (!kIsWeb) {
-      await [Permission.camera, Permission.microphone].request();
-    }
-
-    // Fetch token from backend
-    final tokenResult = await _agoraService.getToken(
-      channelName: widget.channelName,
-    );
-    if (tokenResult['success'] != true) {
-      setState(() {
-        _error = 'Failed to get call token: ${tokenResult['message']}';
-        _isLoading = false;
-      });
-      return;
-    }
-
-    final token = tokenResult['data']['token'] as String;
-    _appId = tokenResult['data']['appId'] as String;
-    final uid = tokenResult['data']['uid'] as int;
-
-    // Init engine
-    _engine = createAgoraRtcEngine();
-    await _engine!.initialize(RtcEngineContext(appId: _appId));
-
-    _engine!.registerEventHandler(
-      RtcEngineEventHandler(
-        onJoinChannelSuccess: (connection, elapsed) {
-          if (mounted) setState(() => _localUserJoined = true);
-        },
-        onUserJoined: (connection, remoteUid, elapsed) {
-          if (mounted) {
-            setState(() {
-              _remoteUid = remoteUid;
-              _remoteUserJoined = true;
-            });
-          }
-        },
-        onUserOffline: (connection, remoteUid, reason) {
-          if (mounted) {
-            setState(() {
-              _remoteUid = null;
-              _remoteUserJoined = false;
-            });
-          }
-        },
-        onError: (err, msg) {
-          if (mounted) setState(() => _error = 'Call error: $msg');
-        },
-      ),
-    );
-
-    if (!widget.isAudioOnly) {
-      await _engine!.enableVideo();
-      // startPreview is not supported on web
+    try {
+      // On mobile, request permissions; on web the browser handles this automatically
       if (!kIsWeb) {
-        await _engine!.startPreview();
+        await [Permission.camera, Permission.microphone].request();
+      }
+
+      // Fetch token from backend
+      final tokenResult = await _agoraService.getToken(
+        channelName: widget.channelName,
+      );
+      if (tokenResult['success'] != true) {
+        if (mounted) {
+          setState(() {
+            _error = 'Could not start call: ${tokenResult['message']}';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final token = tokenResult['data']['token'] as String;
+      _appId = tokenResult['data']['appId'] as String;
+      final uid = tokenResult['data']['uid'] as int;
+
+      // Init engine
+      _engine = createAgoraRtcEngine();
+      await _engine!.initialize(RtcEngineContext(appId: _appId));
+
+      _engine!.registerEventHandler(
+        RtcEngineEventHandler(
+          onJoinChannelSuccess: (connection, elapsed) {
+            if (mounted) setState(() => _localUserJoined = true);
+          },
+          onUserJoined: (connection, remoteUid, elapsed) {
+            if (mounted) {
+              setState(() {
+                _remoteUid = remoteUid;
+                _remoteUserJoined = true;
+              });
+            }
+          },
+          onUserOffline: (connection, remoteUid, reason) {
+            if (mounted) {
+              setState(() {
+                _remoteUid = null;
+                _remoteUserJoined = false;
+              });
+            }
+          },
+          onError: (err, msg) {
+            if (mounted) {
+              setState(() {
+                _error = 'Call error ($err): $msg';
+                _isLoading = false;
+              });
+            }
+          },
+        ),
+      );
+
+      if (!widget.isAudioOnly) {
+        await _engine!.enableVideo();
+        // startPreview is not supported on web
+        if (!kIsWeb) {
+          await _engine!.startPreview();
+        }
+      }
+
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      await _engine!.joinChannel(
+        token: token,
+        channelId: widget.channelName,
+        uid: uid,
+        options: const ChannelMediaOptions(
+          autoSubscribeAudio: true,
+          autoSubscribeVideo: true,
+          publishCameraTrack: true,
+          publishMicrophoneTrack: true,
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        ),
+      );
+
+      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to start call: $e';
+          _isLoading = false;
+        });
       }
     }
-
-    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-    await _engine!.joinChannel(
-      token: token,
-      channelId: widget.channelName,
-      uid: uid,
-      options: const ChannelMediaOptions(
-        autoSubscribeAudio: true,
-        autoSubscribeVideo: true,
-        publishCameraTrack: true,
-        publishMicrophoneTrack: true,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _endCall() async {

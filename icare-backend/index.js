@@ -18,6 +18,7 @@ const ratingsRoutes = require('./routes/ratings');
 const inventoryRoutes = require('./routes/inventory');
 const invoicesRoutes = require('./routes/invoices');
 const usersRoutes = require('./routes/users');
+const agoraRoutes = require('./routes/agora');
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use('/api/seed', seedRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/invoices', invoicesRoutes);
+app.use('/api/agora', agoraRoutes);
 
 // Stub routes — return empty success so Flutter doesn't crash on 404
 const makeStub = (emptyKey) => {
