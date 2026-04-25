@@ -67,7 +67,9 @@ class _VideoCallWebState extends State<VideoCall> {
 
   Future<void> _initAgora() async {
     final token = await _fetchToken();
-    if (token == null || _agoraAppId == null || _agoraAppId!.isEmpty) {
+    if (!mounted) return;
+
+    if (token == null || _agoraAppId == null || (_agoraAppId?.isEmpty ?? true)) {
       setState(() => _error = 'Could not get call token — check your connection.');
       return;
     }
@@ -93,20 +95,23 @@ class _VideoCallWebState extends State<VideoCall> {
 
       if (!widget.isAudioOnly) {
         await _engine!.enableVideo();
-        await _engine!.startPreview();
+        // Note: startPreview() is NOT called — on Flutter web it tries to bind
+        // to a DOM element before the widget tree renders and throws a null error.
+        // Video preview starts automatically after joinChannel() renders AgoraVideoView.
         if (mounted) setState(() => _localVideoReady = true);
       }
       await _engine!.enableAudio();
 
+      if (!mounted) return;
       await _engine!.joinChannel(
         token: token,
         channelId: widget.channelName,
         uid: 0,
-        options: const ChannelMediaOptions(
+        options: ChannelMediaOptions(
           clientRoleType: ClientRoleType.clientRoleBroadcaster,
           channelProfile: ChannelProfileType.channelProfileCommunication,
-          publishMicrophoneTrack: true,
-          publishCameraTrack: true,
+          publishMicrophoneTrack: !_muted,
+          publishCameraTrack: !widget.isAudioOnly,
         ),
       );
     } catch (e) {
