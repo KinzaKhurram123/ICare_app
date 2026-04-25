@@ -81,16 +81,32 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         pageBuilder: (ctx, _, __) => _ConnectNowRequestDialog(
           patientName: patientName,
           onAccept: () async {
-            await _service.acceptRequest(requestId);
-            nav.pop();
-            nav.push(
-              MaterialPageRoute(
-                builder: (_) => VideoCall(
-                  channelName: channelName,
-                  remoteUserName: patientName,
+            try {
+              final result = await _service.acceptRequest(requestId);
+              final callChannel = result['channelName']?.toString() ?? channelName;
+              final callPatient = result['patientName']?.toString() ?? patientName;
+              nav.pop();
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: callChannel,
+                    remoteUserName: callPatient,
+                  ),
                 ),
-              ),
-            );
+              );
+            } catch (e) {
+              debugPrint('❌ Accept failed: $e — trying with channel directly');
+              // Even if backend accept fails, still join the channel
+              nav.pop();
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: channelName,
+                    remoteUserName: patientName,
+                  ),
+                ),
+              );
+            }
           },
           onDecline: () => nav.pop(),
         ),

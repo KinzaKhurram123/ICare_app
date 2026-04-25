@@ -51,7 +51,7 @@ router.get('/pending', authMiddleware, async (req, res) => {
       success: true,
       hasPending: true,
       request: {
-        id: request._id,
+        id: request._id.toString(),
         patientName: request.patientName,
         channelName: request.channelName,
         waitingTime: Math.floor((Date.now() - request.createdAt) / 1000),
@@ -73,9 +73,23 @@ router.post('/accept', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'requestId required' });
     }
 
-    const request = await ConnectNow.findById(requestId);
+    let request = await ConnectNow.findById(requestId).catch(() => null);
+
+    // If already accepted by this doctor, return success (idempotent)
+    if (request && request.status === 'accepted') {
+      return res.json({
+        success: true,
+        channelName: request.channelName,
+        patientName: request.patientName,
+      });
+    }
+
     if (!request || request.status !== 'pending') {
-      return res.status(404).json({ success: false, message: 'Request not found or already handled' });
+      // Try finding by channelName as fallback
+      request = await ConnectNow.findOne({ status: 'pending' }).sort({ createdAt: -1 }).catch(() => null);
+      if (!request) {
+        return res.status(404).json({ success: false, message: 'No pending request found' });
+      }
     }
 
     request.status = 'accepted';

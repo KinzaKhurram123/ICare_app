@@ -138,6 +138,9 @@ class _VideoCallState extends State<VideoCall> {
             bitrate: 0, // auto
           ),
         );
+        // startPreview() is essential on web — without it local camera
+        // stream doesn't start until joinChannel callback fires (too late)
+        await _engine!.startPreview();
       }
 
       // 6. Channel profile + role
