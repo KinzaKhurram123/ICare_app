@@ -179,6 +179,28 @@ class PharmacyService {
     await _apiService.delete('/pharmacy/products/$id');
   }
 
+  Future<Map<String, dynamic>> createPrescriptionOrder({
+    required String pharmacyId,
+    required List<dynamic> medicines,
+    String? medicalRecordId,
+    String deliveryOption = 'pickup',
+    String address = '',
+  }) async {
+    final response = await _apiService.post('/pharmacy/orders/prescription', {
+      'pharmacyId': pharmacyId,
+      'medicines': medicines.map((m) => {
+        'name': m['name'] ?? m['productName'] ?? '',
+        'dosage': m['dosage'] ?? '',
+        'frequency': m['frequency'] ?? '',
+      }).toList(),
+      'prescriptionText': medicines.map((m) => m['name'] ?? m['productName'] ?? '').join(', '),
+      if (medicalRecordId != null) 'medicalRecordId': medicalRecordId,
+      'deliveryOption': deliveryOption,
+      'address': address,
+    });
+    return response.data;
+  }
+
   // Order Management
   Future<List<dynamic>> getPharmacyOrders({String? status}) async {
     String url = '/pharmacy/orders/pharmacy/list';

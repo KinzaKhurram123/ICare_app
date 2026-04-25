@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/medical_record_service.dart';
+import 'package:icare/services/laboratory_service.dart';
+import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/doctors_list.dart';
+import 'package:icare/screens/labb_details.dart';
+import 'package:icare/screens/pharmacy_details.dart';
 import 'package:intl/intl.dart';
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
@@ -28,25 +32,26 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     setState(() => _isLoading = true);
     try {
       final result = await _medicalRecordService.getMyRecords();
-
       if (result['success'] && mounted) {
         final records = result['records'] as List<dynamic>;
         final prescriptions = records.where((r) {
-          final prescriptionObj = r['prescription'];
-          if (prescriptionObj is Map) {
-            final meds = prescriptionObj['medicines'] as List?;
-            final hasReferral = prescriptionObj['referral'] != null;
-            return (meds != null && meds.isNotEmpty) || hasReferral;
+          final p = r['prescription'];
+          if (p is Map) {
+            final meds = p['medicines'] as List?;
+            final tests = p['labTests'] as List?;
+            final hasReferral = p['referral'] != null;
+            return (meds != null && meds.isNotEmpty) ||
+                (tests != null && tests.isNotEmpty) ||
+                hasReferral;
           }
           return false;
         }).toList();
-
         setState(() {
           _prescriptions = prescriptions;
           _isLoading = false;
         });
       } else {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
       debugPrint('Error loading prescriptions: $e');
@@ -57,7 +62,6 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -77,33 +81,28 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _prescriptions.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.medication_outlined,
-                    size: 64,
-                    color: Colors.grey.shade300,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.medication_outlined,
+                          size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text('No prescriptions yet',
+                          style: TextStyle(
+                              fontSize: 15, color: Color(0xFF64748B))),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No prescriptions yet',
-                    style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadPrescriptions,
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(isDesktop ? 40 : 20),
+                    itemCount: _prescriptions.length,
+                    itemBuilder: (context, index) =>
+                        _buildPrescriptionCard(_prescriptions[index]),
                   ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadPrescriptions,
-              child: ListView.builder(
-                padding: EdgeInsets.all(isDesktop ? 40 : 20),
-                itemCount: _prescriptions.length,
-                itemBuilder: (context, index) {
-                  return _buildPrescriptionCard(_prescriptions[index]);
-                },
-              ),
-            ),
+                ),
     );
   }
 
@@ -111,12 +110,17 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     final date = DateTime.parse(record['createdAt']);
     final diagnosis = record['diagnosis'] ?? 'General Prescription';
     final doctorName = record['doctor']?['name'] ?? 'Unknown Doctor';
-    final medicines = record['prescription']?['medicines'] as List? ?? [];
-    final pharmacyOrder = record['pharmacyOrder'];
-    final orderStatus = pharmacyOrder?['status'] ?? 'not_ordered';
+    final rawId = (record['_id'] ?? record['id'] ?? '').toString();
+    final recordNumber = rawId.length >= 6
+        ? 'MR-${rawId.substring(rawId.length - 6).toUpperCase()}'
+        : 'MR-XXXXXX';
+    final medicines =
+        (record['prescription']?['medicines'] as List?) ?? [];
+    final labTests =
+        (record['prescription']?['labTests'] as List?) ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -132,13 +136,13 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── HEADER ─────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF59E0B), Color(0xFFEAB308)],
-              ),
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              gradient:
+                  LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),
@@ -151,304 +155,116 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.medication_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.description_rounded,
+                      color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        diagnosis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
+                      Text(diagnosis,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white)),
                       const SizedBox(height: 4),
-                      Text(
-                        'Dr. $doctorName',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
-                      ),
+                      Text('Dr. $doctorName',
+                          style: const TextStyle(
+                              fontSize: 13, color: Colors.white70)),
                     ],
                   ),
                 ),
-                Text(
-                  DateFormat('MMM dd, yyyy').format(date),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Medications',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...medicines.map((med) => _buildMedicineItem(med)),
-
-                // ── REFERRAL TO SPECIALIST ──────────────────────────────
-                if (record['prescription']?['referral'] != null) ...[
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Specialist Referral',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () {
-                      final specialty = record['prescription']['referral']['specialty'];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => DoctorsListWithSpecialty(specialty: specialty),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFFBEB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.person_search_rounded,
-                              color: Color(0xFFF59E0B),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  record['prescription']['referral']['specialty'] ?? 'Specialist',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                if (record['prescription']['referral']['reason'] != null)
-                                  Text(
-                                    record['prescription']['referral']['reason'],
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: Color(0xFFF59E0B),
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
-                if (pharmacyOrder != null) ...[
-                  const SizedBox(height: 16),
-                  _buildStatusTimeline(orderStatus),
-                  const SizedBox(height: 12),
-                  if (pharmacyOrder['pharmacy'] != null)
-                    _buildPharmacyInfo(pharmacyOrder['pharmacy']),
-                ],
-                const SizedBox(height: 16),
-                if (orderStatus == 'not_ordered')
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Prescription sent to pharmacy for fulfillment!',
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.shopping_cart_checkout_rounded,
-                        size: 20,
-                      ),
-                      label: const Text(
-                        'Fulfill via Pharmacy',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEAB308),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusTimeline(String currentStatus) {
-    final statuses = ['pending', 'preparing', 'dispatched', 'delivered'];
-    final currentIndex = statuses.indexOf(currentStatus);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Order Status',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: List.generate(statuses.length, (index) {
-              final isActive = index <= currentIndex;
-              final isCurrent = index == currentIndex;
-              return Expanded(
-                child: Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? const Color(0xFFEAB308)
-                                  : Colors.grey.shade300,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _getStatusIcon(statuses[index]),
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _getStatusLabel(statuses[index]),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: isCurrent
-                                  ? FontWeight.w900
-                                  : FontWeight.w600,
-                              color: isActive
-                                  ? const Color(0xFF0F172A)
-                                  : const Color(0xFF94A3B8),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(date),
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        recordNumber,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5),
                       ),
                     ),
-                    if (index < statuses.length - 1)
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          color: isActive
-                              ? const Color(0xFFEAB308)
-                              : Colors.grey.shade300,
-                        ),
-                      ),
                   ],
                 ),
-              );
-            }),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildPharmacyInfo(dynamic pharmacy) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.local_pharmacy_rounded,
-            color: Colors.blue.shade700,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  pharmacy['name'] ?? 'Pharmacy',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.blue.shade900,
+                // ── MEDICINES TILE (clickable) ────────────────────────
+                if (medicines.isNotEmpty) ...[
+                  _clickableTile(
+                    icon: Icons.medication_rounded,
+                    color: const Color(0xFF3B82F6),
+                    bgColor: const Color(0xFFEFF6FF),
+                    title: 'Medicines',
+                    subtitle: '${medicines.length} prescribed by doctor',
+                    arrowColor: const Color(0xFF3B82F6),
+                    onTap: () => _showMedicinesDetail(context, medicines),
                   ),
-                ),
-                if (pharmacy['phone'] != null)
-                  Text(
-                    pharmacy['phone'],
-                    style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── LAB TESTS TILE (clickable) ────────────────────────
+                if (labTests.isNotEmpty) ...[
+                  _clickableTile(
+                    icon: Icons.biotech_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    bgColor: const Color(0xFFF5F3FF),
+                    title: 'Lab Tests',
+                    subtitle: '${labTests.length} tests ordered',
+                    arrowColor: const Color(0xFF8B5CF6),
+                    onTap: () => _showLabTestsDetail(context, labTests),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // ── SPECIALIST REFERRAL TILE ──────────────────────────
+                if (record['prescription']?['referral'] != null) ...[
+                  _clickableTile(
+                    icon: Icons.person_search_rounded,
+                    color: const Color(0xFFF59E0B),
+                    bgColor: const Color(0xFFFFFBEB),
+                    title: record['prescription']['referral']['specialty'] ?? 'Specialist Referral',
+                    subtitle: record['prescription']['referral']['reason'] ?? 'Referred by doctor',
+                    arrowColor: const Color(0xFFF59E0B),
+                    onTap: () {
+                      final specialty = record['prescription']['referral']['specialty'];
+                      Navigator.push(context, MaterialPageRoute(
+                          builder: (ctx) => DoctorsListWithSpecialty(specialty: specialty)));
+                    },
+                  ),
+                ],
+
+                // Show empty state if no medicines AND no lab tests
+                if (medicines.isEmpty &&
+                    labTests.isEmpty &&
+                    record['prescription']?['referral'] == null)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('No details available',
+                        style: TextStyle(color: Color(0xFF94A3B8))),
                   ),
               ],
             ),
@@ -458,89 +274,425 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  IconData _getStatusIcon(String status) {
-    switch (status) {
-      case 'pending':
-        return Icons.schedule_rounded;
-      case 'preparing':
-        return Icons.science_rounded;
-      case 'dispatched':
-        return Icons.local_shipping_rounded;
-      case 'delivered':
-        return Icons.check_circle_rounded;
-      default:
-        return Icons.circle;
-    }
+  // ── CLICKABLE TILE ───────────────────────────────────────────────────────
+  Widget _clickableTile({
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required String title,
+    required String subtitle,
+    required Color arrowColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: color)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF64748B))),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, color: arrowColor, size: 16),
+          ],
+        ),
+      ),
+    );
   }
 
-  String _getStatusLabel(String status) {
-    switch (status) {
-      case 'pending':
-        return 'Pending';
-      case 'preparing':
-        return 'Preparing';
-      case 'dispatched':
-        return 'Dispatched';
-      case 'delivered':
-        return 'Delivered';
-      default:
-        return status;
-    }
+  // ── MEDICINES DETAIL SHEET ───────────────────────────────────────────────
+  void _showMedicinesDetail(BuildContext context, List<dynamic> medicines) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.medication_rounded,
+                          color: Color(0xFF3B82F6), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Prescribed Medicines',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A))),
+                          Text('Tap "Find Pharmacies" to order',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(),
+              // Medicines list
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  itemCount: medicines.length,
+                  itemBuilder: (_, i) => _buildMedicineItem(medicines[i]),
+                ),
+              ),
+              // Find Pharmacies button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showFindPharmacies(context, medicines);
+                    },
+                    icon: const Icon(Icons.local_pharmacy_rounded),
+                    label: const Text('Find Pharmacies',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── LAB TESTS DETAIL SHEET ───────────────────────────────────────────────
+  void _showLabTestsDetail(BuildContext context, List<dynamic> labTests) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.biotech_rounded,
+                          color: Color(0xFF8B5CF6), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ordered Lab Tests',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A))),
+                          Text('Tap "Find Labs" to book',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  itemCount: labTests.length,
+                  itemBuilder: (_, i) => _buildLabTestItem(labTests[i]),
+                ),
+              ),
+              // Find Labs button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showFindLabs(context, labTests);
+                    },
+                    icon: const Icon(Icons.science_rounded),
+                    label: const Text('Find Labs',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(
+      IconData icon, Color color, String title, String? subtitle) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A))),
+            if (subtitle != null)
+              Text(subtitle,
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF64748B))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
   }
 
   Widget _buildMedicineItem(dynamic medicine) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF59E0B),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 12),
+              const Icon(Icons.medication_rounded,
+                  color: Color(0xFF3B82F6), size: 18),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   medicine['name'] ?? 'Medicine',
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                  ),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.only(left: 26),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 4,
+              children: [
+                if ((medicine['dosage'] ?? '').toString().isNotEmpty)
+                  _pill('Dosage', medicine['dosage']),
+                if ((medicine['frequency'] ?? '').toString().isNotEmpty)
+                  _pill('Frequency', medicine['frequency']),
+                if ((medicine['duration'] ?? '').toString().isNotEmpty)
+                  _pill('Duration', medicine['duration']),
+              ],
+            ),
+          ),
+          if ((medicine['instructions'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 26),
+              child: Text(
+                '📝 ${medicine['instructions']}',
+                style: const TextStyle(
+                    fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabTestItem(dynamic test) {
+    final urgency =
+        (test['urgency'] ?? 'Routine').toString().toLowerCase();
+    final urgencyColor = urgency == 'stat'
+        ? const Color(0xFFEF4444)
+        : urgency == 'urgent'
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF8B5CF6);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F3FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFDDD6FE)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.biotech_rounded,
+              color: Color(0xFF8B5CF6), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMedicineDetail('Dosage', medicine['dosage'] ?? 'N/A'),
-                _buildMedicineDetail(
-                  'Frequency',
-                  medicine['frequency'] ?? 'N/A',
+                Text(
+                  test['name'] ?? 'Lab Test',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A)),
                 ),
-                _buildMedicineDetail('Duration', medicine['duration'] ?? 'N/A'),
-                if (medicine['instructions'] != null)
-                  _buildMedicineDetail(
-                    'Instructions',
-                    medicine['instructions'],
-                  ),
+                if ((test['notes'] ?? '').toString().isNotEmpty)
+                  Text(test['notes'],
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF64748B))),
               ],
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: urgencyColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              test['urgency'] ?? 'Routine',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: urgencyColor),
             ),
           ),
         ],
@@ -548,34 +700,512 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  Widget _buildMedicineDetail(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontSize: 13,
+  Widget _pill(String label, dynamic value) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$label: ',
+            style: const TextStyle(
+                fontSize: 12,
                 color: Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
+                fontWeight: FontWeight.w600)),
+        Text(value?.toString() ?? '',
+            style: const TextStyle(
+                fontSize: 12,
                 color: Color(0xFF0F172A),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  // ── FIND LABS BOTTOM SHEET ──────────────────────────────────────────
+  void _showFindLabs(BuildContext context, List<dynamic> tests) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _FindLabsSheet(tests: tests),
+    );
+  }
+
+  // ── FIND PHARMACIES BOTTOM SHEET ───────────────────────────────────
+  void _showFindPharmacies(BuildContext context, List<dynamic> medicines) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _FindPharmaciesSheet(medicines: medicines),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIND LABS SHEET
+// ─────────────────────────────────────────────────────────────────────────────
+class _FindLabsSheet extends StatefulWidget {
+  final List<dynamic> tests;
+  const _FindLabsSheet({required this.tests});
+
+  @override
+  State<_FindLabsSheet> createState() => _FindLabsSheetState();
+}
+
+class _FindLabsSheetState extends State<_FindLabsSheet> {
+  final LaboratoryService _labService = LaboratoryService();
+  List<dynamic> _labs = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLabs();
+  }
+
+  Future<void> _fetchLabs() async {
+    try {
+      final labs = await _labService.getAllLaboratories();
+      if (mounted) setState(() { _labs = labs; _isLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.science_rounded,
+                            color: Color(0xFF8B5CF6), size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Find Labs',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A))),
+                            Text('Select a lab to book your tests',
+                                style: TextStyle(
+                                    fontSize: 13, color: Color(0xFF64748B))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Ordered tests chips
+                  const Text('Ordered Tests:',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B))),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: widget.tests.map((t) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
+                      ),
+                      child: Text(t['name'] ?? '',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF7C3AED),
+                              fontWeight: FontWeight.w600)),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                ],
               ),
             ),
+            // Labs list
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _labs.isEmpty
+                      ? const Center(
+                          child: Text('No labs found',
+                              style:
+                                  TextStyle(color: Color(0xFF64748B))))
+                      : ListView.builder(
+                          controller: scrollCtrl,
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                          itemCount: _labs.length,
+                          itemBuilder: (ctx, i) =>
+                              _labTile(_labs[i]),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _labTile(dynamic lab) {
+    final name = lab['labName']?.toString() ??
+        lab['lab_name']?.toString() ??
+        lab['name']?.toString() ??
+        'Laboratory';
+    final address = lab['address']?.toString() ?? lab['location']?.toString() ?? '';
+    final phone = lab['phone']?.toString() ?? lab['phoneNumber']?.toString() ?? '';
+
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LabDetails(
+              labData: lab,
+              prescribedTests: widget.tests
+                  .map((t) => (t['name'] ?? t['testName'] ?? '').toString())
+                  .where((n) => n.isNotEmpty)
+                  .toList(),
+            ),
           ),
-        ],
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.science_rounded,
+                  color: Color(0xFF8B5CF6), size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A))),
+                  if (address.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      const Icon(Icons.location_on_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Expanded(
+                          child: Text(address,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis)),
+                    ]),
+                  ],
+                  if (phone.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      const Icon(Icons.phone_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Text(phone,
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF64748B))),
+                    ]),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 16, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIND PHARMACIES SHEET
+// ─────────────────────────────────────────────────────────────────────────────
+class _FindPharmaciesSheet extends StatefulWidget {
+  final List<dynamic> medicines;
+  const _FindPharmaciesSheet({required this.medicines});
+
+  @override
+  State<_FindPharmaciesSheet> createState() => _FindPharmaciesSheetState();
+}
+
+class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
+  final PharmacyService _pharmacyService = PharmacyService();
+  List<dynamic> _pharmacies = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPharmacies();
+  }
+
+  Future<void> _fetchPharmacies() async {
+    try {
+      final pharmacies = await _pharmacyService.getAllPharmacies();
+      if (mounted) setState(() { _pharmacies = pharmacies; _isLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.local_pharmacy_rounded,
+                            color: Color(0xFF3B82F6), size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Find Pharmacies',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A))),
+                            Text('Select a pharmacy for your medicines',
+                                style: TextStyle(
+                                    fontSize: 13, color: Color(0xFF64748B))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Prescribed Medicines:',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B))),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: widget.medicines.map((m) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Text(m['name'] ?? '',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1D4ED8),
+                              fontWeight: FontWeight.w600)),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _pharmacies.isEmpty
+                      ? const Center(
+                          child: Text('No pharmacies found',
+                              style: TextStyle(color: Color(0xFF64748B))))
+                      : ListView.builder(
+                          controller: scrollCtrl,
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                          itemCount: _pharmacies.length,
+                          itemBuilder: (ctx, i) =>
+                              _pharmacyTile(_pharmacies[i]),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pharmacyTile(dynamic pharmacy) {
+    final name = pharmacy['pharmacyName']?.toString() ??
+        pharmacy['pharmacy_name']?.toString() ??
+        pharmacy['name']?.toString() ??
+        'Pharmacy';
+    final address = pharmacy['address']?.toString() ?? pharmacy['location']?.toString() ?? '';
+    final phone = pharmacy['phone']?.toString() ?? pharmacy['phoneNumber']?.toString() ?? '';
+
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyDetailsScreen(
+              pharmacy: Map<String, dynamic>.from(pharmacy is Map ? pharmacy : {}),
+              prescribedMedicines: widget.medicines,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.local_pharmacy_rounded,
+                  color: Color(0xFF3B82F6), size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A))),
+                  if (address.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      const Icon(Icons.location_on_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Expanded(
+                          child: Text(address,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis)),
+                    ]),
+                  ],
+                  if (phone.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      const Icon(Icons.phone_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 3),
+                      Text(phone,
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF64748B))),
+                    ]),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 16, color: Color(0xFF94A3B8)),
+          ],
+        ),
       ),
     );
   }

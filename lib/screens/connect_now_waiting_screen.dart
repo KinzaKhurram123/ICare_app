@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/connect_now_service.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/app_keys.dart';
 
 class ConnectNowWaitingScreen extends StatefulWidget {
   const ConnectNowWaitingScreen({super.key});
@@ -84,9 +85,11 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
         if (status['status'] == 'accepted') {
           timer.cancel();
           _countdownTimer?.cancel();
+          final acceptedBy = status['acceptedBy'] as Map? ?? {};
+          final doctorName = (acceptedBy['doctorName'] ?? acceptedBy['name'] ?? 'Doctor').toString();
           _onDoctorAccepted(
-            status['channelName'],
-            status['acceptedBy']?['name'] ?? 'Doctor',
+            status['channelName']?.toString() ?? _channelName ?? '',
+            doctorName,
           );
         } else if (status['status'] == 'expired') {
           timer.cancel();
@@ -99,40 +102,15 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
 
   void _onDoctorAccepted(String channelName, String doctorName) {
     if (!mounted) return;
-    setState(() => _isSearching = false);
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            SizedBox(width: 8),
-            Text('Doctor Found!'),
-          ],
+    _countdownTimer?.cancel();
+    _pollTimer?.cancel();
+    // Auto-navigate directly — no button click required
+    appNavigatorKey.currentState?.pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => VideoCall(
+          channelName: channelName,
+          remoteUserName: doctorName.isNotEmpty ? doctorName : 'Doctor',
         ),
-        content: Text('Dr. $doctorName has accepted your request.'),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => VideoCall(
-                    channelName: channelName,
-                    remoteUserName: doctorName,
-                  ),
-                ),
-              );
-            },
-            child: const Text('Join Call', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }

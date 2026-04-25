@@ -14,7 +14,8 @@ import 'package:icare/widgets/custom_text_input.dart';
 
 class PharmacyDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> pharmacy;
-  const PharmacyDetailsScreen({super.key, required this.pharmacy});
+  final List<dynamic>? prescribedMedicines;
+  const PharmacyDetailsScreen({super.key, required this.pharmacy, this.prescribedMedicines});
 
   @override
   State<PharmacyDetailsScreen> createState() => _PharmacyDetailsScreenState();
@@ -142,13 +143,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                 Expanded(
                   child: CustomButton(
                     label: "Confirm & Order",
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Order sent to pharmacy!"),
-                        ),
-                      );
+                      await _placePrescriptionOrder();
                     },
                   ),
                 ),
@@ -158,6 +155,38 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _placePrescriptionOrder() async {
+    final pharmacyId = widget.pharmacy['_id']?.toString() ?? '';
+    if (pharmacyId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pharmacy ID not found'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    try {
+      final medicines = widget.prescribedMedicines ?? [];
+      await _pharmacyService.createPrescriptionOrder(
+        pharmacyId: pharmacyId,
+        medicines: medicines,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order placed successfully! Pharmacy will confirm shortly.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to place order: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   List<dynamic> get _filteredMedicines {

@@ -11,17 +11,22 @@ import 'package:icare/screens/splash.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
 import 'package:icare/utils/shared_pref.dart';
+import 'package:icare/utils/app_keys.dart';
 
 /// Loads auth from SharedPrefs once on app start and populates authProvider.
 final authInitProvider = FutureProvider<void>((ref) async {
   try {
     final token = await SharedPref().getToken();
     if (token != null && token.isNotEmpty) {
-      ref.read(authProvider.notifier).setUserToken(token);
+      await ref.read(authProvider.notifier).setUserToken(token);
       final userRole = await SharedPref().getUserRole();
-      if (userRole != null) ref.read(authProvider.notifier).setUserRole(userRole);
+      if (userRole != null) {
+        await ref.read(authProvider.notifier).setUserRole(userRole);
+      }
       final userData = await SharedPref().getUserData();
-      if (userData != null) ref.read(authProvider.notifier).setUser(userData);
+      if (userData != null) {
+        await ref.read(authProvider.notifier).setUser(userData);
+      }
     }
   } catch (_) {}
 });
@@ -47,6 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(_routerNotifierProvider);
 
   return GoRouter(
+    navigatorKey: appNavigatorKey,
     initialLocation: '/home',
     observers: [FlutterSmartDialog.observer],
     refreshListenable: notifier,

@@ -33,6 +33,7 @@ class ApiService {
     }
 
     if (token != null) {
+      token = token.trim();
       _dio.options.headers['Authorization'] = 'Bearer $token';
       debugPrint("✅ ApiService: Authorization header set");
     } else {

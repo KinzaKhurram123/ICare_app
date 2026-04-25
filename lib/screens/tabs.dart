@@ -73,6 +73,7 @@ import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/pharmacy_management.dart';
 import 'package:icare/screens/prescriptions.dart';
+import 'package:icare/screens/patient_prescriptions.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/reminder_list.dart';
 import 'package:icare/screens/student_dashboard.dart';
@@ -643,6 +644,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) => const MyAppointmentsListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.medication_liquid_outlined,
+                    'My Prescriptions',
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => const PatientPrescriptions(),
                         ),
                       );
                     },

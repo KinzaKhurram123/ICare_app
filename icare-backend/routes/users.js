@@ -121,8 +121,29 @@ router.get('/search', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── SET ROLE (admin/debug only) ──────────────────────────────────────────────
+// POST /api/users/set-role { email, role }
+router.post('/set-role', async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { email, role } = req.body;
+    if (!email || !role) return res.status(400).json({ success: false, message: 'email and role required' });
+    const validRoles = ['patient', 'doctor', 'lab', 'pharmacy', 'admin'];
+    if (!validRoles.includes(role)) return res.status(400).json({ success: false, message: 'invalid role' });
+    const user = await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $set: { role, is_active: true, is_approved: true } },
+      { new: true }
+    ).select('-password').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, user: { _id: user._id, email: user.email, role: user.role } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── FALLBACK ─────────────────────────────────────────────────────────────────
-router.all('*', (req, res) => {
+router.all('/{*path}', (req, res) => {
   res.json({ success: true, users: [], count: 0 });
 });
 

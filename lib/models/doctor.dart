@@ -74,9 +74,37 @@ class Doctor {
       return [];
     }
 
+    // Support both nested-user format and flat format from API
+    final userJson = json['user'] is Map
+        ? Map<String, dynamic>.from(json['user'] as Map)
+        : <String, dynamic>{
+            '_id': json['_id'] ?? json['id'] ?? '',
+            'name': json['name'] ?? '',
+            'email': json['email'] ?? '',
+            'phoneNumber': json['phoneNumber'] ?? json['phone'] ?? '',
+            'role': json['role'] ?? '',
+            'profilePicture': json['profilePicture'],
+          };
+
+    // availableTime can be a Map or a plain String like "9:00 AM - 5:00 PM"
+    AvailableTime? parseAvailableTime(dynamic value) {
+      if (value == null) return null;
+      if (value is Map) {
+        return AvailableTime.fromJson(Map<String, dynamic>.from(value));
+      }
+      if (value is String && value.isNotEmpty) {
+        final parts = value.split(' - ');
+        return AvailableTime(
+          start: parts.isNotEmpty ? parts[0] : value,
+          end: parts.length > 1 ? parts[1] : '',
+        );
+      }
+      return null;
+    }
+
     return Doctor(
-      id: json['_id']?.toString() ?? '',
-      user: User.fromJson(json['user'] ?? {}),
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      user: User.fromJson(userJson),
       specialization: json['specialization']?.toString(),
       pmdcNumber: json['pmdcNumber']?.toString(),
       consultationType: parseConsultationType(json['consultationType']),
@@ -87,9 +115,7 @@ class Doctor {
       clinicName: json['clinicName']?.toString(),
       clinicAddress: json['clinicAddress']?.toString(),
       availableDays: parseStringList(json['availableDays']),
-      availableTime: json['availableTime'] != null
-          ? AvailableTime.fromJson(json['availableTime'])
-          : null,
+      availableTime: parseAvailableTime(json['availableTime']),
       isApproved: json['isApproved'] == true,
       isOnline: json['isOnline'] == true,
       ratings: parseRatings(json['ratings']),
