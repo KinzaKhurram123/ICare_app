@@ -2,7 +2,7 @@ name: Build Flutter APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "wajahat" ]
   pull_request:
     branches: [ "main", "master" ]
   workflow_dispatch:  # Manual trigger button
