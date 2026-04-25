@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -5,6 +6,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../utils/app_keys.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class VideoCall extends StatefulWidget {
   final String channelName;
@@ -39,7 +42,7 @@ class _VideoCallState extends State<VideoCall> {
 
   // Requirement 40.13: In-Call Features
   int _callDuration = 0;
-  late Stream<int> _timerStream;
+  StreamSubscription<int>? _timerSubscription;
   bool _isScreenSharing = false;
   int _networkQuality = 4; // 1-5 (5 = Excellent)
 
@@ -58,8 +61,7 @@ class _VideoCallState extends State<VideoCall> {
   }
 
   void _startTimer() {
-    _timerStream = Stream.periodic(const Duration(seconds: 1), (i) => i);
-    _timerStream.listen((duration) {
+    _timerSubscription = Stream.periodic(const Duration(seconds: 1), (i) => i).listen((duration) {
       if (mounted && _remoteUserJoined) {
         setState(() => _callDuration = duration);
       }
@@ -75,9 +77,30 @@ class _VideoCallState extends State<VideoCall> {
   Future<void> _initAgora() async {
     try {
       debugPrint('🎥 Step 1: Starting Agora init...');
-      // On mobile, request permissions; on web the browser handles this automatically
+      // On mobile, request permissions via permission_handler
       if (!kIsWeb) {
         await [Permission.camera, Permission.microphone].request();
+      } else {
+        // On web, explicitly request browser camera+mic permission BEFORE Agora init.
+        // This forces Chrome to show the permission dialog and primes getUserMedia
+        // so that Agora can access the devices without a second prompt.
+        try {
+          debugPrint('🎥 Step 1a: Requesting browser camera/mic permission...');
+          final stream = await html.window.navigator.mediaDevices!
+              .getUserMedia({'video': true, 'audio': true});
+          // Stop all tracks immediately — Agora will open its own stream.
+          stream.getTracks().forEach((t) => t.stop());
+          debugPrint('🎥 Step 1a: Permission granted ✅');
+        } catch (e) {
+          debugPrint('🎥 Step 1a: Permission denied or unavailable: $e');
+          if (mounted) {
+            setState(() {
+              _error = 'Camera/microphone access denied. Please allow in browser settings and try again.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
       }
 
       debugPrint('🎥 Step 2: Fetching token for channel: ${widget.channelName}');
@@ -240,6 +263,7 @@ class _VideoCallState extends State<VideoCall> {
 
   @override
   void dispose() {
+    _timerSubscription?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
     super.dispose();
