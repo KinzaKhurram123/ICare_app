@@ -943,6 +943,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
           MaterialPageRoute(
             builder: (_) => PharmacyDetailsScreen(
               pharmacy: Map<String, dynamic>.from(pharmacy is Map ? pharmacy : {}),
+              prescribedMedicines: widget.medicines,
             ),
           ),
         );
