@@ -67,7 +67,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
           patientName: request['patientName']?.toString() ?? 'Patient',
           channelName: request['channelName']?.toString() ?? '',
           expiresAt: DateTime.now().add(
-            Duration(seconds: 180 - (request['waitingTime'] ?? 0)),
+            Duration(seconds: 180 - ((request['waitingTime'] as num?)?.toInt() ?? 0)),
           ),
         ),
       ),
