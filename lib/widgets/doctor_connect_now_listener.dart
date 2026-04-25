@@ -49,11 +49,15 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         final request = result['request'] as Map<String, dynamic>;
         debugPrint('🚨 Pending request found: ${request['patientName']}');
         _dialogShowing = true;
-        await _showRequestDialog(request);
-        _dialogShowing = false;
+        try {
+          await _showRequestDialog(request);
+        } finally {
+          _dialogShowing = false;
+        }
       }
     } catch (e) {
       debugPrint('❌ Error checking pending requests: $e');
+      _dialogShowing = false;
     }
   }
 
@@ -69,12 +73,12 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         patientName: patientName,
         onAccept: () async {
           // Accept in backend
-          final result = await _service.acceptRequest(requestId);
+          await _service.acceptRequest(requestId);
           if (!ctx.mounted) return;
           Navigator.of(ctx).pop();
           if (!mounted) return;
-          // Navigate to video call
-          Navigator.of(context).push(
+          // Navigate to video call using root navigator
+          Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(
               builder: (_) => VideoCall(
                 channelName: channelName,

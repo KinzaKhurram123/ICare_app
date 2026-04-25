@@ -45,8 +45,11 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
 
     debugPrint('📞 Incoming call detected: ${signal['callerName']}');
     _dialogShowing = true;
-    await _showIncomingCallDialog(signal);
-    _dialogShowing = false;
+    try {
+      await _showIncomingCallDialog(signal);
+    } finally {
+      _dialogShowing = false;
+    }
   }
 
   Future<void> _showIncomingCallDialog(Map<String, dynamic> signal) async {
@@ -67,7 +70,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
           if (!ctx.mounted) return;
           Navigator.of(ctx).pop();
           if (!mounted) return;
-          Navigator.of(context).push(
+          Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(
               builder: (_) => VideoCall(
                 channelName: channelName,
