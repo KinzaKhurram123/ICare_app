@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/call_service.dart';
 import '../utils/shared_pref.dart';
+import '../utils/app_keys.dart';
 import '../screens/video_call.dart';
 
 /// Wraps the app and polls for incoming calls every 3 seconds.
@@ -59,32 +60,38 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
     final callType = signal['callType']?.toString() ?? 'video';
     final isAudioOnly = callType == 'audio';
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _IncomingCallDialog(
-        callerName: callerName,
-        isAudioOnly: isAudioOnly,
-        onAccept: () async {
-          await _callService.respondToCall(signalId, 'accepted');
-          if (!ctx.mounted) return;
-          Navigator.of(ctx).pop();
-          if (!mounted) return;
-          Navigator.of(context, rootNavigator: true).push(
-            MaterialPageRoute(
-              builder: (_) => VideoCall(
-                channelName: channelName,
-                remoteUserName: callerName,
-                isAudioOnly: isAudioOnly,
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) {
+      debugPrint('⚠️ Navigator not ready, skipping call dialog');
+      return;
+    }
+
+    await nav.push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: false,
+        pageBuilder: (ctx, _, __) => _IncomingCallDialog(
+          callerName: callerName,
+          isAudioOnly: isAudioOnly,
+          onAccept: () async {
+            await _callService.respondToCall(signalId, 'accepted');
+            nav.pop();
+            nav.push(
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: channelName,
+                  remoteUserName: callerName,
+                  isAudioOnly: isAudioOnly,
+                ),
               ),
-            ),
-          );
-        },
-        onDecline: () async {
-          await _callService.respondToCall(signalId, 'rejected');
-          if (!ctx.mounted) return;
-          Navigator.of(ctx).pop();
-        },
+            );
+          },
+          onDecline: () async {
+            await _callService.respondToCall(signalId, 'rejected');
+            nav.pop();
+          },
+        ),
       ),
     );
   }

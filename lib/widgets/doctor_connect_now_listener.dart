@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/connect_now_service.dart';
 import '../utils/shared_pref.dart';
+import '../utils/app_keys.dart';
 import '../screens/video_call.dart';
 
 /// Wraps the doctor's app and polls for Connect Now requests every 5 seconds.
@@ -66,30 +67,33 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
     final patientName = request['patientName']?.toString() ?? 'Patient';
     final channelName = request['channelName']?.toString() ?? '';
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _ConnectNowRequestDialog(
-        patientName: patientName,
-        onAccept: () async {
-          // Accept in backend
-          await _service.acceptRequest(requestId);
-          if (!ctx.mounted) return;
-          Navigator.of(ctx).pop();
-          if (!mounted) return;
-          // Navigate to video call using root navigator
-          Navigator.of(context, rootNavigator: true).push(
-            MaterialPageRoute(
-              builder: (_) => VideoCall(
-                channelName: channelName,
-                remoteUserName: patientName,
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) {
+      debugPrint('⚠️ Navigator not ready, skipping dialog');
+      return;
+    }
+
+    await nav.push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: false,
+        pageBuilder: (ctx, _, __) => _ConnectNowRequestDialog(
+          patientName: patientName,
+          onAccept: () async {
+            await _service.acceptRequest(requestId);
+            nav.pop();
+            nav.push(
+              MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: channelName,
+                  remoteUserName: patientName,
+                ),
               ),
-            ),
-          );
-        },
-        onDecline: () {
-          if (ctx.mounted) Navigator.of(ctx).pop();
-        },
+            );
+          },
+          onDecline: () => nav.pop(),
+        ),
       ),
     );
   }
