@@ -895,7 +895,13 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LabDetails(labData: lab),
+            builder: (_) => LabDetails(
+              labData: lab,
+              prescribedTests: widget.tests
+                  .map((t) => (t['name'] ?? t['testName'] ?? '').toString())
+                  .where((n) => n.isNotEmpty)
+                  .toList(),
+            ),
           ),
         );
       },
