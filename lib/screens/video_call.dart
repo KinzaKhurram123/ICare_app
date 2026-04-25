@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:js' as js;
 import '../services/agora_service.dart';
 
 class VideoCall extends StatefulWidget {
@@ -34,11 +35,10 @@ class _VideoCallState extends State<VideoCall> {
   String? _error;
   String _appId = '';
 
-  // Requirement 40.13: In-Call Features
   int _callDuration = 0;
   late Stream<int> _timerStream;
   bool _isScreenSharing = false;
-  int _networkQuality = 4; // 1-5 (5 = Excellent)
+  int _networkQuality = 4;
 
   @override
   void initState() {
@@ -64,18 +64,13 @@ class _VideoCallState extends State<VideoCall> {
 
   Future<void> _initAgora() async {
     if (kIsWeb) {
-      setState(() {
-        _error =
-            'Video calls are not supported on web.\nPlease use the mobile app.';
-        _isLoading = false;
-      });
+      await _initWebVideo();
       return;
     }
 
-    // Request permissions
+    // Mobile initialization
     await [Permission.camera, Permission.microphone].request();
 
-    // Fetch token from backend
     final tokenResult = await _agoraService.getToken(
       channelName: widget.channelName,
     );
@@ -91,7 +86,6 @@ class _VideoCallState extends State<VideoCall> {
     _appId = tokenResult['data']['appId'] as String;
     final uid = tokenResult['data']['uid'] as int;
 
-    // Init engine
     _engine = createAgoraRtcEngine();
     await _engine!.initialize(RtcEngineContext(appId: _appId));
 
@@ -144,6 +138,44 @@ class _VideoCallState extends State<VideoCall> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  Future<void> _initWebVideo() async {
+    try {
+      final tokenResult = await _agoraService.getToken(
+        channelName: widget.channelName,
+      );
+      if (tokenResult['success'] != true) {
+        setState(() {
+          _error = 'Failed to get call token: ${tokenResult['message']}';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final tokenRaw = tokenResult['data']['token'];
+      final token = (tokenRaw != null && tokenRaw.toString().isNotEmpty) ? tokenRaw.toString() : null;
+      _appId = tokenResult['data']['appId'] as String;
+      final uid = tokenResult['data']['uid'] as int;
+
+      // Initialize Agora Web SDK via JavaScript
+      js.context.callMethod('initAgoraWeb', [_appId, widget.channelName, token, uid]);
+
+      if (mounted) {
+        setState(() {
+          _localUserJoined = true;
+          _remoteUserJoined = true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Error initializing video: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _endCall() async {
     await _engine?.leaveChannel();
     await _engine?.release();
@@ -152,21 +184,29 @@ class _VideoCallState extends State<VideoCall> {
 
   Future<void> _toggleMute() async {
     setState(() => _isMuted = !_isMuted);
-    await _engine?.muteLocalAudioStream(_isMuted);
+    if (!kIsWeb) {
+      await _engine?.muteLocalAudioStream(_isMuted);
+    }
   }
 
   Future<void> _toggleCamera() async {
     setState(() => _isCameraOff = !_isCameraOff);
-    await _engine?.muteLocalVideoStream(_isCameraOff);
+    if (!kIsWeb) {
+      await _engine?.muteLocalVideoStream(_isCameraOff);
+    }
   }
 
   Future<void> _toggleSpeaker() async {
     setState(() => _isSpeakerOn = !_isSpeakerOn);
-    await _engine?.setEnableSpeakerphone(_isSpeakerOn);
+    if (!kIsWeb) {
+      await _engine?.setEnableSpeakerphone(_isSpeakerOn);
+    }
   }
 
   Future<void> _switchCamera() async {
-    await _engine?.switchCamera();
+    if (!kIsWeb) {
+      await _engine?.switchCamera();
+    }
   }
 
   @override
@@ -225,21 +265,183 @@ class _VideoCallState extends State<VideoCall> {
       );
     }
 
+    if (kIsWeb) {
+      return _buildWebVideoInterface();
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Remote video (full screen)
           _buildRemoteVideo(),
-
-          // Local video (picture-in-picture, top right)
           if (!widget.isAudioOnly) _buildLocalVideo(),
-
-          // Top bar
           _buildTopBar(),
-
-          // Bottom controls
           _buildControls(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebVideoInterface() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          onPressed: _endCall,
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.remoteUserName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _remoteUserJoined ? Colors.green : Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _remoteUserJoined
+                      ? _formatDuration(_callDuration)
+                      : 'Connecting...',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                // Remote video area
+                Container(
+                  color: const Color(0xFF1E293B),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 80,
+                          backgroundColor: Colors.white24,
+                          child: Text(
+                            widget.remoteUserName[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 64,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Text(
+                          widget.remoteUserName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _remoteUserJoined ? 'Connected' : 'Waiting for connection...',
+                          style: TextStyle(
+                            color: _remoteUserJoined
+                                ? Colors.greenAccent
+                                : Colors.white60,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Local video preview (top right)
+                if (!widget.isAudioOnly && !_isCameraOff)
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      width: 140,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24, width: 2),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.videocam_rounded,
+                            color: Colors.white54,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Your Camera',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Container(
+            color: const Color(0xFF1E293B),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _controlBtn(
+                  icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                  label: _isMuted ? 'Unmute' : 'Mute',
+                  onTap: _toggleMute,
+                  active: _isMuted,
+                ),
+                if (!widget.isAudioOnly)
+                  _controlBtn(
+                    icon: _isCameraOff
+                        ? Icons.videocam_off_rounded
+                        : Icons.videocam_rounded,
+                    label: 'Camera',
+                    onTap: _toggleCamera,
+                    active: _isCameraOff,
+                  ),
+                _controlBtn(
+                  icon: Icons.call_end_rounded,
+                  label: 'End Call',
+                  onTap: _endCall,
+                  isEnd: true,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -423,7 +625,6 @@ class _VideoCallState extends State<VideoCall> {
                   ],
                 ),
               ),
-              // Network Quality Indicator
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(

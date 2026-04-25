@@ -8,6 +8,7 @@ import 'package:icare/screens/soap_notes_redesign.dart';
 import 'package:icare/screens/create_medical_record.dart';
 import 'package:icare/screens/prescription_templates_screen.dart';
 import 'package:icare/screens/doctor_assign_program_screen.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/doctor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -89,10 +90,15 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
             ),
             tooltip: 'Start Video Consultation',
             onPressed: () {
-              // Simulated Telemedicine Integration (Req 6.9)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Starting Secure Video Consultation...'),
+              // Navigate to video call screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: widget.appointment.id ?? 'consultation',
+                    remoteUserName: widget.appointment.doctor?.name ?? 'Doctor',
+                    isAudioOnly: false,
+                  ),
                 ),
               );
             },
