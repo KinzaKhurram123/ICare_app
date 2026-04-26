@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: {
     type: String,
-    enum: ['patient', 'doctor', 'lab', 'pharmacy', 'admin'],
+    enum: ['patient', 'doctor', 'lab', 'pharmacy', 'admin', 'instructor', 'student'],
     default: 'patient',
   },
   is_approved: { type: Boolean, default: true },
