@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/instructor_service.dart';
@@ -172,9 +173,13 @@ class _InstructorCreateCourseScreenState
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+        String msg = 'Something went wrong. Please try again.';
+        if (e is DioException) {
+          msg = e.response?.data?['message'] as String? ?? e.message ?? msg;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
       }
     }
   }

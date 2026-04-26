@@ -94,7 +94,7 @@ class Course {
           ? DateTime.parse(json['publishedAt'])
           : null,
       enrollmentCount: json['enrollmentCount'] ?? 0,
-      rating: CourseRating.fromJson(json['rating'] ?? {}),
+      rating: CourseRating.fromJson(json['rating']),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
@@ -304,11 +304,15 @@ class CourseRating {
 
   CourseRating({this.average = 0.0, this.count = 0});
 
-  factory CourseRating.fromJson(Map<String, dynamic> json) {
-    return CourseRating(
-      average: (json['average'] ?? 0).toDouble(),
-      count: json['count'] ?? 0,
-    );
+  factory CourseRating.fromJson(dynamic json) {
+    if (json is num) return CourseRating(average: json.toDouble());
+    if (json is Map<String, dynamic>) {
+      return CourseRating(
+        average: (json['average'] ?? 0).toDouble(),
+        count: json['count'] ?? 0,
+      );
+    }
+    return CourseRating();
   }
 
   Map<String, dynamic> toJson() {

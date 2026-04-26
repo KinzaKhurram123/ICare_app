@@ -85,10 +85,10 @@ router.get('/my-courses', authMiddleware, async (req, res) => {
     await connectMongoDB();
     const instructorId = toId(req.user.id);
     if (!instructorId) return res.status(400).json({ success: false, message: 'Invalid user id in token' });
-    const courses = await Course.find({ instructor_id: instructorId, is_active: true }).lean();
+    const courses = await Course.find({ instructor_id: instructorId, is_active: { $ne: false } }).lean();
     res.json({ success: true, courses, count: courses.length });
   } catch (e) {
-    console.error('my-courses error:', e);
+    console.error('GET /my-courses error:', e.message, e.name);
     res.status(500).json({ success: false, message: e.message });
   }
 });
@@ -117,12 +117,12 @@ router.post('/courses', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const data = { ...req.body, instructor_id: toId(req.user.id) };
-    // Sync visibility and isPublished
     if (data.isPublished === true) data.visibility = 'public';
     if (!data.visibility) data.visibility = 'private';
     const course = await Course.create(data);
     res.status(201).json({ success: true, course });
   } catch (e) {
+    console.error('POST /instructors/courses error:', e.message, e.name);
     res.status(500).json({ success: false, message: e.message });
   }
 });
