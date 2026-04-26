@@ -143,7 +143,7 @@ router.post('/courses', authMiddleware, async (req, res) => {
     res.status(201).json({ success: true, course });
   } catch (e) {
     console.error('POST /instructors/courses error:', e.message, e.name, e.stack);
-    res.status(500).json({ success: false, message: e.message, stack: e.stack?.split('\n').slice(0,4).join(' | ') });
+    res.status(500).json({ success: false, message: e.message, v: 'v2', stack: e.stack?.split('\n').slice(0,5).join(' >> ') });
   }
 });
 
