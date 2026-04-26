@@ -12,6 +12,9 @@ function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
 
+// ── DEPLOY CHECK (no DB) ─────────────────────────────────────────────────────
+router.get('/ping', (req, res) => res.json({ ok: true, deploy: 'v3-nohook' }));
+
 // ── STATS ────────────────────────────────────────────────────────────────────
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
