@@ -119,6 +119,9 @@ router.post('/courses', authMiddleware, async (req, res) => {
     const data = { ...req.body, instructor_id: toId(req.user.id) };
     if (data.isPublished === true) data.visibility = 'public';
     if (!data.visibility) data.visibility = 'private';
+    // Sync thumbnail fields
+    if (data.thumbnail && !data.thumbnail_url) data.thumbnail_url = data.thumbnail;
+    if (data.thumbnail_url && !data.thumbnail) data.thumbnail = data.thumbnail_url;
     // Sanitize modules to avoid schema validation errors
     if (Array.isArray(data.modules)) {
       data.modules = data.modules.map((m, mi) => ({
