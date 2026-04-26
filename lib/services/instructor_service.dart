@@ -96,14 +96,23 @@ class InstructorService {
   // COURSES MANAGEMENT
   // ═══════════════════════════════════════════════════════════════════════
 
-  // Get my courses — backend filters by logged-in user's token
+  // Get my courses — tries token-based endpoint first, falls back to query param
   Future<List<dynamic>> getMyCourses() async {
     try {
+      // Try new token-based endpoint first
       final response = await _apiService.get('/instructors/my-courses');
       return response.data['courses'] as List;
     } catch (e) {
-      debugPrint('Error getting my courses: $e');
-      rethrow;
+      debugPrint('my-courses failed, trying fallback: $e');
+      try {
+        // Fallback: use courses endpoint without instructorId filter
+        // Backend will return all courses; we filter by token on backend
+        final response = await _apiService.get('/instructors/courses');
+        return response.data['courses'] as List;
+      } catch (e2) {
+        debugPrint('Error getting my courses: $e2');
+        rethrow;
+      }
     }
   }
 

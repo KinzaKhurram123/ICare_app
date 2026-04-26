@@ -84,10 +84,11 @@ router.get('/my-courses', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const instructorId = toId(req.user.id);
-    if (!instructorId) return res.status(400).json({ success: false, message: 'Invalid user id' });
+    if (!instructorId) return res.status(400).json({ success: false, message: 'Invalid user id in token' });
     const courses = await Course.find({ instructor_id: instructorId, is_active: true }).lean();
     res.json({ success: true, courses, count: courses.length });
   } catch (e) {
+    console.error('my-courses error:', e);
     res.status(500).json({ success: false, message: e.message });
   }
 });
