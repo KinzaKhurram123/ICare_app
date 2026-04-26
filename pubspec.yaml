@@ -144,7 +144,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-dependency_overrides:
-  zego_zim: 2.16.0
-  zego_uikit_signaling_plugin: 2.5.3
