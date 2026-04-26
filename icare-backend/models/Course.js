@@ -59,3 +59,4 @@ const courseSchema = new mongoose.Schema({
 // No pre-save hooks — sync logic is handled in route handlers
 
 module.exports = mongoose.models.Course || mongoose.model('Course', courseSchema);
+// Mon Apr 27 01:48:00 PST 2026
