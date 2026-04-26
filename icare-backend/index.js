@@ -85,6 +85,9 @@ app.use('/api/labs', labsRoutes);
 app.use('/api/laboratories', labsRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/courses', coursesRoutes);
+
+// Students courses — alias to instructors courses (public listing)
+app.use('/api/students/courses', coursesRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/seed', seedRoutes);

@@ -78,20 +78,6 @@ router.get('/get_all_instructors', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:id', authMiddleware, async (req, res) => {
-  try {
-    await connectMongoDB();
-    const id = toId(req.params.id);
-    if (!id) return res.status(400).json({ success: false, message: 'Invalid ID' });
-    const profile = await InstructorProfile.findById(id).lean();
-    if (!profile) return res.status(404).json({ success: false, message: 'Not found' });
-    const user = await User.findById(profile.user_id).lean() || {};
-    res.json({ success: true, instructor: { _id: profile._id.toString(), name: user.username || user.name || '', email: user.email || '', ...profile } });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
-
 // ── COURSES ──────────────────────────────────────────────────────────────────
 router.get('/courses', authMiddleware, async (req, res) => {
   try {
@@ -236,6 +222,21 @@ router.get('/assigned-learners', authMiddleware, async (req, res) => {
       enrolledCourses: courses.filter(c => c.assigned_to.map(String).includes(u._id.toString())).map(c => ({ _id: c._id.toString(), title: c.title })),
     }));
     res.json({ success: true, learners, count: learners.length });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ── GET INSTRUCTOR BY ID (must be last to avoid matching named routes) ──────
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const id = toId(req.params.id);
+    if (!id) return res.status(400).json({ success: false, message: 'Invalid ID' });
+    const profile = await InstructorProfile.findById(id).lean();
+    if (!profile) return res.status(404).json({ success: false, message: 'Not found' });
+    const user = await User.findById(profile.user_id).lean() || {};
+    res.json({ success: true, instructor: { _id: profile._id.toString(), name: user.username || user.name || '', email: user.email || '', ...profile } });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
   }
