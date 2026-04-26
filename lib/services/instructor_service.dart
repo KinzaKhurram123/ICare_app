@@ -88,20 +88,18 @@ class InstructorService {
       return _cachedInstructorId!;
     }
     final profile = await getMyProfile();
-    return profile['_id'];
+    // user_id is the User._id — this is what instructor_id in Course refers to
+    return profile['user_id'] as String? ?? profile['_id'] as String;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
   // COURSES MANAGEMENT
   // ═══════════════════════════════════════════════════════════════════════
 
-  // Get my courses
+  // Get my courses — backend filters by logged-in user's token
   Future<List<dynamic>> getMyCourses() async {
     try {
-      final instructorId = await _getInstructorId();
-      final response = await _apiService.get(
-        '/instructors/courses?instructorId=$instructorId',
-      );
+      final response = await _apiService.get('/instructors/my-courses');
       return response.data['courses'] as List;
     } catch (e) {
       debugPrint('Error getting my courses: $e');

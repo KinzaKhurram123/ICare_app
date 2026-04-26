@@ -17,6 +17,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const instructorId = toId(req.user.id);
+    if (!instructorId) return res.status(400).json({ success: false, message: 'Invalid user' });
     const [totalCourses, totalPrecautions, courseList] = await Promise.all([
       Course.countDocuments({ instructor_id: instructorId, is_active: true }),
       Precaution.countDocuments({ instructor_id: instructorId, is_active: true }),
@@ -78,12 +79,30 @@ router.get('/get_all_instructors', authMiddleware, async (req, res) => {
   }
 });
 
+// ── MY COURSES (token-based, no query param needed) ──────────────────────────
+router.get('/my-courses', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const instructorId = toId(req.user.id);
+    if (!instructorId) return res.status(400).json({ success: false, message: 'Invalid user id' });
+    const courses = await Course.find({ instructor_id: instructorId, is_active: true }).lean();
+    res.json({ success: true, courses, count: courses.length });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ── COURSES ──────────────────────────────────────────────────────────────────
 router.get('/courses', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const filter = { is_active: true };
-    if (req.query.instructorId) filter.instructor_id = toId(req.query.instructorId);
+    // instructorId can be user_id (ObjectId) — validate before using
+    if (req.query.instructorId) {
+      const id = toId(req.query.instructorId);
+      if (!id) return res.status(400).json({ success: false, message: 'Invalid instructorId' });
+      filter.instructor_id = id;
+    }
     if (req.query.q) filter.title = { $regex: req.query.q, $options: 'i' };
     if (req.query.visibility) filter.visibility = req.query.visibility;
     const courses = await Course.find(filter).lean();
@@ -96,7 +115,11 @@ router.get('/courses', authMiddleware, async (req, res) => {
 router.post('/courses', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const course = await Course.create({ ...req.body, instructor_id: toId(req.user.id) });
+    const data = { ...req.body, instructor_id: toId(req.user.id) };
+    // Sync visibility and isPublished
+    if (data.isPublished === true) data.visibility = 'public';
+    if (!data.visibility) data.visibility = 'private';
+    const course = await Course.create(data);
     res.status(201).json({ success: true, course });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
@@ -133,7 +156,13 @@ router.get('/courses/:id', authMiddleware, async (req, res) => {
 router.put('/courses/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const course = await Course.findByIdAndUpdate(toId(req.params.id), { $set: req.body }, { new: true });
+    const update = { ...req.body };
+    // Keep visibility and isPublished in sync
+    if (update.visibility === 'public') update.isPublished = true;
+    if (update.visibility === 'private') update.isPublished = false;
+    if (update.isPublished === true) update.visibility = 'public';
+    if (update.isPublished === false && !update.visibility) update.visibility = 'private';
+    const course = await Course.findByIdAndUpdate(toId(req.params.id), { $set: update }, { new: true });
     if (!course) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, course });
   } catch (e) {

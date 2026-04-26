@@ -146,12 +146,14 @@ class _InstructorCoursesManagementScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+        leading: Navigator.of(context).canPop()
+            ? const CustomBackButton()
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(

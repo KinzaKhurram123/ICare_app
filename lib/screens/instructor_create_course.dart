@@ -245,8 +245,6 @@ class _InstructorCreateCourseScreenState
               const SizedBox(height: 24),
               _buildCategorySection(),
               const SizedBox(height: 24),
-              _buildHealthConditionsSection(),
-              const SizedBox(height: 24),
               _buildModulesSection(),
               const SizedBox(height: 32),
               CustomButton(

@@ -128,13 +128,14 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // 2x2 grid on all screen sizes — clean and consistent
                     GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: isDesktop ? 4 : 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: isDesktop ? 2.2 : 1.8,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: isDesktop ? 2.4 : 2.0,
                       children: [
                         _buildQuickAction(
                           context,

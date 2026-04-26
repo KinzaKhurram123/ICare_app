@@ -1115,7 +1115,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                 ],
 
-                if (role == 'Student' || role == 'Instructor') ...[
+                if (role == 'Student') ...[
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(
