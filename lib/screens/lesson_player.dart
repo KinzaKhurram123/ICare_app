@@ -57,31 +57,31 @@ class _LessonPlayerState extends State<LessonPlayer> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── VIDEO AREA ──────────────────────────────────────────────
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: hasVideo
-                    ? (isEmbeddable
-                        // YouTube / Vimeo → embedded iframe
-                        ? VideoPlayerWidget(videoUrl: videoUrl)
-                        // Direct URL → show play button that opens browser
-                        : _DirectVideoFallback(
-                            videoUrl: videoUrl,
-                            onTap: () => _openInBrowser(videoUrl),
-                          ))
-                    : _NoVideoPlaceholder(),
-              ),
-            ),
+      // Column layout: video fixed at top, scrollable content below.
+      // This prevents the iframe from blocking scroll events on the content.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── VIDEO (fixed, outside scroll view) ────────────────────────
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: hasVideo
+                ? (isEmbeddable
+                    ? VideoPlayerWidget(videoUrl: videoUrl)
+                    : _DirectVideoFallback(
+                        videoUrl: videoUrl,
+                        onTap: () => _openInBrowser(videoUrl),
+                      ))
+                : _NoVideoPlaceholder(),
+          ),
 
-            const SizedBox(height: 32),
-
+          // ── SCROLLABLE CONTENT below video ────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             // ── TITLE ───────────────────────────────────────────────────
             Text(
               title,
@@ -194,9 +194,12 @@ class _LessonPlayerState extends State<LessonPlayer> {
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
+                ],      // inner Column children end
+              ),        // inner Column
+            ),          // SingleChildScrollView
+          ),            // Expanded
+        ],              // outer Column children end
+      ),                // outer Column (body)
     );
   }
 }
