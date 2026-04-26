@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/instructor_assign_course_screen.dart';
+import 'package:icare/screens/instructor_courses_management.dart';
+import 'package:icare/screens/instructor_create_course.dart';
+import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
 
 class InstructorDashboardScreen extends StatefulWidget {
@@ -115,6 +118,55 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       ),
 
                     const SizedBox(height: 20),
+                    // Quick Actions
+                    const Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: isDesktop ? 4 : 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: isDesktop ? 2.2 : 1.8,
+                      children: [
+                        _buildQuickAction(
+                          context,
+                          'Manage Programs',
+                          Icons.health_and_safety_rounded,
+                          const Color(0xFF6366F1),
+                          const InstructorCoursesManagementScreen(),
+                        ),
+                        _buildQuickAction(
+                          context,
+                          'Create Program',
+                          Icons.add_circle_outline_rounded,
+                          const Color(0xFF10B981),
+                          const InstructorCreateCourseScreen(),
+                        ),
+                        _buildQuickAction(
+                          context,
+                          'Assign Programs',
+                          Icons.assignment_ind_rounded,
+                          const Color(0xFFF59E0B),
+                          const InstructorAssignCourseScreen(),
+                        ),
+                        _buildQuickAction(
+                          context,
+                          'View Learners',
+                          Icons.group_rounded,
+                          const Color(0xFF3B82F6),
+                          const InstructorLearnersScreen(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     // Navigation hint for mobile (sidebar is a drawer)
                     if (!isDesktop)
                       Container(
@@ -203,6 +255,58 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     );
 
     return isDesktop ? Expanded(child: card) : card;
+  }
+
+  Widget _buildQuickAction(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    Widget screen,
+  ) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (ctx) => screen),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
 }
