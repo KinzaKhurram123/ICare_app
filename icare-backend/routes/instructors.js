@@ -142,8 +142,8 @@ router.post('/courses', authMiddleware, async (req, res) => {
     const course = await Course.create(data);
     res.status(201).json({ success: true, course });
   } catch (e) {
-    console.error('POST /instructors/courses error:', e.message, e.name);
-    res.status(500).json({ success: false, message: e.message });
+    console.error('POST /instructors/courses error:', e.message, e.name, e.stack);
+    res.status(500).json({ success: false, message: e.message, stack: e.stack?.split('\n').slice(0,4).join(' | ') });
   }
 });
 
