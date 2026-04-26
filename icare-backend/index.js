@@ -21,6 +21,7 @@ const usersRoutes = require('./routes/users');
 const agoraRoutes = require('./routes/agora');
 const callRoutes = require('./routes/call');
 const connectNowRoutes = require('./routes/connect-now');
+const instructorsRoutes = require('./routes/instructors');
 
 const app = express();
 
@@ -93,6 +94,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/agora', agoraRoutes);
 app.use('/api/call', callRoutes);
 app.use('/api/connect-now', connectNowRoutes);
+app.use('/api/instructors', instructorsRoutes);
 
 // Stub routes — return empty success so Flutter doesn't crash on 404
 const makeStub = (emptyKey) => {

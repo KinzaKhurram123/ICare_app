@@ -1,11 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:icare/screens/instructor_assign_course_screen.dart';
-import 'package:icare/screens/instructor_courses_management.dart';
-import 'package:icare/screens/instructor_learners_screen.dart';
-import 'package:icare/screens/instructor_precautions_management.dart';
-import 'package:icare/screens/instructor_analytics.dart';
-import 'package:icare/screens/instructor_qa_center_screen.dart';
-import 'package:icare/screens/instructor_earnings_screen.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -121,50 +114,29 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                         ],
                       ),
 
-                    const SizedBox(height: 28),
-
-                    // Quick Actions
-                    const Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                    const SizedBox(height: 20),
+                    // Navigation hint for mobile (sidebar is a drawer)
+                    if (!isDesktop)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.menu_rounded, color: Color(0xFF3B82F6), size: 20),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Tap the menu icon (☰) at the top left to navigate to Programs, Learners, Analytics and more.',
+                                style: TextStyle(color: Color(0xFF1E40AF), fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    if (isDesktop)
-                      // Desktop: 2-column grid for action cards
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 4.0,
-                        children: [
-                          _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
-                          _buildActionCard('Assign Programs', 'Assign development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
-                          _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
-                          _buildActionCard('Educational Analytics', 'Track completions and engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
-                          _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
-                          _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
-                        ],
-                      )
-                    else ...[
-                      _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Assign Programs', 'Assign professional development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Educational Analytics', 'Track completions and learner engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
-                    ],
                   ],
                 ),
               ),
@@ -233,65 +205,4 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     return isDesktop ? Expanded(child: card) : card;
   }
 
-  Widget _buildActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: Color(0xFF94A3B8),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

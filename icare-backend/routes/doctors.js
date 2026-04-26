@@ -14,7 +14,8 @@ function toId(id) {
 router.get('/get_all_doctors', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const doctors = await User.find({ role: 'doctor', is_active: { $ne: false } }).lean();
+    // Case-insensitive match — old accounts may have 'Doctor' (capital D)
+    const doctors = await User.find({ role: /^doctor$/i, is_active: { $ne: false } }).lean();
     const ids = doctors.map(d => d._id);
     const profiles = await DoctorProfile.find({ user_id: { $in: ids } }).lean();
     const profileMap = {};
