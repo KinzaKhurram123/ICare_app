@@ -56,12 +56,11 @@ const courseSchema = new mongoose.Schema({
   total_reviews: { type: Number, default: 0 },
 }, { timestamps: true });
 
-// Virtual: keep thumbnail consistent
-courseSchema.pre('save', function (next) {
+// Keep thumbnail and visibility in sync
+courseSchema.pre('save', async function () {
   if (this.thumbnail && !this.thumbnail_url) this.thumbnail_url = this.thumbnail;
   if (this.thumbnail_url && !this.thumbnail) this.thumbnail = this.thumbnail_url;
   if (this.isPublished && this.visibility === 'private') this.visibility = 'public';
-  return next();
 });
 
 module.exports = mongoose.models.Course || mongoose.model('Course', courseSchema);
