@@ -206,6 +206,34 @@ router.delete('/precautions/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// ── VIDEO / THUMBNAIL URL STORE (no file upload — URL-based) ─────────────────
+// POST /api/instructors/videos/upload  { videoUrl: "https://..." }
+router.post('/videos/upload', authMiddleware, async (req, res) => {
+  try {
+    const { videoUrl } = req.body;
+    if (!videoUrl) {
+      return res.status(400).json({ success: false, message: 'videoUrl is required' });
+    }
+    // Just return the URL back — no storage needed, URL is saved in lesson
+    return res.json({ success: true, videoUrl });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// POST /api/instructors/thumbnails/upload  { thumbnailUrl: "https://..." }
+router.post('/thumbnails/upload', authMiddleware, async (req, res) => {
+  try {
+    const { thumbnailUrl } = req.body;
+    if (!thumbnailUrl) {
+      return res.status(400).json({ success: false, message: 'thumbnailUrl is required' });
+    }
+    return res.json({ success: true, thumbnailUrl });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ── ASSIGNED LEARNERS ─────────────────────────────────────────────────────────
 router.get('/assigned-learners', authMiddleware, async (req, res) => {
   try {

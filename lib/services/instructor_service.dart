@@ -1,12 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:icare/services/api_config.dart';
 import 'package:icare/services/api_service.dart';
-import 'package:icare/services/auth_service.dart';
 
 class InstructorService {
   final ApiService _apiService = ApiService();
-  final Dio _dio = Dio();
   String? _cachedInstructorId;
 
   // Q&A Management
@@ -256,83 +252,41 @@ class InstructorService {
     }
   }
 
-  // Upload video file for course lessons
+  // Store video URL (URL-based — no file upload on Vercel serverless)
   Future<Map<String, dynamic>> uploadVideo({
     String? filePath,
     List<int>? bytes,
     required String fileName,
+    String? videoUrl,
   }) async {
     try {
-      final token = await AuthService().getToken();
-
-      MultipartFile file;
-      if (kIsWeb) {
-        if (bytes == null) throw Exception('Bytes required for web upload');
-        file = MultipartFile.fromBytes(bytes, filename: fileName);
-      } else {
-        if (filePath == null) {
-          throw Exception('File path required for mobile upload');
-        }
-        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      // If a direct URL is provided, just return it
+      if (videoUrl != null && videoUrl.isNotEmpty) {
+        return {'success': true, 'videoUrl': videoUrl};
       }
-
-      final formData = FormData.fromMap({'video': file});
-
-      final response = await _dio.post(
-        '${ApiConfig.baseUrl}/instructors/videos/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      return response.data;
+      // Fallback: return empty (file upload not supported on Vercel)
+      return {'success': false, 'message': 'Please provide a video URL (YouTube, Vimeo, or direct link)'};
     } catch (e) {
-      debugPrint('❌ Failed to upload video: $e');
-      throw Exception('Failed to upload video: $e');
+      debugPrint('❌ uploadVideo error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  // Upload thumbnail image for course
+  // Store thumbnail URL
   Future<Map<String, dynamic>> uploadThumbnail({
     String? filePath,
     List<int>? bytes,
     required String fileName,
+    String? thumbnailUrl,
   }) async {
     try {
-      final token = await AuthService().getToken();
-
-      MultipartFile file;
-      if (kIsWeb) {
-        if (bytes == null) throw Exception('Bytes required for web upload');
-        file = MultipartFile.fromBytes(bytes, filename: fileName);
-      } else {
-        if (filePath == null) {
-          throw Exception('File path required for mobile upload');
-        }
-        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+        return {'success': true, 'thumbnailUrl': thumbnailUrl};
       }
-
-      final formData = FormData.fromMap({'thumbnail': file});
-
-      final response = await _dio.post(
-        '${ApiConfig.baseUrl}/instructors/thumbnails/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      return response.data;
+      return {'success': false, 'message': 'Please provide a thumbnail URL'};
     } catch (e) {
-      debugPrint('❌ Failed to upload thumbnail: $e');
-      throw Exception('Failed to upload thumbnail: $e');
+      debugPrint('❌ uploadThumbnail error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 }

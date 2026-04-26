@@ -54,6 +54,9 @@ class Course {
       instructorId = instructor['_id'] ?? instructor['id'] ?? '';
       instructorName = instructor['name'];
       instructorEmail = instructor['email'];
+    } else if (json['instructor_id'] != null) {
+      // Backend stores as instructor_id
+      instructorId = json['instructor_id'].toString();
     } else {
       instructorId = '';
     }
@@ -85,8 +88,8 @@ class Course {
               ?.map((m) => CourseModule.fromJson(m))
               .toList() ??
           [],
-      thumbnail: json['thumbnail'],
-      isPublished: json['isPublished'] ?? false,
+      thumbnail: json['thumbnail'] ?? json['thumbnail_url'],
+      isPublished: json['isPublished'] == true || json['visibility'] == 'public',
       publishedAt: json['publishedAt'] != null
           ? DateTime.parse(json['publishedAt'])
           : null,
@@ -194,8 +197,8 @@ class Lesson {
       id: json['_id'],
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      videoUrl: json['videoUrl'],
-      duration: json['duration'],
+      videoUrl: json['videoUrl'] ?? json['video_url'],
+      duration: json['duration'] ?? json['duration_minutes'],
       order: json['order'] ?? 0,
       resources:
           (json['resources'] as List?)
