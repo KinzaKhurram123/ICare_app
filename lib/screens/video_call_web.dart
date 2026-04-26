@@ -50,6 +50,13 @@ class _VideoCallWebState extends State<VideoCall> {
         '&config.startWithAudioMuted=false'
         '&config.disableInviteFunctions=true'
         '&config.disableDeepLinking=true'
+        '&config.hideConferenceSubject=true'
+        '&config.disableThirdPartyRequests=true'
+        '&interfaceConfig.SHOW_JITSI_WATERMARK=false'
+        '&interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false'
+        '&interfaceConfig.SHOW_BRAND_WATERMARK=false'
+        '&interfaceConfig.TOOLBAR_ALWAYS_VISIBLE=false'
+        '&interfaceConfig.DEFAULT_BACKGROUND=%23000000'
         '&userInfo.displayName=$name';
   }
 

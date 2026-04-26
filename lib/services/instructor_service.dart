@@ -61,7 +61,8 @@ class InstructorService {
   Future<Map<String, dynamic>> getMyProfile() async {
     final response = await _apiService.get('/instructors/me');
     final instructor = response.data['instructor'];
-    _cachedInstructorId = instructor['_id'];
+    // Cache the user_id (not profile _id) — courses/precautions are keyed by user_id
+    _cachedInstructorId = instructor['user_id'] as String? ?? instructor['_id'];
     return instructor;
   }
 
@@ -240,7 +241,7 @@ class InstructorService {
       return response.data['stats'] ?? {};
     } catch (e) {
       debugPrint('Error getting stats: $e');
-      rethrow;
+      return {};
     }
   }
 
