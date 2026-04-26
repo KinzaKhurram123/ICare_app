@@ -61,7 +61,7 @@ courseSchema.pre('save', function (next) {
   if (this.thumbnail && !this.thumbnail_url) this.thumbnail_url = this.thumbnail;
   if (this.thumbnail_url && !this.thumbnail) this.thumbnail = this.thumbnail_url;
   if (this.isPublished && this.visibility === 'private') this.visibility = 'public';
-  next();
+  return next();
 });
 
 module.exports = mongoose.models.Course || mongoose.model('Course', courseSchema);

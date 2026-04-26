@@ -151,7 +151,7 @@ class _InstructorCreateCourseScreenState
       };
 
       if (_isEditing) {
-        await _instructorService.updateCourse(widget.course!.id!, courseData);
+        await _instructorService.updateCourse(widget.course!.id ?? '', courseData);
       } else {
         await _instructorService.createCourse(courseData);
       }
@@ -407,7 +407,13 @@ class _InstructorCreateCourseScreenState
             labelText: 'Target Audience',
             border: OutlineInputBorder(),
           ),
-          items: TargetAudience.values.map((aud) {
+          items: [
+            TargetAudience.patient,
+            TargetAudience.doctor,
+            TargetAudience.student,
+            TargetAudience.both,
+            TargetAudience.all,
+          ].map((aud) {
             return DropdownMenuItem(value: aud, child: Text(aud.displayName));
           }).toList(),
           onChanged: (val) => setState(() => _targetAudience = val!),

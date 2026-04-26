@@ -119,6 +119,23 @@ router.post('/courses', authMiddleware, async (req, res) => {
     const data = { ...req.body, instructor_id: toId(req.user.id) };
     if (data.isPublished === true) data.visibility = 'public';
     if (!data.visibility) data.visibility = 'private';
+    // Sanitize modules to avoid schema validation errors
+    if (Array.isArray(data.modules)) {
+      data.modules = data.modules.map((m, mi) => ({
+        title: m.title || `Module ${mi + 1}`,
+        description: m.description || '',
+        order: m.order ?? mi,
+        lessons: Array.isArray(m.lessons) ? m.lessons.map((l, li) => ({
+          title: l.title || `Lesson ${li + 1}`,
+          content: l.content || '',
+          videoUrl: l.videoUrl || l.video_url || '',
+          duration: Number(l.duration || l.duration_minutes || 0),
+          order: l.order ?? li,
+          resources: Array.isArray(l.resources) ? l.resources : [],
+        })) : [],
+        quiz: m.quiz || null,
+      }));
+    }
     const course = await Course.create(data);
     res.status(201).json({ success: true, course });
   } catch (e) {
