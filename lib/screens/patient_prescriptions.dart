@@ -909,10 +909,11 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
           MaterialPageRoute(
             builder: (_) => LabDetails(
               labData: lab,
-              prescribedTests: widget.tests
-                  .map((t) => (t['name'] ?? t['testName'] ?? '').toString())
-                  .where((n) => n.isNotEmpty)
-                  .toList(),
+              prescribedTests: widget.tests.map((t) {
+                if (t is String) return t;
+                if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
+                return t.toString();
+              }).where((n) => n.isNotEmpty).toList(),
             ),
           ),
         );

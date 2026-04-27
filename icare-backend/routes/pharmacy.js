@@ -256,28 +256,43 @@ router.post('/orders', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const patientId = toId(req.user.id);
-    const { pharmacyId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
+    const { pharmacyId, userId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
 
-    if (!pharmacyId) return res.status(400).json({ success: false, message: 'Pharmacy is required' });
+    // Accept either pharmacyId or userId (frontend may send either)
+    const rawPharmacyId = pharmacyId || userId;
+    if (!rawPharmacyId) return res.status(400).json({ success: false, message: 'Pharmacy is required' });
+
+    const resolvedPharmacyId = toId(rawPharmacyId);
+    if (!resolvedPharmacyId) return res.status(400).json({ success: false, message: 'Invalid pharmacy ID' });
+
+    if (!patientId) return res.status(401).json({ success: false, message: 'Invalid patient token' });
+
+    // Normalize items — frontend may send productName or product_name
+    const normalizedItems = (items || []).map(i => ({
+      product_name: i.product_name || i.productName || i.name || '',
+      generic_name: i.generic_name || i.genericName || '',
+      quantity: i.quantity || 1,
+      price: i.price || 0,
+    }));
 
     const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
 
     const order = await PharmacyOrder.create({
       patient_id: patientId,
-      pharmacy_id: toId(pharmacyId),
+      pharmacy_id: resolvedPharmacyId,
       prescription_id: prescriptionId || null,
       delivery_address: deliveryAddress || '',
       total_amount: totalAmount || 0,
       delivery_fee: deliveryFee || 0,
       status: 'pending',
       order_number: orderNumber,
-      items: items || [],
+      items: normalizedItems,
     });
 
     res.status(201).json({ success: true, message: 'Order created successfully', order: { ...order.toObject(), _id: order._id.toString() } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Failed to create order' });
+    console.error('POST /pharmacy/orders error:', err.message, err.stack);
+    res.status(500).json({ success: false, message: err.message || 'Failed to create order' });
   }
 });
 
