@@ -643,7 +643,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const MyAppointmentsListScreen(),
+                          builder: (ctx) => const BookingsHistoryScreen(),
                         ),
                       );
                     },

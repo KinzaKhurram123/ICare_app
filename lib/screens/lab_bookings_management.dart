@@ -133,6 +133,58 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   }
 
   Future<void> _updateStatus(String bookingId, String newStatus) async {
+    // If cancelling, require a reason
+    if (newStatus == 'cancelled') {
+      final reasonCtrl = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Cancel Booking'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason for cancellation (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Enter cancellation reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (reasonCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required'), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text('Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       await _labService.updateBookingStatus(bookingId, newStatus);
       if (mounted) {
