@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const { connectMongoDB } = require('../config/mongodb');
 const { authMiddleware } = require('../middleware/auth');
 const MedicalRecord = require('../models/MedicalRecord');
 const PharmacyOrder = require('../models/PharmacyOrder');
@@ -9,6 +10,7 @@ const LabTestRequest = require('../models/LabTestRequest');
 // POST /api/medical-records/create
 router.post('/create', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const {
       patientId,
       appointmentId,
@@ -69,6 +71,7 @@ router.post('/create', authMiddleware, async (req, res) => {
           quantity: 1,
           price: 0,
         }));
+        const rxOrderNumber = `RX-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
         await PharmacyOrder.create({
           patient_id: patientId,
           pharmacy_id: selectedPharmacy,
@@ -76,7 +79,8 @@ router.post('/create', authMiddleware, async (req, res) => {
           delivery_address: '',
           total_amount: 0,
           status: 'pending',
-          order_number: `RX-${Date.now().toString().slice(-8)}`,
+          order_number: rxOrderNumber,
+          orderNumber: rxOrderNumber,
           items: orderItems,
         });
         console.log(`✅ Pharmacy order auto-created for record ${record._id}`);
@@ -118,6 +122,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 // GET /api/medical-records/patient/:patientId
 router.get('/patient/:patientId', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const records = await MedicalRecord.find({ patient: req.params.patientId })
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
@@ -133,6 +138,7 @@ router.get('/patient/:patientId', authMiddleware, async (req, res) => {
 // GET /api/medical-records/doctor
 router.get('/doctor', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const records = await MedicalRecord.find({ doctor: req.user.id || req.user._id })
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
@@ -148,6 +154,7 @@ router.get('/doctor', authMiddleware, async (req, res) => {
 // GET /api/medical-records/my-records
 router.get('/my-records', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const userId = req.user.id || req.user._id;
     const role = req.user.role?.toLowerCase();
 
@@ -168,6 +175,7 @@ router.get('/my-records', authMiddleware, async (req, res) => {
 // GET /api/medical-records/:id
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const record = await MedicalRecord.findById(req.params.id)
       .populate('doctor', 'name email')
       .populate('patient', 'name email');
@@ -184,6 +192,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // PUT /api/medical-records/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const record = await MedicalRecord.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('doctor', 'name email')
       .populate('patient', 'name email');

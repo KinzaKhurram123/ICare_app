@@ -21,6 +21,8 @@ const pharmacyOrderSchema = new mongoose.Schema({
     default: 'pending',
   },
   order_number: String,
+  // camelCase alias kept for backwards compatibility with existing data
+  orderNumber: { type: String },
   expected_delivery_time: String,
   cancellation_reason: { type: String, default: '' },
   items: [orderItemSchema],

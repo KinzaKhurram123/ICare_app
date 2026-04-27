@@ -309,6 +309,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
       delivery_fee: Number(deliveryFee) || 0,
       status: 'pending',
       order_number: orderNumber,
+      orderNumber: orderNumber,
       items: normalizedItems,
     });
 

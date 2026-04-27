@@ -226,7 +226,7 @@ class PharmacyService {
   ) async {
     debugPrint('🔄 Updating order $orderId to status: $status');
     final response = await _apiService.put(
-      '/pharmacy/orders/$orderId/status',
+      '/pharmacy/orders/$orderId',
       {'status': status},
     );
     debugPrint('✅ Order status updated successfully');

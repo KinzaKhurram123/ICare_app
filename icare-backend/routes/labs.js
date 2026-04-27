@@ -184,8 +184,20 @@ router.get('/bookings/my', authMiddleware, async (req, res) => {
     const result = bookings.map(b => ({
       ...b,
       _id: b._id.toString(),
-      lab_name: lMap[b.lab_id.toString()]?.username || lMap[b.lab_id.toString()]?.name,
-      lab_full_name: lpMap[b.lab_id.toString()]?.lab_name,
+      // camelCase aliases for Flutter
+      testName: b.test_type,
+      testType: b.test_type,
+      date: b.test_date,
+      reportUrl: b.report_url,
+      reportNotes: b.report_notes,
+      bookingNumber: b._id.toString().slice(-6).toUpperCase(),
+      isAbnormal: b.is_abnormal || false,
+      criticalAlert: b.critical_alert || false,
+      laboratory: {
+        _id: lMap[b.lab_id.toString()]?._id?.toString(),
+        labName: lpMap[b.lab_id.toString()]?.lab_name || lMap[b.lab_id.toString()]?.username || lMap[b.lab_id.toString()]?.name || 'Laboratory',
+        city: lpMap[b.lab_id.toString()]?.city || '',
+      },
     }));
     res.json({ success: true, bookings: result });
   } catch (error) {
