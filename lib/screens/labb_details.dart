@@ -54,7 +54,7 @@ class _LabDetailsState extends State<LabDetails> {
               : "Our laboratory combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.");
     final String image = (labData?['image'] is String)
         ? (labData?['image'] as String)
-        : ImagePaths.lab3;
+        : '';
 
     // Get dynamic tests if available, otherwise use defaults
     final List<String> availableTests = (labData?['tests'] is List)
@@ -112,21 +112,28 @@ class _LabDetailsState extends State<LabDetails> {
             ClipRRect(
               clipBehavior: Clip.hardEdge,
               borderRadius: BorderRadius.circular(20),
-              child: image.startsWith('assets')
+              child: image.isEmpty
                   ? Image.asset(
-                      image,
+                      ImagePaths.lab3,
                       fit: BoxFit.cover,
                       width: Utils.windowWidth(context) * 0.9,
                       height: Utils.windowWidth(context) * 0.5,
                     )
-                  : Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: Utils.windowWidth(context) * 0.9,
-                      height: Utils.windowWidth(context) * 0.5,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset(ImagePaths.lab3, fit: BoxFit.cover),
-                    ),
+                  : image.startsWith('assets')
+                      ? Image.asset(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                        )
+                      : Image.network(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(ImagePaths.lab3, fit: BoxFit.cover),
+                        ),
             ),
             SizedBox(height: ScallingConfig.scale(20)),
             CustomText(
@@ -336,12 +343,25 @@ class _LabDetailsState extends State<LabDetails> {
                               height: 450,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(32),
-                                image: DecorationImage(
-                                  image: image.startsWith('assets')
-                                      ? AssetImage(image) as ImageProvider
-                                      : NetworkImage(image),
-                                  fit: BoxFit.cover,
-                                ),
+                                gradient: image.isEmpty
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color(0xFF1D4ED8),
+                                          Color(0xFF0EA5E9),
+                                        ],
+                                      )
+                                    : null,
+                                image: image.isNotEmpty
+                                    ? DecorationImage(
+                                        image: image.startsWith('assets')
+                                            ? AssetImage(image) as ImageProvider
+                                            : NetworkImage(image),
+                                        fit: BoxFit.cover,
+                                        onError: (_, __) {},
+                                      )
+                                    : null,
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
