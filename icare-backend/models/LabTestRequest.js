@@ -5,9 +5,10 @@ const labTestRequestSchema = new mongoose.Schema({
   lab_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   test_type: { type: String, required: true },
   test_date: String,
+  price: { type: Number, default: 0 },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'sample-collected', 'processing', 'completed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'sample_collected', 'sample-collected', 'awaiting_reports', 'reporting_done', 'processing', 'completed', 'cancelled'],
     default: 'pending',
   },
   results: mongoose.Schema.Types.Mixed,

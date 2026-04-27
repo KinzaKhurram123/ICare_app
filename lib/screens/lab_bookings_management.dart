@@ -1185,7 +1185,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     ),
                   ),
                 Text(
-                  'PKR ${booking['price'] ?? 0}',
+                  'PKR ${_calcPrice(booking)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
@@ -1204,6 +1204,18 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     if (name.contains('blood')) return Icons.bloodtype_rounded;
     if (name.contains('covid')) return Icons.coronavirus_rounded;
     return Icons.science_rounded;
+  }
+
+  /// Calculate price from booking: use saved price if > 0,
+  /// otherwise count tests in test_type string × Rs. 3000
+  int _calcPrice(Map<String, dynamic> booking) {
+    final saved = booking['price'];
+    if (saved != null && saved is num && saved > 0) return saved.toInt();
+    // Fallback: count comma-separated tests
+    final testType = booking['test_type']?.toString() ?? '';
+    if (testType.isEmpty) return 0;
+    final count = testType.split(',').where((t) => t.trim().isNotEmpty).length;
+    return count * 3000;
   }
 
   Color _getStatusColor(String status) {

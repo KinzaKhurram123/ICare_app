@@ -345,11 +345,16 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     
     if (!finalTest) return res.status(400).json({ success: false, message: 'Test type is required' });
 
+    // Calculate price: Rs. 3000 per test
+    const testCount = finalTest.split(',').filter(t => t.trim()).length;
+    const price = testCount * 3000;
+
     const booking = await LabTestRequest.create({
       patient_id: patientId,
       lab_id: labId,
       test_type: finalTest,
       test_date: testDate || date || null,
+      price: price,
       status: 'pending',
     });
 
