@@ -5,7 +5,8 @@ import '../models/lab_result.dart';
 import '../widgets/back_button.dart';
 import '../providers/auth_provider.dart';
 import '../services/laboratory_service.dart';
-import 'upload_lab_report_screen.dart';
+import 'lab_result_entry_screen.dart';
+import '../widgets/rating_dialog.dart';
 
 class LabBookingDetails extends ConsumerWidget {
   final Map<String, dynamic> booking;
@@ -51,9 +52,45 @@ class LabBookingDetails extends ConsumerWidget {
             _buildInfoCard(testName, status, date, patient),
             const SizedBox(height: 24),
             if (role == 'Laboratory') _buildActionButtons(context, status),
+            if (role != 'Laboratory' && status.toLowerCase() == 'completed')
+              _buildRateLabButton(context),
             const SizedBox(height: 24),
             if (results.isNotEmpty) _buildResultsSection(results),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRateLabButton(BuildContext context) {
+    final labService = LaboratoryService();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => showRatingDialog(
+            context: context,
+            title: 'Rate Your Lab Experience',
+            subtitle: 'How was your experience with this test?',
+            onSubmit: (rating, comment) async {
+              await labService.rateBooking(
+                bookingId: booking['_id'],
+                rating: rating,
+                comment: comment,
+              );
+            },
+          ),
+          icon: const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+          label: const Text(
+            'Rate this Lab',
+            style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: const BorderSide(color: Color(0xFFF59E0B)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ),
     );
@@ -128,32 +165,59 @@ class LabBookingDetails extends ConsumerWidget {
             ],
           ),
           const Divider(height: 24),
+          if ((booking['doctor']?['name'] ?? booking['orderedBy'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.medical_services_rounded,
+              'Ordered By',
+              'Dr. ${booking['doctor']?['name'] ?? booking['orderedBy'] ?? 'N/A'}',
+            ),
           _buildInfoRow(
             Icons.person_rounded,
-            'Patient',
-            patient?['name'] ?? 'N/A',
+            'Patient Name',
+            patient?['name'] ?? booking['patientName'] ?? 'N/A',
           ),
           _buildInfoRow(
             Icons.calendar_today_rounded,
-            'Date',
+            'Test Prescription Date',
             DateFormat('MMM dd, yyyy').format(date),
           ),
+          if ((booking['referredBy'] ?? booking['referred_by'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.medical_services_rounded,
+              'Referred By',
+              'Dr. ${booking['referredBy'] ?? booking['referred_by'] ?? 'N/A'}',
+            ),
           _buildInfoRow(
-            Icons.attach_money_rounded,
-            'Price',
-            'PKR ${booking['price'] ?? 0}',
+            Icons.location_on_rounded,
+            'Collection Type',
+            (booking['collectionType'] ?? booking['collection_type'] ?? booking['type'] ?? 'In-Lab').toString().replaceAll('in-house', 'In-Lab').replaceAll('in-lab', 'In-Lab').replaceAll('home', 'Home Collection'),
           ),
+          if ((booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.notes_rounded,
+              "Doctor's Notes",
+              booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '',
+            ),
+          if ((booking['sampleCollectedBy'] ?? '').toString().isNotEmpty)
+            _buildInfoRow(
+              Icons.person_outline_rounded,
+              'Sample Collected By',
+              booking['sampleCollectedBy'] ?? 'N/A',
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData? icon, String label, String value, {String? customIconPath}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF64748B)),
+          if (customIconPath != null)
+            Image.asset(customIconPath, width: 18, height: 18, color: const Color(0xFF64748B))
+          else if (icon != null)
+            Icon(icon, size: 18, color: const Color(0xFF64748B)),
           const SizedBox(width: 12),
           Text(
             '$label:',
@@ -359,39 +423,63 @@ class LabBookingDetails extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        if (currentStatus.toLowerCase() == 'pending')
-          _buildActionButton(
-            context,
-            'Confirm Appointment',
-            Icons.check_circle_outline_rounded,
-            Colors.blue,
-            () => _updateStatus(context, 'confirmed'),
+        if (currentStatus.toLowerCase() == 'pending' || currentStatus.toLowerCase() == 'new request')
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  context,
+                  'Accept',
+                  Icons.check_circle_outline_rounded,
+                  Colors.green,
+                  () => _updateStatus(context, 'accepted'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionButton(
+                  context,
+                  'Decline',
+                  Icons.cancel_outlined,
+                  Colors.red,
+                  () => _updateStatus(context, 'declined'),
+                ),
+              ),
+            ],
           ),
-        if (currentStatus.toLowerCase() == 'confirmed')
+        if (currentStatus.toLowerCase() == 'accepted' || currentStatus.toLowerCase() == 'confirmed')
           _buildActionButton(
             context,
             'Mark Sample Collected',
             Icons.science_rounded,
             Colors.orange,
-            () => _updateStatus(context, 'completed'), // Simplified for now
+            () => _updateStatus(context, 'sample_collected'),
           ),
-        if (currentStatus.toLowerCase() == 'completed' || currentStatus.toLowerCase() == 'confirmed')
+        if (currentStatus.toLowerCase() == 'sample_collected' || currentStatus.toLowerCase() == 'sample collected')
           _buildActionButton(
             context,
-            'Upload Report',
-            Icons.upload_file_rounded,
+            'Enter Results',
+            Icons.biotech_rounded,
             const Color(0xFF8B5CF6),
             () async {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (ctx) => UploadLabReportScreen(booking: booking),
+                  builder: (ctx) => LabResultEntryScreen(booking: booking),
                 ),
               );
               if (result == true && context.mounted) {
                 Navigator.pop(context);
               }
             },
+          ),
+        if (currentStatus.toLowerCase() == 'awaiting_reports' || currentStatus.toLowerCase() == 'awaiting reports')
+          _buildActionButton(
+            context,
+            'Mark Reporting Done',
+            Icons.done_all_rounded,
+            Colors.green,
+            () => _updateStatus(context, 'reporting_done'),
           ),
       ],
     );
@@ -433,6 +521,66 @@ class LabBookingDetails extends ConsumerWidget {
   }
 
   Future<void> _updateStatus(BuildContext context, String newStatus) async {
+    // Cancellation / decline requires a mandatory reason
+    if (newStatus == 'cancelled' || newStatus == 'declined') {
+      final reasonController = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            newStatus == 'declined' ? 'Decline Booking' : 'Cancel Booking',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Enter reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                if (reasonController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required to cancel/decline')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              child: Text(newStatus == 'declined' ? 'Decline' : 'Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       final labService = LaboratoryService();
       await labService.updateBookingStatus(booking['_id'], newStatus);

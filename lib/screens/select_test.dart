@@ -31,7 +31,9 @@ class _SelectTestState extends State<SelectTest> {
 
   Future<void> _fetchLabTests() async {
     try {
-      final labId = widget.bookingData['labId'];
+      // Use profileId for fetching lab details (availableTests),
+      // labId (user._id) is only used for booking creation routes
+      final labId = widget.bookingData['labProfileId'] ?? widget.bookingData['labId'];
       if (labId == null) throw 'Lab ID is missing';
 
       final lab = await _labService.getLabById(labId);

@@ -10,6 +10,7 @@ import 'package:icare/screens/patient_profile_view.dart';
 import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/screens/tabs.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -42,12 +43,30 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
         : appointment.doctor;
     final formattedDate = DateFormat('MMMM dd, yyyy').format(appointment.date);
 
+    final statusColor = appointment.status.toLowerCase() == 'confirmed'
+        ? const Color(0xFF10B981)
+        : appointment.status.toLowerCase() == 'pending'
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF94A3B8);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: CustomBackButton(),
+        leading: GestureDetector(
+          onTap: () {
+            if (selectedRole == 'Patient') {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (ctx) => const TabsScreen()),
+                (route) => false,
+              );
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+        ),
         title: CustomText(
-          text: "View Profile",
+          text: "Appointment Details",
           letterSpacing: -0.31,
           lineHeight: 1.0,
           fontSize: 16.78,
@@ -65,41 +84,53 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
               appointmentId: appointment.id,
               patient: appointment.patient,
             ),
+            // Status badge
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  const Text('Status:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      appointment.status.toUpperCase(),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             DetailsInfoWidget(
               title: "Scheduled Appointment",
               data: {
                 "Date": formattedDate,
                 "Time": appointment.timeSlot,
                 "Booking for": "Self",
-                "Status": appointment.status.toUpperCase(),
               },
             ),
             DetailsInfoWidget(
               title: selectedRole == 'Doctor' ? "Patient Info" : "Doctor Info",
-              data: {
-                "Name": otherPerson?.name ?? 'N/A',
-                "Email": otherPerson?.email ?? 'N/A',
-                "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                "Reason": appointment.reason ?? 'N/A',
-              },
+              data: selectedRole == 'Patient'
+                  ? {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    }
+                  : {
+                      "Name": otherPerson?.name ?? 'N/A',
+                      "Email": otherPerson?.email ?? 'N/A',
+                      "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                      "Reason": appointment.reason ?? 'N/A',
+                    },
             ),
             if (selectedRole == "lab_technician") ...[Tests()],
 
-            ConsultationTypeCard(
-              chat: true,
-              title: "Messaging",
-              description: "Chat With Doctor",
-              duration: "30 Minutes",
-            ),
-            SizedBox(height: ScallingConfig.scale(10)),
-            ConsultationTypeCard(
-              call: true,
-              title: "Voice Call",
-              description: "Voice call With Doctor",
-              duration: "30 Minutes",
-            ),
-
-            if (selectedRole == "Patient" || selectedRole == "Doctor") ...[
+            if (selectedRole == "Doctor") ...[
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: ScallingConfig.scale(20),
@@ -273,7 +304,7 @@ class ProfileInfoWidget extends StatelessWidget {
                     ),
                     SizedBox(width: ScallingConfig.scale(10)),
                     CustomText(
-                      text: "View Profile",
+                      text: "View Full Details",
                       underline: true,
                       onTap: () {
                         if (patient != null) {
@@ -290,23 +321,6 @@ class ProfileInfoWidget extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: ScallingConfig.scale(10)),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.email_outlined,
-                      size: 16,
-                      color: AppColors.darkGreyColor,
-                    ),
-                    SizedBox(width: Utils.windowWidth(context) * 0.025),
-                    Expanded(
-                      child: CustomText(
-                        text: email,
-                        fontSize: 12,
-                        color: AppColors.darkGreyColor,
-                      ),
-                    ),
-                  ],
-                ),
                 Row(
                   children: [
                     SvgWrapper(assetPath: ImagePaths.scan),
@@ -527,7 +541,7 @@ class _WebPatientProfileView extends StatelessWidget {
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          "View Profile",
+          "Appointment Details",
           style: TextStyle(
             fontSize: 18,
             fontFamily: "Gilroy-Bold",
@@ -601,16 +615,18 @@ class _WebPatientProfileView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildInfoRow(
-                          Icons.email_outlined,
-                          otherPerson?.email ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          Icons.phone_outlined,
-                          otherPerson?.phoneNumber ?? 'N/A',
-                        ),
-                        const SizedBox(height: 8),
+                        if (selectedRole == 'Doctor') ...[
+                          _buildInfoRow(
+                            Icons.email_outlined,
+                            otherPerson?.email ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            Icons.phone_outlined,
+                            otherPerson?.phoneNumber ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         _buildInfoRow(
                           Icons.qr_code_rounded,
                           "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
@@ -627,7 +643,7 @@ class _WebPatientProfileView extends StatelessWidget {
                             );
                           },
                           child: const Text(
-                            "View Full Profile →",
+                            "View Full Details →",
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -649,7 +665,9 @@ class _WebPatientProfileView extends StatelessWidget {
                       _buildWebDetailsCard(
                         "Scheduled Appointment",
                         Icons.calendar_today_rounded,
-                        const Color(0xFF6366F1),
+                        appointment.status.toLowerCase() == 'confirmed'
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF6366F1),
                         {
                           "Date": formattedDate,
                           "Time": appointment.timeSlot,
@@ -665,12 +683,17 @@ class _WebPatientProfileView extends StatelessWidget {
                             : "Doctor Info",
                         Icons.person_outline_rounded,
                         const Color(0xFF3B82F6),
-                        {
-                          "Name": otherPerson?.name ?? 'N/A',
-                          "Email": otherPerson?.email ?? 'N/A',
-                          "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                          "Reason": appointment.reason ?? 'N/A',
-                        },
+                        selectedRole == 'Patient'
+                            ? {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              }
+                            : {
+                                "Name": otherPerson?.name ?? 'N/A',
+                                "Email": otherPerson?.email ?? 'N/A',
+                                "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                                "Reason": appointment.reason ?? 'N/A',
+                              },
                       ),
                       if (selectedRole == "lab_technician") ...[
                         const SizedBox(height: 24),
@@ -684,95 +707,65 @@ class _WebPatientProfileView extends StatelessWidget {
                           },
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      // Consultation Options
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Messaging",
-                              "Chat With Doctor",
-                              "30 Minutes",
-                              Icons.chat_bubble_outline_rounded,
-                              const Color(0xFF10B981),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildConsultationCard(
-                              "Voice Call",
-                              "Voice call With Doctor",
-                              "30 Minutes",
-                              Icons.phone_outlined,
-                              const Color(0xFF0EA5E9),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (selectedRole == "Patient" ||
-                          selectedRole == "Doctor") ...[
+                      if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) => SoapNotesScreen(
-                                        appointment: appointment,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.note_outlined, size: 20),
-                                label: const Text("Soap Notes"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 20,
-                                  ),
-                                  side: const BorderSide(
-                                    color: AppColors.primaryColor,
-                                    width: 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                        _buildWebDetailsCard(
+                          "Scheduled Appointment",
+                          Icons.calendar_today_rounded,
+                          const Color(0xFF6366F1),
+                          {
+                            "Date": formattedDate,
+                            "Time": appointment.timeSlot,
+                            "Status": appointment.status.toUpperCase(),
+                            "Booking for": "Self",
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        // Patient/Doctor Info
+                        _buildWebDetailsCard(
+                          selectedRole == 'Doctor'
+                              ? "Patient Info"
+                              : "Doctor Info",
+                          Icons.person_outline_rounded,
+                          const Color(0xFF3B82F6),
+                          {
+                            "Name": otherPerson?.name ?? 'N/A',
+                            "Email": otherPerson?.email ?? 'N/A',
+                            "Phone": otherPerson?.phoneNumber ?? 'N/A',
+                            "Reason": appointment.reason ?? 'N/A',
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => IntakeNotesScreen(
+                                    appointment: appointment,
                                   ),
                                 ),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.description_outlined,
+                              size: 20,
+                            ),
+                            label: const Text("Intake Notes"),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 20,
+                              ),
+                              side: const BorderSide(
+                                color: AppColors.primaryColor,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (ctx) => IntakeNotesScreen(
-                                        appointment: appointment,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.description_outlined,
-                                  size: 20,
-                                ),
-                                label: const Text("Intake Notes"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 20,
-                                  ),
-                                  side: const BorderSide(
-                                    color: AppColors.primaryColor,
-                                    width: 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                       if (selectedRole == "Doctor") ...[

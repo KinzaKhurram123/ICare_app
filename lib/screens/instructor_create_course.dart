@@ -1,6 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
-import 'package:icare/services/course_service.dart';
+import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -19,7 +20,7 @@ class InstructorCreateCourseScreen extends StatefulWidget {
 class _InstructorCreateCourseScreenState
     extends State<InstructorCreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CourseService _courseService = CourseService();
+  final InstructorService _instructorService = InstructorService();
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
@@ -32,6 +33,7 @@ class _InstructorCreateCourseScreenState
 
   bool _isLoading = false;
   bool _isEditing = false;
+  String? _uploadedThumbnailUrl;
   List<String> _healthConditions = [];
   List<CourseModule> _modules = [];
 
@@ -57,6 +59,54 @@ class _InstructorCreateCourseScreenState
       _difficulty = widget.course!.difficulty;
       _healthConditions = List.from(widget.course!.healthConditions);
       _modules = List.from(widget.course!.modules);
+      _uploadedThumbnailUrl = widget.course!.thumbnail;
+    }
+  }
+
+  Future<void> _pickAndUploadThumbnail() async {
+    // Show dialog to paste image URL
+    final urlController = TextEditingController(text: _thumbnailController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Course Thumbnail'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Paste an image URL (Imgur, Cloudinary, or any direct image link):',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                hintText: 'https://i.imgur.com/...',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, urlController.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      setState(() {
+        _uploadedThumbnailUrl = result;
+        _thumbnailController.text = result;
+      });
     }
   }
 
@@ -82,22 +132,28 @@ class _InstructorCreateCourseScreenState
 
     try {
       final courseData = {
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'thumbnail': _thumbnailController.text,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'thumbnail': _thumbnailController.text.trim().isNotEmpty
+            ? _thumbnailController.text.trim()
+            : (_uploadedThumbnailUrl ?? ''),
+        'thumbnail_url': _thumbnailController.text.trim().isNotEmpty
+            ? _thumbnailController.text.trim()
+            : (_uploadedThumbnailUrl ?? ''),
         'duration': int.tryParse(_durationController.text) ?? 0,
-        'category': _category.name,
-        'targetAudience': _targetAudience.name,
-        'difficulty': _difficulty?.name,
+        'category': _category.value,
+        'targetAudience': _targetAudience.value,
+        if (_difficulty != null) 'difficulty': _difficulty!.value,
         'healthConditions': _healthConditions,
         'modules': _modules.map((m) => m.toJson()).toList(),
         'isPublished': false,
+        'visibility': 'private',
       };
 
       if (_isEditing) {
-        await _courseService.updateCourse(widget.course!.id!, courseData);
+        await _instructorService.updateCourse(widget.course!.id ?? '', courseData);
       } else {
-        await _courseService.createCourse(courseData);
+        await _instructorService.createCourse(courseData);
       }
 
       if (mounted) {
@@ -117,9 +173,13 @@ class _InstructorCreateCourseScreenState
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+        String msg = 'Something went wrong. Please try again.';
+        if (e is DioException) {
+          msg = e.response?.data?['message'] as String? ?? e.message ?? msg;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -190,8 +250,6 @@ class _InstructorCreateCourseScreenState
               const SizedBox(height: 24),
               _buildCategorySection(),
               const SizedBox(height: 24),
-              _buildHealthConditionsSection(),
-              const SizedBox(height: 24),
               _buildModulesSection(),
               const SizedBox(height: 32),
               CustomButton(
@@ -241,9 +299,82 @@ class _InstructorCreateCourseScreenState
           ],
         ),
         const SizedBox(height: 16),
-        CustomInputField(
-          controller: _thumbnailController,
-          hintText: 'Thumbnail URL (optional)',
+        // Thumbnail upload
+        GestureDetector(
+          onTap: _pickAndUploadThumbnail,
+          child: Container(
+            width: double.infinity,
+            height: 160,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _uploadedThumbnailUrl != null
+                    ? AppColors.primaryColor.withValues(alpha: 0.4)
+                    : const Color(0xFFE2E8F0),
+                width: 1.5,
+              ),
+            ),
+            child: _uploadedThumbnailUrl != null
+                    ? Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(13),
+                            child: Image.network(
+                              _uploadedThumbnailUrl!,
+                              width: double.infinity,
+                              height: 160,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image_outlined, size: 40, color: Color(0xFFCBD5E1)),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: _pickAndUploadThumbnail,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.edit, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.add_photo_alternate_outlined, size: 32, color: AppColors.primaryColor),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Upload Course Thumbnail',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'JPG, PNG or WebP — max 5MB',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+          ),
         ),
       ],
     );
@@ -276,7 +407,13 @@ class _InstructorCreateCourseScreenState
             labelText: 'Target Audience',
             border: OutlineInputBorder(),
           ),
-          items: TargetAudience.values.map((aud) {
+          items: [
+            TargetAudience.patient,
+            TargetAudience.doctor,
+            TargetAudience.student,
+            TargetAudience.both,
+            TargetAudience.all,
+          ].map((aud) {
             return DropdownMenuItem(value: aud, child: Text(aud.displayName));
           }).toList(),
           onChanged: (val) => setState(() => _targetAudience = val!),
@@ -713,6 +850,8 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   final TextEditingController _videoUrlController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
 
+  String? _uploadedVideoUrl;
+
   @override
   void initState() {
     super.initState();
@@ -721,6 +860,55 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       _contentController.text = widget.lesson!.content;
       _videoUrlController.text = widget.lesson!.videoUrl ?? '';
       _durationController.text = widget.lesson!.duration?.toString() ?? '';
+      _uploadedVideoUrl = widget.lesson!.videoUrl;
+    }
+  }
+
+  Future<void> _pickAndUploadVideo() async {
+    // On Vercel serverless, file upload not supported.
+    // Show dialog to paste video URL instead.
+    final urlController = TextEditingController(text: _videoUrlController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Video URL'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Paste a video URL (YouTube, Vimeo, or direct .mp4 link):',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                hintText: 'https://youtube.com/watch?v=...',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, urlController.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      setState(() {
+        _uploadedVideoUrl = result;
+        _videoUrlController.text = result;
+      });
     }
   }
 
@@ -787,9 +975,95 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 validator: (val) => val?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              CustomInputField(
-                controller: _videoUrlController,
-                hintText: 'Video URL (optional)',
+              // Video URL section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _uploadedVideoUrl != null
+                        ? Colors.green.withOpacity(0.4)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Lesson Video',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'YouTube, Vimeo, or direct .mp4 link',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomInputField(
+                            controller: _videoUrlController,
+                            hintText: 'https://youtube.com/watch?v=...',
+                            onChanged: (val) {
+                              setState(() => _uploadedVideoUrl = val.isNotEmpty ? val : null);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: _pickAndUploadVideo,
+                          icon: const Icon(Icons.link_rounded, size: 18),
+                          label: const Text('Paste URL'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_uploadedVideoUrl != null && _uploadedVideoUrl!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded,
+                                color: Colors.green, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _uploadedVideoUrl!,
+                                style: const TextStyle(
+                                    fontSize: 11, color: Color(0xFF64748B)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded,
+                                  size: 16, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  _uploadedVideoUrl = null;
+                                  _videoUrlController.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               CustomInputField(

@@ -216,7 +216,7 @@ class _FillLabFormState extends State<FillLabForm> {
             children: [
               CustomInputField(
                 controller: _locationController,
-                hintText: "Location",
+                hintText: "Address",
                 borderRadius: 0,
                 hintStyle: TextStyle(
                   color: AppColors.grayColor.withAlpha(70),
@@ -451,8 +451,8 @@ class _FillLabFormState extends State<FillLabForm> {
                         children: [
                           Expanded(
                             child: _buildWebInputField(
-                              "Location",
-                              "Enter sample location",
+                              "Address",
+                              "Enter patient address",
                               Icons.location_on_outlined,
                               _locationController,
                             ),

@@ -1,0 +1,227 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../services/connect_now_service.dart';
+import '../utils/shared_pref.dart';
+import '../utils/app_keys.dart';
+import '../screens/video_call.dart';
+
+/// Wraps the doctor's app and polls for Connect Now requests every 5 seconds.
+class DoctorConnectNowListener extends StatefulWidget {
+  final Widget child;
+
+  const DoctorConnectNowListener({super.key, required this.child});
+
+  @override
+  State<DoctorConnectNowListener> createState() => _DoctorConnectNowListenerState();
+}
+
+class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
+  final ConnectNowService _service = ConnectNowService();
+  final SharedPref _sharedPref = SharedPref();
+  Timer? _timer;
+  bool _dialogShowing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _checkPending());
+  }
+
+  Future<void> _checkPending() async {
+    if (_dialogShowing || !mounted) return;
+
+    final userRole = await _sharedPref.getUserRole();
+    if (userRole == null) return;
+    if (userRole.toLowerCase() != 'doctor') return;
+
+    final token = await _sharedPref.getToken();
+    if (token == null || token.isEmpty) return;
+
+    debugPrint('🩺 Checking for Connect Now requests...');
+
+    try {
+      final result = await _service.checkPending();
+      if (result['hasPending'] == true && mounted) {
+        final request = result['request'] as Map<String, dynamic>;
+        debugPrint('🚨 Pending request found: ${request['patientName']}');
+        _dialogShowing = true;
+        try {
+          await _showRequestDialog(request);
+        } finally {
+          _dialogShowing = false;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking pending requests: $e');
+      _dialogShowing = false;
+    }
+  }
+
+  Future<void> _showRequestDialog(Map<String, dynamic> request) async {
+    final requestId = request['id']?.toString() ?? '';
+    final patientName = request['patientName']?.toString() ?? 'Patient';
+    final channelName = request['channelName']?.toString() ?? '';
+
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) {
+      debugPrint('⚠️ Navigator not ready, skipping dialog');
+      return;
+    }
+
+    await nav.push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: false,
+        pageBuilder: (ctx, _, __) => _ConnectNowRequestDialog(
+          patientName: patientName,
+          onAccept: () async {
+            try {
+              final result = await _service.acceptRequest(requestId);
+              final callChannel = result['channelName']?.toString() ?? channelName;
+              final callPatient = result['patientName']?.toString() ?? patientName;
+              nav.pop();
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: callChannel,
+                    remoteUserName: callPatient,
+                  ),
+                ),
+              );
+            } catch (e) {
+              debugPrint('❌ Accept failed: $e — trying with channel directly');
+              // Even if backend accept fails, still join the channel
+              nav.pop();
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: channelName,
+                    remoteUserName: patientName,
+                  ),
+                ),
+              );
+            }
+          },
+          onDecline: () => nav.pop(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _ConnectNowRequestDialog extends StatelessWidget {
+  final String patientName;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  const _ConnectNowRequestDialog({
+    required this.patientName,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1B4332), Color(0xFF0A1628)],
+          ),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.medical_services_rounded, color: Colors.green, size: 40),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Instant Consultation Request',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$patientName needs a doctor right now',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: onDecline,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF374151),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Decline', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: onAccept,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.video_call_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Accept', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -11,15 +11,23 @@ import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:icare/widgets/custom_check_box.dart';
 
 class LabDetails extends StatefulWidget {
-  const LabDetails({super.key, this.labData});
+  const LabDetails({super.key, this.labData, this.prescribedTests});
   final Map<String, dynamic>? labData;
+  final List<String>? prescribedTests; // pre-select from prescription
 
   @override
   State<LabDetails> createState() => _LabDetailsState();
 }
 
 class _LabDetailsState extends State<LabDetails> {
-  final List<String> _selectedTests = [];
+  late List<String> _selectedTests;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select prescribed tests if coming from prescription flow
+    _selectedTests = List<String>.from(widget.prescribedTests ?? []);
+  }
 
   @override
   Widget build(BuildContext context) {

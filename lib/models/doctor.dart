@@ -4,6 +4,7 @@ class Doctor {
   final String id;
   final User user;
   final String? specialization;
+  final String? pmdcNumber;
   final List<String> consultationType;
   final List<String> languages;
   final List<String> degrees;
@@ -14,6 +15,7 @@ class Doctor {
   final List<String> availableDays;
   final AvailableTime? availableTime;
   final bool isApproved;
+  final bool isOnline;
   final List<double> ratings;
   final List<String> reviews;
 
@@ -21,6 +23,7 @@ class Doctor {
     required this.id,
     required this.user,
     this.specialization,
+    this.pmdcNumber,
     this.consultationType = const [],
     this.languages = const [],
     this.degrees = const [],
@@ -31,6 +34,7 @@ class Doctor {
     this.availableDays = const [],
     this.availableTime,
     this.isApproved = false,
+    this.isOnline = false,
     this.ratings = const [],
     this.reviews = const [],
   });
@@ -44,34 +48,78 @@ class Doctor {
       return [];
     }
 
+    // Safe list parsing helper
+    List<String> parseStringList(dynamic value) {
+      if (value == null) return [];
+      if (value is List) {
+        return value.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+      }
+      return [];
+    }
+
+    // Safe ratings parsing
+    List<double> parseRatings(dynamic value) {
+      if (value == null) return [];
+      if (value is List) {
+        return value
+            .map((r) {
+              if (r is num) return r.toDouble();
+              if (r is String) return double.tryParse(r);
+              return null;
+            })
+            .where((r) => r != null)
+            .cast<double>()
+            .toList();
+      }
+      return [];
+    }
+
+    // Support both nested-user format and flat format from API
+    final userJson = json['user'] is Map
+        ? Map<String, dynamic>.from(json['user'] as Map)
+        : <String, dynamic>{
+            '_id': json['_id'] ?? json['id'] ?? '',
+            'name': json['name'] ?? '',
+            'email': json['email'] ?? '',
+            'phoneNumber': json['phoneNumber'] ?? json['phone'] ?? '',
+            'role': json['role'] ?? '',
+            'profilePicture': json['profilePicture'],
+          };
+
+    // availableTime can be a Map or a plain String like "9:00 AM - 5:00 PM"
+    AvailableTime? parseAvailableTime(dynamic value) {
+      if (value == null) return null;
+      if (value is Map) {
+        return AvailableTime.fromJson(Map<String, dynamic>.from(value));
+      }
+      if (value is String && value.isNotEmpty) {
+        final parts = value.split(' - ');
+        return AvailableTime(
+          start: parts.isNotEmpty ? parts[0] : value,
+          end: parts.length > 1 ? parts[1] : '',
+        );
+      }
+      return null;
+    }
+
     return Doctor(
-      id: json['_id'] ?? '',
-      user: User.fromJson(json['user'] ?? {}),
-      specialization: json['specialization'],
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      user: User.fromJson(userJson),
+      specialization: json['specialization']?.toString(),
+      pmdcNumber: json['pmdcNumber']?.toString(),
       consultationType: parseConsultationType(json['consultationType']),
-      languages: json['languages'] != null
-          ? List<String>.from(json['languages'])
-          : [],
-      degrees: json['degrees'] != null
-          ? List<String>.from(json['degrees'])
-          : [],
-      experience: json['experience'],
-      licenseNumber: json['licenseNumber'],
-      clinicName: json['clinicName'],
-      clinicAddress: json['clinicAddress'],
-      availableDays: json['availableDays'] != null
-          ? List<String>.from(json['availableDays'])
-          : [],
-      availableTime: json['availableTime'] != null
-          ? AvailableTime.fromJson(json['availableTime'])
-          : null,
-      isApproved: json['isApproved'] ?? false,
-      ratings: json['ratings'] != null
-          ? List<double>.from(json['ratings'].map((r) => r.toDouble()))
-          : [],
-      reviews: json['reviews'] != null
-          ? List<String>.from(json['reviews'])
-          : [],
+      languages: parseStringList(json['languages']),
+      degrees: parseStringList(json['degrees']),
+      experience: json['experience']?.toString(),
+      licenseNumber: json['licenseNumber']?.toString(),
+      clinicName: json['clinicName']?.toString(),
+      clinicAddress: json['clinicAddress']?.toString(),
+      availableDays: parseStringList(json['availableDays']),
+      availableTime: parseAvailableTime(json['availableTime']),
+      isApproved: json['isApproved'] == true,
+      isOnline: json['isOnline'] == true,
+      ratings: parseRatings(json['ratings']),
+      reviews: parseStringList(json['reviews']),
     );
   }
 

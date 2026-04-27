@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/consultation.dart';
 import 'package:icare/services/healthcare_workflow_service.dart';
+import 'package:icare/services/laboratory_service.dart';
+import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/theme.dart';
 
 /// Doctor Consultation Screen
@@ -65,6 +67,8 @@ class _DoctorConsultationScreenState
   // Step 4: Plan
   final _instructionsController = TextEditingController();
   final _followUpInstructionsController = TextEditingController();
+  final _followUpDurationController = TextEditingController();
+  String _followUpUnit = 'Days';
   DateTime? _followUpDate;
 
   // Plan items (will be managed through dialogs)
@@ -72,6 +76,40 @@ class _DoctorConsultationScreenState
   List<Map<String, dynamic>> _labTests = [];
   List<Map<String, dynamic>> _healthPrograms = [];
   Map<String, dynamic>? _referral;
+
+  // Selected pharmacy & lab for auto-routing
+  String? _selectedPharmacyId;
+  String? _selectedLabId;
+
+  List<dynamic> _availablePharmacies = [];
+  List<dynamic> _availableLabs = [];
+  bool _isLoadingPharmacies = false;
+  bool _isLoadingLabs = false;
+
+  final PharmacyService _pharmacyService = PharmacyService();
+  final LaboratoryService _labService = LaboratoryService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPharmaciesAndLabs();
+  }
+
+  Future<void> _loadPharmaciesAndLabs() async {
+    setState(() { _isLoadingPharmacies = true; _isLoadingLabs = true; });
+    try {
+      final pharmacies = await _pharmacyService.getAllPharmacies();
+      if (mounted) setState(() { _availablePharmacies = pharmacies; _isLoadingPharmacies = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingPharmacies = false);
+    }
+    try {
+      final labs = await _labService.getAllLaboratories();
+      if (mounted) setState(() { _availableLabs = labs; _isLoadingLabs = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingLabs = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -99,6 +137,7 @@ class _DoctorConsultationScreenState
     _clinicalNotesController.dispose();
     _instructionsController.dispose();
     _followUpInstructionsController.dispose();
+    _followUpDurationController.dispose();
     super.dispose();
   }
 
@@ -815,6 +854,75 @@ class _DoctorConsultationScreenState
           ),
           maxLines: 2,
         ),
+        const SizedBox(height: 20),
+
+        // ── FOLLOW UP AFTER ──────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.event_repeat_rounded, color: Color(0xFF6366F1), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Follow Up After', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _followUpDurationController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Duration',
+                        hintText: 'e.g. 7',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<String>(
+                      value: _followUpUnit,
+                      decoration: InputDecoration(
+                        labelText: 'Unit',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                      ),
+                      items: ['Days', 'Weeks', 'Months'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                      onChanged: (v) => setState(() => _followUpUnit = v!),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Patient will be prompted to schedule a follow-up appointment',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1150,9 +1258,9 @@ class _DoctorConsultationScreenState
         ),
         examination: PhysicalExamination(
           vitalSigns: VitalSigns(
-            bloodPressureSystolic: int.tryParse(_bpSystolicController.text) ?? 0,
-            bloodPressureDiastolic: int.tryParse(_bpDiastolicController.text) ?? 0,
-            heartRate: int.tryParse(_heartRateController.text) ?? 0,
+            bloodPressureSystolic: double.tryParse(_bpSystolicController.text) ?? 0,
+            bloodPressureDiastolic: double.tryParse(_bpDiastolicController.text) ?? 0,
+            heartRate: double.tryParse(_heartRateController.text) ?? 0,
             temperature: double.tryParse(_temperatureController.text) ?? 0,
             oxygenSaturation: double.tryParse(_oxygenSaturationController.text) ?? 0,
             weight: double.tryParse(_weightController.text) ?? 0,
@@ -1170,8 +1278,10 @@ class _DoctorConsultationScreenState
           clinicalNotes: _clinicalNotesController.text.trim(),
         ),
         plan: TreatmentPlan(
-          prescriptionIds: _prescriptions.map((p) => p['id'].toString()).toList(),
-          labTestRequestIds: _labTests.map((l) => l['id'].toString()).toList(),
+          // Pass medicine names as IDs so workflow service can send them to pharmacy
+          prescriptionIds: _prescriptions.map((p) => p['name'].toString()).toList(),
+          // Pass lab test names so workflow service can send them to lab
+          labTestRequestIds: _labTests.map((l) => l['name'].toString()).toList(),
           healthProgramIds: _healthPrograms.map((h) => h['id'].toString()).toList(),
           instructions: _instructionsController.text.trim(),
           followUpInstructions: _followUpInstructionsController.text.trim(),
@@ -1182,7 +1292,11 @@ class _DoctorConsultationScreenState
       );
 
       final workflowService = HealthcareWorkflowService();
-      final result = await workflowService.processConsultationCompletion(consultation);
+      final result = await workflowService.processConsultationCompletion(
+        consultation,
+        selectedPharmacyId: _selectedPharmacyId,
+        selectedLabId: _selectedLabId,
+      );
 
       if (mounted) {
         // Show completion summary
@@ -1223,9 +1337,11 @@ class _DoctorConsultationScreenState
             const Text('The following actions have been triggered:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
             const SizedBox(height: 16),
             if (_prescriptions.isNotEmpty)
-              _summaryRow(Icons.medication_rounded, const Color(0xFF3B82F6), '${_prescriptions.length} prescription(s) issued'),
+              _summaryRow(Icons.medication_rounded, const Color(0xFF3B82F6),
+                  '${_prescriptions.length} prescription(s) issued${_selectedPharmacyId != null ? ' → sent to pharmacy' : ''}'),
             if (_labTests.isNotEmpty)
-              _summaryRow(Icons.biotech_rounded, const Color(0xFF8B5CF6), '${_labTests.length} lab test(s) sent to lab dashboard'),
+              _summaryRow(Icons.biotech_rounded, const Color(0xFF8B5CF6),
+                  '${_labTests.length} lab test(s)${_selectedLabId != null ? ' → sent to lab dashboard' : ' ordered'}'),
             if (_healthPrograms.isNotEmpty)
               _summaryRow(Icons.health_and_safety_rounded, const Color(0xFF10B981), '${_healthPrograms.length} health program(s) assigned to patient'),
             if (_referral != null)

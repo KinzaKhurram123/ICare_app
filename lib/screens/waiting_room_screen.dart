@@ -46,9 +46,9 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (ctx) => VideoCallScreen(
-          appointmentId: patient['id'],
-          userName: patient['name'],
+        builder: (ctx) => VideoCall(
+          channelName: patient['id'],
+          remoteUserName: patient['name'],
         ),
       ),
     );

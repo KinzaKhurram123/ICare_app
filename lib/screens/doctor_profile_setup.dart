@@ -1,8 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/doctor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:image_picker/image_picker.dart';
 
 class DoctorProfileSetup extends ConsumerStatefulWidget {
   const DoctorProfileSetup({super.key});
@@ -25,6 +27,17 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   final TextEditingController clinicAddressController = TextEditingController();
   final TextEditingController startTimeController = TextEditingController();
   final TextEditingController endTimeController = TextEditingController();
+
+  Uint8List? _imageBytes;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() => _imageBytes = bytes);
+    }
+  }
 
   // Available days selection
   final Map<String, bool> selectedDays = {
@@ -97,6 +110,7 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       availableDays: availableDays,
       startTime: startTimeController.text,
       endTime: endTimeController.text,
+      profileImage: _imageBytes,
     );
 
     setState(() => _isLoading = false);
@@ -217,6 +231,48 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Profile Photo
+                Center(
+                  child: GestureDetector(
+                    onTap: _pickProfileImage,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 3),
+                          ),
+                          child: ClipOval(
+                            child: _imageBytes != null
+                                ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                                : Icon(Icons.person_rounded, size: 44, color: AppColors.primaryColor),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text('Tap to upload profile photo', style: TextStyle(fontSize: 12, color: AppColors.primaryColor)),
+                ),
+                const SizedBox(height: 24),
                 _buildSectionTitle("Basic Information"),
                 const SizedBox(height: 16),
                 _buildTextField(
@@ -246,23 +302,6 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                   label: "License Number",
                   icon: Icons.badge_outlined,
                   hint: "Medical license number",
-                ),
-                const SizedBox(height: 32),
-                _buildSectionTitle("Clinic Information"),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: clinicNameController,
-                  label: "Clinic Name",
-                  icon: Icons.local_hospital_outlined,
-                  hint: "Your clinic or hospital name",
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: clinicAddressController,
-                  label: "Clinic Address",
-                  icon: Icons.location_on_outlined,
-                  hint: "Full address",
-                  maxLines: 2,
                 ),
                 const SizedBox(height: 32),
                 _buildSectionTitle("Availability"),
@@ -396,7 +435,49 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                             fontFamily: "Gilroy-Bold",
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
+                        // Profile Photo Upload
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickProfileImage,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 110,
+                                  height: 110,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryColor.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 3),
+                                  ),
+                                  child: ClipOval(
+                                    child: _imageBytes != null
+                                        ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                                        : Icon(Icons.person_rounded, size: 50, color: AppColors.primaryColor),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                    child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Text('Tap to upload profile photo', style: TextStyle(fontSize: 13, color: AppColors.primaryColor)),
+                        ),
+                        const SizedBox(height: 32),
                         Row(
                           children: [
                             Expanded(
@@ -439,30 +520,6 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 40),
-                        const Text(
-                          "Clinic Information",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildTextField(
-                          controller: clinicNameController,
-                          label: "Clinic Name",
-                          icon: Icons.local_hospital_outlined,
-                          hint: "Your clinic or hospital name",
-                        ),
-                        const SizedBox(height: 24),
-                        _buildTextField(
-                          controller: clinicAddressController,
-                          label: "Clinic Address",
-                          icon: Icons.location_on_outlined,
-                          hint: "Full address",
-                          maxLines: 2,
                         ),
                         const SizedBox(height: 40),
                         const Text(

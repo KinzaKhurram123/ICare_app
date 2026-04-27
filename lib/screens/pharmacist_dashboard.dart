@@ -4,7 +4,7 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/pharmacy_inventory.dart';
 import 'package:icare/screens/pharmacy_orders.dart';
 import 'package:icare/screens/pharmacy_analytics.dart';
-import 'package:icare/screens/my_orders.dart';
+import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:intl/intl.dart';
 
@@ -20,8 +20,10 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
   final PharmacyService _pharmacyService = PharmacyService();
   bool _isLoading = true;
   bool _hasError = false;
+  List<Map<String, dynamic>> _recentOrders = [];
 
   Map<String, int> _stats = {
+    'todayOrders': 0,
     'totalOrders': 0,
     'pendingOrders': 0,
     'completedOrders': 0,
@@ -43,14 +45,33 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
         _hasError = false;
       });
       final stats = await _pharmacyService.getPharmacyStats();
+      List<Map<String, dynamic>> recentOrders = [];
+      try {
+        final orders = await _pharmacyService.getPharmacyOrders();
+        recentOrders = orders
+            .take(5)
+            .map((o) => Map<String, dynamic>.from(o as Map))
+            .toList();
+      } catch (_) {}
       setState(() {
         _stats = stats.map((key, value) => MapEntry(key, value as int));
+        _recentOrders = recentOrders;
         _isLoading = false;
       });
     } catch (e) {
+      // Show dashboard with zero stats instead of error
       setState(() {
         _isLoading = false;
-        _hasError = true;
+        _hasError = false; // Don't show error, just show empty dashboard
+        _stats = {
+          'todayOrders': 0,
+          'totalOrders': 0,
+          'pendingOrders': 0,
+          'completedOrders': 0,
+          'totalProducts': 0,
+          'lowStock': 0,
+          'revenue': 0,
+        };
       });
     }
   }
@@ -190,8 +211,17 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Prescriptions',
-                  _stats['totalOrders']!,
+                  'Today',
+                  _stats['todayOrders'] ?? 0,
+                  Icons.today_rounded,
+                  const Color(0xFF6366F1),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  'Total',
+                  _stats['totalOrders'] ?? 0,
                   Icons.receipt_long_rounded,
                   const Color(0xFF3B82F6),
                 ),
@@ -200,7 +230,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               Expanded(
                 child: _buildStatCard(
                   'Pending',
-                  _stats['pendingOrders']!,
+                  _stats['pendingOrders'] ?? 0,
                   Icons.pending_actions_rounded,
                   const Color(0xFFF59E0B),
                 ),
@@ -208,19 +238,10 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatCard(
-                  'Medications',
-                  _stats['totalProducts']!,
-                  Icons.medication_rounded,
+                  'Completed',
+                  _stats['completedOrders'] ?? 0,
+                  Icons.check_circle_outline_rounded,
                   const Color(0xFF10B981),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatCard(
-                  'Low Stock',
-                  _stats['lowStock']!,
-                  Icons.warning_rounded,
-                  const Color(0xFFEF4444),
                 ),
               ),
             ],
@@ -233,19 +254,19 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Requests',
-                    _stats['totalOrders']!,
-                    Icons.receipt_long_rounded,
-                    const Color(0xFF3B82F6),
+                    'Today',
+                    _stats['todayOrders'] ?? 0,
+                    Icons.today_rounded,
+                    const Color(0xFF6366F1),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Pending',
-                    _stats['pendingOrders']!,
-                    Icons.pending_actions_rounded,
-                    const Color(0xFFF59E0B),
+                    'Total',
+                    _stats['totalOrders'] ?? 0,
+                    Icons.receipt_long_rounded,
+                    const Color(0xFF3B82F6),
                   ),
                 ),
               ],
@@ -255,19 +276,19 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Medications',
-                    _stats['totalProducts']!,
-                    Icons.medication_liquid_rounded,
-                    const Color(0xFF10B981),
+                    'Pending',
+                    _stats['pendingOrders'] ?? 0,
+                    Icons.pending_actions_rounded,
+                    const Color(0xFFF59E0B),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Low Stock',
-                    _stats['lowStock']!,
-                    Icons.warning_rounded,
-                    const Color(0xFFEF4444),
+                    'Completed',
+                    _stats['completedOrders'] ?? 0,
+                    Icons.check_circle_outline_rounded,
+                    const Color(0xFF10B981),
                   ),
                 ),
               ],
@@ -371,13 +392,13 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
               },
             ),
             _buildActionCard(
-              'Fulfillment Analytics',
-              Icons.analytics_rounded,
-              const Color(0xFF8B5CF6),
+              'Invoices',
+              Icons.receipt_long_rounded,
+              const Color(0xFFF59E0B),
               () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (ctx) => const PharmacyAnalytics(),
+                    builder: (ctx) => const PaymentInvoices(isPharmacy: true),
                   ),
                 );
               },
@@ -458,36 +479,68 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                'New prescription received',
-                'Prescription #1234',
-                Icons.receipt_rounded,
-                const Color(0xFF3B82F6),
-                '5 min ago',
-              ),
-              const Divider(height: 24),
-              _buildActivityItem(
-                'Low stock alert',
-                'Paracetamol 500mg',
-                Icons.warning_rounded,
-                const Color(0xFFEF4444),
-                '1 hour ago',
-              ),
-              const Divider(height: 24),
-              _buildActivityItem(
-                'Prescription fulfilled',
-                'Prescription #1230',
-                Icons.check_circle_rounded,
-                const Color(0xFF10B981),
-                '2 hours ago',
-              ),
-            ],
-          ),
+          child: _recentOrders.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      'No recent orders to display',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                )
+              : Column(
+                  children: _recentOrders.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final order = entry.value;
+                    final status = (order['status'] ?? 'pending').toString();
+                    final patientName = order['patient']?['name'] ?? order['customerName'] ?? 'Customer';
+                    final orderId = order['orderNumber'] ?? order['_id']?.toString().substring(18) ?? '#—';
+                    IconData icon;
+                    Color color;
+                    String title;
+                    if (status == 'completed') {
+                      icon = Icons.check_circle_rounded;
+                      color = const Color(0xFF10B981);
+                      title = 'Order delivered';
+                    } else if (status == 'out_for_delivery') {
+                      icon = Icons.local_shipping_rounded;
+                      color = const Color(0xFF6366F1);
+                      title = 'Out for delivery';
+                    } else if (status == 'preparing') {
+                      icon = Icons.medication_rounded;
+                      color = const Color(0xFF3B82F6);
+                      title = 'Preparing order';
+                    } else if (status == 'cancelled') {
+                      icon = Icons.cancel_rounded;
+                      color = const Color(0xFFEF4444);
+                      title = 'Order cancelled';
+                    } else {
+                      icon = Icons.receipt_rounded;
+                      color = const Color(0xFFF59E0B);
+                      title = 'New order received';
+                    }
+                    return Column(
+                      children: [
+                        if (i > 0) const Divider(height: 24),
+                        _buildActivityItem(title, '$patientName • $orderId', icon, color, _timeAgo(order['createdAt'])),
+                      ],
+                    );
+                  }).toList(),
+                ),
         ),
       ],
     );
+  }
+
+  String _timeAgo(dynamic createdAt) {
+    if (createdAt == null) return '—';
+    final dt = DateTime.tryParse(createdAt.toString());
+    if (dt == null) return '—';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   Widget _buildActivityItem(

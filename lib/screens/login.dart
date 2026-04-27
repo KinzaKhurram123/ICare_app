@@ -2,6 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/forget_password.dart';
 import 'package:icare/screens/privacy_policy.dart';
@@ -282,6 +285,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     ),
                   ),
+                  // Back to Home button
+                  Positioned(
+                    top: 24, left: 24,
+                    child: GestureDetector(
+                      onTap: () => context.go('/home'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.arrow_back_rounded, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text('Home', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 50),
@@ -289,27 +315,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 90, height: 90,
-                            padding: const EdgeInsets.all(14),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.10),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            child: Image.asset(ImagePaths.logo, fit: BoxFit.contain),
+                            child: Image.asset(
+                              'assets/Asset 1.png',
+                              height: 80,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                            ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 16),
+                          // "by" text only
                           const Text(
-                            "iCare Virtual Hospital",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 32, fontWeight: FontWeight.w800,
-                              color: Colors.white, letterSpacing: 0.5,
-                            ),
+                            "by",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white70),
                           ),
                           const SizedBox(height: 10),
+                          // RM Health Solutions logo below "by"
+                          Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Image.asset(
+                              'assets/images/health.jpeg',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Text('RM Health Solutions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0036BC))),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
                           Text(
-                            "Your Virtual Healthcare Platform",
+                            "Your Trusted Healthcare Platform",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600,
@@ -327,13 +375,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           const SizedBox(height: 44),
-                          _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.verified_user_rounded, "Verified Doctors Only"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.medical_services_rounded, "Complete Virtual Hospital"),
-                          const SizedBox(height: 14),
-                          _buildHeroTrust(Icons.people_rounded, "Trusted by Patients Nationwide"),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Left Column - 2 items
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildHeroTrust(Icons.shield_rounded, "Data Protected & Secure", "End-to-end encrypted health records", color: const Color(0xFFEF4444)),
+                                    const SizedBox(height: 18),
+                                    _buildHeroTrust(Icons.verified_user_rounded, "HIPAA Compliant", "Meeting US healthcare data security standards", color: const Color(0xFF10B981)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              // Right Column - 2 items
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildHeroTrust(Icons.local_hospital_rounded, "Complete Digital Health Care Platform", "Consult, prescribe & manage all-in-one", color: const Color(0xFF8B5CF6)),
+                                    const SizedBox(height: 18),
+                                    _buildHeroTrust(Icons.people_rounded, "Open for Everyone", "For patients, doctors & healthcare providers", color: const Color(0xFFF59E0B)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -836,22 +907,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   ],
                                 ),
                                 const SizedBox(height: 24),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _webSocialButton(
-                                        ImagePaths.google_icon,
-                                        "Google",
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _webSocialButton(
-                                        ImagePaths.facebook_icon,
-                                        "Facebook",
-                                      ),
-                                    ),
-                                  ],
+                                _webSocialButton(
+                                  ImagePaths.google_icon,
+                                  "Continue with Google",
                                 ),
                               ],
                             ],
@@ -1322,30 +1380,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
             ),
           ),
+          // Home button for mobile
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            child: GestureDetector(
+              onTap: () => context.go('/home'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.arrow_back_rounded, color: AppColors.primaryColor, size: 15),
+                    const SizedBox(width: 5),
+                    Text('Home', style: TextStyle(color: AppColors.primaryColor, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeroTrust(IconData icon, String text) {
+  Widget _buildHeroTrust(IconData icon, String title, String subtitle, {Color? color}) {
+    final iconColor = color ?? Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          width: 44, height: 44,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
+            color: iconColor,
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: Colors.white, size: 18),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
-        const SizedBox(width: 12),
-        Text(
-          text,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  height: 1.3,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1358,14 +1462,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 25),
         const Text("Or Continue With", style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 15),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _socialButton(ImagePaths.facebook_icon, "Facebook"),
-            const SizedBox(width: 20),
-            _socialButton(ImagePaths.google_icon, "Google"),
-          ],
-        ),
+        _socialButton(ImagePaths.google_icon, "Google"),
       ],
     );
   }
@@ -1504,13 +1601,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               "👤 User object created: ${user.name}, ${user.email}, ${user.role}",
             );
 
-            ref.read(authProvider.notifier).setUser(user);
-            debugPrint("✅ User set in provider");
-
-            ref
+            // Save token first and await
+            await ref
                 .read(authProvider.notifier)
                 .setUserToken(result['data']['token']);
             debugPrint("✅ Token set in provider");
+
+            // Save user and await
+            await ref.read(authProvider.notifier).setUser(user);
+            debugPrint("✅ User set in provider");
 
             // Verify the role is set
             final currentRole = ref.read(authProvider).userRole;
@@ -1520,9 +1619,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               "✅ Logged in as: ${user.name} (${user.email}) - Role: ${user.role}",
             );
 
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (ctx) => const TabsScreen()),
-            );
+            context.go('/dashboard');
           } else {
             debugPrint("❌ Failed to fetch profile: ${profileResult['message']}");
             _showError(
@@ -1557,9 +1654,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // credentials: credentialsController.text.trim(),
         );
         if (result['success']) {
-          // Set token in provider first
+          // Set token in provider first and await
           final token = result['data']['token'];
-          ref.read(authProvider.notifier).setUserToken(token);
+          await ref.read(authProvider.notifier).setUserToken(token);
 
           // Fetch user profile after registration, passing token directly
           final profileResult = await _userService.getUserProfile(token: token);
@@ -1567,7 +1664,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           if (profileResult['success'] && mounted) {
             final userData = profileResult['user'];
             final user = app_user.User.fromJson(userData);
-            ref.read(authProvider.notifier).setUser(user);
+            await ref.read(authProvider.notifier).setUser(user);
 
             // Redirect based on user role
             if (user.role == 'Laboratory') {
@@ -1587,9 +1684,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               );
             } else {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (ctx) => const TabsScreen()),
-              );
+              context.go('/dashboard');
             }
           }
         } else {

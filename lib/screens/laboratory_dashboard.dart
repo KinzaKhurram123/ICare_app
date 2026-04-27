@@ -3,8 +3,10 @@ import '../services/laboratory_service.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_tests_management.dart';
+import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/settings.dart';
+import 'package:icare/screens/lab_settings_screen.dart';
 import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/tasks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -470,7 +472,13 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
   Widget _buildStatsGrid(bool isMobile) {
     final stats = [
       {
-        'title': 'Total Requests',
+        'title': 'Today',
+        'value': _stats?['todayBookings']?.toString() ?? '0',
+        'icon': Icons.today_rounded,
+        'trend': 'New',
+      },
+      {
+        'title': 'Total',
         'value': _stats?['totalBookings']?.toString() ?? '0',
         'icon': Icons.calendar_month_rounded,
         'trend': '+12%',
@@ -486,12 +494,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
         'value': _stats?['completedBookings']?.toString() ?? '0',
         'icon': Icons.task_alt_rounded,
         'trend': '+8%',
-      },
-      {
-        'title': 'Today',
-        'value': _stats?['todayBookings']?.toString() ?? '0',
-        'icon': Icons.today_rounded,
-        'trend': 'New',
       },
     ];
 
@@ -651,12 +653,12 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
               runSpacing: 16,
               children: [
                 _buildActionButton(
-                  'Diagnostic Queue',
-                  Icons.assignment_ind_rounded,
+                  'New Requests',
+                  Icons.pending_actions_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (ctx) => const LabBookingsManagement(
-                        title: 'Diagnostic Queue',
+                        title: 'New Requests',
                         initialFilter: 'pending',
                       ),
                     ),
@@ -664,37 +666,31 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Result Entry',
-                  Icons.biotech_rounded,
+                  'Records',
+                  Icons.folder_copy_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Result Entry',
-                        initialFilter: 'confirmed',
-                      ),
+                      builder: (ctx) => const LabReportsScreen(),
                     ),
                   ),
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Clinical Archive',
-                  Icons.history_rounded,
+                  'Orders',
+                  Icons.list_alt_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Clinical Archive',
-                        initialFilter: 'completed',
-                      ),
+                      builder: (ctx) => const LabBookingsManagement(),
                     ),
                   ),
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Supplies',
-                  Icons.inventory_2_outlined,
+                  'Test Catalog',
+                  Icons.science_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (ctx) => const LabSuppliesManagement(),
+                      builder: (ctx) => const LabTestsManagement(),
                     ),
                   ),
                   isMobile,
@@ -714,22 +710,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                     MaterialPageRoute(
                       builder: (ctx) => const PaymentInvoices(),
                     ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Tasks',
-                  Icons.task_alt_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Settings',
-                  Icons.settings_outlined,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
                   ),
                   isMobile,
                 ),

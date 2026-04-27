@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/connect_now_service.dart';
 import 'package:icare/services/doctor_service.dart';
+import 'package:icare/screens/doctor_connect_now_screen.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/screens/doctor_appointments.dart';
@@ -17,10 +20,10 @@ import 'package:icare/screens/doctor_availability.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/my_learning.dart';
 import 'package:icare/screens/clinical_audit_screen.dart';
-import 'package:icare/screens/doctor_revenue_analytics_screen.dart';
+import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
-import 'package:icare/screens/subscription_chronic_care_screen.dart';
+import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -48,22 +51,26 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     setState(() => _isLoading = true);
 
     try {
-      final appResult = await _appointmentService.getMyAppointmentsDetailed();
-      final statsResult = await _doctorService.getStats();
+      final results = await Future.wait([
+        _appointmentService.getMyAppointmentsDetailed(),
+        _doctorService.getStats().catchError((_) => <String, dynamic>{'success': false, 'stats': {}}),
+      ]);
 
       if (mounted) {
         setState(() {
-          if (appResult['success']) {
-            _appointments =
-                appResult['appointments'] as List<AppointmentDetail>;
+          final appResult = results[0];
+          final statsResult = results[1];
+          if (appResult['success'] == true) {
+            _appointments = appResult['appointments'] as List<AppointmentDetail>;
           }
-          if (statsResult['success']) {
-            _stats = statsResult['stats'];
+          if (statsResult['success'] == true) {
+            _stats = statsResult['stats'] ?? {};
           }
           _isLoading = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ _loadData error: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -108,7 +115,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           ),
         ),
         actions: [
-          _buildVerificationBadge(),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Color(0xFF0F172A)),
             onPressed: () {
@@ -132,26 +138,33 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTrustIndicator(),
-                        const SizedBox(height: 24),
-                        // Welcome Header
+                        // 1. Welcome Header with rating + satisfaction
                         _buildWelcomeHeader(userName),
                         const SizedBox(height: 24),
 
-                        // Statistics Cards
-                        _buildStatisticsCards(isDesktop, isTablet),
+                        // 2. Appointment Requests (pending — Accept/Decline)
+                        _buildAppointmentRequests(),
                         const SizedBox(height: 24),
 
-                        // Today's Appointments
+                        // 3. Today's Appointments
                         _buildTodayAppointments(),
                         const SizedBox(height: 24),
 
-                        // Quick Actions
-                        _buildQuickActions(isDesktop, isTablet),
+                        // 4. Earnings Display
+                        _buildEarningsCard(),
                         const SizedBox(height: 24),
 
-                        // Clinical & Professional Features
+                        // 5. Consultations Count Card
+                        _buildConsultationsCard(),
+                        const SizedBox(height: 24),
+
+                        // 6. Clinical Flags (SOAP notes alerts)
+                        _buildClinicalFlags(),
+                        const SizedBox(height: 24),
+
+                        // 6. Clinical & Professional Features
                         _buildFeatureGrid(isDesktop, isTablet),
+                        // Quick Actions intentionally removed per meeting notes
                       ],
                     ),
                   ),
@@ -161,90 +174,10 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
-  Widget _buildTrustIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.shield_rounded, color: Colors.greenAccent, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'secure_platform'.tr(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  'data_protected'.tr(),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          _buildLanguageToggle(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageToggle() {
-    final isUrdu = context.locale.languageCode == 'ur';
-    return TextButton(
-      onPressed: () {
-        context.setLocale(isUrdu ? const Locale('en') : const Locale('ur'));
-      },
-      child: Text(
-        isUrdu ? 'English' : 'اردو',
-        style: const TextStyle(
-          color: Colors.greenAccent,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerificationBadge() {
-    // Simulated check for verified status (Req 29.14)
-    final isVerified = _stats['isVerified'] ?? true;
-    if (!isVerified) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.blue.withOpacity(0.5)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified_rounded, color: Colors.blue, size: 14),
-          SizedBox(width: 4),
-          Text(
-            'Verified',
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildWelcomeHeader(String userName) {
+    final avgRating = _stats['avgRating'] ?? '0.0';
+    final satisfaction = _stats['satisfaction'] ?? '0%';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -291,108 +224,117 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     color: Color(0xFF0F172A),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            avgRating.toString(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.sentiment_very_satisfied_rounded, color: Color(0xFF8B5CF6), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            satisfaction.toString(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF6B21A8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          _buildVerificationBadge(),
         ],
       ),
     );
   }
 
   Widget _buildStatisticsCards(bool isDesktop, bool isTablet) {
-    final totalPatients = _stats['totalPatients'] ?? 0;
-    final revenue = _stats['revenue'] ?? 0;
+    final totalConsultations = _stats['totalPatients'] ?? _completedCount;
     final avgRating = _stats['avgRating'] ?? '0.0';
     final satisfaction = _stats['satisfaction'] ?? '0%';
 
+    final cards = [
+      _buildStatCard(
+        'Consultations',
+        totalConsultations,
+        Icons.medical_services_rounded,
+        const Color(0xFF3B82F6),
+      ),
+      _buildStatCard(
+        'Pending',
+        _pendingCount,
+        Icons.pending_actions_rounded,
+        const Color(0xFFF59E0B),
+      ),
+      _buildStatCard(
+        'rating'.tr(),
+        avgRating,
+        Icons.star_rounded,
+        const Color(0xFFF59E0B),
+      ),
+      _buildStatCard(
+        'satisfaction'.tr(),
+        satisfaction,
+        Icons.sentiment_very_satisfied_rounded,
+        const Color(0xFF8B5CF6),
+      ),
+    ];
+
     if (isDesktop || isTablet) {
       return Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'patients'.tr(),
-              totalPatients,
-              Icons.people_rounded,
-              const Color(0xFF3B82F6),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'revenue'.tr(),
-              'PKR $revenue',
-              Icons.payments_rounded,
-              const Color(0xFF10B981),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'rating'.tr(),
-              avgRating,
-              Icons.star_rounded,
-              const Color(0xFFF59E0B),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              'satisfaction'.tr(),
-              satisfaction,
-              Icons.sentiment_very_satisfied_rounded,
-              const Color(0xFF8B5CF6),
-            ),
-          ),
-        ],
+        children: cards
+            .map((c) => Expanded(child: c))
+            .expand((w) => [w, const SizedBox(width: 16)])
+            .toList()
+          ..removeLast(),
       );
     }
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'patients'.tr(),
-                totalPatients,
-                Icons.people_rounded,
-                const Color(0xFF3B82F6),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'revenue'.tr(),
-                'PKR $revenue',
-                Icons.payments_rounded,
-                const Color(0xFF10B981),
-              ),
-            ),
-          ],
-        ),
+        Row(children: [
+          Expanded(child: cards[0]),
+          const SizedBox(width: 12),
+          Expanded(child: cards[1]),
+        ]),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'rating'.tr(),
-                avgRating,
-                Icons.star_rounded,
-                const Color(0xFFF59E0B),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'satisfaction'.tr(),
-                satisfaction,
-                Icons.sentiment_very_satisfied_rounded,
-                const Color(0xFF8B5CF6),
-              ),
-            ),
-          ],
-        ),
+        Row(children: [
+          Expanded(child: cards[2]),
+          const SizedBox(width: 12),
+          Expanded(child: cards[3]),
+        ]),
       ],
     );
   }
@@ -456,36 +398,221 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
-  Widget _buildTodayAppointments() {
+  Future<void> _updateAppointmentStatus(String appointmentId, String status) async {
+    try {
+      final result = await _appointmentService.updateAppointmentStatus(
+        appointmentId: appointmentId,
+        status: status,
+      );
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(status == 'confirmed' ? 'Appointment accepted.' : 'Appointment declined.'),
+            backgroundColor: status == 'confirmed' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+          ));
+          _loadData();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message'] ?? 'Failed to update appointment.'),
+            backgroundColor: const Color(0xFFEF4444),
+          ));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: Color(0xFFEF4444),
+        ));
+      }
+    }
+  }
+
+  Widget _buildAppointmentRequests() {
+    final pendingAppointments = _appointments
+        .where((a) => a.status == 'pending')
+        .take(5)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "today_appointments".tr(),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorAppointmentsScreen(),
+            Row(
+              children: [
+                const Text(
+                  'Appointment Requests',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
                   ),
-                );
-              },
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: Text('view_all'.tr()),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryColor,
+                ),
+                if (_pendingCount > 0) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'New ${_pendingCount.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontFamily: 'Gilroy-Bold',
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (_pendingCount > 5)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (ctx) => const DoctorAppointmentsScreen(),
+                  ));
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+                child: const Text('View All'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (pendingAppointments.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Center(
+              child: Text(
+                'No pending appointment requests.',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
               ),
             ),
-          ],
+          )
+        else
+          ...pendingAppointments.map((appt) => _buildRequestCard(appt)),
+      ],
+    );
+  }
+
+  Widget _buildRequestCard(AppointmentDetail appointment) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+            child: Text(
+              appointment.patient?.name.substring(0, 1).toUpperCase() ?? 'P',
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appointment.patient?.name ?? 'Patient',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${appointment.timeSlot}  •  ${DateFormat('dd MMM').format(appointment.date)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Reject button
+          GestureDetector(
+            onTap: () => _updateAppointmentStatus(appointment.id, 'cancelled'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Reject',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Accept button
+          GestureDetector(
+            onTap: () => _updateAppointmentStatus(appointment.id, 'confirmed'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF059669),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Accept',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodayAppointments() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "today_appointments".tr(),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
         ),
         const SizedBox(height: 16),
         _todayAppointments.isEmpty
@@ -516,8 +643,14 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   ),
                 ),
               )
-            : Column(
-                children: _todayAppointments.take(3).map((appointment) {
+            : GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.0,
+                children: _todayAppointments.take(6).map((appointment) {
                   return _buildTodayAppointmentCard(appointment);
                 }).toList(),
               ),
@@ -527,96 +660,475 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
 
   Widget _buildTodayAppointmentCard(AppointmentDetail appointment) {
     final statusColor = _getStatusColor(appointment.status);
+    final initials = (appointment.patient?.name ?? 'P')
+        .split(' ')
+        .take(2)
+        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+        .join();
 
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => ProfileOrAppointmentViewScreen(appointment: appointment),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Time chip at top
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.access_time_rounded, size: 11, color: statusColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      appointment.timeSlot,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Avatar
+            Center(
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [statusColor, statusColor.withValues(alpha: 0.7)],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initials.isEmpty ? 'P' : initials,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Patient name
+            Text(
+              appointment.patient?.name ?? 'Patient',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            // Status badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+            ),
+              child: Text(
+                appointment.status.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  color: statusColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEarningsCard() {
+    // Mock data - backend se aayega
+    final previousMonthEarnings = _stats['previousMonthEarnings'] ?? 45000;
+    final totalNetEarnings = _stats['totalNetEarnings'] ?? 180000;
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Earnings Overview',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Previous Month',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'PKR ${previousMonthEarnings.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Net Earnings',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'PKR ${totalNetEarnings.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsultationsCard() {
+    final totalConsultations = _stats['totalPatients'] ?? _completedCount;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [statusColor, statusColor.withValues(alpha: 0.7)],
-              ),
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(
-              child: Text(
-                appointment.patient?.name.substring(0, 1).toUpperCase() ?? 'P',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
+            child: const Icon(
+              Icons.medical_services_rounded,
+              color: Color(0xFF3B82F6),
+              size: 28,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  appointment.patient?.name ?? 'Patient',
+                  totalConsultations.toString(),
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 28,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF0F172A),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 12,
-                      color: Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      appointment.timeSlot,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'Total Consultations',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              appointment.status.toUpperCase(),
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: statusColor,
-              ),
-            ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildClinicalFlags() {
+    // Completed appointments that likely need SOAP notes
+    final flagged = _appointments
+        .where((a) => a.status == 'completed')
+        .take(5)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.flag_rounded, color: Color(0xFFDC2626), size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Clinical Flags',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (flagged.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${flagged.length} pending',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFDC2626),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: flagged.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: const Color(0xFF10B981),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'All SOAP notes are up to date.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF10B981),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    // Info banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded,
+                              color: Color(0xFFDC2626), size: 16),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'These appointments are missing SOAP notes. Tap to complete.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFDC2626),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...flagged.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final appt = entry.value;
+                      return Column(
+                        children: [
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => SoapNotesScreen(
+                                    appointment: appt,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.assignment_late_rounded,
+                                      color: Color(0xFFDC2626),
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'This appointment with ${appt.patient?.name ?? 'Patient'}',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          '#${appt.id.length > 8 ? appt.id.substring(appt.id.length - 8).toUpperCase() : appt.id.toUpperCase()}  ·  ${DateFormat('dd MMM yyyy, hh:mm a').format(appt.date)}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 
@@ -640,7 +1152,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 children: [
                   Expanded(
                     child: _buildActionCardCompact(
-                      'appointments'.tr(),
+                      'Appointments',
                       Icons.calendar_month_rounded,
                       const Color(0xFF3B82F6),
                       () {
@@ -655,7 +1167,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'availability'.tr(),
+                      'Availability',
                       Icons.schedule_rounded,
                       const Color(0xFF10B981),
                       () {
@@ -670,28 +1182,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildActionCardCompact(
-                      'records'.tr(),
+                      'Records',
                       Icons.folder_rounded,
                       const Color(0xFFF59E0B),
                       () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (ctx) => const PatientRecordsListScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionCardCompact(
-                      'profile'.tr(),
-                      Icons.person_rounded,
-                      const Color(0xFF8B5CF6),
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => const DoctorProfileSetup(),
                           ),
                         );
                       },
@@ -724,7 +1221,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               childAspectRatio: aspectRatio,
               children: [
                 _buildActionCardCompact(
-                  'appointments'.tr(),
+                  'Appointments',
                   Icons.calendar_month_rounded,
                   const Color(0xFF3B82F6),
                   () {
@@ -736,7 +1233,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'availability'.tr(),
+                  'Availability',
                   Icons.schedule_rounded,
                   const Color(0xFF10B981),
                   () {
@@ -748,25 +1245,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   },
                 ),
                 _buildActionCardCompact(
-                  'records'.tr(),
+                  'Records',
                   Icons.folder_rounded,
                   const Color(0xFFF59E0B),
                   () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (ctx) => const PatientRecordsListScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildActionCardCompact(
-                  'profile'.tr(),
-                  Icons.person_rounded,
-                  const Color(0xFF8B5CF6),
-                  () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) => const DoctorProfileSetup(),
                       ),
                     );
                   },
@@ -872,37 +1357,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           childAspectRatio: clinicalRatio,
           children: [
             _buildFeatureCard(
-              'revenue_usage'.tr(),
-              Icons.bar_chart_rounded,
-              const Color(0xFF3B82F6),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorRevenueAnalyticsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildFeatureCard(
-              'clinical_audit'.tr(),
+              'Quality Score',
               Icons.rule_folder_rounded,
               const Color(0xFF0F172A),
               () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const ClinicalAuditScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildFeatureCard(
-              'care_programs'.tr(),
-              Icons.monitor_heart_rounded,
-              const Color(0xFFEF4444),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const SubscriptionChronicCareScreen(),
                   ),
                 );
               },
@@ -920,8 +1381,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               },
             ),
             _buildFeatureCard(
-              'vault'.tr(),
-              Icons.verified_user_rounded,
+              'Certificate',
+              Icons.workspace_premium_rounded,
               const Color(0xFF10B981),
               () {
                 Navigator.of(context).push(
@@ -939,6 +1400,18 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const DoctorAvailability(),
+                  ),
+                );
+              },
+            ),
+            _buildFeatureCard(
+              'Revenue & Analytics',
+              Icons.bar_chart_rounded,
+              const Color(0xFF10B981),
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const DoctorAnalytics(),
                   ),
                 );
               },
@@ -964,7 +1437,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           childAspectRatio: profRatio,
           children: [
             _buildFeatureCard(
-              'courses'.tr(),
+              'Courses',
               Icons.school_rounded,
               const Color(0xFF8B5CF6),
               () {

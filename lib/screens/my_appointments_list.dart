@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/lab_list.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/widgets/rating_dialog.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -25,6 +27,21 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
   void initState() {
     super.initState();
     _loadAppointments();
+  }
+
+  Future<void> _rateDoctor(AppointmentDetail appointment) async {
+    await showRatingDialog(
+      context: context,
+      title: 'Rate Your Experience',
+      subtitle: 'How was your appointment with ${appointment.doctorName}?',
+      onSubmit: (rating, comment) async {
+        await _appointmentService.rateAppointment(
+          appointmentId: appointment.id,
+          rating: rating,
+          comment: comment,
+        );
+      },
+    );
   }
 
   Future<void> _loadAppointments() async {
@@ -90,12 +107,34 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
         elevation: 0,
         centerTitle: true,
         title: CustomText(
-          text: "My Appointments",
+          text: "Patient Bookings",
           fontFamily: "Gilroy-Bold",
           fontSize: 18,
           fontWeight: FontWeight.w900,
           color: const Color(0xFF0F172A),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (ctx) => LabsListScreen()),
+                );
+              },
+              icon: const Icon(Icons.biotech_rounded, size: 18),
+              label: const Text('Book Lab Test'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryColor,
+                backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -351,6 +390,27 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                     ),
                                   ],
                                 ),
+
+                                // Rate Doctor button (completed appointments)
+                                if (appointment.status.toLowerCase() == 'completed') ...[
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _rateDoctor(appointment),
+                                      icon: const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+                                      label: const Text(
+                                        'Rate Doctor',
+                                        style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        side: const BorderSide(color: Color(0xFFF59E0B)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
 
                                 // Reason
                                 if (appointment.reason != null &&

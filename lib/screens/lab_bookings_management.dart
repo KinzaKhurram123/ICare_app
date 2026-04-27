@@ -5,7 +5,7 @@ import '../widgets/back_button.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_booking_details.dart';
 import 'package:icare/utils/error_handler.dart';
-import 'package:icare/screens/upload_lab_report_screen.dart';
+import 'package:icare/screens/lab_result_entry_screen.dart';
 
 class LabBookingsManagement extends StatefulWidget {
   final String? initialFilter;
@@ -99,6 +99,12 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         status: _selectedFilter == 'all' ? null : _selectedFilter,
       );
 
+      // Sort by date — oldest first (date-wise priority)
+      bookings.sort((a, b) {
+        final dateA = DateTime.tryParse(a['date'] ?? a['createdAt'] ?? '') ?? DateTime.now();
+        final dateB = DateTime.tryParse(b['date'] ?? b['createdAt'] ?? '') ?? DateTime.now();
+        return dateA.compareTo(dateB);
+      });
       setState(() {
         _bookings = bookings;
         _isLoading = false;
@@ -127,6 +133,58 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   }
 
   Future<void> _updateStatus(String bookingId, String newStatus) async {
+    // If cancelling, require a reason
+    if (newStatus == 'cancelled') {
+      final reasonCtrl = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Cancel Booking'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason for cancellation (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Enter cancellation reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (reasonCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required'), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text('Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       await _labService.updateBookingStatus(bookingId, newStatus);
       if (mounted) {
@@ -178,6 +236,15 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateOrderDialog(context),
+        backgroundColor: primaryColor,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'Create Order',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Column(
         children: [
           _buildHeader(),
@@ -192,6 +259,467 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                 : _buildBookingsList(),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCreateOrderDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController();
+    final ageController = TextEditingController();
+    final contactController = TextEditingController();
+    final locationController = TextEditingController();
+    final mrNumberController = TextEditingController();
+    final prescriptionDateController = TextEditingController();
+    final referredByController = TextEditingController();
+    final testController = TextEditingController();
+    final specimenControllers = <TextEditingController>[TextEditingController()];
+    String collectionType = 'in-lab';
+    String gender = 'Male';
+    bool isUrgent = false;
+    String normalTurnaround = '1 Day';
+    String urgentTurnaround = '4 Hours';
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.add_circle_rounded, color: primaryColor, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Create Walk-in Order',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Patient Details
+                  _buildSectionLabel('Patient Details'),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: nameController,
+                    label: 'Patient Name',
+                    icon: Icons.person_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFormField(
+                          controller: ageController,
+                          label: 'Age',
+                          icon: Icons.cake_rounded,
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              value: gender,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.wc_rounded, size: 18, color: primaryColor),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                              ),
+                              items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                              onChanged: (v) => setModalState(() => gender = v!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: mrNumberController,
+                    label: 'MR Number (Medical Record Number)',
+                    icon: Icons.badge_rounded,
+                    hint: 'Permanent patient ID',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: contactController,
+                    label: 'Contact Number',
+                    icon: Icons.phone_rounded,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: locationController,
+                    label: 'Address',
+                    icon: Icons.location_on_rounded,
+                  ),
+                  const SizedBox(height: 20),
+                  // Referred By
+                  _buildSectionLabel('Referred By'),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: referredByController,
+                    label: 'Referring Doctor Name',
+                    icon: Icons.medical_services_rounded,
+                    hint: 'Doctor who referred this test',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: prescriptionDateController,
+                    label: 'Test Prescription Date',
+                    icon: Icons.calendar_today_rounded,
+                    hint: 'DD/MM/YYYY',
+                    keyboardType: TextInputType.datetime,
+                  ),
+                  const SizedBox(height: 20),
+                  // Tests Required
+                  _buildSectionLabel('Test(s) Required'),
+                  const SizedBox(height: 12),
+                  _buildFormField(
+                    controller: testController,
+                    label: 'Test Name(s)',
+                    icon: Icons.science_rounded,
+                    hint: 'e.g. CBC, Blood Sugar, Lipid Profile',
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  // Specimen Information
+                  _buildSectionLabel('Specimen Information'),
+                  const SizedBox(height: 12),
+                  ...specimenControllers.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final ctrl = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildFormField(
+                              controller: ctrl,
+                              label: 'Specimen ID ${specimenControllers.length > 1 ? '#${i + 1}' : ''}',
+                              icon: Icons.qr_code_rounded,
+                              hint: 'Unique ID on test tube/container',
+                            ),
+                          ),
+                          if (specimenControllers.length > 1) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => setModalState(() => specimenControllers.removeAt(i)),
+                              icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  TextButton.icon(
+                    onPressed: () => setModalState(() => specimenControllers.add(TextEditingController())),
+                    icon: const Icon(Icons.add_circle_rounded, size: 18),
+                    label: const Text('Add Another Specimen'),
+                    style: TextButton.styleFrom(foregroundColor: primaryColor),
+                  ),
+                  const SizedBox(height: 20),
+                  // Collection Type
+                  _buildSectionLabel('Collection Type'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCollectionOption(
+                          label: 'In-Lab',
+                          icon: Icons.business_rounded,
+                          value: 'in-lab',
+                          selected: collectionType,
+                          onTap: () => setModalState(() => collectionType = 'in-lab'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildCollectionOption(
+                          label: 'Home Collection',
+                          icon: Icons.home_rounded,
+                          value: 'home',
+                          selected: collectionType,
+                          onTap: () => setModalState(() => collectionType = 'home'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Urgency & Turnaround
+                  _buildSectionLabel('Urgency & Turnaround Time'),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Is this test urgent?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                      Switch(
+                        value: isUrgent,
+                        activeColor: const Color(0xFFFF4D00),
+                        onChanged: (v) => setModalState(() => isUrgent = v),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Normal Turnaround', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              value: normalTurnaround,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                              ),
+                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '4 Days', '5 Days', '7 Days']
+                                  .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                              onChanged: (v) => setModalState(() => normalTurnaround = v!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isUrgent) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Urgent Turnaround', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFFF4D00))),
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<String>(
+                                value: urgentTurnaround,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: const Color(0xFFFF4D00).withOpacity(0.5))),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: const Color(0xFFFF4D00).withOpacity(0.5))),
+                                  filled: true,
+                                  fillColor: const Color(0xFFFFF5F0),
+                                ),
+                                items: ['1 Hour', '2 Hours', '4 Hours', '6 Hours', '12 Hours', '24 Hours']
+                                    .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Color(0xFFFF4D00))))).toList(),
+                                onChanged: (v) => setModalState(() => urgentTurnaround = v!),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setModalState(() => isSubmitting = true);
+                              try {
+                                await _labService.createWalkInOrder(
+                                  patientName: nameController.text.trim(),
+                                  contact: contactController.text.trim(),
+                                  address: locationController.text.trim(),
+                                  tests: testController.text.trim(),
+                                  collectionType: collectionType,
+                                );
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                _loadBookings();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Walk-in order created successfully'),
+                                      backgroundColor: Colors.green,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setModalState(() => isSubmitting = false);
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(
+                                      content: Text(e.toString()),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Create Order',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hint,
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: primaryColor, size: 20),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Row(
+      children: [
+        Container(width: 3, height: 16, decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), fontFamily: 'Gilroy-Bold')),
+      ],
+    );
+  }
+
+  Widget _buildCollectionOption({
+    required String label,
+    required IconData icon,
+    required String value,
+    required String selected,
+    required VoidCallback onTap,
+  }) {
+    final isSelected = selected == value;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : const Color(0xFF64748B), size: 24),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? Colors.white : const Color(0xFF0F172A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -257,10 +785,13 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
           _buildFilterChip('Urgent', 'urgent', Icons.priority_high_rounded),
           _buildFilterChip('Pending', 'pending', Icons.schedule_rounded),
           _buildFilterChip(
-            'Confirmed',
+            'Accepted',
             'confirmed',
             Icons.check_circle_outline_rounded,
           ),
+          _buildFilterChip('Sample Collected', 'sample_collected', Icons.science_outlined),
+          _buildFilterChip('Awaiting Reports', 'awaiting_reports', Icons.hourglass_empty_rounded),
+          _buildFilterChip('Reporting Done', 'reporting_done', Icons.assignment_turned_in_rounded),
           _buildFilterChip('Completed', 'completed', Icons.done_all_rounded),
           _buildFilterChip('Cancelled', 'cancelled', Icons.cancel_outlined),
         ],
@@ -345,6 +876,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     final isUrgent = urgency == 'Urgent';
     final diagnosisNotes = booking['diagnosisNotes'];
     final specialInstructions = booking['specialInstructions'];
+    final collectionType = booking['collectionType'] ?? booking['collection_type'] ?? 'in-lab';
+    final isHomeCollection = collectionType == 'home';
 
     return InkWell(
       onTap: () async {
@@ -381,46 +914,30 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Urgency and Doctor-ordered badges
-            Row(
+            // Urgency, Doctor-ordered, and Collection Type badges
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 if (isUrgent)
                   Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.priority_high_rounded,
-                          size: 14,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'URGENT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.red,
-                          ),
-                        ),
+                        Icon(Icons.priority_high_rounded, size: 14, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text('URGENT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.red)),
                       ],
                     ),
                   ),
                 if (isDoctorOrdered)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF8B5CF6).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -428,26 +945,47 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.medical_services_rounded,
-                          size: 14,
-                          color: Color(0xFF8B5CF6),
-                        ),
+                        const Icon(Icons.medical_services_rounded, size: 14, color: Color(0xFF8B5CF6)),
                         const SizedBox(width: 6),
                         Text(
-                          'Doctor Ordered${doctorName != null ? ' by Dr. $doctorName' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF8B5CF6),
-                          ),
+                          'Ordered by${doctorName != null ? ' Dr. $doctorName' : ' Doctor'}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6)),
                         ),
                       ],
                     ),
                   ),
+                // Sample Collection Type badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isHomeCollection
+                        ? const Color(0xFF0EA5E9).withOpacity(0.1)
+                        : const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isHomeCollection ? Icons.home_rounded : Icons.business_rounded,
+                        size: 14,
+                        color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isHomeCollection ? 'Home Collection' : 'In Lab',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            if (isUrgent || isDoctorOrdered) const SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Container(
@@ -610,26 +1148,37 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                   TextButton.icon(
                     onPressed: () => _updateStatus(booking['_id'], 'confirmed'),
                     icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                    label: const Text('Confirm'),
+                    label: const Text('Accept'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                if (status.toLowerCase() == 'confirmed')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'sample_collected'),
+                    icon: const Icon(Icons.science_outlined, size: 18),
+                    label: const Text('Sample Collected'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
-                if (status.toLowerCase() == 'confirmed' ||
+                if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'awaiting_reports' ||
                     status.toLowerCase() == 'completed')
                   TextButton.icon(
                     onPressed: () async {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (ctx) => UploadLabReportScreen(booking: booking),
+                          builder: (ctx) => LabResultEntryScreen(booking: booking),
                         ),
                       );
                       _loadBookings();
                     },
-                    icon: const Icon(Icons.upload_file_rounded, size: 18),
-                    label: const Text('Upload'),
+                    icon: const Icon(Icons.biotech_rounded, size: 18),
+                    label: const Text('Enter Results'),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF8B5CF6),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -664,7 +1213,13 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
       case 'pending':
         return Colors.orange;
       case 'confirmed':
+        return Colors.green;
+      case 'sample_collected':
         return Colors.blue;
+      case 'awaiting_reports':
+        return const Color(0xFF8B5CF6);
+      case 'reporting_done':
+        return const Color(0xFF10B981);
       case 'completed':
         return Colors.green;
       case 'cancelled':

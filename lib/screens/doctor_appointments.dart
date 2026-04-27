@@ -104,12 +104,36 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: CustomText(
-          text: "My Appointments",
-          fontFamily: "Gilroy-Bold",
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFF0F172A),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomText(
+              text: "My Appointments",
+              fontFamily: "Gilroy-Bold",
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF0F172A),
+            ),
+            if (!_isLoading && _appointments.where((a) => a.status.toLowerCase() == 'pending').isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'New ${_appointments.where((a) => a.status.toLowerCase() == 'pending').length.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    fontFamily: 'Gilroy-Bold',
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
       body: Column(
@@ -196,7 +220,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
@@ -274,18 +298,20 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         ),
         child: Column(
           children: [
-            // Gradient Header with Date & Status
+            // Header with Date & Status
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [statusColor, statusColor.withValues(alpha: 0.8)],
-                ),
+                color: statusColor.withValues(alpha: 0.08),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(19),
                   topRight: Radius.circular(19),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: statusColor.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
                 ),
               ),
               child: Row(
@@ -293,12 +319,12 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.calendar_today_rounded,
-                      color: Colors.white,
+                      color: statusColor,
                       size: 24,
                     ),
                   ),
@@ -312,25 +338,25 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: Color(0xFF0F172A),
                             letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.access_time_rounded,
-                              color: Colors.white,
+                              color: statusColor,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               appointment.timeSlot,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: Color(0xFF334155),
                               ),
                             ),
                           ],
@@ -344,22 +370,15 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: statusColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Text(
                       appointment.status.toUpperCase(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
-                        color: statusColor,
+                        color: Colors.white,
                         letterSpacing: 0.8,
                       ),
                     ),
@@ -489,7 +508,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF64748B),
+                                  color: Color(0xFF000000),
                                 ),
                               ),
                             ],
@@ -499,7 +518,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                             appointment.reason!,
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF0F172A),
+                              color: Color(0xFF000000),
                               height: 1.5,
                             ),
                           ),
@@ -514,44 +533,47 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () =>
-                                _updateStatus(appointment.id, 'confirmed'),
-                            icon: const Icon(
-                              Icons.check_circle_rounded,
-                              size: 20,
-                            ),
-                            label: const Text('Accept'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          child: GestureDetector(
+                            onTap: () => _updateStatus(appointment.id, 'confirmed'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              elevation: 0,
-                              shadowColor: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.3),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'Accept',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () =>
-                                _updateStatus(appointment.id, 'cancelled'),
-                            icon: const Icon(Icons.cancel_rounded, size: 20),
-                            label: const Text('Reject'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFEF4444),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: const BorderSide(
-                                color: Color(0xFFEF4444),
-                                width: 2,
+                          child: GestureDetector(
+                            onTap: () => _updateStatus(appointment.id, 'cancelled'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFEF4444), width: 1.5),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'Reject',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFEF4444),
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
                               ),
                             ),
                           ),
@@ -563,8 +585,8 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
+                          child: GestureDetector(
+                            onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (ctx) => ConsultationWorkflowScreen(
@@ -573,35 +595,41 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 ),
                               );
                             },
-                            icon: const Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 22,
-                            ),
-                            label: const Text('Start Consultation'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3B82F6),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              elevation: 0,
-                              textStyle: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'Start Consultation',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontFamily: 'Gilroy-Bold',
+                                ),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        IconButton(
-                          onPressed: () =>
-                              _updateStatus(appointment.id, 'completed'),
-                          icon: const Icon(
-                            Icons.check_circle_outline_rounded,
-                            color: Color(0xFF3B82F6),
+                        GestureDetector(
+                          onTap: () => _updateStatus(appointment.id, 'completed'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF3B82F6), width: 1.5),
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: Color(0xFF3B82F6),
+                              size: 20,
+                            ),
                           ),
-                          tooltip: 'Mark as Completed',
                         ),
                       ],
                     ),

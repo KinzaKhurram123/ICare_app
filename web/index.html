@@ -1,16 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="iCare Virtual Hospital">
+  <meta name="description" content="iCare - Your Virtual Healthcare Platform">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="iCare">
+  <meta http-equiv="Content-Security-Policy" content="img-src 'self' data: https: http: blob:;">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
-  <title>iCare Virtual Hospital</title>
+  <title>iCare</title>
   <link rel="manifest" href="manifest.json">
   <style>
     body { margin: 0; background: #ffffff; }
@@ -20,7 +21,7 @@
       align-items: center; justify-content: center;
       background: #ffffff; z-index: 9999;
     }
-    #loading img { width: 120px; height: 120px; object-fit: contain; }
+    #loading img { width: 160px; height: 160px; object-fit: contain; }
     #loading .spinner {
       margin-top: 24px; width: 36px; height: 36px;
       border: 3px solid #e2e8f0;
@@ -33,14 +34,68 @@
 </head>
 <body>
   <div id="loading">
-    <img src="icons/Icon-192.png" alt="iCare">
+    <img src="icare_logo.png" alt="iCare" style="width:160px;height:160px;object-fit:contain;">
     <div class="spinner"></div>
   </div>
+  <!-- Agora Web SDK -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
   <script>
     window.addEventListener('flutter-first-frame', function() {
       var loading = document.getElementById('loading');
       if (loading) loading.style.display = 'none';
     });
+
+    // ── Agora Web helpers called from Flutter via JS interop ──────────────
+    var _agoraClient = null;
+    var _localAudioTrack = null;
+    var _localVideoTrack = null;
+
+    window.agoraJoin = async function(appId, channel, token, uid) {
+      try {
+        _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+        _agoraClient.on('user-published', async (user, mediaType) => {
+          await _agoraClient.subscribe(user, mediaType);
+          if (mediaType === 'video') {
+            var remoteDiv = document.getElementById('agora-remote');
+            if (remoteDiv) user.videoTrack.play('agora-remote');
+          }
+          if (mediaType === 'audio') user.audioTrack.play();
+        });
+
+        _agoraClient.on('user-unpublished', (user) => {
+          var remoteDiv = document.getElementById('agora-remote');
+          if (remoteDiv) remoteDiv.innerHTML = '';
+        });
+
+        await _agoraClient.join(appId, channel, token, uid || null);
+        _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        await _agoraClient.publish([_localAudioTrack, _localVideoTrack]);
+        _localVideoTrack.play('agora-local');
+        return 'ok';
+      } catch(e) {
+        console.error('agoraJoin error:', e);
+        return 'error:' + e.message;
+      }
+    };
+
+    window.agoraLeave = async function() {
+      try {
+        if (_localAudioTrack) { _localAudioTrack.stop(); _localAudioTrack.close(); }
+        if (_localVideoTrack) { _localVideoTrack.stop(); _localVideoTrack.close(); }
+        if (_agoraClient) await _agoraClient.leave();
+        _agoraClient = null; _localAudioTrack = null; _localVideoTrack = null;
+      } catch(e) { console.error('agoraLeave error:', e); }
+    };
+
+    window.agoraMuteMic = function(mute) {
+      if (_localAudioTrack) _localAudioTrack.setEnabled(!mute);
+    };
+
+    window.agoraMuteCam = function(mute) {
+      if (_localVideoTrack) _localVideoTrack.setEnabled(!mute);
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

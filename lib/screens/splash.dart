@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/utils/imagePaths.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -39,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(ImagePaths.logo, width: logoSize, height: logoSize, fit: BoxFit.contain),
+              SvgPicture.asset(ImagePaths.logo, width: logoSize, height: logoSize, fit: BoxFit.contain, colorFilter: null),
               const SizedBox(height: 24),
               const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0036BC)),

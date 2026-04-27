@@ -47,22 +47,26 @@ class _ChangePasswordState extends State<ChangePassword> {
               children: [
                 CustomInputField(
                   maxLines: 1,
-
-                  hintText: "Password",
+                  hintText: "Current Password",
                   leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
                   isPassword: true,
                   bgColor: AppColors.white,
                   borderRadius: 30,
                   borderColor: AppColors.veryLightGrey,
                   borderWidth: 2,
-                  // validator: (val) {
-                  //   if (val == null || val.isEmpty) {
-                  //     return "Please enter your username";
-                  //   }
-                  //   return null;
-                  // },
                 ),
-
+                SizedBox(height: ScallingConfig.scale(10)),
+                CustomInputField(
+                  maxLines: 1,
+                  hintText: "New Password",
+                  leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                  isPassword: true,
+                  bgColor: AppColors.white,
+                  borderRadius: 30,
+                  borderColor: AppColors.veryLightGrey,
+                  borderWidth: 2,
+                ),
+                SizedBox(height: ScallingConfig.scale(10)),
                 CustomInputField(
                   maxLines: 1,
                   hintText: "Confirm Password",
@@ -192,6 +196,33 @@ class _WebChangePassword extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 32),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Current Password",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CustomInputField(
+                          maxLines: 1,
+                          hintText: "Enter current password",
+                          leadingIcon: SvgWrapper(assetPath: ImagePaths.key),
+                          isPassword: true,
+                          bgColor: const Color(0xFFF8FAFC),
+                          borderRadius: 12,
+                          borderColor: const Color(0xFFE2E8F0),
+                          borderWidth: 1.5,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
 
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

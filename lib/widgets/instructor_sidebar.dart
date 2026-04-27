@@ -86,7 +86,7 @@ class InstructorSidebar extends StatelessWidget {
                 ],
               ),
             ),
-            _buildFooter(context),
+            // footer removed (no logout in drawer)
           ],
         ),
       ),
@@ -95,34 +95,45 @@ class InstructorSidebar extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-      color: AppColors.primaryColor,
-      child: const Row(
+      padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
+      color: Colors.white,
+      child: Column(
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.white,
-            radius: 24,
-            child: Icon(Icons.person_rounded, color: AppColors.primaryColor),
+          Image.asset(
+            'assets/Asset 1.png',
+            height: 64,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Instructor Panel',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.primaryColor,
+                radius: 22,
+                child: Icon(Icons.person_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Instructor Panel',
+                      style: TextStyle(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Program Manager',
+                      style: TextStyle(color: AppColors.primaryColor, fontSize: 12),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Program Manager',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -154,29 +165,10 @@ class InstructorSidebar extends StatelessWidget {
       onTap: () {
         Navigator.pop(context); // Close drawer
         if (!isSelected) {
-          Navigator.of(
-            context,
-          ).pushReplacement(MaterialPageRoute(builder: (ctx) => screen));
+          Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => screen));
         }
       },
     );
   }
 
-  Widget _buildFooter(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          // Implement Logout
-        },
-        icon: const Icon(Icons.logout_rounded, size: 18),
-        label: const Text('Logout'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.red,
-          side: const BorderSide(color: Color(0xFFF1F5F9)),
-          minimumSize: const Size(double.infinity, 45),
-        ),
-      ),
-    );
-  }
 }

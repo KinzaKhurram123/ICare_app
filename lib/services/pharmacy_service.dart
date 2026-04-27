@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:icare/services/api_service.dart';
 
@@ -8,7 +9,28 @@ class PharmacyService {
   // Get all pharmacies (public endpoint)
   Future<List<dynamic>> getAllPharmacies() async {
     final response = await _apiService.get('/pharmacy/get_all_pharmacy');
-    return response.data['pharmacies'] as List;
+    final list = response.data['pharmacies'] as List? ?? [];
+    // Backend returns: { _id: profileId, user: { _id, name }, pharmacyName/ownerName, city }
+    return list.map((p) {
+      final map = Map<String, dynamic>.from(p);
+      final user = map['user'] as Map<String, dynamic>? ?? {};
+      // Preserve original profile _id for routing (selectedPharmacy in medical record)
+      map['profileId'] = map['_id']?.toString();
+      // Also keep user._id available if needed
+      map['userId'] = user['_id']?.toString();
+      map['_id'] = map['profileId'];
+      map['id'] = map['_id'];
+      // Use actual pharmacy name field first, then fallback chain
+      final displayName = map['pharmacyName']?.toString()
+          ?? map['pharmacy_name']?.toString()
+          ?? map['ownerName']?.toString()
+          ?? user['name']?.toString()
+          ?? 'Pharmacy';
+      map['pharmacyName'] = displayName;
+      map['pharmacy_name'] = displayName;
+      map['name'] = displayName;
+      return map;
+    }).toList();
   }
 
   // Get pharmacy profile for logged-in pharmacist
@@ -63,7 +85,7 @@ class PharmacyService {
       final ordersResponse = await _apiService.get(
         '/pharmacy/orders/pharmacy/list',
       );
-      final orders = ordersResponse.data['orders'] as List;
+      final orders = (ordersResponse.data['orders'] as List?) ?? [];
       debugPrint('✅ Got ${orders.length} orders');
 
       // Get all medicines for the pharmacy
@@ -73,7 +95,7 @@ class PharmacyService {
       final medicinesResponse = await _apiService.get(
         '/pharmacy/products?pharmacyId=$pharmacyId',
       );
-      final medicines = medicinesResponse.data['medicines'] as List;
+      final medicines = (medicinesResponse.data['medicines'] as List?) ?? [];
       debugPrint('✅ Got ${medicines.length} medicines');
 
       // Calculate stats
@@ -104,8 +126,16 @@ class PharmacyService {
         'revenue': revenue.toInt(),
       };
     } catch (e) {
-      debugPrint('Error getting pharmacy stats: $e');
-      rethrow;
+      debugPrint('❌ Error getting pharmacy stats: $e');
+      // Return default stats instead of throwing
+      return {
+        'totalOrders': 0,
+        'pendingOrders': 0,
+        'completedOrders': 0,
+        'totalProducts': 0,
+        'lowStock': 0,
+        'revenue': 0,
+      };
     }
   }
 
@@ -149,6 +179,28 @@ class PharmacyService {
     await _apiService.delete('/pharmacy/products/$id');
   }
 
+  Future<Map<String, dynamic>> createPrescriptionOrder({
+    required String pharmacyId,
+    required List<dynamic> medicines,
+    String? medicalRecordId,
+    String deliveryOption = 'pickup',
+    String address = '',
+  }) async {
+    final response = await _apiService.post('/pharmacy/orders/prescription', {
+      'pharmacyId': pharmacyId,
+      'medicines': medicines.map((m) => {
+        'name': m['name'] ?? m['productName'] ?? '',
+        'dosage': m['dosage'] ?? '',
+        'frequency': m['frequency'] ?? '',
+      }).toList(),
+      'prescriptionText': medicines.map((m) => m['name'] ?? m['productName'] ?? '').join(', '),
+      if (medicalRecordId != null) 'medicalRecordId': medicalRecordId,
+      'deliveryOption': deliveryOption,
+      'address': address,
+    });
+    return response.data;
+  }
+
   // Order Management
   Future<List<dynamic>> getPharmacyOrders({String? status}) async {
     String url = '/pharmacy/orders/pharmacy/list';
@@ -168,10 +220,20 @@ class PharmacyService {
     String orderId,
     String status,
   ) async {
-    final response = await _apiService.put('/pharmacy/orders/$orderId/status', {
-      'status': status,
+    debugPrint('🔄 Updating order $orderId to status: $status');
+    final response = await _apiService.put(
+      '/pharmacy/orders/$orderId/status',
+      {'status': status},
+    );
+    debugPrint('✅ Order status updated successfully');
+    return response.data['order'] ?? {};
+  }
+
+  Future<void> submitOrderRating(String orderId, int rating, String comment) async {
+    await _apiService.post('/pharmacy/orders/$orderId/rating', {
+      'rating': rating,
+      'comment': comment,
     });
-    return response.data['order'];
   }
 
   // Analytics

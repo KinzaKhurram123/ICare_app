@@ -20,10 +20,27 @@ class LaboratoryService {
   // Get all laboratories
   Future<List<dynamic>> getAllLaboratories() async {
     try {
-      final response = await _apiService.get(
-        '/laboratories/get_all_laboratories',
-      );
-      return response.data['laboratories'] ?? [];
+      final response = await _apiService.get('/laboratories/get_all_laboratories');
+      final list = (response.data['laboratories'] ?? []) as List;
+      // Backend returns: { _id: profileId, user: { _id, name }, labName, city }
+      return list.map((l) {
+        final map = Map<String, dynamic>.from(l);
+        final user = map['user'] as Map<String, dynamic>? ?? {};
+        // Preserve original profile _id for routing (referredLaboratory, getLabById)
+        map['profileId'] = map['_id']?.toString();
+        // Also keep user._id available if needed
+        map['userId'] = user['_id']?.toString();
+        map['_id'] = map['profileId'];
+        map['id'] = map['_id'];
+        final displayName = map['labName']?.toString()
+            ?? map['lab_name']?.toString()
+            ?? user['name']?.toString()
+            ?? 'Laboratory';
+        map['labName'] = displayName;
+        map['lab_name'] = displayName;
+        map['name'] = displayName;
+        return map;
+      }).toList();
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getAllLaboratories');
       rethrow;
@@ -181,6 +198,53 @@ class LaboratoryService {
       };
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getDashboardStats');
+      rethrow;
+    }
+  }
+
+  // Rate a booking (patient side)
+  Future<void> rateBooking({
+    required String bookingId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      await _apiService.post('/laboratories/bookings/$bookingId/rate', {
+        'rating': rating,
+        'comment': comment,
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'rateBooking');
+      rethrow;
+    }
+  }
+
+  // Create walk-in order
+  Future<Map<String, dynamic>> createWalkInOrder({
+    required String patientName,
+    required String contact,
+    required String address,
+    required String tests,
+    required String collectionType,
+  }) async {
+    try {
+      final profile = await getProfile();
+      final labId = profile['_id'];
+      final response = await _apiService.post(
+        '/laboratories/$labId/bookings',
+        {
+          'patientName': patientName,
+          'contact': contact,
+          'address': address,
+          'testName': tests,
+          'collectionType': collectionType,
+          'source': 'walk-in',
+          'status': 'confirmed',
+        },
+      );
+      return response.data['booking'] ?? {};
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'createWalkInOrder');
       rethrow;
     }
   }

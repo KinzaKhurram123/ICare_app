@@ -1,8 +1,11 @@
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/icare_app_bar.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:intl/intl.dart';
@@ -59,16 +62,22 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         leading: const CustomBackButton(),
+        centerTitle: true,
         title: const Text(
           'Health Community',
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 22,
+            fontSize: 17,
             fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
+            color: Color(0xFF0F172A),
+            fontFamily: 'Gilroy-Bold',
+            letterSpacing: -0.3,
           ),
+        ),
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
       body: Column(

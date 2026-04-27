@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/laboratory_service.dart';
 import 'laboratory_dashboard.dart';
 import 'tabs.dart';
@@ -32,6 +34,16 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   final _workingHoursToController = TextEditingController();
 
   bool _homeSampleAvailable = false;
+  bool _drapCompliance = false;
+
+  // Profile Image
+  Uint8List? _imageBytes;
+  final ImagePicker _picker = ImagePicker();
+
+  // Doctors Panel
+  final List<Map<String, TextEditingController>> _doctors = [];
+  // Sample Collectors Panel
+  final List<Map<String, TextEditingController>> _collectors = [];
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -156,6 +168,14 @@ class _LabProfileSetupState extends State<LabProfileSetup>
   }
 
   @override
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() => _imageBytes = bytes);
+    }
+  }
+
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
@@ -292,6 +312,10 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                             ],
                           ),
                           const SizedBox(height: 20),
+                          _buildDoctorsPanel(),
+                          const SizedBox(height: 20),
+                          _buildCollectorsPanel(),
+                          const SizedBox(height: 20),
                           _buildSection(
                             'Working Hours',
                             Icons.access_time_rounded,
@@ -317,10 +341,14 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 12),
+                              _buildWorkingDaysSelector(),
                             ],
                           ),
                           const SizedBox(height: 20),
                           _buildServicesSection(),
+                          const SizedBox(height: 20),
+                          _buildDrapSection(),
                           const SizedBox(height: 32),
                           _buildSaveButton(),
                         ],
@@ -369,17 +397,39 @@ class _LabProfileSetupState extends State<LabProfileSetup>
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: const Icon(
-              Icons.science_rounded,
-              size: 48,
-              color: Colors.white,
+          GestureDetector(
+            onTap: _pickProfileImage,
+            child: Stack(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: _imageBytes != null
+                        ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                        : const Icon(Icons.science_rounded, size: 40, color: Colors.white),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: primaryColor, width: 1.5),
+                    ),
+                    child: Icon(Icons.camera_alt, size: 14, color: primaryColor),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 20),
@@ -397,7 +447,7 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Complete your laboratory information to get started',
+                  'Tap the logo to upload your lab photo',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -641,6 +691,237 @@ class _LabProfileSetupState extends State<LabProfileSetup>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  final List<String> _workingDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  Widget _buildWorkingDaysSelector() {
+    final allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: allDays.map((day) {
+        final isSelected = _workingDays.contains(day);
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _workingDays.remove(day);
+              } else {
+                _workingDays.add(day);
+              }
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? primaryColor : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: isSelected ? primaryColor : const Color(0xFFE2E8F0)),
+            ),
+            child: Text(day, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : const Color(0xFF64748B))),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDoctorsPanel() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.people_rounded, color: primaryColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text('Doctors Panel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              const Spacer(),
+              if (_doctors.length < 6)
+                TextButton.icon(
+                  onPressed: () => setState(() => _doctors.add({
+                    'name': TextEditingController(),
+                    'education': TextEditingController(),
+                    'designation': TextEditingController(),
+                  })),
+                  icon: const Icon(Icons.add_circle_rounded, size: 18),
+                  label: const Text('Add Doctor'),
+                  style: TextButton.styleFrom(foregroundColor: primaryColor),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text('These doctors appear on every lab report as "Verified by". Max 6 doctors.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          const SizedBox(height: 16),
+          if (_doctors.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_add_rounded, color: Color(0xFFCBD5E1), size: 24),
+                  SizedBox(width: 8),
+                  Text('No doctors added yet. Tap "Add Doctor" to begin.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                ],
+              ),
+            )
+          else
+            ...List.generate(_doctors.length, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Text('Doctor ${i + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        const Spacer(),
+                        IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20), onPressed: () => setState(() => _doctors.removeAt(i)), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(controller: _doctors[i]['name'], decoration: _inputDec('Full Name', Icons.person_rounded)),
+                    const SizedBox(height: 8),
+                    TextField(controller: _doctors[i]['education'], decoration: _inputDec('Education (e.g. MBBS, FCPS)', Icons.school_rounded)),
+                    const SizedBox(height: 8),
+                    TextField(controller: _doctors[i]['designation'], decoration: _inputDec('Designation (e.g. Associate Professor)', Icons.work_rounded)),
+                  ],
+                ),
+              ),
+            )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollectorsPanel() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.science_rounded, color: Color(0xFF10B981), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text('Sample Collectors Panel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => setState(() => _collectors.add({
+                  'name': TextEditingController(),
+                  'designation': TextEditingController(),
+                })),
+                icon: const Icon(Icons.add_circle_rounded, size: 18),
+                label: const Text('Add Collector'),
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF10B981)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text('These staff members appear as "Sample Collected By" on lab reports.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          const SizedBox(height: 16),
+          if (_collectors.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_add_rounded, color: Color(0xFFCBD5E1), size: 24),
+                  SizedBox(width: 8),
+                  Text('No collectors added yet.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                ],
+              ),
+            )
+          else
+            ...List.generate(_collectors.length, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Text('Collector ${i + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        const Spacer(),
+                        IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20), onPressed: () => setState(() => _collectors.removeAt(i)), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(controller: _collectors[i]['name'], decoration: _inputDec('Full Name', Icons.person_rounded)),
+                    const SizedBox(height: 8),
+                    TextField(controller: _collectors[i]['designation'], decoration: _inputDec('Designation (e.g. Lab Technician)', Icons.work_rounded)),
+                  ],
+                ),
+              ),
+            )),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDec(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 18, color: primaryColor),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: primaryColor, width: 1.5)),
+    );
+  }
+
+  Widget _buildDrapSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _drapCompliance ? const Color(0xFF10B981) : const Color(0xFFE2E8F0)),
+      ),
+      child: CheckboxListTile(
+        title: const Text(
+          'DRAP Compliance Agreement',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+        ),
+        subtitle: const Text(
+          'I confirm this laboratory operates in accordance with DRAP (Drug Regulatory Authority of Pakistan) regulations and diagnostic testing standards.',
+          style: TextStyle(fontSize: 12, height: 1.4),
+        ),
+        value: _drapCompliance,
+        onChanged: (value) {
+          setState(() => _drapCompliance = value ?? false);
+        },
+        activeColor: const Color(0xFF10B981),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }

@@ -3,6 +3,8 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/rating_dialog.dart';
+import 'package:icare/utils/pdf_invoice_generator.dart';
 import 'package:intl/intl.dart';
 
 class PharmacyOrders extends StatefulWidget {
@@ -44,33 +46,62 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     try {
       setState(() => _isLoading = true);
       final status = _getCurrentStatus();
+      debugPrint('📋 Loading orders with status: $status');
       final orders = await _pharmacyService.getPharmacyOrders(status: status);
+      debugPrint('✅ Received ${orders.length} orders from backend');
+
       setState(() {
         _orders = orders.map((o) {
           final user = o['user'] as Map<String, dynamic>?;
+          final orderId = o['_id']?.toString();
+
+          // Skip orders with invalid IDs
+          if (orderId == null || orderId.isEmpty) {
+            debugPrint('⚠️ Skipping order with missing ID');
+            return null;
+          }
+
+          debugPrint('📦 Order ID: $orderId, Status: ${o['status']}');
+
           return {
-            '_id': o['_id'],
-            'id': o['orderNumber'] ?? '#${o['_id'].toString().substring(0, 8)}',
-            'customerName': user?['name'] ?? 'Guest Customer',
-            'customerPhone': user?['phoneNumber'] ?? 'N/A',
-            'items': (o['items'] as List?)?.length ?? 0,
+            '_id': orderId,
+            'id': o['orderNumber'] ?? '#${orderId.substring(0, 8)}',
+            'customerName': user?['name'] ?? user?['username'] ?? 'Patient',
+            'customerPhone': user?['phoneNumber'] ?? user?['phone'] ?? 'N/A',
+            'items': ((o['items'] as List?)?.length ?? 0) +
+                ((o['prescriptionItems'] as List?)?.length ?? 0),
+            'itemsList': (o['items'] as List?) ?? [],
             'total': (o['totalAmount'] ?? 0).toDouble(),
             'status': o['status'] ?? 'pending',
             'date': o['createdAt'] != null
                 ? DateTime.parse(o['createdAt'])
                 : DateTime.now(),
-            'medicines':
-                (o['items'] as List?)
-                    ?.map((item) => item['productName'] ?? 'Unknown')
-                    .toList() ??
-                [],
-            'prescriptionText': o['prescriptionText'],
+            'orderType': o['orderType'] ?? 'cart',
+            'medicines': [
+              ...((o['items'] as List?) ?? []).map((item) {
+                final name = (item['product_name'] ??
+                    item['productName'] ??
+                    item['name'] ??
+                    'Medicine').toString();
+                return _sanitizeText(name) ?? name;
+              }),
+              ...((o['prescriptionItems'] as List?) ?? []).map((item) {
+                final name = (item['productName'] ??
+                    item['name'] ??
+                    'Medicine').toString();
+                return _sanitizeText(name) ?? name;
+              }),
+            ],
+            'prescriptionText': _sanitizeText(o['prescriptionText']?.toString()),
             'medicalRecord': o['medicalRecord'],
+            'prescriptionId': o['prescriptionId'],
           };
-        }).toList();
+        }).whereType<Map<String, dynamic>>().toList(); // Filter out null entries
+        debugPrint('✅ Processed ${_orders.length} valid orders');
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('❌ Error loading orders: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,34 +116,287 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
       case 0:
         return 'all';
       case 1:
-        return 'pending';
+        return 'pending'; // Awaiting Fulfillment
       case 2:
-        return 'processing';
+        return 'confirmed,preparing,out_for_delivery'; // Processing (all active states)
       case 3:
-        return 'completed';
+        return 'completed'; // Dispensed
       default:
         return 'all';
     }
   }
 
-  Future<void> _updateOrderStatus(String orderId, String newStatus) async {
+  Future<void> _updateOrderStatus(String orderId, String newStatus, {String? expectedDelivery}) async {
     try {
+      debugPrint('🔄 Attempting to update order $orderId to $newStatus');
+
       await _pharmacyService.updateOrderStatus(orderId, newStatus);
-      await _loadOrders();
+      debugPrint('✅ Order status updated successfully');
+
       if (mounted) {
+        // Show success message based on action
+        String message;
+        Color bgColor = const Color(0xFF10B981);
+
+        switch (newStatus) {
+          case 'confirmed':
+            message = '✓ Order accepted successfully';
+            break;
+          case 'rejected':
+            message = '✗ Order rejected';
+            bgColor = const Color(0xFFEF4444);
+            break;
+          case 'preparing':
+            message = '✓ Order moved to preparing';
+            break;
+          case 'out_for_delivery':
+            message = '✓ Order dispatched for delivery';
+            break;
+          case 'completed':
+            message = '✓ Order marked as delivered';
+            break;
+          default:
+            message = '✓ Order status updated';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Order status updated to $newStatus')),
+          SnackBar(
+            content: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: bgColor,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
       }
+
+      // Small delay to ensure message is visible before reload
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Reload orders to get fresh data
+      await _loadOrders();
     } catch (e) {
-      if (mounted) {
-        Utils.showErrorSnackBar(context, e);
+      debugPrint('❌ Error updating order status: $e');
+
+      // Check if it's a 404 error (backend bug - order in list but can't update)
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('404') || errorMsg.contains('not found')) {
+        if (mounted) {
+          // Remove the broken order from UI immediately
+          setState(() {
+            _orders.removeWhere((o) => o['_id'] == orderId);
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                '⚠ Backend error: Order removed from list',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '✗ Failed to update: ${e.toString()}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       }
     }
   }
 
+  Future<void> _showDispatchDialog(String orderId, List items) async {
+    // Check for controlled medicines exceeding 30-unit cap
+    final violatingItems = items.where((item) {
+      final isControlled = item['isControlled'] == true;
+      final qty = (item['quantity'] ?? item['qty'] ?? 0) as int;
+      return isControlled && qty > 30;
+    }).toList();
+
+    if (violatingItems.isNotEmpty && mounted) {
+      final names = violatingItems.map((i) => i['productName'] ?? i['name'] ?? 'Unknown').join(', ');
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_rounded, color: Color(0xFF8B5CF6), size: 22),
+              SizedBox(width: 10),
+              Text('Controlled Medicine Warning', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          content: Text(
+            'This order contains controlled medicine(s) exceeding the 30-unit limit:\n\n$names\n\nPlease verify prescription before dispatching.',
+            style: const TextStyle(fontSize: 13, height: 1.5),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white),
+              child: const Text('Proceed Anyway'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
+    final deliveryController = TextEditingController();
+    TimeOfDay? selectedTime;
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.delivery_dining_rounded, color: Color(0xFF8B5CF6), size: 22),
+              SizedBox(width: 10),
+              Text('Dispatch Order', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            ],
+          ),
+          content: SizedBox(
+            width: 380,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Enter the expected delivery time before dispatching. This will be shown to the patient.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Expected Delivery Time *',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          selectedTime = picked;
+                          deliveryController.text = picked.format(ctx);
+                        });
+                      }
+                    },
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        controller: deliveryController,
+                        decoration: InputDecoration(
+                          hintText: 'Tap to select time',
+                          suffixIcon: const Icon(Icons.access_time_rounded, color: Color(0xFF8B5CF6)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty) ? 'Expected delivery time is required' : null,
+                      ),
+                    ),
+                  ),
+                  if (selectedTime != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F0FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Patient will be notified: delivery by ${selectedTime!.format(ctx)}',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF6D28D9)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx);
+                  _updateOrderStatus(orderId, 'out_for_delivery',
+                      expectedDelivery: deliveryController.text);
+                }
+              },
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: const Text('Dispatch'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> _getOrdersByStatus(String status) {
-    return _orders;
+    if (status == 'all') return _orders;
+
+    if (status == 'processing') {
+      // Processing tab includes: confirmed, preparing, out_for_delivery
+      return _orders.where((o) {
+        final s = o['status']?.toString() ?? '';
+        return s == 'confirmed' || s == 'preparing' || s == 'out_for_delivery';
+      }).toList();
+    }
+
+    // For specific status (pending, completed, rejected)
+    return _orders.where((o) => o['status'] == status).toList();
   }
 
   @override
@@ -126,7 +410,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Dispense Requests',
+          'Orders',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -134,6 +418,13 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             color: Color(0xFF0F172A),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
+            onPressed: _loadOrders,
+            tooltip: 'Refresh orders',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primaryColor,
@@ -202,6 +493,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     final statusColor = _getStatusColor(status);
     final date = order['date'] as DateTime;
     final isDoctorReferred = order['medicalRecord'] != null;
+    final isPrescriptionOrder = order['orderType'] == 'prescription';
     final hasPrescriptionText =
         order['prescriptionText'] != null &&
         order['prescriptionText'].toString().isNotEmpty;
@@ -240,8 +532,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Doctor-referred badge
-                if (isDoctorReferred)
+                if (isDoctorReferred || isPrescriptionOrder)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(
@@ -249,24 +540,34 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      color: isPrescriptionOrder
+                          ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                          : const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(
-                          Icons.medical_services_rounded,
+                          isPrescriptionOrder
+                              ? Icons.upload_file_rounded
+                              : Icons.medical_services_rounded,
                           size: 14,
-                          color: Color(0xFF10B981),
+                          color: isPrescriptionOrder
+                              ? const Color(0xFF8B5CF6)
+                              : const Color(0xFF10B981),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
-                          'Doctor Prescribed',
+                          isPrescriptionOrder
+                              ? 'Prescription Order'
+                              : 'Doctor Referred',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF10B981),
+                            color: isPrescriptionOrder
+                                ? const Color(0xFF8B5CF6)
+                                : const Color(0xFF10B981),
                           ),
                         ),
                       ],
@@ -300,11 +601,22 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                             ),
                           ),
                           const SizedBox(height: 4),
+                          const Text(
+                            'Patient Name',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             order['customerName'],
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF64748B),
+                              color: Color(0xFF0F172A),
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -470,7 +782,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                           ),
                         ),
                         Text(
-                          '\$${order['total']}',
+                          'PKR ${order['total']}',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -506,58 +818,110 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
+                        child: OutlinedButton.icon(
                           onPressed: () =>
-                              _updateOrderStatus(order['_id'], 'cancelled'),
+                              _updateOrderStatus(order['_id'], 'rejected'),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          label: const Text('Reject'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFEF4444),
-                            side: const BorderSide(color: Color(0xFFEF4444)),
+                            side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Reject'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () =>
                               _updateOrderStatus(order['_id'], 'confirmed'),
+                          icon: const Icon(Icons.check_rounded, size: 18),
+                          label: const Text('Accept'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 48),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Accept'),
                         ),
                       ),
                     ],
                   ),
                 ] else if (status == 'confirmed') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'preparing'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          _updateOrderStatus(order['_id'], 'preparing'),
+                      icon: const Icon(Icons.medication_rounded, size: 18),
+                      label: const Text('Start Preparing'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                    child: const Text('Start Preparing'),
                   ),
                 ] else if (status == 'preparing') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'out_for_delivery'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showDispatchDialog(order['_id'], order['itemsList'] as List),
+                      icon: const Icon(Icons.delivery_dining_rounded, size: 18),
+                      label: const Text('Dispatch Order'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                    child: const Text('Out for Delivery'),
                   ),
                 ] else if (status == 'out_for_delivery') ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        _updateOrderStatus(order['_id'], 'completed'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _markAsCompleted(order['_id'], order['customerName']),
+                      icon: const Icon(Icons.check_circle_rounded, size: 18),
+                      label: const Text('Mark as Delivered'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                    child: const Text('Mark as Completed'),
+                  ),
+                ] else if (status == 'completed') ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _downloadInvoice(order),
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text('Download Invoice'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0036BC),
+                        side: const BorderSide(color: Color(0xFF0036BC)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -566,6 +930,105 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         ],
       ),
     );
+  }
+
+  Future<void> _downloadInvoice(Map<String, dynamic> order) async {
+    try {
+      final medicinesList = (order['medicines'] as List? ?? order['items'] as List? ?? []);
+      final total = (order['total'] ?? order['totalAmount'] ?? order['amount'] ?? 0).toDouble();
+      final perItem = medicinesList.isNotEmpty ? total / medicinesList.length : 0.0;
+
+      final items = medicinesList.map((medicine) {
+        if (medicine is Map) {
+          return {
+            'name': medicine['name']?.toString() ?? medicine['productName']?.toString() ?? 'Item',
+            'quantity': medicine['quantity'] ?? 1,
+            'price': (medicine['price'] ?? medicine['unitPrice'] ?? perItem).toDouble(),
+          };
+        }
+        return {'name': medicine.toString(), 'quantity': 1, 'price': perItem};
+      }).toList();
+
+      if (items.isEmpty) {
+        items.add({'name': 'Pharmacy Order', 'quantity': 1, 'price': total});
+      }
+
+      // Parse date safely
+      DateTime orderDate;
+      final rawDate = order['date'] ?? order['createdAt'] ?? order['orderDate'];
+      if (rawDate is DateTime) {
+        orderDate = rawDate;
+      } else if (rawDate != null) {
+        orderDate = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+      } else {
+        orderDate = DateTime.now();
+      }
+
+      await PdfInvoiceGenerator.generatePharmacyInvoice(
+        orderNumber: (order['id'] ?? order['_id'] ?? 'N/A').toString(),
+        patientName: (order['customerName'] ?? order['patientName'] ?? order['patient_name'] ?? 'Patient').toString(),
+        patientPhone: (order['customerPhone'] ?? order['phone'] ?? order['patientPhone'] ?? 'N/A').toString(),
+        patientAddress: (order['address'] ?? order['deliveryAddress'] ?? 'N/A').toString(),
+        items: items,
+        deliveryFee: (order['deliveryFee'] ?? order['delivery_fee'] ?? 0).toDouble(),
+        totalAmount: total,
+        orderDate: orderDate,
+        pharmacyName: 'iCare Pharmacy',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate invoice: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markAsCompleted(String orderId, String customerName) async {
+    try {
+      await _updateOrderStatus(orderId, 'completed');
+
+      if (mounted) {
+        final rated = await showRatingDialog(
+          context: context,
+          title: 'How was your experience?',
+          subtitle: 'Rate your experience with $customerName\'s order',
+          onSubmit: (rating, comment) async {
+            // Submit rating to backend
+            try {
+              await _pharmacyService.submitOrderRating(orderId, rating, comment);
+            } catch (e) {
+              debugPrint('Failed to submit rating: $e');
+            }
+          },
+        );
+
+        if (rated == true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Thank you for your feedback!'),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Utils.showErrorSnackBar(context, e);
+      }
+    }
+  }
+
+  /// Removes "undefined" / "null" strings injected by backend template rendering
+  String? _sanitizeText(String? text) {
+    if (text == null) return null;
+    final cleaned = text
+        .replaceAll(RegExp(r'\bundefined\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\bnull\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
+        .replaceAll(RegExp(r',\s*,'), ',')
+        .trim();
+    return cleaned.isEmpty ? null : cleaned;
   }
 
   Color _getStatusColor(String status) {

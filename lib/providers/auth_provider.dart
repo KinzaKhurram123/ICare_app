@@ -18,18 +18,18 @@ class AuthNotifier extends StateNotifier<Auth> {
         ),
       );
 
-  void setUserToken(String _token) {
-    state = state.copyWith(token: _token, isLoggedIn: true);
-    SharedPref().setToken(_token);
+  Future<void> setUserToken(String token) async {
+    state = state.copyWith(token: token, isLoggedIn: true);
+    await SharedPref().setToken(token.trim());
   }
 
   void setUserWalkthrough(bool value) {
     state = state.copyWith(userWalkthrough: value);
   }
 
-  void setUserRole(String role) {
+  Future<void> setUserRole(String role) async {
     log(role);
-    SharedPref().setUserRole(role);
+    await SharedPref().setUserRole(role);
     state = state.copyWith(userRole: role);
   }
 
@@ -37,11 +37,10 @@ class AuthNotifier extends StateNotifier<Auth> {
     state = state.copyWith(fcmToken: _token);
   }
 
-  void setUser(User user) {
-    // Keep the original role case from backend and normalize it
+  Future<void> setUser(User user) async {
     final normalizedRole = _normalizeRole(user.role);
-    SharedPref().setUserRole(normalizedRole);
-    SharedPref().setUserData(user);
+    await SharedPref().setUserRole(normalizedRole);
+    await SharedPref().setUserData(user);
     state = state.copyWith(user: user, userRole: normalizedRole);
   }
 
@@ -55,10 +54,10 @@ class AuthNotifier extends StateNotifier<Auth> {
     return normalized;
   }
 
-  void setUserLogout() {
-    SharedPref().remove("userRole");
-    SharedPref().remove("token");
-    SharedPref().remove("userData");
+  Future<void> setUserLogout() async {
+    await SharedPref().remove("userRole");
+    await SharedPref().remove("token");
+    await SharedPref().remove("userData");
     state = Auth();
   }
 }

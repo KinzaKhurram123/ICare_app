@@ -123,11 +123,39 @@ class NotificationService {
   /// Get notifications for current user
   Future<Map<String, dynamic>> getNotifications() async {
     try {
-      final response = await _apiService.get('/notifications');
-      return response.data;
+      final response = await _apiService.get('/notifications').timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Request timeout - please check your connection');
+        },
+      );
+      if (kDebugMode) {
+        print('Notifications response: ${response.data}');
+      }
+      
+      // Handle different response structures
+      if (response.data is Map) {
+        final data = response.data as Map<String, dynamic>;
+        return {
+          'success': true,
+          'notifications': data['notifications'] ?? data['data'] ?? [],
+        };
+      }
+      
+      return {
+        'success': true,
+        'notifications': [],
+      };
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getNotifications');
-      rethrow;
+      if (kDebugMode) {
+        print('Error fetching notifications: $e');
+      }
+      return {
+        'success': false,
+        'notifications': [],
+        'error': e.toString(),
+      };
     }
   }
 
@@ -137,7 +165,9 @@ class NotificationService {
       await _apiService.put('/notifications/$id/read', {});
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'markAsRead');
-      rethrow;
+      if (kDebugMode) {
+        print('Error marking notification as read: $e');
+      }
     }
   }
 
@@ -147,7 +177,9 @@ class NotificationService {
       await _apiService.put('/notifications/read-all', {});
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'markAllAsRead');
-      rethrow;
+      if (kDebugMode) {
+        print('Error marking all notifications as read: $e');
+      }
     }
   }
 }

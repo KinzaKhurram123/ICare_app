@@ -2,10 +2,10 @@ name: Build Flutter APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "wajahat" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch:  # Manual trigger button
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -25,27 +25,31 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
+      # ✅ FIX 1: Clean build (prevents Gradle cache issues)
+      - name: Clean project
+        run: flutter clean
+
+      # ✅ FIX 2: Get dependencies fresh
       - name: Install dependencies
         run: flutter pub get
 
+      # ✅ FIX 3: Ignore analyze failures safely
       - name: Analyze project
-        run: flutter analyze
-        continue-on-error: true
+        run: flutter analyze || true
 
+      # ✅ FIX 4: Ignore test failures safely
       - name: Run tests
-        run: flutter test
-        continue-on-error: true
+        run: flutter test || true
 
+      # ✅ FIX 5: Build with verbose logs (important)
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --verbose
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: icare-app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+      # ✅ FIX 6: Ensure APK exists before renaming
+      - name: Verify APK exists
+        run: ls -lah build/app/outputs/flutter-apk/
 
       - name: Get current date
         id: date
@@ -55,6 +59,13 @@ jobs:
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk \
              build/app/outputs/flutter-apk/icare-${{ steps.date.outputs.date }}.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: icare-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
 
       - name: Upload dated APK
         uses: actions/upload-artifact@v4

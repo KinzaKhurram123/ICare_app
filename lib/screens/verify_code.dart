@@ -5,6 +5,7 @@ import 'package:icare/services/auth_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/widgets/auth_left_panel.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -129,12 +130,9 @@ class _VerifyCodeState extends State<VerifyCode> {
           // ══════════════════════════════════════════════════════════════
           // LEFT HERO PANEL — gradient + branding
           // ══════════════════════════════════════════════════════════════
-          Expanded(
+          const Expanded(
             flex: 5,
-            child: SizedBox(
-              height: screenHeight,
-              child: Image.asset("assets/images/splash.jpg", fit: BoxFit.cover),
-            ),
+            child: AuthLeftPanel(),
           ),
 
           // ══════════════════════════════════════════════════════════════

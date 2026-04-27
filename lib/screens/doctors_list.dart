@@ -21,8 +21,17 @@ class _DoctorsListState extends State<DoctorsList> {
   List<Doctor> _filteredDoctors = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  String _searchMode = 'name'; // name, specialty, condition
   String? _selectedSpecialization;
   Set<String> _specializations = {};
+  String? _availabilityFilter; // online, offline, all
+  double? _minFee;
+  double? _maxFee;
+  double? _minRating;
+  String? _genderFilter; // male, female, all
+  String? _languageFilter;
+  Set<String> _languages = {};
+  String _sortBy = 'rating'; // rating, experience, fees
 
   @override
   void initState() {
@@ -54,10 +63,17 @@ class _DoctorsListState extends State<DoctorsList> {
           .map((d) => d.specialization!)
           .toSet();
 
+      final langs = doctorsList
+          .where((d) => d.languages != null && d.languages!.isNotEmpty)
+          .expand((d) => d.languages!)
+          .toSet();
+
       setState(() {
         _doctors = doctorsList;
         _filteredDoctors = doctorsList;
         _specializations = specs;
+        _languages = langs;
+        _sortDoctors();
         _isLoading = false;
       });
     } else {
@@ -74,29 +90,72 @@ class _DoctorsListState extends State<DoctorsList> {
   }
 
   void _filterDoctors() {
-    debugPrint(
-      '🔍 Filtering doctors: query="$_searchQuery", spec=$_selectedSpecialization',
-    );
     setState(() {
       _filteredDoctors = _doctors.where((doctor) {
-        final matchesSearch =
-            _searchQuery.isEmpty ||
-            doctor.user.name.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ) ||
-            (doctor.specialization?.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                ) ??
-                false);
+        bool matchesSearch = false;
+        
+        if (_searchMode == 'name') {
+          matchesSearch = _searchQuery.isEmpty ||
+              doctor.user.name.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+        } else if (_searchMode == 'specialty') {
+          matchesSearch = _searchQuery.isEmpty ||
+              (doctor.specialization?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ?? false);
+        } else if (_searchMode == 'condition') {
+          matchesSearch = _searchQuery.isEmpty ||
+              (doctor.specialization?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ?? false);
+        }
 
         final matchesSpecialization =
             _selectedSpecialization == null ||
             doctor.specialization == _selectedSpecialization;
 
-        return matchesSearch && matchesSpecialization;
+        final matchesAvailability = _availabilityFilter == null ||
+            _availabilityFilter == 'all' ||
+            (_availabilityFilter == 'online' && doctor.isOnline) ||
+            (_availabilityFilter == 'offline' && !doctor.isOnline);
+
+        const matchesFees = true; // consultationFee not available in Doctor model yet
+
+        final matchesRating = _minRating == null || doctor.averageRating >= _minRating!;
+
+        // Gender filter temporarily disabled - gender field not in Doctor model
+        const matchesGender = true;
+
+        final matchesLanguage = _languageFilter == null ||
+            (doctor.languages?.contains(_languageFilter) ?? false);
+
+        return matchesSearch && matchesSpecialization && matchesAvailability &&
+            matchesFees && matchesRating && matchesGender && matchesLanguage;
       }).toList();
-      debugPrint('✅ Filtered to ${_filteredDoctors.length} doctors');
+      
+      _sortDoctors();
     });
+  }
+
+  void _sortDoctors() {
+    setState(() {
+      if (_sortBy == 'rating') {
+        _filteredDoctors.sort((a, b) => b.averageRating.compareTo(a.averageRating));
+      } else if (_sortBy == 'experience') {
+        _filteredDoctors.sort((a, b) {
+          final aExp = int.tryParse(a.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
+          final bExp = int.tryParse(b.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
+          return bExp.compareTo(aExp);
+        });
+      } else if (_sortBy == 'fees') {
+        // consultationFee not yet in Doctor model — skip sort
+      }
+    });
+  }
+
+  int get _onlineDoctorsCount {
+    return _doctors.where((d) => d.isOnline).length;
   }
 
   @override
@@ -128,7 +187,52 @@ class _DoctorsListState extends State<DoctorsList> {
                   color: Colors.white,
                   padding: EdgeInsets.all(isDesktop ? 24 : 16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Online doctors count
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${_onlineDoctorsCount} doctors online right now',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Search Mode Tabs
+                      Row(
+                        children: [
+                          _buildSearchModeTab('name', 'By Name'),
+                          const SizedBox(width: 8),
+                          _buildSearchModeTab('specialty', 'By Speciality'),
+                          const SizedBox(width: 8),
+                          _buildSearchModeTab('condition', 'By Condition'),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
                       // Search Bar
                       TextField(
                         onChanged: (value) {
@@ -136,7 +240,11 @@ class _DoctorsListState extends State<DoctorsList> {
                           _filterDoctors();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search doctors by name or specialization',
+                          hintText: _searchMode == 'name' 
+                            ? 'Search doctors by name' 
+                            : _searchMode == 'specialty'
+                            ? 'Search by specialization'
+                            : 'Search by condition (e.g., diabetes)',
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -148,7 +256,7 @@ class _DoctorsListState extends State<DoctorsList> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
+                            borderSide: const BorderSide(
                               color: AppColors.primaryColor,
                             ),
                           ),
@@ -156,45 +264,173 @@ class _DoctorsListState extends State<DoctorsList> {
                           fillColor: const Color(0xFFF8FAFC),
                         ),
                       ),
-                      if (_specializations.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        // Specialization Filter
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              FilterChip(
-                                label: const Text('All'),
-                                selected: _selectedSpecialization == null,
-                                onSelected: (selected) {
+                      const SizedBox(height: 16),
+                      
+                      // Filters Row
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          // Specialization
+                          if (_specializations.isNotEmpty)
+                            SizedBox(
+                              width: isDesktop ? 200 : double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedSpecialization,
+                                decoration: InputDecoration(
+                                  labelText: 'Speciality',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  isDense: true,
+                                ),
+                                items: [
+                                  const DropdownMenuItem(value: null, child: Text('All')),
+                                  ..._specializations.map((s) => DropdownMenuItem(value: s, child: Text(s))),
+                                ],
+                                onChanged: (v) {
                                   setState(() {
-                                    _selectedSpecialization = null;
+                                    _selectedSpecialization = v;
                                     _filterDoctors();
                                   });
                                 },
                               ),
-                              const SizedBox(width: 8),
-                              ..._specializations.map(
-                                (spec) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: FilterChip(
-                                    label: Text(spec),
-                                    selected: _selectedSpecialization == spec,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        _selectedSpecialization = selected
-                                            ? spec
-                                            : null;
-                                        _filterDoctors();
-                                      });
-                                    },
-                                  ),
+                            ),
+                          
+                          // Availability
+                          SizedBox(
+                            width: isDesktop ? 150 : double.infinity,
+                            child: DropdownButtonFormField<String>(
+                              value: _availabilityFilter,
+                              decoration: InputDecoration(
+                                labelText: 'Availability',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
                               ),
-                            ],
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 'online', child: Text('Online')),
+                                DropdownMenuItem(value: 'offline', child: Text('Offline')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _availabilityFilter = v;
+                                  _filterDoctors();
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                          
+                          // Rating
+                          SizedBox(
+                            width: isDesktop ? 150 : double.infinity,
+                            child: DropdownButtonFormField<double>(
+                              value: _minRating,
+                              decoration: InputDecoration(
+                                labelText: 'Min Rating',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 4.5, child: Text('4.5+')),
+                                DropdownMenuItem(value: 4.0, child: Text('4.0+')),
+                                DropdownMenuItem(value: 3.5, child: Text('3.5+')),
+                                DropdownMenuItem(value: 3.0, child: Text('3.0+')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _minRating = v;
+                                  _filterDoctors();
+                                });
+                              },
+                            ),
+                          ),
+                          
+                          // Gender
+                          SizedBox(
+                            width: isDesktop ? 130 : double.infinity,
+                            child: DropdownButtonFormField<String>(
+                              value: _genderFilter,
+                              decoration: InputDecoration(
+                                labelText: 'Gender',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: null, child: Text('All')),
+                                DropdownMenuItem(value: 'male', child: Text('Male')),
+                                DropdownMenuItem(value: 'female', child: Text('Female')),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _genderFilter = v;
+                                  _filterDoctors();
+                                });
+                              },
+                            ),
+                          ),
+                          
+                          // Language
+                          if (_languages.isNotEmpty)
+                            SizedBox(
+                              width: isDesktop ? 150 : double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                value: _languageFilter,
+                                decoration: InputDecoration(
+                                  labelText: 'Language',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  isDense: true,
+                                ),
+                                items: [
+                                  const DropdownMenuItem(value: null, child: Text('All')),
+                                  ..._languages.map((l) => DropdownMenuItem(value: l, child: Text(l))),
+                                ],
+                                onChanged: (v) {
+                                  setState(() {
+                                    _languageFilter = v;
+                                    _filterDoctors();
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Sort Options
+                      Row(
+                        children: [
+                          const Text(
+                            'Sort by:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _buildSortChip('rating', 'Rating'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('experience', 'Experience'),
+                          const SizedBox(width: 8),
+                          _buildSortChip('fees', 'Fees'),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -206,6 +442,274 @@ class _DoctorsListState extends State<DoctorsList> {
                             text: 'No doctors found',
                             fontSize: 16,
                             color: Colors.grey,
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossAxisCount = 2;
+                            if (constraints.maxWidth > 1200) {
+                              crossAxisCount = 4;
+                            } else if (constraints.maxWidth > 800) {
+                              crossAxisCount = 3;
+                            }
+
+                            return GridView.builder(
+                              itemCount: _filteredDoctors.length,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isDesktop ? 40 : 20,
+                                vertical: 24,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    mainAxisExtent: isDesktop ? 340 : 280,
+                                    crossAxisSpacing: 24,
+                                    mainAxisSpacing: 24,
+                                  ),
+                              itemBuilder: (ctx, i) {
+                                return DoctorProfileCard(
+                                  doctor: _filteredDoctors[i],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildSearchModeTab(String mode, String label) {
+    final isSelected = _searchMode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _searchMode = mode;
+          _filterDoctors();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortChip(String sort, String label) {
+    final isSelected = _sortBy == sort;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _sortBy = sort;
+          _sortDoctors();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DoctorsListWithSpecialty extends StatefulWidget {
+  final String specialty;
+  const DoctorsListWithSpecialty({super.key, required this.specialty});
+
+  @override
+  State<DoctorsListWithSpecialty> createState() => _DoctorsListWithSpecialtyState();
+}
+
+class _DoctorsListWithSpecialtyState extends State<DoctorsListWithSpecialty> {
+  final DoctorService _doctorService = DoctorService();
+  List<Doctor> _doctors = [];
+  List<Doctor> _filteredDoctors = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctors();
+  }
+
+  Future<void> _loadDoctors() async {
+    setState(() => _isLoading = true);
+
+    final result = await _doctorService.getAllDoctors();
+
+    if (result['success']) {
+      final doctorsList = (result['doctors'] as List)
+          .map((json) => Doctor.fromJson(json))
+          .toList();
+
+      // Filter by specialty immediately
+      final filtered = doctorsList
+          .where((d) => d.specialization == widget.specialty)
+          .toList();
+
+      setState(() {
+        _doctors = doctorsList;
+        _filteredDoctors = filtered;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to load doctors'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _filterDoctors() {
+    setState(() {
+      _filteredDoctors = _doctors.where((doctor) {
+        final matchesSearch = _searchQuery.isEmpty ||
+            doctor.user.name.toLowerCase().contains(_searchQuery.toLowerCase());
+        final matchesSpecialty = doctor.specialization == widget.specialty;
+        return matchesSearch && matchesSpecialty;
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDesktop = Utils.windowWidth(context) > 600;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        leading: const CustomBackButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: CustomText(
+          text: widget.specialty,
+          fontFamily: "Gilroy-Bold",
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: const Color(0xFF0F172A),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: Color(0xFFF59E0B),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Showing ${widget.specialty} specialists based on your referral',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF92400E),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        onChanged: (value) {
+                          _searchQuery = value;
+                          _filterDoctors();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search by doctor name',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _filteredDoctors.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_search_rounded,
+                                size: 64,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomText(
+                                text: 'No ${widget.specialty} specialists found',
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ],
                           ),
                         )
                       : LayoutBuilder(
@@ -377,6 +881,81 @@ class DoctorProfileCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 8),
+                  
+                  // PMDC Number (if available)
+                  if (displayDoctor.pmdcNumber != null && displayDoctor.pmdcNumber!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'PMDC: ${displayDoctor.pmdcNumber}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0369A1),
+                        ),
+                      ),
+                    ),
+                  
+                  // Years of Experience (if available)
+                  if (displayDoctor.experience != null && displayDoctor.experience!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.work_outline_rounded,
+                          size: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          displayDoctor.experience!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  
+                  // Online indicator
+                  if (displayDoctor.isOnline) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Online',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
                   const SizedBox(height: 16),
 
                   // Rating Badge
