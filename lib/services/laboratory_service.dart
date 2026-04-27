@@ -195,7 +195,7 @@ class LaboratoryService {
           .length;
       final todayBookings = bookings.where((b) {
         final bookingDate =
-            DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
+            DateTime.tryParse(b['test_date'] ?? b['createdAt'] ?? b['date'] ?? '') ?? DateTime.now();
         final today = DateTime.now();
         return bookingDate.year == today.year &&
             bookingDate.month == today.month &&

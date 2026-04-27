@@ -867,9 +867,9 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   Widget _buildBookingCard(Map<String, dynamic> booking) {
     final status = booking['status'] ?? 'pending';
     final statusColor = _getStatusColor(status);
-    final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
-    final patient = booking['patient'];
-    final testName = booking['testName'] ?? 'Test';
+    final date = DateTime.tryParse(booking['date'] ?? booking['test_date'] ?? booking['createdAt'] ?? '') ?? DateTime.now();
+    final patientName = booking['patient_name'] ?? booking['patient']?['name'] ?? 'Patient';
+    final testName = booking['test_type'] ?? booking['testName'] ?? 'Test';
     final isDoctorOrdered = booking['medicalRecord'] != null;
     final doctorName = booking['doctor']?['name'];
     final urgency = booking['urgency'] ?? 'Normal';
@@ -1010,7 +1010,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                         ),
                       ),
                       Text(
-                        patient?['name'] ?? 'Patient',
+                        patientName,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 13,
