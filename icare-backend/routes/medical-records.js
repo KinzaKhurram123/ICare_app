@@ -40,8 +40,11 @@ router.post('/create', authMiddleware, async (req, res) => {
       symptoms: symptoms || [],
       prescription: {
         ...(prescription || {}),
-        // Also store labTests inside prescription for patient_prescriptions.dart
-        labTests: labTests || prescription?.labTests || [],
+        // Normalize labTests into {name, urgency} objects for prescription.labTests
+        labTests: (() => {
+          const raw = prescription?.labTests || labTests || [];
+          return raw.map(t => typeof t === 'string' ? { name: t, urgency: 'Routine' } : t);
+        })(),
       },
       labTests: labTests || [],
       vitalSigns: vitalSigns || {},
