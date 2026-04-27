@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -923,9 +924,20 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              // Simulate file pick with placeholder name
-              onPicked('${label.replaceAll(' ', '_')}.pdf');
+            onPressed: () async {
+              try {
+                final result = await FilePicker.platform.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                  allowMultiple: false,
+                );
+                if (result != null && result.files.isNotEmpty) {
+                  onPicked(result.files.first.name);
+                }
+              } catch (e) {
+                // Fallback if file picker fails
+                onPicked('${label.replaceAll(' ', '_')}.pdf');
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: color,

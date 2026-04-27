@@ -444,33 +444,15 @@ class _DoctorsListState extends State<DoctorsList> {
                             color: Colors.grey,
                           ),
                         )
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            int crossAxisCount = 2;
-                            if (constraints.maxWidth > 1200) {
-                              crossAxisCount = 4;
-                            } else if (constraints.maxWidth > 800) {
-                              crossAxisCount = 3;
-                            }
-
-                            return GridView.builder(
-                              itemCount: _filteredDoctors.length,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isDesktop ? 40 : 20,
-                                vertical: 24,
-                              ),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    mainAxisExtent: isDesktop ? 340 : 280,
-                                    crossAxisSpacing: 24,
-                                    mainAxisSpacing: 24,
-                                  ),
-                              itemBuilder: (ctx, i) {
-                                return DoctorProfileCard(
-                                  doctor: _filteredDoctors[i],
-                                );
-                              },
+                      : ListView.builder(
+                          itemCount: _filteredDoctors.length,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? 40 : 16,
+                            vertical: 16,
+                          ),
+                          itemBuilder: (ctx, i) {
+                            return DoctorProfileCard(
+                              doctor: _filteredDoctors[i],
                             );
                           },
                         ),
@@ -712,33 +694,15 @@ class _DoctorsListWithSpecialtyState extends State<DoctorsListWithSpecialty> {
                             ],
                           ),
                         )
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            int crossAxisCount = 2;
-                            if (constraints.maxWidth > 1200) {
-                              crossAxisCount = 4;
-                            } else if (constraints.maxWidth > 800) {
-                              crossAxisCount = 3;
-                            }
-
-                            return GridView.builder(
-                              itemCount: _filteredDoctors.length,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isDesktop ? 40 : 20,
-                                vertical: 24,
-                              ),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    mainAxisExtent: isDesktop ? 340 : 280,
-                                    crossAxisSpacing: 24,
-                                    mainAxisSpacing: 24,
-                                  ),
-                              itemBuilder: (ctx, i) {
-                                return DoctorProfileCard(
-                                  doctor: _filteredDoctors[i],
-                                );
-                              },
+                      : ListView.builder(
+                          itemCount: _filteredDoctors.length,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? 40 : 16,
+                            vertical: 16,
+                          ),
+                          itemBuilder: (ctx, i) {
+                            return DoctorProfileCard(
+                              doctor: _filteredDoctors[i],
                             );
                           },
                         ),
@@ -755,6 +719,279 @@ class DoctorProfileCard extends StatelessWidget {
   final Doctor? doctor;
   final double? width;
   final EdgeInsets? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayDoctor = doctor ??
+        Doctor(
+          id: 'dummy',
+          user: User(
+            id: 'dummy',
+            name: 'Dr. John Doe',
+            email: 'doctor@example.com',
+            phoneNumber: '0300000000',
+            role: 'Doctor',
+          ),
+          specialization: 'General Practitioner',
+          ratings: [4.5],
+        );
+
+    final averageRating = displayDoctor.averageRating;
+    final reviewCount = displayDoctor.reviewCount;
+    final fee = displayDoctor.consultationFee;
+    final experience = displayDoctor.experience;
+    final degrees = displayDoctor.degrees;
+    final hasPmdc = displayDoctor.pmdcNumber != null && displayDoctor.pmdcNumber!.isNotEmpty;
+
+    return GestureDetector(
+      onTap: () {
+        if (doctor != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: width,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                    child: Text(
+                      displayDoctor.user.name.isNotEmpty
+                          ? displayDoctor.user.name.substring(0, 1).toUpperCase()
+                          : 'D',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name + PLATINUM badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                displayDoctor.user.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                            ),
+                            if (averageRating >= 4.5)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.workspace_premium_rounded, size: 12, color: Color(0xFFF59E0B)),
+                                    SizedBox(width: 3),
+                                    Text('PLATINUM DOCTOR', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFF59E0B))),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+
+                        // PMDC Verified
+                        if (hasPmdc)
+                          Row(
+                            children: [
+                              const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
+                              const SizedBox(width: 4),
+                              const Text('PMDC Verified', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF10B981))),
+                            ],
+                          ),
+
+                        const SizedBox(height: 4),
+
+                        // Specialization
+                        Text(
+                          displayDoctor.specialization ?? 'General Practitioner',
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                        ),
+
+                        // Degrees
+                        if (degrees.isNotEmpty)
+                          Text(
+                            degrees.join(', '),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          ),
+
+                        const SizedBox(height: 8),
+
+                        // Experience + Rating
+                        Row(
+                          children: [
+                            if (experience != null && experience.isNotEmpty) ...[
+                              Text(
+                                experience,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text('Experience', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                              const SizedBox(width: 16),
+                            ],
+                            if (averageRating > 0) ...[
+                              const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 3),
+                              Text(
+                                averageRating.toStringAsFixed(1),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$reviewCount Reviews',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              const SizedBox(height: 12),
+
+              // Bottom row: availability + fee + buttons
+              Row(
+                children: [
+                  // Availability
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.videocam_rounded, size: 16, color: Color(0xFF64748B)),
+                        const SizedBox(width: 6),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Online Video Consultation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 6, height: 6,
+                                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF10B981)),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text('Available today', style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        if (fee != null && fee > 0)
+                          Text(
+                            'Rs. ${fee.toInt()}',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        if (doctor != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.videocam_rounded, size: 16),
+                      label: const Text('Video Consultation'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryColor,
+                        side: BorderSide(color: AppColors.primaryColor.withOpacity(0.4)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (doctor != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Book Appointment'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
