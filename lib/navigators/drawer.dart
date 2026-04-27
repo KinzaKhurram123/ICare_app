@@ -762,8 +762,6 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             filterQuality: FilterQuality.high,
           ),
           const SizedBox(height: 16),
-          Container(height: 1, color: const Color(0xFFE8ECF5)),
-          const SizedBox(height: 16),
           // User info row
           Row(
             children: [

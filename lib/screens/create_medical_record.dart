@@ -29,6 +29,30 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
   final _symptomsController = TextEditingController();
   final _notesController = TextEditingController();
 
+  // Common diagnoses for searchable dropdown
+  static const List<String> _commonDiagnoses = [
+    'Hypertension', 'Type 2 Diabetes Mellitus', 'Type 1 Diabetes Mellitus',
+    'Upper Respiratory Tract Infection (URTI)', 'Lower Respiratory Tract Infection',
+    'Pneumonia', 'Bronchitis', 'Asthma', 'COPD',
+    'Acute Gastroenteritis', 'Peptic Ulcer Disease', 'GERD',
+    'Urinary Tract Infection (UTI)', 'Kidney Stones',
+    'Anemia', 'Iron Deficiency Anemia',
+    'Migraine', 'Tension Headache',
+    'Acute Pharyngitis', 'Tonsillitis', 'Sinusitis', 'Otitis Media',
+    'Conjunctivitis', 'Allergic Rhinitis',
+    'Eczema', 'Psoriasis', 'Acne Vulgaris', 'Urticaria',
+    'Hypothyroidism', 'Hyperthyroidism',
+    'Anxiety Disorder', 'Depression',
+    'Osteoarthritis', 'Rheumatoid Arthritis', 'Gout',
+    'Dengue Fever', 'Typhoid Fever', 'Malaria',
+    'COVID-19', 'Influenza',
+    'Coronary Artery Disease', 'Heart Failure', 'Arrhythmia',
+    'Stroke', 'Epilepsy',
+    'Hepatitis A', 'Hepatitis B', 'Hepatitis C',
+    'Appendicitis', 'Cholecystitis',
+    'Other',
+  ];
+
   // Vital Signs
   final _bpController = TextEditingController();
   final _tempController = TextEditingController();
@@ -963,29 +987,7 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Diagnosis Section
-                  _buildModernSectionCard(
-                    'Diagnosis',
-                    Icons.medical_information_rounded,
-                    const Color(0xFFEF4444),
-                    child: TextFormField(
-                      controller: _diagnosisController,
-                      decoration: _modernInputDecoration(
-                        'Enter primary diagnosis',
-                        Icons.edit_note_rounded,
-                      ),
-                      validator: (v) =>
-                          v?.isEmpty ?? true ? 'Diagnosis is required' : null,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Symptoms Section
+                  // Symptoms Section (first per clinical workflow)
                   _buildModernSectionCard(
                     'Symptoms',
                     Icons.sick_rounded,
@@ -993,11 +995,86 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                     child: TextFormField(
                       controller: _symptomsController,
                       decoration: _modernInputDecoration(
-                        'e.g., Fever, Headache, Cough',
+                        'e.g., Fever, Headache, Cough (comma separated)',
                         Icons.list_alt_rounded,
                       ),
                       maxLines: 3,
                       style: const TextStyle(fontSize: 15),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Diagnosis Section (after symptoms)
+                  _buildModernSectionCard(
+                    'Diagnosis',
+                    Icons.medical_information_rounded,
+                    const Color(0xFFEF4444),
+                    child: Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return _commonDiagnoses.where((d) =>
+                          d.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                      },
+                      onSelected: (String selection) {
+                        _diagnosisController.text = selection;
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                        // sync with _diagnosisController
+                        controller.text = _diagnosisController.text;
+                        controller.addListener(() {
+                          _diagnosisController.text = controller.text;
+                        });
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: _modernInputDecoration(
+                            'Search or type diagnosis',
+                            Icons.search_rounded,
+                          ),
+                          validator: (v) =>
+                              v?.isEmpty ?? true ? 'Diagnosis is required' : null,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 6,
+                            borderRadius: BorderRadius.circular(12),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 220),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    dense: true,
+                                    leading: Icon(
+                                      option == 'Other'
+                                          ? Icons.edit_outlined
+                                          : Icons.medical_information_outlined,
+                                      size: 18,
+                                      color: const Color(0xFFEF4444),
+                                    ),
+                                    title: Text(option,
+                                        style: const TextStyle(fontSize: 14)),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
 
@@ -1384,98 +1461,6 @@ class _CreateMedicalRecordScreenState extends State<CreateMedicalRecordScreen> {
                   ),
 
                   const SizedBox(height: 20),
-
-                  // Laboratory Referral (Task 11.1)
-                  _buildModernSectionCard(
-                    'Refer to Laboratory',
-                    Icons.biotech_rounded,
-                    const Color(0xFF0EA5E9),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Select a laboratory to automatically receive these test requests.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_isLoadingLabs)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_availableLabs.isEmpty)
-                          const Text('No laboratories available in your region')
-                        else
-                          DropdownButtonFormField<String>(
-                            value: _selectedLabId,
-                            isExpanded: true,
-                            decoration: _modernInputDecoration(
-                              'Select Laboratory',
-                              Icons.local_hospital_rounded,
-                            ),
-                            dropdownColor: Colors.white,
-                            items: _availableLabs.map((lab) {
-                              return DropdownMenuItem<String>(
-                                value: lab['_id']?.toString(),
-                                child: Text(
-                                  lab['labName']?.toString() ?? lab['name']?.toString() ?? 'Laboratory',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) =>
-                                setState(() => _selectedLabId = val),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Pharmacy Referral (Task 12.1)
-                  _buildModernSectionCard(
-                    'Refer to Pharmacy',
-                    Icons.medication_liquid_rounded,
-                    const Color(0xFF10B981),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Select a pharmacy to automatically send this prescription for fulfillment.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_isLoadingPharmacies)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_availablePharmacies.isEmpty)
-                          const Text('No pharmacies available')
-                        else
-                          DropdownButtonFormField<String>(
-                            value: _selectedPharmacyId,
-                            isExpanded: true,
-                            decoration: _modernInputDecoration(
-                              'Select Pharmacy',
-                              Icons.medication_rounded,
-                            ),
-                            dropdownColor: Colors.white,
-                            items: _availablePharmacies.map((pharmacy) {
-                              return DropdownMenuItem<String>(
-                                value: pharmacy['_id']?.toString(),
-                                child: Text(
-                                  pharmacy['pharmacyName']?.toString() ?? pharmacy['name']?.toString() ?? 'Pharmacy',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) =>
-                                setState(() => _selectedPharmacyId = val),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
 
                   // Health Programs Assignment (Task 19.3)
                   _buildModernSectionCard(

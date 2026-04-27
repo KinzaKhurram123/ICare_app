@@ -521,6 +521,66 @@ class LabBookingDetails extends ConsumerWidget {
   }
 
   Future<void> _updateStatus(BuildContext context, String newStatus) async {
+    // Cancellation / decline requires a mandatory reason
+    if (newStatus == 'cancelled' || newStatus == 'declined') {
+      final reasonController = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            newStatus == 'declined' ? 'Decline Booking' : 'Cancel Booking',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Enter reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                if (reasonController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required to cancel/decline')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              child: Text(newStatus == 'declined' ? 'Decline' : 'Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       final labService = LaboratoryService();
       await labService.updateBookingStatus(booking['_id'], newStatus);

@@ -824,6 +824,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     final isUrgent = urgency == 'Urgent';
     final diagnosisNotes = booking['diagnosisNotes'];
     final specialInstructions = booking['specialInstructions'];
+    final collectionType = booking['collectionType'] ?? booking['collection_type'] ?? 'in-lab';
+    final isHomeCollection = collectionType == 'home';
 
     return InkWell(
       onTap: () async {
@@ -860,46 +862,30 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Urgency and Doctor-ordered badges
-            Row(
+            // Urgency, Doctor-ordered, and Collection Type badges
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 if (isUrgent)
                   Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.priority_high_rounded,
-                          size: 14,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'URGENT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.red,
-                          ),
-                        ),
+                        Icon(Icons.priority_high_rounded, size: 14, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text('URGENT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.red)),
                       ],
                     ),
                   ),
                 if (isDoctorOrdered)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF8B5CF6).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -907,26 +893,47 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.medical_services_rounded,
-                          size: 14,
-                          color: Color(0xFF8B5CF6),
-                        ),
+                        const Icon(Icons.medical_services_rounded, size: 14, color: Color(0xFF8B5CF6)),
                         const SizedBox(width: 6),
                         Text(
                           'Ordered by${doctorName != null ? ' Dr. $doctorName' : ' Doctor'}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF8B5CF6),
-                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6)),
                         ),
                       ],
                     ),
                   ),
+                // Sample Collection Type badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isHomeCollection
+                        ? const Color(0xFF0EA5E9).withOpacity(0.1)
+                        : const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isHomeCollection ? Icons.home_rounded : Icons.business_rounded,
+                        size: 14,
+                        color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isHomeCollection ? 'Home Collection' : 'In Lab',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            if (isUrgent || isDoctorOrdered) const SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Container(
