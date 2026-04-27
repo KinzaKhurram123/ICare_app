@@ -50,12 +50,27 @@ class AuthLeftPanel extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // iCare Logo
-                  Image.asset(
-                    'assets/Asset 1.png',
-                    height: 80,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
+                  // iCare Logo — white box container (same as login page)
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/Asset 1.png',
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
