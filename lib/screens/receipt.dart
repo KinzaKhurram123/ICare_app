@@ -20,9 +20,24 @@ class REceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tests = (bookingData?['tests'] as List?)?.cast<String>() ?? [];
-    final totalPrice = bookingData?['totalPrice'] ?? (tests.length * 3000);
-    final date = bookingData?['date'] ?? "Not set";
+    // Support both 'tests' list and 'test_type' string
+    final rawTests = bookingData?['tests'];
+    final List<String> tests;
+    if (rawTests is List && rawTests.isNotEmpty) {
+      tests = rawTests.cast<String>();
+    } else if (bookingData?['test_type'] != null) {
+      // test_type is a comma-separated string like "CBC, Blood Sugar"
+      tests = bookingData!['test_type'].toString().split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+    } else if (bookingData?['testType'] != null) {
+      tests = bookingData!['testType'].toString().split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+    } else {
+      tests = [];
+    }
+    
+    // Calculate price: Rs. 3000 per test
+    final int testCount = tests.isNotEmpty ? tests.length : 1;
+    final totalPrice = bookingData?['totalPrice'] ?? bookingData?['price'] ?? (testCount * 3000);
+    final date = bookingData?['test_date'] ?? bookingData?['date'] ?? "Not set";
     final time = bookingData?['time'] ?? "Not set";
     final bookingId = bookingData?['_id'] ?? bookingData?['id'] ?? "N/A";
 

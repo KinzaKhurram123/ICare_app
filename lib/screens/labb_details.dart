@@ -362,16 +362,14 @@ class _LabDetailsState extends State<LabDetails> {
                               height: 450,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(32),
-                                gradient: image.isEmpty
-                                    ? const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFF1D4ED8),
-                                          Color(0xFF0EA5E9),
-                                        ],
-                                      )
-                                    : null,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF1D4ED8),
+                                    Color(0xFF0EA5E9),
+                                  ],
+                                ),
                                 image: image.isNotEmpty
                                     ? DecorationImage(
                                         image: image.startsWith('assets')
@@ -391,6 +389,53 @@ class _LabDetailsState extends State<LabDetails> {
                               ),
                               child: Stack(
                                 children: [
+                                  // Show lab icon/content when no image
+                                  if (image.isEmpty)
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(24),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.science_rounded,
+                                              color: Colors.white,
+                                              size: 80,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: const Text(
+                                              'Certified Diagnostic Laboratory',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   Positioned(
                                     top: 20,
                                     right: 20,

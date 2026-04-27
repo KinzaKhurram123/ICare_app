@@ -163,11 +163,15 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
   @override
   Widget build(BuildContext context) {
     final booking = widget.booking;
-    final patient = booking['patient'];
     final testName = booking['test_type'] ?? booking['testName'] ?? 'Lab Test';
     final date = DateTime.tryParse(booking['test_date'] ?? booking['date'] ?? booking['createdAt'] ?? '') ?? DateTime.now();
     final status = booking['status'] ?? 'pending';
-    final patientName = booking['patient_name'] ?? booking['patient']?['name'] ?? 'N/A';
+    // Try multiple fields for patient name
+    final patientName = booking['patient_name'] 
+        ?? booking['patientName']
+        ?? booking['patient']?['name']
+        ?? booking['patient']?['username']
+        ?? 'Unknown Patient';
 
     return Scaffold(
       backgroundColor: backgroundColor,

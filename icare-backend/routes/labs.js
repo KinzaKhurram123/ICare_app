@@ -357,7 +357,20 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     console.log('✅ LAB BOOKING - Booking lab_id:', booking.lab_id.toString());
     console.log('✅ LAB BOOKING - Booking patient_id:', booking.patient_id.toString());
 
-    res.status(201).json({ success: true, message: 'Booking created', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+    // Fetch patient info to include in response
+    const patient = await User.findById(patientId).lean();
+    const patientName = patient?.username || patient?.name || 'Unknown';
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Booking created', 
+      booking: { 
+        ...booking.toObject(), 
+        _id: booking._id.toString(),
+        patient_name: patientName,
+        patient_email: patient?.email,
+      } 
+    });
   } catch (error) {
     console.error('❌ LAB BOOKING - Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create booking' });
