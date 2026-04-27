@@ -820,6 +820,38 @@ class _DoctorConsultationScreenState
             ],
           ),
         ),
+        // ── SELECT PHARMACY ──────────────────────────────────────────
+        if (_prescriptions.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _buildDropdownSection(
+            title: 'Send Prescription To',
+            icon: Icons.local_pharmacy_rounded,
+            color: const Color(0xFF3B82F6),
+            isLoading: _isLoadingPharmacies,
+            items: _availablePharmacies,
+            selectedId: _selectedPharmacyId,
+            nameKey: 'pharmacyName',
+            hint: 'Select pharmacy (optional)',
+            onChanged: (id) => setState(() => _selectedPharmacyId = id),
+          ),
+        ],
+
+        // ── SELECT LAB ───────────────────────────────────────────────
+        if (_labTests.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _buildDropdownSection(
+            title: 'Send Lab Tests To',
+            icon: Icons.science_rounded,
+            color: const Color(0xFF8B5CF6),
+            isLoading: _isLoadingLabs,
+            items: _availableLabs,
+            selectedId: _selectedLabId,
+            nameKey: 'labName',
+            hint: 'Select laboratory (optional)',
+            onChanged: (id) => setState(() => _selectedLabId = id),
+          ),
+        ],
+
         const SizedBox(height: 20),
 
         // ── INSTRUCTIONS ─────────────────────────────────────────────
@@ -1015,6 +1047,63 @@ class _DoctorConsultationScreenState
                 ),
               );
             }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required bool isLoading,
+    required List<dynamic> items,
+    required String? selectedId,
+    required String nameKey,
+    required String hint,
+    required void Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: isLoading
+                ? const LinearProgressIndicator()
+                : DropdownButtonFormField<String>(
+                    value: selectedId,
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      hintStyle: const TextStyle(fontSize: 13),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      isDense: true,
+                    ),
+                    items: [
+                      DropdownMenuItem<String>(value: null, child: Text(hint, style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)))),
+                      ...items.map((item) {
+                        final id = item['_id']?.toString() ?? item['id']?.toString() ?? '';
+                        final name = item[nameKey]?.toString() ?? item['name']?.toString() ?? 'Unknown';
+                        return DropdownMenuItem<String>(value: id, child: Text(name, style: const TextStyle(fontSize: 13)));
+                      }),
+                    ],
+                    onChanged: onChanged,
+                  ),
+          ),
         ],
       ),
     );

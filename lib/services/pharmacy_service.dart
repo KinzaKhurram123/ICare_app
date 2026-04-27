@@ -10,17 +10,16 @@ class PharmacyService {
   Future<List<dynamic>> getAllPharmacies() async {
     final response = await _apiService.get('/pharmacy/get_all_pharmacy');
     final list = response.data['pharmacies'] as List? ?? [];
-    // Backend returns: { _id: profileId, user: { _id, name }, pharmacyName/ownerName, city }
     return list.map((p) {
       final map = Map<String, dynamic>.from(p);
       final user = map['user'] as Map<String, dynamic>? ?? {};
-      // Preserve original profile _id for routing (selectedPharmacy in medical record)
+      // userId = User._id — used for order creation (pharmacy_id in backend)
+      final userId = user['_id']?.toString() ?? map['userId']?.toString() ?? map['_id']?.toString();
+      map['userId'] = userId;
       map['profileId'] = map['_id']?.toString();
-      // Also keep user._id available if needed
-      map['userId'] = user['_id']?.toString();
-      map['_id'] = map['profileId'];
-      map['id'] = map['_id'];
-      // Use actual pharmacy name field first, then fallback chain
+      // _id must be User._id so that pharmacy_id in orders matches
+      map['_id'] = userId;
+      map['id'] = userId;
       final displayName = map['pharmacyName']?.toString()
           ?? map['pharmacy_name']?.toString()
           ?? map['ownerName']?.toString()
