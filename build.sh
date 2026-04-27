@@ -1,21 +1,22 @@
 #!/bin/bash
-set -e
+
+echo "=== Starting Flutter Build ==="
 
 # Install Flutter if not present
 if ! command -v flutter &> /dev/null; then
     echo "Installing Flutter..."
-    git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+    git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter || exit 1
     export PATH="$PATH:/tmp/flutter/bin"
-    flutter config --no-analytics
-    flutter precache --web
+    flutter config --no-analytics || exit 1
+    flutter precache --web || exit 1
 fi
 
 # Get dependencies
 echo "Getting dependencies..."
-flutter pub get
+flutter pub get || exit 1
 
-# Build Flutter web (skip analyzer to speed up build)
+# Build Flutter web
 echo "Building Flutter web..."
-flutter build web --release --web-renderer html
+flutter build web --release --web-renderer html || exit 1
 
-echo "Build complete!"
+echo "=== Build Complete ==="
