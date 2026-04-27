@@ -77,16 +77,14 @@ class _FillLabFormState extends State<FillLabForm> {
         throw Exception("Laboratory ID missing");
       }
 
+      // Backend expects: testType (required), testDate (optional), notes (optional)
+      final tests = widget.selectedTests ?? ["Complete Blood Count (CBC)"];
       final bookingData = {
-        'patientName': _patientNameController.text,
-        'age': int.tryParse(_ageController.text) ?? 25,
-        'phoneNumber': _phoneController.text,
-        'location': _locationController.text,
+        'testType': tests.join(', '),  // Backend expects single string
+        'test_type': tests.join(', '), // Alias for compatibility
+        'testDate': _dateController.text,
         'date': _dateController.text,
-        'time': _timeController.text,
-        'tests': widget.selectedTests ?? ["Complete Blood Count (CBC)"],
-        'homeSampleAvailable': _homeSample,
-        'totalPrice': (widget.selectedTests?.length ?? 1) * 3000,
+        'notes': 'Patient: ${_patientNameController.text}, Age: ${_ageController.text}, Phone: ${_phoneController.text}, Location: ${_locationController.text}, Time: ${_timeController.text}, Home Sample: $_homeSample',
       };
 
       final booking = await _labService.createBooking(labId, bookingData);
