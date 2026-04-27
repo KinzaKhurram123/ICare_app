@@ -57,8 +57,13 @@ class _LabDetailsState extends State<LabDetails> {
         : '';
 
     // Get dynamic tests if available, otherwise use defaults
+    // Backend may return tests as Strings OR as Maps {name, price, ...}
     final List<String> availableTests = (labData?['tests'] is List)
-        ? (labData?['tests'] as List).cast<String>()
+        ? (labData!['tests'] as List).map((t) {
+            if (t is String) return t;
+            if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
+            return t.toString();
+          }).where((s) => s.isNotEmpty).toList()
         : [
             "Complete Blood Count (CBC)",
             "Blood Sugar (Fasting / Random)",

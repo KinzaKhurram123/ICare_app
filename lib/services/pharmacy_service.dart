@@ -186,17 +186,21 @@ class PharmacyService {
     String deliveryOption = 'pickup',
     String address = '',
   }) async {
-    final response = await _apiService.post('/pharmacy/orders/prescription', {
+    // Backend uses POST /pharmacy/orders with items array
+    final items = medicines.map((m) => {
+      'productName': m['name'] ?? m['productName'] ?? '',
+      'quantity': 1,
+      'price': m['price'] ?? 0,
+      'dosage': m['dosage'] ?? '',
+      'frequency': m['frequency'] ?? '',
+    }).toList();
+    final response = await _apiService.post('/pharmacy/orders', {
       'pharmacyId': pharmacyId,
-      'medicines': medicines.map((m) => {
-        'name': m['name'] ?? m['productName'] ?? '',
-        'dosage': m['dosage'] ?? '',
-        'frequency': m['frequency'] ?? '',
-      }).toList(),
-      'prescriptionText': medicines.map((m) => m['name'] ?? m['productName'] ?? '').join(', '),
-      if (medicalRecordId != null) 'medicalRecordId': medicalRecordId,
-      'deliveryOption': deliveryOption,
-      'address': address,
+      'items': items,
+      'deliveryAddress': address,
+      'totalAmount': 0,
+      'deliveryFee': 0,
+      if (medicalRecordId != null) 'prescriptionId': medicalRecordId,
     });
     return response.data;
   }
