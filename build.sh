@@ -1,22 +1,56 @@
 #!/bin/bash
 
-echo "=== Starting Flutter Build ==="
+echo "=== Flutter Build Script ==="
 
-# Install Flutter if not present
+# Check if Flutter is available
 if ! command -v flutter &> /dev/null; then
-    echo "Installing Flutter..."
-    git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter || exit 1
+    echo "Flutter not found. Installing..."
+
+    # Clone Flutter
+    if [ ! -d "/tmp/flutter" ]; then
+        echo "Cloning Flutter repository..."
+        git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to clone Flutter"
+            exit 1
+        fi
+    fi
+
+    # Add Flutter to PATH
     export PATH="$PATH:/tmp/flutter/bin"
-    flutter config --no-analytics || exit 1
-    flutter precache --web || exit 1
+
+    # Configure Flutter
+    echo "Configuring Flutter..."
+    flutter config --no-analytics
+
+    # Precache web
+    echo "Precaching Flutter web..."
+    flutter precache --web
+fi
+
+# Verify Flutter is working
+echo "Verifying Flutter installation..."
+flutter --version
+if [ $? -ne 0 ]; then
+    echo "ERROR: Flutter verification failed"
+    exit 1
 fi
 
 # Get dependencies
-echo "Getting dependencies..."
-flutter pub get || exit 1
+echo "Getting Flutter dependencies..."
+flutter pub get
+if [ $? -ne 0 ]; then
+    echo "ERROR: flutter pub get failed"
+    exit 1
+fi
 
-# Build Flutter web
-echo "Building Flutter web..."
-flutter build web --release --web-renderer html || exit 1
+# Build for web
+echo "Building Flutter web app..."
+flutter build web --release --web-renderer html
+if [ $? -ne 0 ]; then
+    echo "ERROR: flutter build web failed"
+    exit 1
+fi
 
-echo "=== Build Complete ==="
+echo "=== Build Complete Successfully ==="
+exit 0
