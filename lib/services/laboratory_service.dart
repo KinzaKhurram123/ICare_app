@@ -24,17 +24,15 @@ class LaboratoryService {
       final list = (response.data['laboratories'] ?? []) as List;
       return list.map((l) {
         final map = Map<String, dynamic>.from(l);
-        final user = map['user'] as Map<String, dynamic>? ?? {};
-        // userId = User._id — used for booking creation (lab_id in backend)
-        final userId = user['_id']?.toString() ?? map['userId']?.toString() ?? map['_id']?.toString();
+        // Backend returns flat structure: {_id: userId, lab_name: ..., ...}
+        // No nested 'user' object
+        final userId = map['_id']?.toString() ?? map['id']?.toString();
         map['userId'] = userId;
-        map['profileId'] = map['_id']?.toString();
-        // _id must be User._id so that /:labId/bookings route matches
         map['_id'] = userId;
         map['id'] = userId;
-        final displayName = map['labName']?.toString()
-            ?? map['lab_name']?.toString()
-            ?? user['name']?.toString()
+        final displayName = map['lab_name']?.toString()
+            ?? map['labName']?.toString()
+            ?? map['name']?.toString()
             ?? 'Laboratory';
         map['labName'] = displayName;
         map['lab_name'] = displayName;

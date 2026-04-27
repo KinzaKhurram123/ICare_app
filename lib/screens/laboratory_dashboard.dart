@@ -151,12 +151,13 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
       final profile = await _labService.getProfile();
       final stats = await _labService.getDashboardStats(profile['_id']);
 
-      // Load low stock alerts
+      // Load low stock alerts (optional feature, don't fail if endpoint missing)
       try {
         final lowStockData = await LabSupplyService.getLowStockAlerts();
         _lowStockCount = lowStockData['count'] ?? 0;
       } catch (e) {
-        debugPrint('Error loading low stock alerts: $e');
+        // Endpoint may not exist yet - gracefully ignore
+        debugPrint('Low stock alerts not available: $e');
         _lowStockCount = 0;
       }
 
