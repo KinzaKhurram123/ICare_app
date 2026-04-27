@@ -13,7 +13,7 @@ class ApiService {
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
     ),
   );
   final SharedPref _sharedPref = SharedPref();
