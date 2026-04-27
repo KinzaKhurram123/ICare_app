@@ -1,0 +1,311 @@
+import 'package:flutter/material.dart';
+import 'package:icare/models/lab_test.dart';
+import 'package:icare/screens/tabs.dart';
+import 'package:icare/services/laboratory_service.dart';
+import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/back_button.dart';
+import 'package:intl/intl.dart';
+
+class ConfirmBookingScreen extends StatefulWidget {
+  final Map<String, dynamic> bookingData;
+  final List<LabTest> selectedTests;
+
+  const ConfirmBookingScreen({
+    super.key,
+    required this.bookingData,
+    required this.selectedTests,
+  });
+
+  @override
+  State<ConfirmBookingScreen> createState() => _ConfirmBookingScreenState();
+}
+
+class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
+  final LaboratoryService _labService = LaboratoryService();
+  bool _isLoading = false;
+
+  double get _totalPrice {
+    double total = 0;
+    for (var test in widget.selectedTests) {
+      total += (test.price as num).toDouble();
+    }
+    return total;
+  }
+
+  Future<void> _processBooking() async {
+    setState(() => _isLoading = true);
+    try {
+      final labId = widget.bookingData['labId'];
+      final bookingDetails = {
+        'testName': widget.selectedTests.map((e) => e.name).join(', '),
+        'date': widget.bookingData['date'],
+        'time': widget.bookingData['time'],
+        'contactLocation': widget.bookingData['address'],
+        'city': widget.bookingData['city'],
+        'homeSample': widget.bookingData['homeSample'],
+        'totalAmount': _totalPrice,
+        'contactName': 'Patient User', // Ideally from profile
+        'contactPhone': '0000000000',
+        'age': 25,
+      };
+
+      await _labService.createBooking(labId, bookingDetails);
+
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Booking failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green,
+              size: 80,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Booking Successful!',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Your lab test has been booked successfully. You can track it in your profile.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (ctx) => const TabsScreen()),
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('Go to Home'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF0B2D6E);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFD),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: const CustomBackButton(),
+        title: const Text(
+          'Booking Summary',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionHeader('Laboratory Information'),
+              _buildDetailCard([
+                _buildInfoLine(
+                  Icons.business_rounded,
+                  'Lab Name',
+                  widget.bookingData['labTitle'] ?? 'Green Lab',
+                ),
+                _buildInfoLine(
+                  Icons.location_on_rounded,
+                  'Location',
+                  widget.bookingData['city'] ?? 'Default City',
+                ),
+              ]),
+              const SizedBox(height: 24),
+
+              _buildSectionHeader('Schedule Details'),
+              _buildDetailCard([
+                _buildInfoLine(
+                  Icons.calendar_today_rounded,
+                  'Date',
+                  widget.bookingData['date'] ?? 'Jan 1, 2024',
+                ),
+                _buildInfoLine(
+                  Icons.access_time_rounded,
+                  'Time',
+                  widget.bookingData['time'] ?? '10:00 AM',
+                ),
+                _buildInfoLine(
+                  Icons.home_rounded,
+                  'Sample Type',
+                  widget.bookingData['homeSample']
+                      ? 'Home Collection'
+                      : 'Walk-in',
+                ),
+              ]),
+              const SizedBox(height: 24),
+
+              _buildSectionHeader('Selected Tests'),
+              _buildDetailCard(
+                widget.selectedTests
+                    .map((t) => _buildTestLine(t.name, 'PKR ${t.price}'))
+                    .toList(),
+              ),
+              const SizedBox(height: 24),
+
+              _buildSectionHeader('Payment Summary'),
+              _buildDetailCard([
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'PKR $_totalPrice',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ]),
+              const SizedBox(height: 48),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _processBooking,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Confirm & Pay',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF64748B),
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailCard(List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildInfoLine(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF0D47A1)),
+          const SizedBox(width: 12),
+          Text(label, style: const TextStyle(color: Color(0xFF64748B))),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestLine(String name, String price) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            price,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0D47A1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
