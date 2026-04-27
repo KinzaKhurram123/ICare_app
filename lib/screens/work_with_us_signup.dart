@@ -1008,18 +1008,18 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
 
   Widget _inputField(
     TextEditingController controller,
-    String hint,
+    String label,
     IconData icon, {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
-    String? hint2,
+    String? hint,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
-        hintText: hint2 ?? hint,
+        hintText: hint ?? label,
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
         prefixIcon: Icon(icon, color: const Color(0xFF94A3B8), size: 20),
         filled: true,
