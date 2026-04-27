@@ -72,7 +72,11 @@ class _FillLabFormState extends State<FillLabForm> {
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('🔍 LAB BOOKING DEBUG - Full labData: ${widget.labData}');
       final labId = widget.labData?['_id'] ?? widget.labData?['id'];
+      debugPrint('🔍 LAB BOOKING DEBUG - Extracted labId: $labId');
+      debugPrint('🔍 LAB BOOKING DEBUG - labData keys: ${widget.labData?.keys.toList()}');
+      
       if (labId == null) {
         throw Exception("Laboratory ID missing");
       }
@@ -87,7 +91,12 @@ class _FillLabFormState extends State<FillLabForm> {
         'notes': 'Patient: ${_patientNameController.text}, Age: ${_ageController.text}, Phone: ${_phoneController.text}, Location: ${_locationController.text}, Time: ${_timeController.text}, Home Sample: $_homeSample',
       };
 
+      debugPrint('🔍 LAB BOOKING DEBUG - Booking data: $bookingData');
+      debugPrint('🔍 LAB BOOKING DEBUG - Calling createBooking with labId: $labId');
+      
       final booking = await _labService.createBooking(labId, bookingData);
+      
+      debugPrint('✅ LAB BOOKING DEBUG - Booking created successfully: $booking');
 
       if (mounted) {
         Navigator.of(context).push(

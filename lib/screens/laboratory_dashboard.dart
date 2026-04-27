@@ -148,8 +148,15 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
     });
 
     try {
+      debugPrint('🔍 LAB DASHBOARD - Loading profile...');
       final profile = await _labService.getProfile();
+      debugPrint('🔍 LAB DASHBOARD - Profile loaded: ${profile['labName'] ?? profile['lab_name']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile _id: ${profile['_id']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile keys: ${profile.keys.toList()}');
+      
+      debugPrint('🔍 LAB DASHBOARD - Fetching dashboard stats for labId: ${profile['_id']}');
       final stats = await _labService.getDashboardStats(profile['_id']);
+      debugPrint('✅ LAB DASHBOARD - Stats loaded: $stats');
 
       // Load low stock alerts (optional feature, don't fail if endpoint missing)
       try {
@@ -169,6 +176,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
       });
       _animationController?.forward();
     } catch (e) {
+      debugPrint('❌ LAB DASHBOARD - Error loading data: $e');
       setState(() {
         _error = ErrorHandler.getFriendlyMessage(e);
         _isLoading = false;

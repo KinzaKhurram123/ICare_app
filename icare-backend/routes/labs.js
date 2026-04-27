@@ -58,17 +58,24 @@ router.get('/profile', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
+    console.log('🔍 LAB PROFILE - User ID:', userId);
+    
     const user = await User.findById(userId).lean();
+    console.log('🔍 LAB PROFILE - User found:', user?.username || user?.name);
+    
     const profile = await LabProfile.findOne({ user_id: userId }).lean() || {};
+    console.log('🔍 LAB PROFILE - Profile found:', profile.lab_name);
 
     const lab = {
       id: user._id.toString(), _id: user._id.toString(),
       username: user.username || user.name, email: user.email, phone: user.phone,
       ...profile, user_id: undefined,
     };
+    
+    console.log('✅ LAB PROFILE - Returning lab with _id:', lab._id);
     res.json({ success: true, laboratory: lab, profile: lab });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB PROFILE - Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch profile' });
   }
 });
@@ -293,7 +300,17 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     const query = { lab_id: labId };
     if (status) query.status = status;
 
+    console.log('🔍 LAB BOOKINGS FETCH - Lab ID:', labId);
+    console.log('🔍 LAB BOOKINGS FETCH - Query:', query);
+
     const bookings = await LabTestRequest.find(query).sort({ createdAt: -1 }).lean();
+    console.log('✅ LAB BOOKINGS FETCH - Found', bookings.length, 'bookings');
+    
+    if (bookings.length > 0) {
+      console.log('✅ LAB BOOKINGS FETCH - First booking lab_id:', bookings[0].lab_id.toString());
+      console.log('✅ LAB BOOKINGS FETCH - First booking patient_id:', bookings[0].patient_id.toString());
+    }
+
     const patientIds = [...new Set(bookings.map(b => b.patient_id.toString()))];
     const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
     const pMap = {};
@@ -308,7 +325,7 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     }));
     res.json({ success: true, bookings: result });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB BOOKINGS FETCH - Error:', error);
     res.json({ success: true, bookings: [] });
   }
 });
@@ -320,6 +337,12 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     const labId = toId(req.params.labId);
     const { testType, test_type, testDate, date, notes } = req.body;
     const finalTest = testType || test_type;
+    
+    console.log('🔍 LAB BOOKING - Patient ID:', patientId);
+    console.log('🔍 LAB BOOKING - Lab ID from URL:', labId);
+    console.log('🔍 LAB BOOKING - Test type:', finalTest);
+    console.log('🔍 LAB BOOKING - Request body:', req.body);
+    
     if (!finalTest) return res.status(400).json({ success: false, message: 'Test type is required' });
 
     const booking = await LabTestRequest.create({
@@ -330,9 +353,13 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
       status: 'pending',
     });
 
+    console.log('✅ LAB BOOKING - Created booking:', booking._id.toString());
+    console.log('✅ LAB BOOKING - Booking lab_id:', booking.lab_id.toString());
+    console.log('✅ LAB BOOKING - Booking patient_id:', booking.patient_id.toString());
+
     res.status(201).json({ success: true, message: 'Booking created', booking: { ...booking.toObject(), _id: booking._id.toString() } });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB BOOKING - Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create booking' });
   }
 });

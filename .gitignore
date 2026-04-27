@@ -57,3 +57,5 @@ build.bat
 
 .vercel
 .env*.local
+
+.vercel
