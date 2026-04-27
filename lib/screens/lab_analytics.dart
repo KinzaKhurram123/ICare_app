@@ -495,6 +495,9 @@ class _LabAnalyticsState extends State<LabAnalytics>
     final revenueByCard = totalRevenue * 0.60;
     final revenueByCash = totalRevenue * 0.40;
     final amountPayable = remaining - revenueByCash;
+    // If negative → lab owes iCare; if positive → iCare owes lab
+    final isPayableToICare = amountPayable < 0;
+    final payableLabel = isPayableToICare ? 'Amount Payable to iCare' : 'Amount Payable to Lab';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -542,7 +545,8 @@ class _LabAnalyticsState extends State<LabAnalytics>
                 const Divider(height: 16, thickness: 0.5),
                 _buildCalcRow('Cash Held with Lab', -revenueByCash, false, color: Colors.orange[700]),
                 const Divider(height: 16, thickness: 1.5),
-                _buildCalcRow('Amount Payable to Lab', amountPayable, true),
+                _buildCalcRow(payableLabel, amountPayable.abs(), true,
+                    color: isPayableToICare ? Colors.red[700] : null),
               ],
             ),
           ),

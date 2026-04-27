@@ -640,8 +640,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   }
 
   Widget _buildLabTestItem(dynamic test) {
-    final urgency =
-        (test['urgency'] ?? 'Routine').toString().toLowerCase();
+    // Handle both String (legacy) and Map format
+    final testName = test is Map
+        ? (test['name'] ?? test['testName'] ?? 'Lab Test').toString()
+        : test.toString();
+    final urgency = test is Map
+        ? (test['urgency'] ?? 'Routine').toString().toLowerCase()
+        : 'routine';
+    final testNotes = test is Map ? (test['notes'] ?? '').toString() : '';
     final urgencyColor = urgency == 'stat'
         ? const Color(0xFFEF4444)
         : urgency == 'urgent'
@@ -666,14 +672,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  test['name'] ?? 'Lab Test',
+                  testName,
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0F172A)),
                 ),
-                if ((test['notes'] ?? '').toString().isNotEmpty)
-                  Text(test['notes'],
+                if (testNotes.isNotEmpty)
+                  Text(testNotes,
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF64748B))),
               ],
@@ -688,7 +694,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
               border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
             ),
             child: Text(
-              test['urgency'] ?? 'Routine',
+              urgency == 'stat' ? 'STAT' : urgency == 'urgent' ? 'Urgent' : 'Routine',
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -838,20 +844,25 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: widget.tests.map((t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F3FF),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFDDD6FE)),
-                      ),
-                      child: Text(t['name'] ?? '',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF7C3AED),
-                              fontWeight: FontWeight.w600)),
-                    )).toList(),
+                    children: widget.tests.map((t) {
+                      final n = t is Map
+                          ? (t['name'] ?? t['testName'] ?? '').toString()
+                          : t.toString();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F3FF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFDDD6FE)),
+                        ),
+                        child: Text(n,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF7C3AED),
+                                fontWeight: FontWeight.w600)),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 16),
                   const Divider(),

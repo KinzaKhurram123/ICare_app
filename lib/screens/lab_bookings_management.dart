@@ -348,7 +348,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                   const SizedBox(height: 12),
                   _buildFormField(
                     controller: locationController,
-                    label: 'Location',
+                    label: 'Address',
                     icon: Icons.location_on_rounded,
                   ),
                   const SizedBox(height: 20),
@@ -476,7 +476,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                                 filled: true,
                                 fillColor: const Color(0xFFF8FAFC),
                               ),
-                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '5 Days', '7 Days']
+                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '4 Days', '5 Days', '7 Days']
                                   .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                               onChanged: (v) => setModalState(() => normalTurnaround = v!),
                             ),
