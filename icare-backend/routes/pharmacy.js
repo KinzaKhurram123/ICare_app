@@ -198,7 +198,18 @@ router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
     await connectMongoDB();
     const userId = toId(req.user.id);
     const { status } = req.query;
-    const query = { pharmacy_id: userId };
+
+    // Build a set of all IDs that could be this pharmacy:
+    // 1. The logged-in user's own _id
+    // 2. Any PharmacyProfile linked to this user (profile._id or profile.user_id)
+    const profile = await PharmacyProfile.findOne({ user_id: userId }).lean();
+    const pharmacyIds = [userId];
+    if (profile) {
+      if (profile._id) pharmacyIds.push(toId(profile._id.toString()));
+      if (profile.user_id) pharmacyIds.push(toId(profile.user_id.toString()));
+    }
+
+    const query = { pharmacy_id: { $in: pharmacyIds.filter(Boolean) } };
     if (status && status !== 'all') query.status = status;
 
     const rawOrders = await PharmacyOrder.find(query).sort({ createdAt: -1 }).lean();

@@ -163,9 +163,24 @@ router.get('/my-records', authMiddleware, async (req, res) => {
     const records = await MedicalRecord.find(query)
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ success: true, records, count: records.length });
+    // Normalize records so prescription.labTests is always an accessible array
+    const normalized = records.map(r => ({
+      ...r,
+      _id: r._id.toString(),
+      prescription: {
+        ...(r.prescription || {}),
+        medicines: r.prescription?.medicines || [],
+        labTests: r.prescription?.labTests || [],
+      },
+      labTests: r.labTests || [],
+      doctor: r.doctor ? { ...r.doctor, _id: r.doctor._id?.toString() } : null,
+      patient: r.patient ? { ...r.patient, _id: r.patient._id?.toString() } : null,
+    }));
+
+    res.json({ success: true, records: normalized, count: normalized.length });
   } catch (err) {
     console.error('Get my records error:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });
