@@ -32,19 +32,32 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     setState(() => _isLoading = true);
     try {
       final result = await _medicalRecordService.getMyRecords();
+      debugPrint('🔍 PRESCRIPTION DEBUG: API result success = ${result['success']}');
+
       if (result['success'] && mounted) {
         final records = result['records'] as List<dynamic>;
+        debugPrint('🔍 PRESCRIPTION DEBUG: Total records = ${records.length}');
+
         final prescriptions = records.where((r) {
           final p = r['prescription'];
           final meds = p is Map ? (p['medicines'] as List?) : null;
+
           // labTests can be at top level OR inside prescription
-          final tests = (p is Map ? (p['labTests'] as List?) : null)
-              ?? (r['labTests'] as List?);
+          final testsInPrescription = p is Map ? (p['labTests'] as List?) : null;
+          final testsAtTopLevel = r['labTests'] as List?;
+          final tests = testsInPrescription ?? testsAtTopLevel;
+
           final hasReferral = p is Map && p['referral'] != null;
+
+          debugPrint('🔍 Record ${r['_id']}: meds=${meds?.length ?? 0}, testsInPrescription=${testsInPrescription?.length ?? 0}, testsAtTopLevel=${testsAtTopLevel?.length ?? 0}, hasReferral=$hasReferral');
+
           return (meds != null && meds.isNotEmpty) ||
               (tests != null && tests.isNotEmpty) ||
               hasReferral;
         }).toList();
+
+        debugPrint('🔍 PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
+
         setState(() {
           _prescriptions = prescriptions;
           _isLoading = false;
@@ -53,7 +66,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('Error loading prescriptions: $e');
+      debugPrint('❌ Error loading prescriptions: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -119,6 +132,9 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     final labTests = (record['prescription']?['labTests'] as List?)
         ?? (record['labTests'] as List?)
         ?? [];
+
+    debugPrint('🔍 CARD DEBUG for ${record['_id']}: medicines=${medicines.length}, labTests=${labTests.length}');
+    debugPrint('   labTests content: $labTests');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
