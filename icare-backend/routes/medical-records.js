@@ -32,6 +32,15 @@ router.post('/create', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'patientId and diagnosis are required' });
     }
 
+    // Extract and normalize lab tests
+    const normalizedLabTests = (() => {
+      const raw = prescription?.labTests || labTests || [];
+      return raw.map(t => typeof t === 'string' ? { name: t, urgency: 'Routine' } : t);
+    })();
+
+    // Extract test names for top-level labTests field (backward compatibility)
+    const labTestNames = normalizedLabTests.map(t => t.name || t);
+
     const record = await MedicalRecord.create({
       doctor: req.user.id || req.user._id,
       patient: patientId,
@@ -40,13 +49,9 @@ router.post('/create', authMiddleware, async (req, res) => {
       symptoms: symptoms || [],
       prescription: {
         ...(prescription || {}),
-        // Normalize labTests into {name, urgency} objects for prescription.labTests
-        labTests: (() => {
-          const raw = prescription?.labTests || labTests || [];
-          return raw.map(t => typeof t === 'string' ? { name: t, urgency: 'Routine' } : t);
-        })(),
+        labTests: normalizedLabTests,
       },
-      labTests: labTests || [],
+      labTests: labTestNames,
       vitalSigns: vitalSigns || {},
       notes: notes || '',
       followUpDate: followUpDate ? new Date(followUpDate) : undefined,
