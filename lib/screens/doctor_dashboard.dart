@@ -51,22 +51,26 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     setState(() => _isLoading = true);
 
     try {
-      final appResult = await _appointmentService.getMyAppointmentsDetailed();
-      final statsResult = await _doctorService.getStats();
+      final results = await Future.wait([
+        _appointmentService.getMyAppointmentsDetailed(),
+        _doctorService.getStats().catchError((_) => <String, dynamic>{'success': false, 'stats': {}}),
+      ]);
 
       if (mounted) {
         setState(() {
-          if (appResult['success']) {
-            _appointments =
-                appResult['appointments'] as List<AppointmentDetail>;
+          final appResult = results[0];
+          final statsResult = results[1];
+          if (appResult['success'] == true) {
+            _appointments = appResult['appointments'] as List<AppointmentDetail>;
           }
-          if (statsResult['success']) {
-            _stats = statsResult['stats'];
+          if (statsResult['success'] == true) {
+            _stats = statsResult['stats'] ?? {};
           }
           _isLoading = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ _loadData error: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }

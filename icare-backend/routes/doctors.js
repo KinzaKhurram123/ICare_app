@@ -4,11 +4,43 @@ const mongoose = require('mongoose');
 const { connectMongoDB } = require('../config/mongodb');
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
+const Appointment = require('../models/Appointment');
 const { authMiddleware } = require('../middleware/auth');
 
 function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
+
+// ─── DOCTOR STATS ─────────────────────────────────────────────────────────────
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id);
+    const [total, pending, confirmed, completed, cancelled] = await Promise.all([
+      Appointment.countDocuments({ doctor_id: doctorId }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'pending' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'confirmed' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'completed' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'cancelled' }),
+    ]);
+    const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
+    res.json({
+      success: true,
+      stats: {
+        totalAppointments: total,
+        pendingAppointments: pending,
+        confirmedAppointments: confirmed,
+        completedAppointments: completed,
+        cancelledAppointments: cancelled,
+        rating: profile?.rating || 0,
+        totalReviews: profile?.total_reviews || 0,
+      },
+    });
+  } catch (e) {
+    console.error('Doctor stats error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
 
 // ─── GET ALL DOCTORS ──────────────────────────────────────────────────────────
 router.get('/get_all_doctors', authMiddleware, async (req, res) => {
