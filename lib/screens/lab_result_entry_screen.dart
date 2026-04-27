@@ -164,9 +164,10 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
   Widget build(BuildContext context) {
     final booking = widget.booking;
     final patient = booking['patient'];
-    final testName = booking['testName'] ?? 'Lab Test';
-    final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
+    final testName = booking['test_type'] ?? booking['testName'] ?? 'Lab Test';
+    final date = DateTime.tryParse(booking['test_date'] ?? booking['date'] ?? booking['createdAt'] ?? '') ?? DateTime.now();
     final status = booking['status'] ?? 'pending';
+    final patientName = booking['patient_name'] ?? booking['patient']?['name'] ?? 'N/A';
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -193,7 +194,7 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
       ),
       body: Column(
         children: [
-          _buildBookingInfo(testName, patient, date, status),
+          _buildBookingInfo(testName, patientName, date, status),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -208,7 +209,7 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
     );
   }
 
-  Widget _buildBookingInfo(String testName, dynamic patient, DateTime date, String status) {
+  Widget _buildBookingInfo(String testName, String patientName, DateTime date, String status) {
     final statusColor = status == 'completed'
         ? Colors.green
         : status == 'confirmed'
@@ -238,7 +239,7 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
                 Text(testName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                 const SizedBox(height: 4),
                 Text(
-                  'Patient: ${patient?['name'] ?? 'N/A'}',
+                  'Patient: $patientName',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                 ),
                 Text(
