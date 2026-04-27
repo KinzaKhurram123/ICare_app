@@ -993,6 +993,13 @@ class DoctorProfileCard extends StatelessWidget {
   }
 }
 
+class DoctorProfileCard extends StatelessWidget {
+  const DoctorProfileCard({super.key, this.doctor, this.width, this.padding});
+
+  final Doctor? doctor;
+  final double? width;
+  final EdgeInsets? padding;
+
   @override
   Widget build(BuildContext context) {
     // Use dummy data if no doctor provided (for home screen preview)

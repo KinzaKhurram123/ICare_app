@@ -36,7 +36,11 @@ router.post('/create', authMiddleware, async (req, res) => {
       appointment: appointmentId || undefined,
       diagnosis,
       symptoms: symptoms || [],
-      prescription: prescription || {},
+      prescription: {
+        ...(prescription || {}),
+        // Also store labTests inside prescription for patient_prescriptions.dart
+        labTests: labTests || prescription?.labTests || [],
+      },
       labTests: labTests || [],
       vitalSigns: vitalSigns || {},
       notes: notes || '',

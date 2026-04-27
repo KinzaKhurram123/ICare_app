@@ -14,6 +14,10 @@ const medicalRecordSchema = new mongoose.Schema({
       duration: String,
       instructions: String,
     }],
+    labTests: [{
+      name: String,
+      urgency: String,
+    }],
     referral: {
       specialty: String,
       reason: String,

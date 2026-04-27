@@ -36,15 +36,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         final records = result['records'] as List<dynamic>;
         final prescriptions = records.where((r) {
           final p = r['prescription'];
-          if (p is Map) {
-            final meds = p['medicines'] as List?;
-            final tests = p['labTests'] as List?;
-            final hasReferral = p['referral'] != null;
-            return (meds != null && meds.isNotEmpty) ||
-                (tests != null && tests.isNotEmpty) ||
-                hasReferral;
-          }
-          return false;
+          final meds = p is Map ? (p['medicines'] as List?) : null;
+          // labTests can be at top level OR inside prescription
+          final tests = (p is Map ? (p['labTests'] as List?) : null)
+              ?? (r['labTests'] as List?);
+          final hasReferral = p is Map && p['referral'] != null;
+          return (meds != null && meds.isNotEmpty) ||
+              (tests != null && tests.isNotEmpty) ||
+              hasReferral;
         }).toList();
         setState(() {
           _prescriptions = prescriptions;
@@ -116,8 +115,10 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         : 'MR-XXXXXX';
     final medicines =
         (record['prescription']?['medicines'] as List?) ?? [];
-    final labTests =
-        (record['prescription']?['labTests'] as List?) ?? [];
+    // labTests can be at top level OR inside prescription
+    final labTests = (record['prescription']?['labTests'] as List?)
+        ?? (record['labTests'] as List?)
+        ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
