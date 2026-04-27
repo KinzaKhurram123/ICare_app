@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -185,8 +186,20 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMsg = 'Failed to place order';
+        if (e is DioException) {
+          // Extract the actual backend error message
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+            errorMsg = data['message'].toString();
+          } else {
+            errorMsg = 'Server error (${e.response?.statusCode ?? 'unknown'}). Please try again.';
+          }
+        } else {
+          errorMsg = e.toString();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to place order: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
       }
     } finally {

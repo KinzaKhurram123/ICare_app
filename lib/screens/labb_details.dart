@@ -118,11 +118,15 @@ class _LabDetailsState extends State<LabDetails> {
               clipBehavior: Clip.hardEdge,
               borderRadius: BorderRadius.circular(20),
               child: image.isEmpty
-                  ? Image.asset(
-                      ImagePaths.lab3,
-                      fit: BoxFit.cover,
+                  ? Container(
                       width: Utils.windowWidth(context) * 0.9,
                       height: Utils.windowWidth(context) * 0.5,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+                        ),
+                      ),
+                      child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
                     )
                   : image.startsWith('assets')
                       ? Image.asset(
@@ -130,14 +134,24 @@ class _LabDetailsState extends State<LabDetails> {
                           fit: BoxFit.cover,
                           width: Utils.windowWidth(context) * 0.9,
                           height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
                         )
                       : Image.network(
                           image,
                           fit: BoxFit.cover,
                           width: Utils.windowWidth(context) * 0.9,
                           height: Utils.windowWidth(context) * 0.5,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.asset(ImagePaths.lab3, fit: BoxFit.cover),
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
                         ),
             ),
             SizedBox(height: ScallingConfig.scale(20)),

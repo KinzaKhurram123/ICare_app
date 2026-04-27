@@ -22,6 +22,7 @@ const pharmacyOrderSchema = new mongoose.Schema({
   },
   order_number: String,
   expected_delivery_time: String,
+  cancellation_reason: { type: String, default: '' },
   items: [orderItemSchema],
 }, { timestamps: true });
 

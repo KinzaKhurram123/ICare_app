@@ -251,39 +251,62 @@ router.get('/orders', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── GET ORDER BY ID ──────────────────────────────────────────────────────────
+router.get('/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const orderId = toId(req.params.id);
+    if (!orderId) return res.status(400).json({ success: false, message: 'Invalid order ID' });
+
+    const order = await PharmacyOrder.findOne({
+      _id: orderId,
+      $or: [{ patient_id: userId }, { pharmacy_id: userId }],
+    }).lean();
+
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, order: { ...order, _id: order._id.toString() } });
+  } catch (err) {
+    console.error('GET /pharmacy/orders/:id error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch order' });
+  }
+});
+
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 router.post('/orders', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
+
     const patientId = toId(req.user.id);
-    const { pharmacyId, userId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
-
-    // Accept either pharmacyId or userId (frontend may send either)
-    const rawPharmacyId = pharmacyId || userId;
-    if (!rawPharmacyId) return res.status(400).json({ success: false, message: 'Pharmacy is required' });
-
-    const resolvedPharmacyId = toId(rawPharmacyId);
-    if (!resolvedPharmacyId) return res.status(400).json({ success: false, message: 'Invalid pharmacy ID' });
-
     if (!patientId) return res.status(401).json({ success: false, message: 'Invalid patient token' });
 
+    const { pharmacyId, userId: bodyUserId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
+
+    // Accept either pharmacyId or userId (frontend may send either)
+    const rawPharmacyId = pharmacyId || bodyUserId;
+    if (!rawPharmacyId) return res.status(400).json({ success: false, message: 'pharmacyId is required' });
+
+    const resolvedPharmacyId = toId(rawPharmacyId);
+    if (!resolvedPharmacyId) return res.status(400).json({ success: false, message: `Invalid pharmacy ID: ${rawPharmacyId}` });
+
     // Normalize items — frontend may send productName or product_name
-    const normalizedItems = (items || []).map(i => ({
+    const normalizedItems = Array.isArray(items) ? items.map(i => ({
       product_name: i.product_name || i.productName || i.name || '',
       generic_name: i.generic_name || i.genericName || '',
-      quantity: i.quantity || 1,
-      price: i.price || 0,
-    }));
+      quantity: Number(i.quantity) || 1,
+      price: Number(i.price) || 0,
+    })) : [];
 
-    const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+    // Generate unique order number with random suffix to avoid collisions
+    const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
 
     const order = await PharmacyOrder.create({
       patient_id: patientId,
       pharmacy_id: resolvedPharmacyId,
-      prescription_id: prescriptionId || null,
+      prescription_id: prescriptionId || undefined,
       delivery_address: deliveryAddress || '',
-      total_amount: totalAmount || 0,
-      delivery_fee: deliveryFee || 0,
+      total_amount: Number(totalAmount) || 0,
+      delivery_fee: Number(deliveryFee) || 0,
       status: 'pending',
       order_number: orderNumber,
       items: normalizedItems,
@@ -292,6 +315,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
     res.status(201).json({ success: true, message: 'Order created successfully', order: { ...order.toObject(), _id: order._id.toString() } });
   } catch (err) {
     console.error('POST /pharmacy/orders error:', err.message, err.stack);
+    // Return the actual error message so the client can display it
     res.status(500).json({ success: false, message: err.message || 'Failed to create order' });
   }
 });
@@ -350,6 +374,24 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to update order' });
+  }
+});
+
+// ─── CANCEL ORDER ─────────────────────────────────────────────────────────────
+router.put('/orders/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const order = await PharmacyOrder.findOneAndUpdate(
+      { _id: toId(req.params.id), patient_id: userId, status: { $in: ['pending', 'confirmed'] } },
+      { $set: { status: 'cancelled', cancellation_reason: req.body.reason || '' } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found or cannot be cancelled' });
+    res.json({ success: true, message: 'Order cancelled', order: { ...order.toObject(), _id: order._id.toString() } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to cancel order' });
   }
 });
 
