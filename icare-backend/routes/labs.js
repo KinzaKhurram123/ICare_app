@@ -14,7 +14,7 @@ function toId(id) {
 // ─── GET ALL LABS ─────────────────────────────────────────────────────────────
 async function getAllLabs() {
   await connectMongoDB();
-  const users = await User.find({ role: 'lab', is_active: { $ne: false } }).lean();
+  const users = await User.find({ role: { $in: ['lab', 'Lab', 'laboratory', 'Laboratory'] }, is_active: { $ne: false } }).lean();
   const ids = users.map(u => u._id);
   const profiles = await LabProfile.find({ user_id: { $in: ids } }).lean();
   const pMap = {};

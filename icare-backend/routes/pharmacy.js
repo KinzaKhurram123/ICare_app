@@ -16,7 +16,7 @@ function toId(id) {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const users = await User.find({ role: 'pharmacy', is_active: { $ne: false } }).lean();
+    const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
     const ids = users.map(u => u._id);
     const profiles = await PharmacyProfile.find({ user_id: { $in: ids } }).lean();
     const pMap = {};
@@ -42,7 +42,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const users = await User.find({ role: 'pharmacy', is_active: { $ne: false } }).lean();
+    const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
     const ids = users.map(u => u._id);
     const profiles = await PharmacyProfile.find({ user_id: { $in: ids } }).lean();
     const pMap = {};
