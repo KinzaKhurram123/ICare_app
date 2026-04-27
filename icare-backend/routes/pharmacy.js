@@ -76,9 +76,13 @@ router.get('/profile', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       pharmacy: {
-        id: user._id.toString(), _id: user._id.toString(),
+        id: user._id.toString(),
+        _id: user._id.toString(),   // always User._id — never let profile spread override this
+        userId: user._id.toString(),
         username: user.username || user.name, email: user.email, phone: user.phone,
         ...profile,
+        _id: user._id.toString(),   // re-assert after spread so profile._id can't override
+        id: user._id.toString(),
       },
     });
   } catch (err) {
@@ -196,51 +200,60 @@ router.get('/analytics', authMiddleware, async (req, res) => {
 router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const userId = toId(req.user.id);
+    const rawUserId = req.user.id || req.user._id;
+    const userId = toId(rawUserId);
+    if (!userId) return res.status(401).json({ success: false, message: 'Invalid token' });
+
     const { status } = req.query;
 
-    // Build a set of all IDs that could be this pharmacy:
-    // 1. The logged-in user's own _id
-    // 2. Any PharmacyProfile linked to this user (profile._id or profile.user_id)
-    const profile = await PharmacyProfile.findOne({ user_id: userId }).lean();
-    const pharmacyIds = [userId];
-    if (profile) {
-      if (profile._id) pharmacyIds.push(toId(profile._id.toString()));
-      if (profile.user_id) pharmacyIds.push(toId(profile.user_id.toString()));
-    }
+    // Search by this pharmacy's user_id AND also by any profile linked to them
+    const profile = await PharmacyProfile.findOne({ user_id: userId }).lean().catch(() => null);
+    const idSet = new Set([rawUserId]);
+    if (profile?._id) idSet.add(profile._id.toString());
+    const pharmacyIds = [...idSet].map(id => toId(id)).filter(Boolean);
 
-    const query = { pharmacy_id: { $in: pharmacyIds.filter(Boolean) } };
+    const query = { pharmacy_id: { $in: pharmacyIds } };
     if (status && status !== 'all') query.status = status;
 
     const rawOrders = await PharmacyOrder.find(query).sort({ createdAt: -1 }).lean();
-    const patientIds = [...new Set(rawOrders.map(o => o.patient_id.toString()))];
-    const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
+
+    // Safe patient lookup — skip nulls
+    const patientIdStrings = [...new Set(
+      rawOrders.map(o => o.patient_id?.toString()).filter(Boolean)
+    )];
+    const patients = patientIdStrings.length > 0
+      ? await User.find({ _id: { $in: patientIdStrings.map(id => toId(id)) } }).lean()
+      : [];
     const pMap = {};
     patients.forEach(p => { pMap[p._id.toString()] = p; });
 
-    const orders = rawOrders.map(o => ({
-      _id: o._id.toString(),
-      orderNumber: o.order_number || `#${o._id.toString().slice(-6).toUpperCase()}`,
-      status: o.status,
-      totalAmount: o.total_amount || 0,
-      deliveryFee: o.delivery_fee || 0,
-      deliveryAddress: o.delivery_address,
-      expectedDeliveryTime: o.expected_delivery_time,
-      createdAt: o.createdAt,
-      prescriptionId: o.prescription_id,
-      user: {
-        _id: pMap[o.patient_id.toString()]?._id?.toString(),
-        name: pMap[o.patient_id.toString()]?.username || pMap[o.patient_id.toString()]?.name || 'Patient',
-        email: pMap[o.patient_id.toString()]?.email,
-        phoneNumber: pMap[o.patient_id.toString()]?.phone,
-      },
-      items: o.items || [],
-    }));
+    const orders = rawOrders.map(o => {
+      const pid = o.patient_id?.toString() || '';
+      const pt = pMap[pid];
+      return {
+        _id: o._id.toString(),
+        orderNumber: o.order_number || `#${o._id.toString().slice(-6).toUpperCase()}`,
+        status: o.status,
+        totalAmount: o.total_amount || 0,
+        deliveryFee: o.delivery_fee || 0,
+        deliveryAddress: o.delivery_address || '',
+        expectedDeliveryTime: o.expected_delivery_time || '',
+        createdAt: o.createdAt,
+        prescriptionId: o.prescription_id || null,
+        user: {
+          _id: pt?._id?.toString() || '',
+          name: pt?.username || pt?.name || 'Patient',
+          email: pt?.email || '',
+          phoneNumber: pt?.phone || pt?.phoneNumber || '',
+        },
+        items: o.items || [],
+      };
+    });
 
-    res.json({ success: true, orders });
+    res.json({ success: true, orders, pharmacyId: rawUserId });
   } catch (err) {
-    console.error(err);
-    res.json({ success: true, orders: [] });
+    console.error('GET /pharmacy/orders/pharmacy/list error:', err.message);
+    res.status(500).json({ success: false, message: err.message, orders: [] });
   }
 });
 

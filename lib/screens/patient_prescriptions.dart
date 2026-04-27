@@ -761,6 +761,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   final LaboratoryService _labService = LaboratoryService();
   List<dynamic> _labs = [];
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -769,11 +770,13 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   }
 
   Future<void> _fetchLabs() async {
+    setState(() { _isLoading = true; _error = null; });
     try {
       final labs = await _labService.getAllLaboratories();
       if (mounted) setState(() { _labs = labs; _isLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      debugPrint('❌ Find Labs error: $e');
+      if (mounted) setState(() { _isLoading = false; _error = e.toString(); });
     }
   }
 
@@ -874,18 +877,33 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _labs.isEmpty
-                      ? const Center(
-                          child: Text('No labs found',
-                              style:
-                                  TextStyle(color: Color(0xFF64748B))))
-                      : ListView.builder(
-                          controller: scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          itemCount: _labs.length,
-                          itemBuilder: (ctx, i) =>
-                              _labTile(_labs[i]),
-                        ),
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 40),
+                              const SizedBox(height: 12),
+                              const Text('Could not load labs', style: TextStyle(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: _fetchLabs,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _labs.isEmpty
+                          ? const Center(
+                              child: Text('No labs found',
+                                  style: TextStyle(color: Color(0xFF64748B))))
+                          : ListView.builder(
+                              controller: scrollCtrl,
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                              itemCount: _labs.length,
+                              itemBuilder: (ctx, i) => _labTile(_labs[i]),
+                            ),
             ),
           ],
         ),

@@ -102,9 +102,9 @@
 | | Count |
 |--|-------|
 | Total Features | 77 |
-| DONE | 69 |
-| PENDING | 8 |
-| **Progress** | **~90% Complete** |
+| DONE | 70 |
+| PENDING | 7 |
+| **Progress** | **~91% Complete** |
 
 ---
 
