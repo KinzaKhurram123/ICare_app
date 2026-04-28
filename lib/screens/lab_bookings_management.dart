@@ -1154,6 +1154,16 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
+                if (status.toLowerCase() == 'pending')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'cancelled'),
+                    icon: const Icon(Icons.cancel_outlined, size: 18),
+                    label: const Text('Decline'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
                 if (status.toLowerCase() == 'confirmed')
                   TextButton.icon(
                     onPressed: () => _updateStatus(booking['_id'], 'sample_collected'),
@@ -1165,7 +1175,9 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     ),
                   ),
                 if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'sample-collected' ||
                     status.toLowerCase() == 'awaiting_reports' ||
+                    status.toLowerCase() == 'awaiting-reports' ||
                     status.toLowerCase() == 'completed')
                   TextButton.icon(
                     onPressed: () async {
@@ -1219,7 +1231,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
       case 'urgent':
         return Colors.red;
       case 'pending':

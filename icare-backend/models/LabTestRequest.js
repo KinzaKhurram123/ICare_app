@@ -8,7 +8,17 @@ const labTestRequestSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'sample_collected', 'sample-collected', 'awaiting_reports', 'reporting_done', 'processing', 'completed', 'cancelled'],
+    // Accept both underscore and hyphen variants for all statuses
+    enum: [
+      'pending', 
+      'confirmed', 
+      'sample_collected', 'sample-collected',
+      'awaiting_reports', 'awaiting-reports',
+      'reporting_done', 'reporting-done',
+      'processing', 
+      'completed', 
+      'cancelled',
+    ],
     default: 'pending',
   },
   results: mongoose.Schema.Types.Mixed,

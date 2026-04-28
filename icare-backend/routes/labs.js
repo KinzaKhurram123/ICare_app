@@ -251,7 +251,14 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, results, testDate, date, reportNotes, reportUrl } = req.body;
+    let { status, results, testDate, date, reportNotes, reportUrl } = req.body;
+    
+    // Normalize status: accept both underscore and hyphen variants
+    // Store with underscore for consistency
+    if (status) {
+      status = status.replace(/-/g, '_');
+    }
+    
     const update = {};
     if (status) update.status = status;
     if (results) update.results = results;
@@ -278,14 +285,21 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
         const record = await MedicalRecord.findById(booking.medical_record_id).lean();
         if (record) {
           console.log(`🔔 Lab results ready → Doctor ${record.doctor} notified for test: ${booking.test_type}`);
-          // FCM/push notification would go here when integrated
         }
       } catch (notifyErr) {
         console.error('⚠️  Doctor notification failed:', notifyErr.message);
       }
     }
 
-    res.json({ success: true, message: 'Booking updated', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+    res.json({ 
+      success: true, 
+      message: 'Booking updated', 
+      booking: { 
+        ...booking.toObject(), 
+        _id: booking._id.toString(),
+        status: booking.status?.replace(/-/g, '_') ?? booking.status,
+      } 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Failed to update booking' });
@@ -297,19 +311,29 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     await connectMongoDB();
     const labId = toId(req.params.labId);
     const { status } = req.query;
+
+    // Normalize status filter: accept both underscore and hyphen variants
+    const normalizeStatus = (s) => s?.replace(/_/g, '-');
+    const denormalizeStatus = (s) => s?.replace(/-/g, '_');
+
     const query = { lab_id: labId };
-    if (status) query.status = status;
+    if (status && status !== 'all') {
+      // Support comma-separated statuses AND normalize underscore/hyphen
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      const normalized = [];
+      statuses.forEach(s => {
+        normalized.push(s);
+        const alt = s.includes('_') ? s.replace(/_/g, '-') : s.replace(/-/g, '_');
+        if (alt !== s) normalized.push(alt);
+      });
+      query.status = normalized.length === 1 ? normalized[0] : { $in: normalized };
+    }
 
     console.log('🔍 LAB BOOKINGS FETCH - Lab ID:', labId);
-    console.log('🔍 LAB BOOKINGS FETCH - Query:', query);
+    console.log('🔍 LAB BOOKINGS FETCH - Query:', JSON.stringify(query));
 
     const bookings = await LabTestRequest.find(query).sort({ createdAt: -1 }).lean();
     console.log('✅ LAB BOOKINGS FETCH - Found', bookings.length, 'bookings');
-    
-    if (bookings.length > 0) {
-      console.log('✅ LAB BOOKINGS FETCH - First booking lab_id:', bookings[0].lab_id.toString());
-      console.log('✅ LAB BOOKINGS FETCH - First booking patient_id:', bookings[0].patient_id.toString());
-    }
 
     const patientIds = [...new Set(bookings.map(b => b.patient_id.toString()))];
     const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
@@ -319,6 +343,8 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     const result = bookings.map(b => ({
       ...b,
       _id: b._id.toString(),
+      // Normalize status to underscore for Flutter consistency
+      status: b.status?.replace(/-/g, '_') ?? b.status,
       patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name,
       patient_email: pMap[b.patient_id.toString()]?.email,
       patient_phone: pMap[b.patient_id.toString()]?.phone,
