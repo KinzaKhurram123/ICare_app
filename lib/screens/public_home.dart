@@ -40,7 +40,6 @@ class PublicHome extends StatelessWidget {
             flexibleSpace: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(bottom: BorderSide(color: Color(0xFFE8ECF5), width: 1.5)),
               ),
               child: Padding(
                   padding: EdgeInsets.symmetric(

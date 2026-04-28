@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/instructor_service.dart';
@@ -864,20 +865,54 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
     }
   }
 
+  bool _isUploadingVideo = false;
+
   Future<void> _pickAndUploadVideo() async {
-    // On Vercel serverless, file upload not supported.
-    // Show dialog to paste video URL instead.
+    // Show options: URL paste OR file upload
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Lesson Video'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.link_rounded, color: Color(0xFF3B82F6)),
+              title: const Text('Paste Video URL'),
+              subtitle: const Text('YouTube, Vimeo, or direct .mp4 link'),
+              onTap: () => Navigator.pop(ctx, 'url'),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.upload_file_rounded, color: Color(0xFF10B981)),
+              title: const Text('Upload Video File'),
+              subtitle: const Text('MP4, MOV, AVI (max 100MB)'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == 'url') {
+      await _pasteVideoUrl();
+    } else if (choice == 'file') {
+      await _uploadVideoFile();
+    }
+  }
+
+  Future<void> _pasteVideoUrl() async {
     final urlController = TextEditingController(text: _videoUrlController.text);
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Video URL'),
+        title: const Text('Paste Video URL'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Paste a video URL (YouTube, Vimeo, or direct .mp4 link):',
+              'YouTube, Vimeo, or direct .mp4 link:',
               style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 12),
@@ -903,12 +938,100 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
         ],
       ),
     );
-
     if (result != null && result.isNotEmpty) {
       setState(() {
         _uploadedVideoUrl = result;
         _videoUrlController.text = result;
       });
+    }
+  }
+
+  Future<void> _uploadVideoFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      if (file.bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not read file. Try pasting a URL instead.'), backgroundColor: Colors.orange),
+          );
+        }
+        return;
+      }
+
+      // Check file size (100MB limit)
+      if (file.size > 100 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File too large. Max 100MB. Please use a URL instead.'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+
+      setState(() => _isUploadingVideo = true);
+
+      // Upload to Cloudinary (free unsigned upload)
+      // Using icare's Cloudinary cloud - unsigned upload preset
+      const cloudName = 'demoicare'; // Cloudinary cloud name
+      const uploadPreset = 'icare_videos'; // unsigned upload preset
+
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          file.bytes!,
+          filename: file.name,
+        ),
+        'upload_preset': uploadPreset,
+        'resource_type': 'video',
+        'folder': 'icare_lessons',
+      });
+
+      final dio = Dio();
+      final response = await dio.post(
+        'https://api.cloudinary.com/v1_1/$cloudName/video/upload',
+        data: formData,
+        onSendProgress: (sent, total) {
+          // Could show progress here
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final videoUrl = response.data['secure_url'] as String;
+        setState(() {
+          _uploadedVideoUrl = videoUrl;
+          _videoUrlController.text = videoUrl;
+          _isUploadingVideo = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Video uploaded successfully!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw Exception('Upload failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() => _isUploadingVideo = false);
+      if (mounted) {
+        // If Cloudinary fails, offer URL option
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Upload failed. Please paste a video URL instead.'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Paste URL',
+              textColor: Colors.white,
+              onPressed: _pasteVideoUrl,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -1016,21 +1139,43 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        ElevatedButton.icon(
-                          onPressed: _pickAndUploadVideo,
-                          icon: const Icon(Icons.link_rounded, size: 18),
-                          label: const Text('Paste URL'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
+                        _isUploadingVideo
+                            ? const SizedBox(
+                                width: 44,
+                                height: 44,
+                                child: Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: _pickAndUploadVideo,
+                                icon: const Icon(Icons.video_call_rounded, size: 18),
+                                label: const Text('Add Video'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
                       ],
                     ),
+                    if (_isUploadingVideo)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            SizedBox(width: 4),
+                            Text(
+                              'Uploading video... please wait',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (_uploadedVideoUrl != null && _uploadedVideoUrl!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
