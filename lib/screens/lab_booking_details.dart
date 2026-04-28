@@ -16,10 +16,29 @@ class LabBookingDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.watch(authProvider).userRole;
-    final status = booking['status'] ?? 'pending';
-    final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
-    final patient = booking['patient'];
-    final testName = booking['testName'] ?? 'Test';
+    final status = (booking['status'] ?? 'pending').toString().replaceAll('-', '_');
+    
+    // Support all field name variants
+    final testName = booking['test_type']?.toString()
+        ?? booking['testType']?.toString()
+        ?? booking['testName']?.toString()
+        ?? booking['name']?.toString()
+        ?? 'Test';
+    
+    final dateStr = booking['test_date']?.toString()
+        ?? booking['testDate']?.toString()
+        ?? booking['date']?.toString()
+        ?? booking['createdAt']?.toString()
+        ?? '';
+    final date = DateTime.tryParse(dateStr) ?? DateTime.now();
+    
+    // Patient name — try all possible fields
+    final patientName = booking['patient_name']?.toString()
+        ?? booking['patientName']?.toString()
+        ?? booking['patient']?['name']?.toString()
+        ?? booking['patient']?['username']?.toString()
+        ?? 'Unknown Patient';
+    
     final results =
         (booking['results'] as List?)
             ?.map((r) => LabResult.fromJson(r))
@@ -49,7 +68,7 @@ class LabBookingDetails extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (hasCriticalAlert) _buildCriticalAlert(),
-            _buildInfoCard(testName, status, date, patient),
+            _buildInfoCard(testName, status, date, patientName),
             const SizedBox(height: 24),
             if (role == 'Laboratory') _buildActionButtons(context, status),
             if (role != 'Laboratory' && status.toLowerCase() == 'completed')
@@ -138,7 +157,7 @@ class LabBookingDetails extends ConsumerWidget {
     String testName,
     String status,
     DateTime date,
-    dynamic patient,
+    String patientName,
   ) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -174,7 +193,7 @@ class LabBookingDetails extends ConsumerWidget {
           _buildInfoRow(
             Icons.person_rounded,
             'Patient Name',
-            patient?['name'] ?? booking['patientName'] ?? 'N/A',
+            patientName,
           ),
           _buildInfoRow(
             Icons.calendar_today_rounded,
@@ -455,7 +474,9 @@ class LabBookingDetails extends ConsumerWidget {
             Colors.orange,
             () => _updateStatus(context, 'sample_collected'),
           ),
-        if (currentStatus.toLowerCase() == 'sample_collected' || currentStatus.toLowerCase() == 'sample collected')
+        if (currentStatus.toLowerCase() == 'sample_collected' || 
+            currentStatus.toLowerCase() == 'sample-collected' ||
+            currentStatus.toLowerCase() == 'sample collected')
           _buildActionButton(
             context,
             'Enter Results',
@@ -473,13 +494,24 @@ class LabBookingDetails extends ConsumerWidget {
               }
             },
           ),
-        if (currentStatus.toLowerCase() == 'awaiting_reports' || currentStatus.toLowerCase() == 'awaiting reports')
+        if (currentStatus.toLowerCase() == 'awaiting_reports' || 
+            currentStatus.toLowerCase() == 'awaiting-reports' ||
+            currentStatus.toLowerCase() == 'awaiting reports')
           _buildActionButton(
             context,
             'Mark Reporting Done',
             Icons.done_all_rounded,
             Colors.green,
             () => _updateStatus(context, 'reporting_done'),
+          ),
+        // Cancel button always available for non-completed/cancelled
+        if (!['completed', 'cancelled', 'reporting_done'].contains(currentStatus.toLowerCase()))
+          _buildActionButton(
+            context,
+            'Cancel Booking',
+            Icons.cancel_outlined,
+            Colors.red,
+            () => _updateStatus(context, 'cancelled'),
           ),
       ],
     );
