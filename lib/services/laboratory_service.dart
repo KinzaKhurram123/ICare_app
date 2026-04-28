@@ -253,6 +253,8 @@ class LaboratoryService {
     required String address,
     required String tests,
     required String collectionType,
+    bool isUrgent = false,
+    String? turnaroundTime,
   }) async {
     try {
       final profile = await getProfile();
@@ -264,9 +266,14 @@ class LaboratoryService {
           'contact': contact,
           'address': address,
           'testName': tests,
+          'testType': tests,
+          'test_type': tests,
           'collectionType': collectionType,
           'source': 'walk-in',
           'status': 'confirmed',
+          'urgency': isUrgent ? 'Urgent' : 'Normal',
+          'is_urgent': isUrgent,
+          if (turnaroundTime != null) 'turnaroundTime': turnaroundTime,
         },
       );
       return response.data['booking'] ?? {};

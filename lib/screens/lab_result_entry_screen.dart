@@ -101,7 +101,7 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
               })
           .toList();
       await _labService.updateBooking(widget.booking['_id'], {
-        'status': 'completed',
+        'status': 'reporting_done',
         'results': results,
         'reportNotes': _notesController.text.trim(),
       });
@@ -137,7 +137,7 @@ class _LabResultEntryScreenState extends State<LabResultEntryScreen>
       final bytes = await File(_selectedFile!.path!).readAsBytes();
       await _labService.uploadReport(widget.booking['_id'], bytes, _selectedFile!.name);
       await _labService.updateBooking(widget.booking['_id'], {
-        'status': 'completed',
+        'status': 'reporting_done',
         'reportNotes': _notesController.text.trim(),
       });
       if (mounted) {

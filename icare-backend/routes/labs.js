@@ -266,6 +266,11 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
     if (reportNotes) update.report_notes = reportNotes;
     if (reportUrl) update.report_url = reportUrl;
 
+    // Auto-set status to reporting_done when results are submitted without explicit status
+    if (results && !status) {
+      update.status = 'reporting_done';
+    }
+
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ success: false, message: 'No fields to update' });
     }
@@ -348,6 +353,11 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
       patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name,
       patient_email: pMap[b.patient_id.toString()]?.email,
       patient_phone: pMap[b.patient_id.toString()]?.phone,
+      // Include urgency fields
+      urgency: b.urgency || 'Normal',
+      is_urgent: b.is_urgent || b.urgency === 'Urgent' || false,
+      collectionType: b.collection_type || 'in-lab',
+      collection_type: b.collection_type || 'in-lab',
     }));
     res.json({ success: true, bookings: result });
   } catch (error) {
@@ -375,13 +385,21 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     const testCount = finalTest.split(',').filter(t => t.trim()).length;
     const price = testCount * 3000;
 
+    const { urgency, is_urgent, collectionType, collection_type, turnaroundTime, source, patientName, contact, address } = req.body;
+
     const booking = await LabTestRequest.create({
       patient_id: patientId,
       lab_id: labId,
       test_type: finalTest,
       test_date: testDate || date || null,
       price: price,
-      status: 'pending',
+      status: req.body.status || 'pending',
+      urgency: urgency || (is_urgent ? 'Urgent' : 'Normal'),
+      is_urgent: is_urgent || urgency === 'Urgent' || false,
+      collection_type: collectionType || collection_type || 'in-lab',
+      turnaround_time: turnaroundTime || null,
+      source: source || 'online',
+      patient_name_override: patientName || null,
     });
 
     console.log('✅ LAB BOOKING - Created booking:', booking._id.toString());

@@ -578,6 +578,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                                   address: locationController.text.trim(),
                                   tests: testController.text.trim(),
                                   collectionType: collectionType,
+                                  isUrgent: isUrgent,
+                                  turnaroundTime: isUrgent ? urgentTurnaround : normalTurnaround,
                                 );
                                 if (ctx.mounted) Navigator.pop(ctx);
                                 _loadBookings();
@@ -845,7 +847,11 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   Widget _buildBookingsList() {
     // Filter bookings by urgency if urgent filter is selected
     final filteredBookings = _selectedFilter == 'urgent'
-        ? _bookings.where((b) => b['urgency'] == 'Urgent').toList()
+        ? _bookings.where((b) => 
+            b['urgency'] == 'Urgent' || 
+            b['is_urgent'] == true ||
+            b['isUrgent'] == true ||
+            b['priority'] == 'urgent').toList()
         : _bookings;
 
     return FadeTransition(
@@ -873,7 +879,10 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     final isDoctorOrdered = booking['medicalRecord'] != null;
     final doctorName = booking['doctor']?['name'];
     final urgency = booking['urgency'] ?? 'Normal';
-    final isUrgent = urgency == 'Urgent';
+    final isUrgent = urgency == 'Urgent' || 
+        booking['is_urgent'] == true || 
+        booking['isUrgent'] == true ||
+        booking['priority'] == 'urgent';
     final diagnosisNotes = booking['diagnosisNotes'];
     final specialInstructions = booking['specialInstructions'];
     final collectionType = booking['collectionType'] ?? booking['collection_type'] ?? 'in-lab';
@@ -1174,6 +1183,19 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
+                // sample_collected → awaiting_reports
+                if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'sample-collected')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'awaiting_reports'),
+                    icon: const Icon(Icons.hourglass_empty_rounded, size: 18),
+                    label: const Text('Mark Awaiting Reports'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                // awaiting_reports or sample_collected → Enter Results
                 if (status.toLowerCase() == 'sample_collected' ||
                     status.toLowerCase() == 'sample-collected' ||
                     status.toLowerCase() == 'awaiting_reports' ||
@@ -1193,6 +1215,18 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     label: const Text('Enter Results'),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                // reporting_done → Mark Completed
+                if (status.toLowerCase() == 'reporting_done' ||
+                    status.toLowerCase() == 'reporting-done')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'completed'),
+                    icon: const Icon(Icons.done_all_rounded, size: 18),
+                    label: const Text('Mark Completed'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),

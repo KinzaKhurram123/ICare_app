@@ -6,9 +6,14 @@ const labTestRequestSchema = new mongoose.Schema({
   test_type: { type: String, required: true },
   test_date: String,
   price: { type: Number, default: 0 },
+  urgency: { type: String, default: 'Normal' },
+  is_urgent: { type: Boolean, default: false },
+  collection_type: { type: String, default: 'in-lab' },
+  turnaround_time: { type: String, default: null },
+  source: { type: String, default: 'online' },
+  patient_name_override: { type: String, default: null },
   status: {
     type: String,
-    // Accept both underscore and hyphen variants for all statuses
     enum: [
       'pending', 
       'confirmed', 
@@ -18,6 +23,7 @@ const labTestRequestSchema = new mongoose.Schema({
       'processing', 
       'completed', 
       'cancelled',
+      'declined',
     ],
     default: 'pending',
   },
