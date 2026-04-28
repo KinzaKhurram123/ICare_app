@@ -14,7 +14,7 @@ function toId(id) {
 // ─── GET ALL LABS ─────────────────────────────────────────────────────────────
 async function getAllLabs() {
   await connectMongoDB();
-  const users = await User.find({ role: 'lab', is_active: { $ne: false } }).lean();
+  const users = await User.find({ role: { $in: ['lab', 'Lab', 'laboratory', 'Laboratory'] }, is_active: { $ne: false } }).lean();
   const ids = users.map(u => u._id);
   const profiles = await LabProfile.find({ user_id: { $in: ids } }).lean();
   const pMap = {};
@@ -58,17 +58,24 @@ router.get('/profile', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
+    console.log('🔍 LAB PROFILE - User ID:', userId);
+    
     const user = await User.findById(userId).lean();
+    console.log('🔍 LAB PROFILE - User found:', user?.username || user?.name);
+    
     const profile = await LabProfile.findOne({ user_id: userId }).lean() || {};
+    console.log('🔍 LAB PROFILE - Profile found:', profile.lab_name);
 
     const lab = {
       id: user._id.toString(), _id: user._id.toString(),
       username: user.username || user.name, email: user.email, phone: user.phone,
       ...profile, user_id: undefined,
     };
+    
+    console.log('✅ LAB PROFILE - Returning lab with _id:', lab._id);
     res.json({ success: true, laboratory: lab, profile: lab });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB PROFILE - Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch profile' });
   }
 });
@@ -155,8 +162,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     const [total, pending, completed, todayCount] = await Promise.all([
       LabTestRequest.countDocuments({ lab_id: userId }),
-      LabTestRequest.countDocuments({ lab_id: userId, status: 'pending' }),
-      LabTestRequest.countDocuments({ lab_id: userId, status: 'completed' }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['pending'] } }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['completed', 'reporting_done', 'reporting-done'] } }),
       LabTestRequest.countDocuments({ lab_id: userId, createdAt: { $gte: today } }),
     ]);
 
@@ -184,8 +191,20 @@ router.get('/bookings/my', authMiddleware, async (req, res) => {
     const result = bookings.map(b => ({
       ...b,
       _id: b._id.toString(),
-      lab_name: lMap[b.lab_id.toString()]?.username || lMap[b.lab_id.toString()]?.name,
-      lab_full_name: lpMap[b.lab_id.toString()]?.lab_name,
+      // camelCase aliases for Flutter
+      testName: b.test_type,
+      testType: b.test_type,
+      date: b.test_date,
+      reportUrl: b.report_url,
+      reportNotes: b.report_notes,
+      bookingNumber: b._id.toString().slice(-6).toUpperCase(),
+      isAbnormal: b.is_abnormal || false,
+      criticalAlert: b.critical_alert || false,
+      laboratory: {
+        _id: lMap[b.lab_id.toString()]?._id?.toString(),
+        labName: lpMap[b.lab_id.toString()]?.lab_name || lMap[b.lab_id.toString()]?.username || lMap[b.lab_id.toString()]?.name || 'Laboratory',
+        city: lpMap[b.lab_id.toString()]?.city || '',
+      },
     }));
     res.json({ success: true, bookings: result });
   } catch (error) {
@@ -232,13 +251,25 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, results, testDate, date, reportNotes, reportUrl } = req.body;
+    let { status, results, testDate, date, reportNotes, reportUrl } = req.body;
+    
+    // Normalize status: accept both underscore and hyphen variants
+    // Store with underscore for consistency
+    if (status) {
+      status = status.replace(/-/g, '_');
+    }
+    
     const update = {};
     if (status) update.status = status;
     if (results) update.results = results;
     if (testDate || date) update.test_date = testDate || date;
     if (reportNotes) update.report_notes = reportNotes;
     if (reportUrl) update.report_url = reportUrl;
+
+    // Auto-set status to reporting_done when results are submitted without explicit status
+    if (results && !status) {
+      update.status = 'reporting_done';
+    }
 
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ success: false, message: 'No fields to update' });
@@ -259,14 +290,21 @@ router.put('/bookings/:bookingId', authMiddleware, async (req, res) => {
         const record = await MedicalRecord.findById(booking.medical_record_id).lean();
         if (record) {
           console.log(`🔔 Lab results ready → Doctor ${record.doctor} notified for test: ${booking.test_type}`);
-          // FCM/push notification would go here when integrated
         }
       } catch (notifyErr) {
         console.error('⚠️  Doctor notification failed:', notifyErr.message);
       }
     }
 
-    res.json({ success: true, message: 'Booking updated', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+    res.json({ 
+      success: true, 
+      message: 'Booking updated', 
+      booking: { 
+        ...booking.toObject(), 
+        _id: booking._id.toString(),
+        status: booking.status?.replace(/-/g, '_') ?? booking.status,
+      } 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Failed to update booking' });
@@ -278,10 +316,30 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     await connectMongoDB();
     const labId = toId(req.params.labId);
     const { status } = req.query;
+
+    // Normalize status filter: accept both underscore and hyphen variants
+    const normalizeStatus = (s) => s?.replace(/_/g, '-');
+    const denormalizeStatus = (s) => s?.replace(/-/g, '_');
+
     const query = { lab_id: labId };
-    if (status) query.status = status;
+    if (status && status !== 'all') {
+      // Support comma-separated statuses AND normalize underscore/hyphen
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      const normalized = [];
+      statuses.forEach(s => {
+        normalized.push(s);
+        const alt = s.includes('_') ? s.replace(/_/g, '-') : s.replace(/-/g, '_');
+        if (alt !== s) normalized.push(alt);
+      });
+      query.status = normalized.length === 1 ? normalized[0] : { $in: normalized };
+    }
+
+    console.log('🔍 LAB BOOKINGS FETCH - Lab ID:', labId);
+    console.log('🔍 LAB BOOKINGS FETCH - Query:', JSON.stringify(query));
 
     const bookings = await LabTestRequest.find(query).sort({ createdAt: -1 }).lean();
+    console.log('✅ LAB BOOKINGS FETCH - Found', bookings.length, 'bookings');
+
     const patientIds = [...new Set(bookings.map(b => b.patient_id.toString()))];
     const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
     const pMap = {};
@@ -290,13 +348,20 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
     const result = bookings.map(b => ({
       ...b,
       _id: b._id.toString(),
+      // Normalize status to underscore for Flutter consistency
+      status: b.status?.replace(/-/g, '_') ?? b.status,
       patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name,
       patient_email: pMap[b.patient_id.toString()]?.email,
       patient_phone: pMap[b.patient_id.toString()]?.phone,
+      // Include urgency fields
+      urgency: b.urgency || 'Normal',
+      is_urgent: b.is_urgent || b.urgency === 'Urgent' || false,
+      collectionType: b.collection_type || 'in-lab',
+      collection_type: b.collection_type || 'in-lab',
     }));
     res.json({ success: true, bookings: result });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB BOOKINGS FETCH - Error:', error);
     res.json({ success: true, bookings: [] });
   }
 });
@@ -308,19 +373,55 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     const labId = toId(req.params.labId);
     const { testType, test_type, testDate, date, notes } = req.body;
     const finalTest = testType || test_type;
+    
+    console.log('🔍 LAB BOOKING - Patient ID:', patientId);
+    console.log('🔍 LAB BOOKING - Lab ID from URL:', labId);
+    console.log('🔍 LAB BOOKING - Test type:', finalTest);
+    console.log('🔍 LAB BOOKING - Request body:', req.body);
+    
     if (!finalTest) return res.status(400).json({ success: false, message: 'Test type is required' });
+
+    // Calculate price: Rs. 3000 per test
+    const testCount = finalTest.split(',').filter(t => t.trim()).length;
+    const price = testCount * 3000;
+
+    const { urgency, is_urgent, collectionType, collection_type, turnaroundTime, source, patientName, contact, address } = req.body;
 
     const booking = await LabTestRequest.create({
       patient_id: patientId,
       lab_id: labId,
       test_type: finalTest,
       test_date: testDate || date || null,
-      status: 'pending',
+      price: price,
+      status: req.body.status || 'pending',
+      urgency: urgency || (is_urgent ? 'Urgent' : 'Normal'),
+      is_urgent: is_urgent || urgency === 'Urgent' || false,
+      collection_type: collectionType || collection_type || 'in-lab',
+      turnaround_time: turnaroundTime || null,
+      source: source || 'online',
+      patient_name_override: patientName || null,
     });
 
-    res.status(201).json({ success: true, message: 'Booking created', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+    console.log('✅ LAB BOOKING - Created booking:', booking._id.toString());
+    console.log('✅ LAB BOOKING - Booking lab_id:', booking.lab_id.toString());
+    console.log('✅ LAB BOOKING - Booking patient_id:', booking.patient_id.toString());
+
+    // Fetch patient info to include in response
+    const patient = await User.findById(patientId).lean();
+    const patientNameFromDB = patient?.username || patient?.name || 'Unknown';
+
+    res.status(201).json({
+      success: true,
+      message: 'Booking created',
+      booking: {
+        ...booking.toObject(),
+        _id: booking._id.toString(),
+        patient_name: patientNameFromDB,
+        patient_email: patient?.email,
+      }
+    });
   } catch (error) {
-    console.error(error);
+    console.error('❌ LAB BOOKING - Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create booking' });
   }
 });

@@ -4,17 +4,65 @@ const mongoose = require('mongoose');
 const { connectMongoDB } = require('../config/mongodb');
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
+const Appointment = require('../models/Appointment');
 const { authMiddleware } = require('../middleware/auth');
 
 function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
 
+// ─── DOCTOR STATS ─────────────────────────────────────────────────────────────
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id);
+    const [total, pending, confirmed, completed, cancelled, profile] = await Promise.all([
+      Appointment.countDocuments({ doctor_id: doctorId }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'pending' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'confirmed' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'completed' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'cancelled' }),
+      DoctorProfile.findOne({ user_id: doctorId }).lean(),
+    ]);
+
+    // Revenue = completed appointments × consultation fee
+    const consultationFee = profile?.consultation_fee || 0;
+    const revenue = completed * consultationFee;
+
+    // Satisfaction = percentage of non-cancelled appointments that completed
+    const attempted = total - cancelled;
+    const satisfaction = attempted > 0 ? Math.round((completed / attempted) * 100) : 0;
+
+    const avgRating = profile?.rating || 0;
+
+    res.json({
+      success: true,
+      stats: {
+        totalAppointments: total,
+        pendingAppointments: pending,
+        confirmedAppointments: confirmed,
+        completedAppointments: completed,
+        cancelledAppointments: cancelled,
+        rating: avgRating,
+        totalReviews: profile?.total_reviews || 0,
+        revenue,
+        satisfaction,
+        avgRating,
+        consultationFee,
+      },
+    });
+  } catch (e) {
+    console.error('Doctor stats error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ─── GET ALL DOCTORS ──────────────────────────────────────────────────────────
 router.get('/get_all_doctors', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const doctors = await User.find({ role: 'doctor', is_active: { $ne: false } }).lean();
+    // Case-insensitive match — old accounts may have 'Doctor' (capital D)
+    const doctors = await User.find({ role: /^doctor$/i, is_active: { $ne: false } }).lean();
     const ids = doctors.map(d => d._id);
     const profiles = await DoctorProfile.find({ user_id: { $in: ids } }).lean();
     const profileMap = {};

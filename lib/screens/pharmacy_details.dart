@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,6 +28,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
   List<dynamic> _medicines = [];
   bool _isLoading = true;
+  bool _isPlacingOrder = false;
   String _searchQuery = '';
   XFile? _selectedPrescription;
   final Set<String> _addingToCart = {};
@@ -39,7 +41,19 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
   Future<void> _addToCart(dynamic med) async {
     final id = med['_id']?.toString() ?? '';
-    if (id.isEmpty || _addingToCart.contains(id)) return;
+    // Skip mock medicines (they don't exist in database)
+    if (id.isEmpty || id.startsWith('mock_')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${med['productName']} — contact pharmacy directly to order'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ));
+      }
+      return;
+    }
+    if (_addingToCart.contains(id)) return;
     setState(() => _addingToCart.add(id));
     try {
       await _cartService.addItem(id, 1);
@@ -70,13 +84,79 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       final data = await _pharmacyService.getMedicinesByPharmacyId(pharmacyId);
       if (mounted) {
         setState(() {
-          _medicines = data;
+          // If pharmacy has no products, show Pakistani mock medicines
+          _medicines = data.isNotEmpty ? data : _getPakistaniMockMedicines();
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _medicines = _getPakistaniMockMedicines();
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  /// Pakistani common medicines as fallback when pharmacy has no products
+  List<Map<String, dynamic>> _getPakistaniMockMedicines() {
+    return [
+      {
+        '_id': 'mock_1',
+        'productName': 'Panadol (Paracetamol 500mg)',
+        'brand': 'GSK Pakistan',
+        'price': 35,
+        'category': 'OTC',
+        'description': 'Pain reliever and fever reducer',
+        'stock_quantity': 100,
+      },
+      {
+        '_id': 'mock_2',
+        'productName': 'Brufen (Ibuprofen 400mg)',
+        'brand': 'Abbott Pakistan',
+        'price': 85,
+        'category': 'OTC',
+        'description': 'Anti-inflammatory pain reliever',
+        'stock_quantity': 80,
+      },
+      {
+        '_id': 'mock_3',
+        'productName': 'Augmentin (Amoxicillin 625mg)',
+        'brand': 'GSK Pakistan',
+        'price': 420,
+        'category': 'Prescription',
+        'description': 'Antibiotic for bacterial infections',
+        'stock_quantity': 50,
+      },
+      {
+        '_id': 'mock_4',
+        'productName': 'Risek (Omeprazole 20mg)',
+        'brand': 'Getz Pharma',
+        'price': 180,
+        'category': 'Prescription',
+        'description': 'Acid reflux and stomach ulcer treatment',
+        'stock_quantity': 60,
+      },
+      {
+        '_id': 'mock_5',
+        'productName': 'Glucophage (Metformin 500mg)',
+        'brand': 'Merck Pakistan',
+        'price': 95,
+        'category': 'Prescription',
+        'description': 'Diabetes management medication',
+        'stock_quantity': 70,
+      },
+      {
+        '_id': 'mock_6',
+        'productName': 'Lipitor (Atorvastatin 20mg)',
+        'brand': 'Pfizer Pakistan',
+        'price': 320,
+        'category': 'Prescription',
+        'description': 'Cholesterol lowering medication',
+        'stock_quantity': 45,
+      },
+    ];
   }
 
   Future<void> _pickPrescription() async {
@@ -165,6 +245,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       );
       return;
     }
+    setState(() => _isPlacingOrder = true);
     try {
       final medicines = widget.prescribedMedicines ?? [];
       await _pharmacyService.createPrescriptionOrder(
@@ -174,18 +255,33 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Order placed successfully! Pharmacy will confirm shortly.'),
+            content: Text('Order placed! Pharmacy will confirm shortly.'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
           ),
         );
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        String errorMsg = 'Failed to place order';
+        if (e is DioException) {
+          // Extract the actual backend error message
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+            errorMsg = data['message'].toString();
+          } else {
+            errorMsg = 'Server error (${e.response?.statusCode ?? 'unknown'}). Please try again.';
+          }
+        } else {
+          errorMsg = e.toString();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to place order: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isPlacingOrder = false);
     }
   }
 
@@ -215,6 +311,10 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildPharmacyInfo(),
+                      if (widget.prescribedMedicines != null && widget.prescribedMedicines!.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        _buildPrescribedMedicinesBanner(),
+                      ],
                       const SizedBox(height: 24),
                       _buildSearchBar(),
                       const SizedBox(height: 30),
@@ -394,6 +494,108 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _divider() =>
       Container(width: 1, height: 30, color: Colors.grey.withOpacity(0.2));
 
+  Widget _buildPrescribedMedicinesBanner() {
+    final meds = widget.prescribedMedicines!;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1D4ED8).withOpacity(0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.description_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Doctor\'s Prescription',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('Medicines prescribed by your doctor',
+                        style: TextStyle(fontSize: 12, color: Colors.white70)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: meds.map((m) {
+              final name = m is Map
+                  ? (m['name'] ?? m['medicineName'] ?? '').toString()
+                  : m.toString();
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                ),
+                child: Text(name,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isPlacingOrder ? null : _placePrescriptionOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1D4ED8),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              icon: _isPlacingOrder
+                  ? const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1D4ED8)))
+                  : const Icon(Icons.send_rounded, size: 18),
+              label: Text(
+                _isPlacingOrder ? 'Placing Order...' : 'Order All Prescribed Medicines',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Center(
+            child: Text(
+              'Or browse & add individual medicines below',
+              style: TextStyle(fontSize: 11, color: Colors.white70),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return CustomInputField(
       hintText: "Search for specific medicine...",
@@ -451,6 +653,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _buildMedicineCard(dynamic med) {
     final id = med['_id']?.toString() ?? '';
     final isAdding = _addingToCart.contains(id);
+    final isMock = id.startsWith('mock_');
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -512,7 +715,11 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isAdding ? Colors.grey[300] : AppColors.primaryColor,
+                    color: isMock
+                        ? Colors.grey[300]
+                        : isAdding
+                            ? Colors.grey[300]
+                            : AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: isAdding
@@ -523,9 +730,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
+                      : Icon(
+                          isMock ? Icons.info_outline_rounded : Icons.add_rounded,
+                          color: isMock ? Colors.grey[600] : Colors.white,
                           size: 20,
                         ),
                 ),
@@ -589,7 +796,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
               ),
               const SizedBox(width: 12),
               const CustomText(
-                text: "Upload Prescription",
+                text: "Upload Physical Rx",
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
                 fontSize: 14,

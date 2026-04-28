@@ -87,7 +87,7 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Doctor, date, and time are required' });
     }
 
-    const doctor = await User.findOne({ _id: toId(doctorId), role: 'doctor' });
+    const doctor = await User.findOne({ _id: toId(doctorId), role: /^doctor$/i });
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
@@ -120,7 +120,7 @@ router.post('/book_appointment', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Doctor, date, and time are required' });
     }
 
-    const doctor = await User.findOne({ _id: toId(doctorId), role: 'doctor' });
+    const doctor = await User.findOne({ _id: toId(doctorId), role: /^doctor$/i });
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }

@@ -54,7 +54,7 @@ class _PharmacistDashboardState extends ConsumerState<PharmacistDashboard> {
             .toList();
       } catch (_) {}
       setState(() {
-        _stats = stats.map((key, value) => MapEntry(key, value as int));
+        _stats = stats.map((key, value) => MapEntry(key, (value as num).toInt()));
         _recentOrders = recentOrders;
         _isLoading = false;
       });

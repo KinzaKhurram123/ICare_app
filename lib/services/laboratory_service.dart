@@ -20,25 +20,34 @@ class LaboratoryService {
   // Get all laboratories
   Future<List<dynamic>> getAllLaboratories() async {
     try {
+      debugPrint('🔍 LAB SERVICE - Fetching all laboratories...');
       final response = await _apiService.get('/laboratories/get_all_laboratories');
       final list = (response.data['laboratories'] ?? []) as List;
-      // Backend returns: { _id: profileId, user: { _id, name }, labName, city }
+      debugPrint('🔍 LAB SERVICE - Received ${list.length} laboratories from backend');
+      
       return list.map((l) {
         final map = Map<String, dynamic>.from(l);
-        final user = map['user'] as Map<String, dynamic>? ?? {};
-        // Preserve original profile _id for routing (referredLaboratory, getLabById)
-        map['profileId'] = map['_id']?.toString();
-        // Also keep user._id available if needed
-        map['userId'] = user['_id']?.toString();
-        map['_id'] = map['profileId'];
-        map['id'] = map['_id'];
-        final displayName = map['labName']?.toString()
-            ?? map['lab_name']?.toString()
-            ?? user['name']?.toString()
+        debugPrint('🔍 LAB SERVICE - Processing lab: ${map['lab_name'] ?? map['name']}');
+        debugPrint('🔍 LAB SERVICE - Raw lab data keys: ${map.keys.toList()}');
+        debugPrint('🔍 LAB SERVICE - Raw _id: ${map['_id']}, id: ${map['id']}');
+        
+        // Backend returns flat structure: {_id: userId, lab_name: ..., ...}
+        // No nested 'user' object
+        final userId = map['_id']?.toString() ?? map['id']?.toString();
+        debugPrint('🔍 LAB SERVICE - Extracted userId: $userId');
+        
+        map['userId'] = userId;
+        map['_id'] = userId;
+        map['id'] = userId;
+        final displayName = map['lab_name']?.toString()
+            ?? map['labName']?.toString()
+            ?? map['name']?.toString()
             ?? 'Laboratory';
         map['labName'] = displayName;
         map['lab_name'] = displayName;
         map['name'] = displayName;
+        
+        debugPrint('🔍 LAB SERVICE - Final lab object _id: ${map['_id']}');
         return map;
       }).toList();
     } catch (e, stackTrace) {
@@ -64,12 +73,20 @@ class LaboratoryService {
     Map<String, dynamic> data,
   ) async {
     try {
+      debugPrint('🔍 LAB SERVICE - createBooking called with labId: $labId');
+      debugPrint('🔍 LAB SERVICE - Booking data: $data');
+      debugPrint('🔍 LAB SERVICE - Making POST to: /laboratories/$labId/bookings');
+      
       final response = await _apiService.post(
         '/laboratories/$labId/bookings',
         data,
       );
+      
+      debugPrint('✅ LAB SERVICE - Booking created successfully');
+      debugPrint('✅ LAB SERVICE - Response: ${response.data}');
       return response.data['booking'];
     } catch (e, stackTrace) {
+      debugPrint('❌ LAB SERVICE - createBooking error: $e');
       ErrorHandler.logError(e, stackTrace, context: 'createBooking');
       rethrow;
     }
@@ -78,13 +95,23 @@ class LaboratoryService {
   // Get laboratory bookings (for lab admin)
   Future<List<dynamic>> getBookings(String labId, {String? status}) async {
     try {
+      debugPrint('🔍 LAB SERVICE - getBookings called with labId: $labId, status: $status');
       String url = '/laboratories/$labId/bookings';
       if (status != null) {
         url += '?status=$status';
       }
+      debugPrint('🔍 LAB SERVICE - Fetching from: $url');
+      
       final response = await _apiService.get(url);
-      return response.data['bookings'] ?? [];
+      final bookings = response.data['bookings'] ?? [];
+      
+      debugPrint('✅ LAB SERVICE - Received ${bookings.length} bookings');
+      if (bookings.isNotEmpty) {
+        debugPrint('✅ LAB SERVICE - First booking: ${bookings[0]}');
+      }
+      return bookings;
     } catch (e, stackTrace) {
+      debugPrint('❌ LAB SERVICE - getBookings error: $e');
       ErrorHandler.logError(e, stackTrace, context: 'getBookings');
       rethrow;
     }
@@ -164,11 +191,11 @@ class LaboratoryService {
           .where((b) => b['status'] == 'pending')
           .length;
       final completedBookings = bookings
-          .where((b) => b['status'] == 'completed')
+          .where((b) => b['status'] == 'completed' || b['status'] == 'reporting_done')
           .length;
       final todayBookings = bookings.where((b) {
         final bookingDate =
-            DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
+            DateTime.tryParse(b['test_date'] ?? b['createdAt'] ?? b['date'] ?? '') ?? DateTime.now();
         final today = DateTime.now();
         return bookingDate.year == today.year &&
             bookingDate.month == today.month &&
@@ -226,6 +253,8 @@ class LaboratoryService {
     required String address,
     required String tests,
     required String collectionType,
+    bool isUrgent = false,
+    String? turnaroundTime,
   }) async {
     try {
       final profile = await getProfile();
@@ -237,9 +266,14 @@ class LaboratoryService {
           'contact': contact,
           'address': address,
           'testName': tests,
+          'testType': tests,
+          'test_type': tests,
           'collectionType': collectionType,
           'source': 'walk-in',
           'status': 'confirmed',
+          'urgency': isUrgent ? 'Urgent' : 'Normal',
+          'is_urgent': isUrgent,
+          if (turnaroundTime != null) 'turnaroundTime': turnaroundTime,
         },
       );
       return response.data['booking'] ?? {};

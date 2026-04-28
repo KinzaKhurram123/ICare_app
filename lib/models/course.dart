@@ -54,6 +54,9 @@ class Course {
       instructorId = instructor['_id'] ?? instructor['id'] ?? '';
       instructorName = instructor['name'];
       instructorEmail = instructor['email'];
+    } else if (json['instructor_id'] != null) {
+      // Backend stores as instructor_id
+      instructorId = json['instructor_id'].toString();
     } else {
       instructorId = '';
     }
@@ -85,13 +88,13 @@ class Course {
               ?.map((m) => CourseModule.fromJson(m))
               .toList() ??
           [],
-      thumbnail: json['thumbnail'],
-      isPublished: json['isPublished'] ?? false,
+      thumbnail: json['thumbnail'] ?? json['thumbnail_url'],
+      isPublished: json['isPublished'] == true || json['visibility'] == 'public',
       publishedAt: json['publishedAt'] != null
           ? DateTime.parse(json['publishedAt'])
           : null,
       enrollmentCount: json['enrollmentCount'] ?? 0,
-      rating: CourseRating.fromJson(json['rating'] ?? {}),
+      rating: CourseRating.fromJson(json['rating']),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
@@ -194,8 +197,8 @@ class Lesson {
       id: json['_id'],
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      videoUrl: json['videoUrl'],
-      duration: json['duration'],
+      videoUrl: json['videoUrl'] ?? json['video_url'],
+      duration: json['duration'] ?? json['duration_minutes'],
       order: json['order'] ?? 0,
       resources:
           (json['resources'] as List?)
@@ -301,11 +304,15 @@ class CourseRating {
 
   CourseRating({this.average = 0.0, this.count = 0});
 
-  factory CourseRating.fromJson(Map<String, dynamic> json) {
-    return CourseRating(
-      average: (json['average'] ?? 0).toDouble(),
-      count: json['count'] ?? 0,
-    );
+  factory CourseRating.fromJson(dynamic json) {
+    if (json is num) return CourseRating(average: json.toDouble());
+    if (json is Map<String, dynamic>) {
+      return CourseRating(
+        average: (json['average'] ?? 0).toDouble(),
+        count: json['count'] ?? 0,
+      );
+    }
+    return CourseRating();
   }
 
   Map<String, dynamic> toJson() {

@@ -9,6 +9,7 @@ const doctorsRoutes = require('./routes/doctors');
 const appointmentsRoutes = require('./routes/appointments');
 const medicalRecordsRoutes = require('./routes/medical-records');
 const labsRoutes = require('./routes/labs');
+const labSuppliesRoutes = require('./routes/lab-supplies');
 const pharmacyRoutes = require('./routes/pharmacy');
 const coursesRoutes = require('./routes/courses');
 const productsRoutes = require('./routes/products');
@@ -21,31 +22,30 @@ const usersRoutes = require('./routes/users');
 const agoraRoutes = require('./routes/agora');
 const callRoutes = require('./routes/call');
 const connectNowRoutes = require('./routes/connect-now');
+const instructorsRoutes = require('./routes/instructors');
+const courseQuestionsRoutes = require('./routes/course-questions');
 
 const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow all vercel.app subdomains, localhost, and no-origin requests (mobile/Postman)
-    if (
-      !origin ||
-      /\.vercel\.app$/.test(origin) ||
-      /^http:\/\/localhost(:\d+)?$/.test(origin) ||
-      origin === 'https://icare-virtual-hospital.com' ||
-      origin === 'https://www.icare-virtual-hospital.com'
-    ) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Allow all during development — tighten in prod
-    }
-  },
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: false,
 };
 app.use(cors(corsOptions));
-app.options('/{*path}', cors(corsOptions));
+
+// Handle preflight for ALL routes explicitly
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -82,8 +82,12 @@ app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/medical-records', medicalRecordsRoutes);
 app.use('/api/labs', labsRoutes);
 app.use('/api/laboratories', labsRoutes);
+app.use('/api/lab-supplies', labSuppliesRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/courses', coursesRoutes);
+
+// Students courses — alias to instructors courses (public listing)
+app.use('/api/students/courses', coursesRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/seed', seedRoutes);
@@ -93,6 +97,8 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/agora', agoraRoutes);
 app.use('/api/call', callRoutes);
 app.use('/api/connect-now', connectNowRoutes);
+app.use('/api/instructors', instructorsRoutes);
+app.use('/api/course-questions', courseQuestionsRoutes);
 
 // Stub routes — return empty success so Flutter doesn't crash on 404
 const makeStub = (emptyKey) => {

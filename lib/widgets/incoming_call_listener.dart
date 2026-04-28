@@ -76,6 +76,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
           isAudioOnly: isAudioOnly,
           onAccept: () async {
             await _callService.respondToCall(signalId, 'accepted');
+            final userData = await _sharedPref.getUserData();
             nav.pop();
             nav.push(
               MaterialPageRoute(
@@ -83,6 +84,8 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
                   channelName: channelName,
                   remoteUserName: callerName,
                   isAudioOnly: isAudioOnly,
+                  currentUserId: userData?.id ?? '',
+                  currentUserName: userData?.name ?? 'User',
                 ),
               ),
             );

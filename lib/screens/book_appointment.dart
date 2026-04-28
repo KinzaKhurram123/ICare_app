@@ -4,12 +4,10 @@ import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/custom_text.dart';
 import 'package:intl/intl.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   const BookAppointmentScreen({super.key, required this.doctor});
-
   final Doctor doctor;
 
   @override
@@ -18,700 +16,676 @@ class BookAppointmentScreen extends StatefulWidget {
 
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   final AppointmentService _appointmentService = AppointmentService();
-  final TextEditingController _reasonController = TextEditingController();
+  final PageController _datePageController = PageController();
 
-  DateTime _selectedDate = DateTime.now();
-  String? _selectedTimeSlot;
+  // Date selection
+  late List<DateTime> _dateRange;
+  int _selectedDateIndex = 0;
+
+  // Time slot selection
+  String? _selectedSlot;
+
+  // Step: 0 = slot selection, 1 = reviews, 2 = checkout
+  int _step = 0;
+
   bool _isBooking = false;
+  final _nameController = TextEditingController();
+  final _reasonController = TextEditingController();
+
+  // Morning slots 9:00 AM - 11:45 AM (15 min intervals)
+  final List<String> _morningSlots = [
+    '09:00 AM', '09:15 AM', '09:30 AM', '09:45 AM',
+    '10:00 AM', '10:15 AM', '10:30 AM', '10:45 AM',
+    '11:00 AM', '11:15 AM', '11:30 AM', '11:45 AM',
+  ];
+
+  // Afternoon slots 12:00 PM - 01:45 PM
+  final List<String> _afternoonSlots = [
+    '12:00 PM', '12:15 PM', '12:30 PM', '12:45 PM',
+    '01:00 PM', '01:15 PM', '01:30 PM', '01:45 PM',
+  ];
+
+  // Dummy reviews
+  final List<Map<String, String>> _reviews = [
+    {'text': 'Consultation was good', 'patient': 'Verified Patient F', 'ago': '18 days ago'},
+    {'text': 'Quickly respond the call and guide properly', 'patient': 'Verified Patient F', 'ago': '19 days ago'},
+    {'text': 'I was extremely satisfied with my consultation. The doctor was extremely attentive to listening to my issues and had extremely professional and practical advice.', 'patient': 'Verified Patient U', 'ago': '19 days ago'},
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Ensure initial date is valid
-    _selectedDate = _getNextAvailableDate();
+    // Generate next 8 days
+    final today = DateTime.now();
+    _dateRange = List.generate(8, (i) => today.add(Duration(days: i)));
   }
 
-  DateTime _getNextAvailableDate() {
-    DateTime date = DateTime.now();
-    if (widget.doctor.availableDays.isEmpty) return date;
-
-    // Find next available day within 30 days
-    for (int i = 0; i < 30; i++) {
-      final checkDate = date.add(Duration(days: i));
-      if (_isDayAvailable(checkDate)) {
-        return checkDate;
-      }
-    }
-    return date; // Fallback to today
+  @override
+  void dispose() {
+    _datePageController.dispose();
+    _nameController.dispose();
+    _reasonController.dispose();
+    super.dispose();
   }
 
-  List<String> _getAvailableTimeSlots() {
-    if (widget.doctor.availableTime != null) {
-      final startTime = widget.doctor.availableTime!.start;
+  DateTime get _selectedDate => _dateRange[_selectedDateIndex];
 
-      return [
-        '$startTime',
-        '${_incrementTime(startTime, 1)}',
-        '${_incrementTime(startTime, 2)}',
-        '${_incrementTime(startTime, 3)}',
-      ];
-    }
-
-    return [
-      '09:00 AM',
-      '10:00 AM',
-      '11:00 AM',
-      '12:00 PM',
-      '02:00 PM',
-      '03:00 PM',
-      '04:00 PM',
-      '05:00 PM',
-    ];
-  }
-
-  String _incrementTime(String time, int hours) {
-    try {
-      // Handle 24-hour format (e.g., "08:00")
-      if (!time.contains('AM') && !time.contains('PM')) {
-        final timeParts = time.split(':');
-        int hour = int.parse(timeParts[0]);
-        final minute = timeParts.length > 1 ? timeParts[1] : '00';
-
-        hour += hours;
-        if (hour >= 24) hour -= 24;
-
-        // Convert to 12-hour format with AM/PM
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-
-        return '$displayHour:$minute $period';
-      }
-
-      // Handle 12-hour format (e.g., "09:00 AM")
-      final parts = time.split(' ');
-      if (parts.length < 2) return time;
-
-      final timeParts = parts[0].split(':');
-      int hour = int.parse(timeParts[0]);
-      final minute = timeParts.length > 1 ? timeParts[1] : '00';
-      final period = parts[1];
-
-      hour += hours;
-      if (hour > 12) hour -= 12;
-
-      return '$hour:$minute $period';
-    } catch (e) {
-      debugPrint('Error parsing time: $time, error: $e');
-      return time;
-    }
-  }
-
-  bool _isDayAvailable(DateTime date) {
-    if (widget.doctor.availableDays.isEmpty) return true;
-
-    final dayName = DateFormat('EEEE').format(date);
-    return widget.doctor.availableDays.contains(dayName);
-  }
-
-  Future<void> _bookAppointment() async {
-    if (_selectedTimeSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a time slot'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
+  Future<void> _confirmBooking() async {
+    if (_selectedSlot == null) return;
     setState(() => _isBooking = true);
 
     final result = await _appointmentService.bookAppointment(
       doctorId: widget.doctor.id,
       date: _selectedDate,
-      timeSlot: _selectedTimeSlot!,
-      reason: _reasonController.text.trim().isEmpty
-          ? null
-          : _reasonController.text.trim(),
+      timeSlot: _selectedSlot!,
+      reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
     );
 
     setState(() => _isBooking = false);
-
     if (!mounted) return;
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text(result['message'])),
-            ],
-          ),
+          content: const Row(children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 10),
+            Text('Appointment booked successfully!'),
+          ]),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text(result['message'])),
-            ],
-          ),
+          content: Text(result['message'] ?? 'Booking failed'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
         ),
       );
     }
   }
 
   @override
-  void dispose() {
-    _reasonController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool isDesktop = Utils.windowWidth(context) > 600;
-    final availableSlots = _getAvailableTimeSlots();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        leading: CustomBackButton(),
-        automaticallyImplyLeading: false,
+        leading: _step > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                onPressed: () => setState(() => _step--),
+              )
+            : const CustomBackButton(),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: CustomText(
-          text: "Book Appointment",
-          fontFamily: "Gilroy-Bold",
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFF0F172A),
+        title: Text(
+          _step == 2 ? 'Checkout' : 'Book Appointment',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 24 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Doctor Info Card with Gradient
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primaryColor,
-                    AppColors.primaryColor.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 35,
-                      backgroundColor: Colors.white,
-                      child: Text(
-                        widget.doctor.user.name.isNotEmpty
-                            ? widget.doctor.user.name
-                                  .substring(0, 1)
-                                  .toUpperCase()
-                            : 'D',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.doctor.user.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            widget.doctor.specialization ??
-                                'General Practitioner',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
+      body: _step == 0
+          ? _buildSlotSelection()
+          : _step == 1
+              ? _buildReviews()
+              : _buildCheckout(),
+    );
+  }
+
+  // ── STEP 0: Date + Slot Selection ─────────────────────────────────────────
+  Widget _buildSlotSelection() {
+    final fee = widget.doctor.consultationFee;
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Doctor info card
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-
-            const SizedBox(height: 28),
-
-            // Select Date Section
-            Row(
+            child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: Color(0xFF3B82F6),
-                    size: 20,
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                  child: Text(
+                    widget.doctor.user.name.isNotEmpty
+                        ? widget.doctor.user.name.substring(0, 1).toUpperCase()
+                        : 'D',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Select Date',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Dr. ${widget.doctor.user.name}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      Text(widget.doctor.specialization ?? 'General Physician',
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      if (fee != null && fee > 0)
+                        Text('Fee: Rs. ${fee.toInt()}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+          ),
 
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.light(
-                        primary: AppColors.primaryColor,
-                        onPrimary: Colors.white,
-                        surface: Colors.white,
-                      ),
-                    ),
-                    child: CalendarDatePicker(
-                      initialDate: _selectedDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 90)),
-                      onDateChanged: (date) {
-                        if (_isDayAvailable(date)) {
-                          setState(() => _selectedDate = date);
-                        }
-                      },
-                      selectableDayPredicate:
-                          widget.doctor.availableDays.isEmpty
-                          ? null
-                          : (DateTime date) => _isDayAvailable(date),
-                    ),
-                  ),
-                  if (widget.doctor.availableDays.isNotEmpty) ...[
-                    const Divider(height: 32),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 18,
-                          color: AppColors.primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Available Days',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: widget.doctor.availableDays.map((day) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primaryColor.withValues(alpha: 0.1),
-                                AppColors.primaryColor.withValues(alpha: 0.05),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.primaryColor.withValues(
-                                alpha: 0.3,
+          // Date strip
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: _selectedDateIndex > 0
+                      ? () => setState(() => _selectedDateIndex--)
+                      : null,
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(_dateRange.length, (i) {
+                        final d = _dateRange[i];
+                        final isSelected = i == _selectedDateIndex;
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            _selectedDateIndex = i;
+                            _selectedSlot = null;
+                          }),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primaryColor : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
                               ),
                             ),
-                          ),
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
+                            child: Column(
+                              children: [
+                                Text(
+                                  DateFormat('MMM').format(d),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isSelected ? Colors.white70 : const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat('dd').format(d),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat('EEE').format(d),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isSelected ? Colors.white70 : const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                     ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Select Time Slot Section
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.access_time_rounded,
-                    color: Color(0xFF8B5CF6),
-                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Select Time Slot',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: _selectedDateIndex < _dateRange.length - 1
+                      ? () => setState(() => _selectedDateIndex++)
+                      : null,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Morning Slots
+          _buildSlotSection('Morning Slots', Icons.wb_sunny_outlined, _morningSlots),
+          const SizedBox(height: 8),
+
+          // Afternoon Slots
+          _buildSlotSection('Afternoon Slots', Icons.wb_twilight_outlined, _afternoonSlots),
+
+          const SizedBox(height: 24),
+
+          // Continue to Book button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _selectedSlot != null ? () => setState(() => _step = 1) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFFE2E8F0),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Continue to Book', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotSection(String title, IconData icon, List<String> slots) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: slots.map((slot) {
+              final isSelected = _selectedSlot == slot;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedSlot = slot),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryColor : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    slot,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── STEP 1: Reviews ────────────────────────────────────────────────────────
+  Widget _buildReviews() {
+    final averageRating = widget.doctor.averageRating;
+    final reviewCount = widget.doctor.reviewCount;
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Trust badge
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.shield_rounded, color: Color(0xFFF59E0B), size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('95% patients feel satisfied after booking',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF92400E))),
+                      Text('It takes only 30 sec to book an appointment',
+                          style: TextStyle(fontSize: 12, color: Color(0xFFB45309))),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+          ),
 
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          // Reviews header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  'Reviews About Dr. ${widget.doctor.user.name} ($reviewCount)',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Review cards
+          ..._reviews.map((r) => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.thumb_up_outlined, size: 16, color: Color(0xFF3B82F6)),
+                    SizedBox(width: 6),
+                    Text('I recommend the doctor',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('" ${r['text']} "',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
+                const SizedBox(height: 8),
+                Text('${r['patient']} • ${r['ago']}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          )),
+
+          const SizedBox(height: 24),
+
+          // Continue to Book button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () => setState(() => _step = 2),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Continue to Book', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               ),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: availableSlots.map((slot) {
-                  final isSelected = _selectedTimeSlot == slot;
-                  return InkWell(
-                    onTap: () => setState(() => _selectedTimeSlot = slot),
-                    borderRadius: BorderRadius.circular(16),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: isSelected
-                            ? LinearGradient(
-                                colors: [
-                                  const Color(0xFF8B5CF6),
-                                  const Color(
-                                    0xFF8B5CF6,
-                                  ).withValues(alpha: 0.8),
-                                ],
-                              )
-                            : null,
-                        color: isSelected ? null : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF8B5CF6)
-                              : const Color(0xFFE2E8F0),
-                          width: 2,
-                        ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF8B5CF6,
-                                  ).withValues(alpha: 0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // ── STEP 2: Checkout ───────────────────────────────────────────────────────
+  Widget _buildCheckout() {
+    final fee = widget.doctor.consultationFee ?? 0;
+    final dateStr = DateFormat('MMM dd').format(_selectedDate);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left: form
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Appointment For
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Appointment For',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 12),
+                      Row(
                         children: [
-                          Icon(
-                            Icons.schedule_rounded,
-                            size: 18,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF8B5CF6),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            slot,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: isSelected
-                                  ? Colors.white
-                                  : const Color(0xFF0F172A),
-                            ),
-                          ),
+                          _forChip('Myself', true),
+                          const SizedBox(width: 10),
+                          _forChip('+ Someone else', false),
                         ],
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Reason Section
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.edit_note_rounded,
-                    color: Color(0xFF10B981),
-                    size: 20,
+                      const SizedBox(height: 16),
+                      const Text('Patient Name',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your name',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Reason (optional)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _reasonController,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          hintText: 'Describe your symptoms...',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Reason for Visit',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(width: 8),
+                const SizedBox(height: 16),
+
+                // Payment method
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF64748B).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: const Text(
-                    'Optional',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Select Payment Method',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primaryColor.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.radio_button_checked_rounded, color: AppColors.primaryColor, size: 20),
+                            const SizedBox(width: 10),
+                            const Expanded(child: Text('Online Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
+                            if (fee > 0)
+                              Text('Rs. ${fee.toInt()}',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+          ),
 
-            Container(
+          const SizedBox(width: 16),
+
+          // Right: summary + confirm
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Doctor mini card
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                        child: Text(
+                          widget.doctor.user.name.isNotEmpty
+                              ? widget.doctor.user.name.substring(0, 1).toUpperCase()
+                              : 'D',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Dr. ${widget.doctor.user.name}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                            Text(widget.doctor.specialization ?? 'General Physician',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 8),
+
+                  // Consultation type + fee
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Video consultation', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      if (fee > 0)
+                        Text('Rs. ${fee.toInt()}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Date + time
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text('$dateStr, $_selectedSlot',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Confirm button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isBooking ? null : _confirmBooking,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: _isBooking
+                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Confirm booking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                    ),
                   ),
                 ],
               ),
-              child: TextField(
-                controller: _reasonController,
-                maxLines: 4,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF0F172A),
-                ),
-                decoration: InputDecoration(
-                  hintText:
-                      'Describe your symptoms or reason for consultation...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.all(24),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 32),
-
-            // Book Button with Gradient
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primaryColor,
-                    AppColors.primaryColor.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryColor.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isBooking ? null : _bookAppointment,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Center(
-                    child: _isBooking
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.check_circle_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                'Confirm Booking',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-          ],
+  Widget _forChip(String label, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.primaryColor.withOpacity(0.1) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isSelected)
+            Icon(Icons.check_rounded, size: 14, color: AppColors.primaryColor),
+          if (isSelected) const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? AppColors.primaryColor : const Color(0xFF64748B),
+              )),
+        ],
       ),
     );
   }

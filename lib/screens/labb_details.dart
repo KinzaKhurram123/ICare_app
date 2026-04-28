@@ -54,11 +54,16 @@ class _LabDetailsState extends State<LabDetails> {
               : "Our laboratory combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.");
     final String image = (labData?['image'] is String)
         ? (labData?['image'] as String)
-        : ImagePaths.lab3;
+        : '';
 
     // Get dynamic tests if available, otherwise use defaults
+    // Backend may return tests as Strings OR as Maps {name, price, ...}
     final List<String> availableTests = (labData?['tests'] is List)
-        ? (labData?['tests'] as List).cast<String>()
+        ? (labData!['tests'] as List).map((t) {
+            if (t is String) return t;
+            if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
+            return t.toString();
+          }).where((s) => s.isNotEmpty).toList()
         : [
             "Complete Blood Count (CBC)",
             "Blood Sugar (Fasting / Random)",
@@ -112,21 +117,42 @@ class _LabDetailsState extends State<LabDetails> {
             ClipRRect(
               clipBehavior: Clip.hardEdge,
               borderRadius: BorderRadius.circular(20),
-              child: image.startsWith('assets')
-                  ? Image.asset(
-                      image,
-                      fit: BoxFit.cover,
+              child: image.isEmpty
+                  ? Container(
                       width: Utils.windowWidth(context) * 0.9,
                       height: Utils.windowWidth(context) * 0.5,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+                        ),
+                      ),
+                      child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
                     )
-                  : Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: Utils.windowWidth(context) * 0.9,
-                      height: Utils.windowWidth(context) * 0.5,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset(ImagePaths.lab3, fit: BoxFit.cover),
-                    ),
+                  : image.startsWith('assets')
+                      ? Image.asset(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
+                        )
+                      : Image.network(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
+                        ),
             ),
             SizedBox(height: ScallingConfig.scale(20)),
             CustomText(
@@ -336,12 +362,23 @@ class _LabDetailsState extends State<LabDetails> {
                               height: 450,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(32),
-                                image: DecorationImage(
-                                  image: image.startsWith('assets')
-                                      ? AssetImage(image) as ImageProvider
-                                      : NetworkImage(image),
-                                  fit: BoxFit.cover,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF1D4ED8),
+                                    Color(0xFF0EA5E9),
+                                  ],
                                 ),
+                                image: image.isNotEmpty
+                                    ? DecorationImage(
+                                        image: image.startsWith('assets')
+                                            ? AssetImage(image) as ImageProvider
+                                            : NetworkImage(image),
+                                        fit: BoxFit.cover,
+                                        onError: (_, __) {},
+                                      )
+                                    : null,
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
@@ -352,6 +389,53 @@ class _LabDetailsState extends State<LabDetails> {
                               ),
                               child: Stack(
                                 children: [
+                                  // Show lab icon/content when no image
+                                  if (image.isEmpty)
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(24),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.science_rounded,
+                                              color: Colors.white,
+                                              size: 80,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: const Text(
+                                              'Certified Diagnostic Laboratory',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   Positioned(
                                     top: 20,
                                     right: 20,

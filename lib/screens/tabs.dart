@@ -141,8 +141,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
         activePage = InstructorCoursesManagementScreen();
-      } else if (currentIndex == 2) {
-        activePage = ChatListScreen();
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -361,7 +359,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
       items = [
         _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', index: 0),
         _SidebarItem(icon: Icons.school_outlined, label: 'Courses', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
       ];
     } else if (role == 'Patient') {
       items = [
@@ -402,17 +399,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     : (role == 'Student' ? 'My Programs' : 'Appointments')),
           index: 1,
         ),
-        _SidebarItem(
-          icon: role == 'Pharmacy'
-              ? Icons.inventory_2_outlined
-              : (role == 'Laboratory'
-                    ? Icons.upload_file_outlined
-                    : Icons.chat_bubble_outline),
-          label: role == 'Pharmacy'
-              ? 'Inventory'
-              : (role == 'Laboratory' ? 'Records' : 'Messages'),
-          index: 2,
-        ),
+        if (role != 'Student')
+          _SidebarItem(
+            icon: role == 'Pharmacy'
+                ? Icons.inventory_2_outlined
+                : (role == 'Laboratory'
+                      ? Icons.upload_file_outlined
+                      : Icons.chat_bubble_outline),
+            label: role == 'Pharmacy'
+                ? 'Inventory'
+                : (role == 'Laboratory' ? 'Records' : 'Messages'),
+            index: 2,
+          ),
       ];
     }
 
@@ -643,7 +641,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) => const MyAppointmentsListScreen(),
+                          builder: (ctx) => const BookingsHistoryScreen(),
                         ),
                       );
                     },
@@ -1115,80 +1113,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   ),
                 ],
 
-                if (role == 'Instructor') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
-                    ),
-                    child: Divider(
-                      color: const Color(0xFFE8ECF5),
-                      height: 1,
-                    ),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.medication_outlined,
-                    'Pharmacies',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const PharmaciesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.biotech_outlined,
-                    'Reports/Lab Results',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => LabReportsScreen()),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.favorite_outlined,
-                    'My Health Journey',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const Courses(myPurchased: true),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _buildExtraNavItem(
-                    context,
-                    Icons.help_outline_rounded,
-                    'Help & Support',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const HelpAndSupport(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.settings_outlined,
-                    'Settings',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-
-                if (role == 'Student' || role == 'Instructor') ...[
+                if (role == 'Student') ...[
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(

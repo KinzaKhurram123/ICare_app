@@ -64,9 +64,10 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         _labId = profile['_id'];
       }
 
+      final currentFilter = _selectedFilter;
       final bookings = await _labService.getBookings(
         _labId!,
-        status: _selectedFilter == 'all' ? null : _selectedFilter,
+        status: currentFilter == 'all' ? null : currentFilter,
       );
 
       if (mounted) {
@@ -90,13 +91,17 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     setState(() => _isLoading = true);
 
     try {
-      final profile = await _labService.getProfile();
-      _labId = profile['_id'];
-      if (_labId == null) throw Exception('Laboratory ID not found');
+      // Only fetch profile once; reuse cached _labId on filter changes
+      if (_labId == null) {
+        final profile = await _labService.getProfile();
+        _labId = profile['_id'];
+        if (_labId == null) throw Exception('Laboratory ID not found');
+      }
 
+      final currentFilter = _selectedFilter; // snapshot before any async gap
       final bookings = await _labService.getBookings(
         _labId!,
-        status: _selectedFilter == 'all' ? null : _selectedFilter,
+        status: currentFilter == 'all' ? null : currentFilter,
       );
 
       // Sort by date — oldest first (date-wise priority)
@@ -133,6 +138,58 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   }
 
   Future<void> _updateStatus(String bookingId, String newStatus) async {
+    // If cancelling, require a reason
+    if (newStatus == 'cancelled') {
+      final reasonCtrl = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Cancel Booking'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason for cancellation (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Enter cancellation reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (reasonCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required'), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text('Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       await _labService.updateBookingStatus(bookingId, newStatus);
       if (mounted) {
@@ -348,7 +405,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                   const SizedBox(height: 12),
                   _buildFormField(
                     controller: locationController,
-                    label: 'Location',
+                    label: 'Address',
                     icon: Icons.location_on_rounded,
                   ),
                   const SizedBox(height: 20),
@@ -476,7 +533,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                                 filled: true,
                                 fillColor: const Color(0xFFF8FAFC),
                               ),
-                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '5 Days', '7 Days']
+                              items: ['2 Hours', '4 Hours', '6 Hours', '12 Hours', '1 Day', '2 Days', '3 Days', '4 Days', '5 Days', '7 Days']
                                   .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                               onChanged: (v) => setModalState(() => normalTurnaround = v!),
                             ),
@@ -526,6 +583,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                                   address: locationController.text.trim(),
                                   tests: testController.text.trim(),
                                   collectionType: collectionType,
+                                  isUrgent: isUrgent,
+                                  turnaroundTime: isUrgent ? urgentTurnaround : normalTurnaround,
                                 );
                                 if (ctx.mounted) Navigator.pop(ctx);
                                 _loadBookings();
@@ -793,7 +852,11 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   Widget _buildBookingsList() {
     // Filter bookings by urgency if urgent filter is selected
     final filteredBookings = _selectedFilter == 'urgent'
-        ? _bookings.where((b) => b['urgency'] == 'Urgent').toList()
+        ? _bookings.where((b) => 
+            b['urgency'] == 'Urgent' || 
+            b['is_urgent'] == true ||
+            b['isUrgent'] == true ||
+            b['priority'] == 'urgent').toList()
         : _bookings;
 
     return FadeTransition(
@@ -815,15 +878,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   Widget _buildBookingCard(Map<String, dynamic> booking) {
     final status = booking['status'] ?? 'pending';
     final statusColor = _getStatusColor(status);
-    final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
-    final patient = booking['patient'];
-    final testName = booking['testName'] ?? 'Test';
+    final date = DateTime.tryParse(booking['date'] ?? booking['test_date'] ?? booking['createdAt'] ?? '') ?? DateTime.now();
+    final patientName = booking['patient_name'] ?? booking['patient']?['name'] ?? 'Patient';
+    final testName = booking['test_type'] ?? booking['testName'] ?? 'Test';
     final isDoctorOrdered = booking['medicalRecord'] != null;
     final doctorName = booking['doctor']?['name'];
     final urgency = booking['urgency'] ?? 'Normal';
-    final isUrgent = urgency == 'Urgent';
+    final isUrgent = urgency == 'Urgent' || 
+        booking['is_urgent'] == true || 
+        booking['isUrgent'] == true ||
+        booking['priority'] == 'urgent';
     final diagnosisNotes = booking['diagnosisNotes'];
     final specialInstructions = booking['specialInstructions'];
+    final collectionType = booking['collectionType'] ?? booking['collection_type'] ?? 'in-lab';
+    final isHomeCollection = collectionType == 'home';
 
     return InkWell(
       onTap: () async {
@@ -860,46 +928,30 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Urgency and Doctor-ordered badges
-            Row(
+            // Urgency, Doctor-ordered, and Collection Type badges
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 if (isUrgent)
                   Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.priority_high_rounded,
-                          size: 14,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'URGENT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.red,
-                          ),
-                        ),
+                        Icon(Icons.priority_high_rounded, size: 14, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text('URGENT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.red)),
                       ],
                     ),
                   ),
                 if (isDoctorOrdered)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF8B5CF6).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -907,26 +959,47 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.medical_services_rounded,
-                          size: 14,
-                          color: Color(0xFF8B5CF6),
-                        ),
+                        const Icon(Icons.medical_services_rounded, size: 14, color: Color(0xFF8B5CF6)),
                         const SizedBox(width: 6),
                         Text(
                           'Ordered by${doctorName != null ? ' Dr. $doctorName' : ' Doctor'}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF8B5CF6),
-                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6)),
                         ),
                       ],
                     ),
                   ),
+                // Sample Collection Type badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isHomeCollection
+                        ? const Color(0xFF0EA5E9).withOpacity(0.1)
+                        : const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isHomeCollection ? Icons.home_rounded : Icons.business_rounded,
+                        size: 14,
+                        color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isHomeCollection ? 'Home Collection' : 'In Lab',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isHomeCollection ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            if (isUrgent || isDoctorOrdered) const SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Container(
@@ -951,7 +1024,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                         ),
                       ),
                       Text(
-                        patient?['name'] ?? 'Patient',
+                        patientName,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 13,
@@ -970,7 +1043,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    status.toUpperCase(),
+                    _statusLabel(status),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 10,
@@ -1095,6 +1168,16 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
+                if (status.toLowerCase() == 'pending')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'cancelled'),
+                    icon: const Icon(Icons.cancel_outlined, size: 18),
+                    label: const Text('Decline'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
                 if (status.toLowerCase() == 'confirmed')
                   TextButton.icon(
                     onPressed: () => _updateStatus(booking['_id'], 'sample_collected'),
@@ -1105,8 +1188,23 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
+                // sample_collected → awaiting_reports
                 if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'sample-collected')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'awaiting_reports'),
+                    icon: const Icon(Icons.hourglass_empty_rounded, size: 18),
+                    label: const Text('Mark Awaiting Reports'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                // awaiting_reports or sample_collected → Enter Results
+                if (status.toLowerCase() == 'sample_collected' ||
+                    status.toLowerCase() == 'sample-collected' ||
                     status.toLowerCase() == 'awaiting_reports' ||
+                    status.toLowerCase() == 'awaiting-reports' ||
                     status.toLowerCase() == 'completed')
                   TextButton.icon(
                     onPressed: () async {
@@ -1125,8 +1223,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
+                // reporting_done → Mark Completed
+                if (status.toLowerCase() == 'reporting_done' ||
+                    status.toLowerCase() == 'reporting-done')
+                  TextButton.icon(
+                    onPressed: () => _updateStatus(booking['_id'], 'completed'),
+                    icon: const Icon(Icons.done_all_rounded, size: 18),
+                    label: const Text('Mark Completed'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
                 Text(
-                  'PKR ${booking['price'] ?? 0}',
+                  'PKR ${_calcPrice(booking)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
@@ -1147,8 +1257,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     return Icons.science_rounded;
   }
 
+  /// Calculate price from booking: use saved price if > 0,
+  /// otherwise count tests in test_type string × Rs. 3000
+  int _calcPrice(Map<String, dynamic> booking) {
+    final saved = booking['price'];
+    if (saved != null && saved is num && saved > 0) return saved.toInt();
+    // Fallback: count comma-separated tests
+    final testType = booking['test_type']?.toString() ?? '';
+    if (testType.isEmpty) return 0;
+    final count = testType.split(',').where((t) => t.trim().isNotEmpty).length;
+    return count * 3000;
+  }
+
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
       case 'urgent':
         return Colors.red;
       case 'pending':
@@ -1167,6 +1289,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
+      case 'pending': return 'PENDING';
+      case 'confirmed': return 'ACCEPTED';
+      case 'sample_collected': return 'SAMPLE COLLECTED';
+      case 'awaiting_reports': return 'AWAITING REPORTS';
+      case 'reporting_done': return 'REPORTING DONE';
+      case 'completed': return 'COMPLETED';
+      case 'cancelled': return 'CANCELLED';
+      case 'declined': return 'DECLINED';
+      default: return status.toUpperCase().replaceAll('_', ' ');
     }
   }
 }

@@ -230,7 +230,7 @@ class DoctorService {
       return response.data;
     } catch (e) {
       debugPrint('Error getting doctor stats: $e');
-      rethrow;
+      return {'success': false, 'stats': {}};
     }
   }
 

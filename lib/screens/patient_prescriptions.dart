@@ -32,20 +32,32 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     setState(() => _isLoading = true);
     try {
       final result = await _medicalRecordService.getMyRecords();
+      debugPrint('🔍 PRESCRIPTION DEBUG: API result success = ${result['success']}');
+
       if (result['success'] && mounted) {
         final records = result['records'] as List<dynamic>;
+        debugPrint('🔍 PRESCRIPTION DEBUG: Total records = ${records.length}');
+
         final prescriptions = records.where((r) {
           final p = r['prescription'];
-          if (p is Map) {
-            final meds = p['medicines'] as List?;
-            final tests = p['labTests'] as List?;
-            final hasReferral = p['referral'] != null;
-            return (meds != null && meds.isNotEmpty) ||
-                (tests != null && tests.isNotEmpty) ||
-                hasReferral;
-          }
-          return false;
+          final meds = p is Map ? (p['medicines'] as List?) : null;
+
+          // labTests can be at top level OR inside prescription
+          final testsInPrescription = p is Map ? (p['labTests'] as List?) : null;
+          final testsAtTopLevel = r['labTests'] as List?;
+          final tests = testsInPrescription ?? testsAtTopLevel;
+
+          final hasReferral = p is Map && p['referral'] != null;
+
+          debugPrint('🔍 Record ${r['_id']}: meds=${meds?.length ?? 0}, testsInPrescription=${testsInPrescription?.length ?? 0}, testsAtTopLevel=${testsAtTopLevel?.length ?? 0}, hasReferral=$hasReferral');
+
+          return (meds != null && meds.isNotEmpty) ||
+              (tests != null && tests.isNotEmpty) ||
+              hasReferral;
         }).toList();
+
+        debugPrint('🔍 PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
+
         setState(() {
           _prescriptions = prescriptions;
           _isLoading = false;
@@ -54,7 +66,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('Error loading prescriptions: $e');
+      debugPrint('❌ Error loading prescriptions: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -116,8 +128,13 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         : 'MR-XXXXXX';
     final medicines =
         (record['prescription']?['medicines'] as List?) ?? [];
-    final labTests =
-        (record['prescription']?['labTests'] as List?) ?? [];
+    // labTests can be at top level OR inside prescription
+    final labTests = (record['prescription']?['labTests'] as List?)
+        ?? (record['labTests'] as List?)
+        ?? [];
+
+    debugPrint('🔍 CARD DEBUG for ${record['_id']}: medicines=${medicines.length}, labTests=${labTests.length}');
+    debugPrint('   labTests content: $labTests');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -640,8 +657,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   }
 
   Widget _buildLabTestItem(dynamic test) {
-    final urgency =
-        (test['urgency'] ?? 'Routine').toString().toLowerCase();
+    // Handle both String (legacy) and Map format
+    final testName = test is Map
+        ? (test['name'] ?? test['testName'] ?? 'Lab Test').toString()
+        : test.toString();
+    final urgency = test is Map
+        ? (test['urgency'] ?? 'Routine').toString().toLowerCase()
+        : 'routine';
+    final testNotes = test is Map ? (test['notes'] ?? '').toString() : '';
     final urgencyColor = urgency == 'stat'
         ? const Color(0xFFEF4444)
         : urgency == 'urgent'
@@ -666,14 +689,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  test['name'] ?? 'Lab Test',
+                  testName,
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0F172A)),
                 ),
-                if ((test['notes'] ?? '').toString().isNotEmpty)
-                  Text(test['notes'],
+                if (testNotes.isNotEmpty)
+                  Text(testNotes,
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF64748B))),
               ],
@@ -688,7 +711,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
               border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
             ),
             child: Text(
-              test['urgency'] ?? 'Routine',
+              urgency == 'stat' ? 'STAT' : urgency == 'urgent' ? 'Urgent' : 'Routine',
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -754,6 +777,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   final LaboratoryService _labService = LaboratoryService();
   List<dynamic> _labs = [];
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -762,11 +786,13 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   }
 
   Future<void> _fetchLabs() async {
+    setState(() { _isLoading = true; _error = null; });
     try {
       final labs = await _labService.getAllLaboratories();
       if (mounted) setState(() { _labs = labs; _isLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      debugPrint('❌ Find Labs error: $e');
+      if (mounted) setState(() { _isLoading = false; _error = e.toString(); });
     }
   }
 
@@ -838,20 +864,25 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: widget.tests.map((t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F3FF),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFDDD6FE)),
-                      ),
-                      child: Text(t['name'] ?? '',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF7C3AED),
-                              fontWeight: FontWeight.w600)),
-                    )).toList(),
+                    children: widget.tests.map((t) {
+                      final n = t is Map
+                          ? (t['name'] ?? t['testName'] ?? '').toString()
+                          : t.toString();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F3FF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFDDD6FE)),
+                        ),
+                        child: Text(n,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF7C3AED),
+                                fontWeight: FontWeight.w600)),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
@@ -862,18 +893,33 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _labs.isEmpty
-                      ? const Center(
-                          child: Text('No labs found',
-                              style:
-                                  TextStyle(color: Color(0xFF64748B))))
-                      : ListView.builder(
-                          controller: scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          itemCount: _labs.length,
-                          itemBuilder: (ctx, i) =>
-                              _labTile(_labs[i]),
-                        ),
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 40),
+                              const SizedBox(height: 12),
+                              const Text('Could not load labs', style: TextStyle(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: _fetchLabs,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _labs.isEmpty
+                          ? const Center(
+                              child: Text('No labs found',
+                                  style: TextStyle(color: Color(0xFF64748B))))
+                          : ListView.builder(
+                              controller: scrollCtrl,
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                              itemCount: _labs.length,
+                              itemBuilder: (ctx, i) => _labTile(_labs[i]),
+                            ),
             ),
           ],
         ),
@@ -897,10 +943,11 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
           MaterialPageRoute(
             builder: (_) => LabDetails(
               labData: lab,
-              prescribedTests: widget.tests
-                  .map((t) => (t['name'] ?? t['testName'] ?? '').toString())
-                  .where((n) => n.isNotEmpty)
-                  .toList(),
+              prescribedTests: widget.tests.map((t) {
+                if (t is String) return t;
+                if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
+                return t.toString();
+              }).where((n) => n.isNotEmpty).toList(),
             ),
           ),
         );

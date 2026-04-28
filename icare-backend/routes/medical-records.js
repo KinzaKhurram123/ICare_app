@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const { connectMongoDB } = require('../config/mongodb');
 const { authMiddleware } = require('../middleware/auth');
 const MedicalRecord = require('../models/MedicalRecord');
 const PharmacyOrder = require('../models/PharmacyOrder');
@@ -9,6 +10,7 @@ const LabTestRequest = require('../models/LabTestRequest');
 // POST /api/medical-records/create
 router.post('/create', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const {
       patientId,
       appointmentId,
@@ -30,14 +32,26 @@ router.post('/create', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'patientId and diagnosis are required' });
     }
 
+    // Extract and normalize lab tests
+    const normalizedLabTests = (() => {
+      const raw = prescription?.labTests || labTests || [];
+      return raw.map(t => typeof t === 'string' ? { name: t, urgency: 'Routine' } : t);
+    })();
+
+    // Extract test names for top-level labTests field (backward compatibility)
+    const labTestNames = normalizedLabTests.map(t => t.name || t);
+
     const record = await MedicalRecord.create({
       doctor: req.user.id || req.user._id,
       patient: patientId,
       appointment: appointmentId || undefined,
       diagnosis,
       symptoms: symptoms || [],
-      prescription: prescription || {},
-      labTests: labTests || [],
+      prescription: {
+        ...(prescription || {}),
+        labTests: normalizedLabTests,
+      },
+      labTests: labTestNames,
       vitalSigns: vitalSigns || {},
       notes: notes || '',
       followUpDate: followUpDate ? new Date(followUpDate) : undefined,
@@ -65,6 +79,7 @@ router.post('/create', authMiddleware, async (req, res) => {
           quantity: 1,
           price: 0,
         }));
+        const rxOrderNumber = `RX-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
         await PharmacyOrder.create({
           patient_id: patientId,
           pharmacy_id: selectedPharmacy,
@@ -72,7 +87,8 @@ router.post('/create', authMiddleware, async (req, res) => {
           delivery_address: '',
           total_amount: 0,
           status: 'pending',
-          order_number: `RX-${Date.now().toString().slice(-8)}`,
+          order_number: rxOrderNumber,
+          orderNumber: rxOrderNumber,
           items: orderItems,
         });
         console.log(`✅ Pharmacy order auto-created for record ${record._id}`);
@@ -114,6 +130,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 // GET /api/medical-records/patient/:patientId
 router.get('/patient/:patientId', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const records = await MedicalRecord.find({ patient: req.params.patientId })
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
@@ -129,6 +146,7 @@ router.get('/patient/:patientId', authMiddleware, async (req, res) => {
 // GET /api/medical-records/doctor
 router.get('/doctor', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const records = await MedicalRecord.find({ doctor: req.user.id || req.user._id })
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
@@ -144,6 +162,7 @@ router.get('/doctor', authMiddleware, async (req, res) => {
 // GET /api/medical-records/my-records
 router.get('/my-records', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const userId = req.user.id || req.user._id;
     const role = req.user.role?.toLowerCase();
 
@@ -152,9 +171,24 @@ router.get('/my-records', authMiddleware, async (req, res) => {
     const records = await MedicalRecord.find(query)
       .populate('doctor', 'name email')
       .populate('patient', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ success: true, records, count: records.length });
+    // Normalize records so prescription.labTests is always an accessible array
+    const normalized = records.map(r => ({
+      ...r,
+      _id: r._id.toString(),
+      prescription: {
+        ...(r.prescription || {}),
+        medicines: r.prescription?.medicines || [],
+        labTests: r.prescription?.labTests || [],
+      },
+      labTests: r.labTests || [],
+      doctor: r.doctor ? { ...r.doctor, _id: r.doctor._id?.toString() } : null,
+      patient: r.patient ? { ...r.patient, _id: r.patient._id?.toString() } : null,
+    }));
+
+    res.json({ success: true, records: normalized, count: normalized.length });
   } catch (err) {
     console.error('Get my records error:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -164,6 +198,7 @@ router.get('/my-records', authMiddleware, async (req, res) => {
 // GET /api/medical-records/:id
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const record = await MedicalRecord.findById(req.params.id)
       .populate('doctor', 'name email')
       .populate('patient', 'name email');
@@ -180,6 +215,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // PUT /api/medical-records/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
+    await connectMongoDB();
     const record = await MedicalRecord.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('doctor', 'name email')
       .populate('patient', 'name email');

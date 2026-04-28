@@ -57,7 +57,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
   }
 
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 45), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted && !_isLoading) {
         _checkForNewBookings();
       }
@@ -72,9 +72,15 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
 
       if (currentCount > _lastKnownBookingCount && _lastKnownBookingCount > 0) {
         _showNewBookingNotification();
-        _loadData(); // Full refresh to update UI
       }
       _lastKnownBookingCount = currentCount;
+
+      // Always update stats so completed/pending counts stay live
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
+      }
     } catch (e) {
       debugPrint('Error auto-refreshing: $e');
     }
@@ -148,15 +154,23 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
     });
 
     try {
+      debugPrint('🔍 LAB DASHBOARD - Loading profile...');
       final profile = await _labService.getProfile();
+      debugPrint('🔍 LAB DASHBOARD - Profile loaded: ${profile['labName'] ?? profile['lab_name']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile _id: ${profile['_id']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile keys: ${profile.keys.toList()}');
+      
+      debugPrint('🔍 LAB DASHBOARD - Fetching dashboard stats for labId: ${profile['_id']}');
       final stats = await _labService.getDashboardStats(profile['_id']);
+      debugPrint('✅ LAB DASHBOARD - Stats loaded: $stats');
 
-      // Load low stock alerts
+      // Load low stock alerts (optional feature, don't fail if endpoint missing)
       try {
         final lowStockData = await LabSupplyService.getLowStockAlerts();
         _lowStockCount = lowStockData['count'] ?? 0;
       } catch (e) {
-        debugPrint('Error loading low stock alerts: $e');
+        // Endpoint may not exist yet - gracefully ignore
+        debugPrint('Low stock alerts not available: $e');
         _lowStockCount = 0;
       }
 
@@ -168,6 +182,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
       });
       _animationController?.forward();
     } catch (e) {
+      debugPrint('❌ LAB DASHBOARD - Error loading data: $e');
       setState(() {
         _error = ErrorHandler.getFriendlyMessage(e);
         _isLoading = false;
@@ -367,11 +382,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
+                      ),
+                    );
+                    _loadData();
+                  },
                   icon: const Icon(
                     Icons.notifications_none_rounded,
                     color: Colors.white,
@@ -655,14 +673,17 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                 _buildActionButton(
                   'New Requests',
                   Icons.pending_actions_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'New Requests',
-                        initialFilter: 'pending',
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(
+                          title: 'New Requests',
+                          initialFilter: 'pending',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                    _loadData();
+                  },
                   isMobile,
                 ),
                 _buildActionButton(
@@ -678,11 +699,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                 _buildActionButton(
                   'Orders',
                   Icons.list_alt_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(),
-                    ),
-                  ),
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
+                      ),
+                    );
+                    _loadData();
+                  },
                   isMobile,
                 ),
                 _buildActionButton(

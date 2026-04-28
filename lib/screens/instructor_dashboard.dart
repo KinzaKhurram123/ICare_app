@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_assign_course_screen.dart';
 import 'package:icare/screens/instructor_courses_management.dart';
+import 'package:icare/screens/instructor_create_course.dart';
 import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
-import 'package:icare/screens/instructor_analytics.dart';
-import 'package:icare/screens/instructor_qa_center_screen.dart';
-import 'package:icare/screens/instructor_earnings_screen.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/instructor_service.dart';
-import 'package:icare/utils/theme.dart';
-import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
 
 class InstructorDashboardScreen extends StatefulWidget {
@@ -121,9 +118,8 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                         ],
                       ),
 
-                    const SizedBox(height: 28),
-
-                    // Quick Actions
+                    const SizedBox(height: 20),
+                    // Quick Actions — list style with description + arrow
                     const Text(
                       'Quick Actions',
                       style: TextStyle(
@@ -133,38 +129,30 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    if (isDesktop)
-                      // Desktop: 2-column grid for action cards
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 4.0,
-                        children: [
-                          _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
-                          _buildActionCard('Assign Programs', 'Assign development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
-                          _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
-                          _buildActionCard('Educational Analytics', 'Track completions and engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
-                          _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
-                          _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
-                        ],
-                      )
-                    else ...[
-                      _buildActionCard('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorCoursesManagementScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Assign Programs', 'Assign professional development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFF8B5CF6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAssignCourseScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorLearnersScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Educational Analytics', 'Track completions and learner engagement', Icons.analytics_rounded, const Color(0xFFF59E0B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorAnalytics()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorPrecautionsManagementScreen()))),
-                      const SizedBox(height: 10),
-                      _buildActionCard('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InstructorProfileSetupScreen()))),
-                    ],
+                    _buildQuickActionList(context),
+                    const SizedBox(height: 20),
+                    // Navigation hint for mobile (sidebar is a drawer)
+                    if (!isDesktop)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.menu_rounded, color: Color(0xFF3B82F6), size: 20),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Tap the menu icon (☰) at the top left to navigate to Programs, Learners, Analytics and more.',
+                                style: TextStyle(color: Color(0xFF1E40AF), fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -233,65 +221,153 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
     return isDesktop ? Expanded(child: card) : card;
   }
 
-  Widget _buildActionCard(
-    String title,
-    String subtitle,
+  Widget _buildQuickActionList(BuildContext context) {
+    final actions = [
+      _QAction('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), const InstructorCoursesManagementScreen()),
+      _QAction('Assign Programs', 'Assign professional development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFFF59E0B), const InstructorAssignCourseScreen()),
+      _QAction('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), const InstructorLearnersScreen()),
+      _QAction('Educational Analytics', 'Track completions and learner engagement', Icons.analytics_rounded, const Color(0xFFEF4444), const InstructorAnalytics()),
+      _QAction('Health Tips & Precautions', 'Share health tips with your patients', Icons.tips_and_updates_rounded, const Color(0xFF10B981), const InstructorPrecautionsManagementScreen()),
+      _QAction('Profile Settings', 'Update your profile and availability', Icons.settings_rounded, const Color(0xFF64748B), const InstructorProfileSetupScreen()),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: actions.asMap().entries.map((entry) {
+          final i = entry.key;
+          final a = entry.value;
+          return Column(
+            children: [
+              InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => a.screen),
+                ),
+                borderRadius: BorderRadius.vertical(
+                  top: i == 0 ? const Radius.circular(16) : Radius.zero,
+                  bottom: i == actions.length - 1 ? const Radius.circular(16) : Radius.zero,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: a.color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(a.icon, color: a.color, size: 22),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              a.subtitle,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 22),
+                    ],
+                  ),
+                ),
+              ),
+              if (i < actions.length - 1)
+                const Divider(height: 1, indent: 80, color: Color(0xFFF1F5F9)),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(
+    BuildContext context,
+    String label,
     IconData icon,
     Color color,
-    VoidCallback onTap,
+    Widget screen,
   ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (ctx) => screen),
+      ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: Color(0xFF94A3B8),
             ),
           ],
         ),
       ),
     );
   }
+
+}
+
+class _QAction {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Widget screen;
+  const _QAction(this.title, this.subtitle, this.icon, this.color, this.screen);
 }

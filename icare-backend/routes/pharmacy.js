@@ -16,7 +16,7 @@ function toId(id) {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const users = await User.find({ role: 'pharmacy', is_active: { $ne: false } }).lean();
+    const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
     const ids = users.map(u => u._id);
     const profiles = await PharmacyProfile.find({ user_id: { $in: ids } }).lean();
     const pMap = {};
@@ -42,7 +42,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const users = await User.find({ role: 'pharmacy', is_active: { $ne: false } }).lean();
+    const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
     const ids = users.map(u => u._id);
     const profiles = await PharmacyProfile.find({ user_id: { $in: ids } }).lean();
     const pMap = {};
@@ -76,9 +76,13 @@ router.get('/profile', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       pharmacy: {
-        id: user._id.toString(), _id: user._id.toString(),
+        id: user._id.toString(),
+        _id: user._id.toString(),   // always User._id — never let profile spread override this
+        userId: user._id.toString(),
         username: user.username || user.name, email: user.email, phone: user.phone,
         ...profile,
+        _id: user._id.toString(),   // re-assert after spread so profile._id can't override
+        id: user._id.toString(),
       },
     });
   } catch (err) {
@@ -181,14 +185,83 @@ router.get('/analytics', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const orders = await PharmacyOrder.find({ pharmacy_id: userId }).lean();
-    const totalRevenue = orders.filter(o => ['delivered', 'completed'].includes(o.status)).reduce((s, o) => s + (o.total_amount || 0), 0);
+
+    const [orders, products] = await Promise.all([
+      PharmacyOrder.find({ pharmacy_id: userId }).lean(),
+      Product.find({ pharmacy_id: userId }).lean(),
+    ]);
+
+    const completedOrders = orders.filter(o => ['delivered', 'completed'].includes(o.status));
+    const totalRevenue = completedOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
     const totalOrders = orders.length;
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    res.json({ success: true, totalRevenue: Math.round(totalRevenue), totalOrders, averageOrderValue: parseFloat(avgOrderValue.toFixed(2)), topSellingProducts: [] });
+
+    const ordersAccepted = orders.filter(o => !['pending', 'cancelled', 'rejected'].includes(o.status)).length;
+    const ordersCompleted = completedOrders.length;
+    const failedDeliveries = orders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length;
+    const outOfStockCount = products.filter(p => (p.stock_quantity ?? 0) === 0).length;
+
+    // Top selling: aggregate order items by product name
+    const productSales = {};
+    for (const order of orders) {
+      for (const item of (order.items || [])) {
+        const name = item.product_name || 'Unknown';
+        if (!productSales[name]) productSales[name] = { name, sales: 0, revenue: 0 };
+        productSales[name].sales += item.quantity || 1;
+        productSales[name].revenue += (item.quantity || 1) * (item.price || 0);
+      }
+    }
+    const topSellingProducts = Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5)
+      .map(p => ({ name: p.name, sales: p.sales, revenue: Math.round(p.revenue) }));
+
+    res.json({
+      success: true,
+      totalRevenue: Math.round(totalRevenue),
+      totalOrders,
+      averageOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+      ordersAccepted,
+      ordersCompleted,
+      failedDeliveries,
+      outOfStockCount,
+      complaintsCount: 0,
+      averageRating: 0,
+      averageProcessTime: 'N/A',
+      responseTime: '< 30m',
+      topSellingProducts,
+    });
   } catch (err) {
     console.error(err);
-    res.json({ success: true, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0, topSellingProducts: [] });
+    res.json({ success: true, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0, ordersAccepted: 0, ordersCompleted: 0, failedDeliveries: 0, outOfStockCount: 0, complaintsCount: 0, averageRating: 0, averageProcessTime: 'N/A', responseTime: '< 30m', topSellingProducts: [] });
+  }
+});
+
+// ─── TOP SELLING PRODUCTS ─────────────────────────────────────────────────────
+router.get('/top-selling', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const orders = await PharmacyOrder.find({ pharmacy_id: userId }).lean();
+
+    const productSales = {};
+    for (const order of orders) {
+      for (const item of (order.items || [])) {
+        const name = item.product_name || 'Unknown';
+        if (!productSales[name]) productSales[name] = { name, sales: 0, revenue: 0 };
+        productSales[name].sales += item.quantity || 1;
+        productSales[name].revenue += (item.quantity || 1) * (item.price || 0);
+      }
+    }
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5)
+      .map(p => ({ name: p.name, sales: p.sales, revenue: Math.round(p.revenue) }));
+
+    res.json({ success: true, topProducts });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: true, topProducts: [] });
   }
 });
 
@@ -196,40 +269,60 @@ router.get('/analytics', authMiddleware, async (req, res) => {
 router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const userId = toId(req.user.id);
+    const rawUserId = req.user.id || req.user._id;
+    const userId = toId(rawUserId);
+    if (!userId) return res.status(401).json({ success: false, message: 'Invalid token' });
+
     const { status } = req.query;
-    const query = { pharmacy_id: userId };
+
+    // Search by this pharmacy's user_id AND also by any profile linked to them
+    const profile = await PharmacyProfile.findOne({ user_id: userId }).lean().catch(() => null);
+    const idSet = new Set([rawUserId]);
+    if (profile?._id) idSet.add(profile._id.toString());
+    const pharmacyIds = [...idSet].map(id => toId(id)).filter(Boolean);
+
+    const query = { pharmacy_id: { $in: pharmacyIds } };
     if (status && status !== 'all') query.status = status;
 
     const rawOrders = await PharmacyOrder.find(query).sort({ createdAt: -1 }).lean();
-    const patientIds = [...new Set(rawOrders.map(o => o.patient_id.toString()))];
-    const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
+
+    // Safe patient lookup — skip nulls
+    const patientIdStrings = [...new Set(
+      rawOrders.map(o => o.patient_id?.toString()).filter(Boolean)
+    )];
+    const patients = patientIdStrings.length > 0
+      ? await User.find({ _id: { $in: patientIdStrings.map(id => toId(id)) } }).lean()
+      : [];
     const pMap = {};
     patients.forEach(p => { pMap[p._id.toString()] = p; });
 
-    const orders = rawOrders.map(o => ({
-      _id: o._id.toString(),
-      orderNumber: o.order_number || `#${o._id.toString().slice(-6).toUpperCase()}`,
-      status: o.status,
-      totalAmount: o.total_amount || 0,
-      deliveryFee: o.delivery_fee || 0,
-      deliveryAddress: o.delivery_address,
-      expectedDeliveryTime: o.expected_delivery_time,
-      createdAt: o.createdAt,
-      prescriptionId: o.prescription_id,
-      user: {
-        _id: pMap[o.patient_id.toString()]?._id?.toString(),
-        name: pMap[o.patient_id.toString()]?.username || pMap[o.patient_id.toString()]?.name || 'Patient',
-        email: pMap[o.patient_id.toString()]?.email,
-        phoneNumber: pMap[o.patient_id.toString()]?.phone,
-      },
-      items: o.items || [],
-    }));
+    const orders = rawOrders.map(o => {
+      const pid = o.patient_id?.toString() || '';
+      const pt = pMap[pid];
+      return {
+        _id: o._id.toString(),
+        orderNumber: o.order_number || `#${o._id.toString().slice(-6).toUpperCase()}`,
+        status: o.status,
+        totalAmount: o.total_amount || 0,
+        deliveryFee: o.delivery_fee || 0,
+        deliveryAddress: o.delivery_address || '',
+        expectedDeliveryTime: o.expected_delivery_time || '',
+        createdAt: o.createdAt,
+        prescriptionId: o.prescription_id || null,
+        user: {
+          _id: pt?._id?.toString() || '',
+          name: pt?.username || pt?.name || 'Patient',
+          email: pt?.email || '',
+          phoneNumber: pt?.phone || pt?.phoneNumber || '',
+        },
+        items: o.items || [],
+      };
+    });
 
-    res.json({ success: true, orders });
+    res.json({ success: true, orders, pharmacyId: rawUserId });
   } catch (err) {
-    console.error(err);
-    res.json({ success: true, orders: [] });
+    console.error('GET /pharmacy/orders/pharmacy/list error:', err.message);
+    res.status(500).json({ success: false, message: err.message, orders: [] });
   }
 });
 
@@ -251,33 +344,77 @@ router.get('/orders', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── GET ORDER BY ID ──────────────────────────────────────────────────────────
+router.get('/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const orderId = toId(req.params.id);
+    if (!orderId) return res.status(400).json({ success: false, message: 'Invalid order ID' });
+
+    const order = await PharmacyOrder.findOne({
+      _id: orderId,
+      $or: [{ patient_id: userId }, { pharmacy_id: userId }],
+    }).lean();
+
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, order: { ...order, _id: order._id.toString() } });
+  } catch (err) {
+    console.error('GET /pharmacy/orders/:id error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch order' });
+  }
+});
+
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 router.post('/orders', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
+
     const patientId = toId(req.user.id);
-    const { pharmacyId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
+    if (!patientId) return res.status(401).json({ success: false, message: 'Invalid patient token' });
 
-    if (!pharmacyId) return res.status(400).json({ success: false, message: 'Pharmacy is required' });
+    const { pharmacyId, userId: bodyUserId, prescriptionId, deliveryAddress, totalAmount, deliveryFee, items } = req.body;
 
-    const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+    // Accept either pharmacyId or userId (frontend may send either)
+    const rawPharmacyId = pharmacyId || bodyUserId;
+    if (!rawPharmacyId) return res.status(400).json({ success: false, message: 'pharmacyId is required' });
+
+    const resolvedPharmacyId = toId(rawPharmacyId);
+    if (!resolvedPharmacyId) return res.status(400).json({ success: false, message: `Invalid pharmacy ID: ${rawPharmacyId}` });
+
+    // Normalize items — frontend may send productName or product_name
+    const normalizedItems = Array.isArray(items) ? items.map(i => ({
+      product_name: i.product_name || i.productName || i.name || '',
+      generic_name: i.generic_name || i.genericName || '',
+      quantity: Number(i.quantity) || 1,
+      price: Number(i.price) || 0,
+    })) : [];
+
+    // Calculate total from items if totalAmount not provided or is 0
+    const calculatedTotal = normalizedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const finalTotal = Number(totalAmount) > 0 ? Number(totalAmount) : calculatedTotal;
+
+    // Generate unique order number with random suffix to avoid collisions
+    const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
 
     const order = await PharmacyOrder.create({
       patient_id: patientId,
-      pharmacy_id: toId(pharmacyId),
-      prescription_id: prescriptionId || null,
+      pharmacy_id: resolvedPharmacyId,
+      prescription_id: prescriptionId || undefined,
       delivery_address: deliveryAddress || '',
-      total_amount: totalAmount || 0,
-      delivery_fee: deliveryFee || 0,
+      total_amount: finalTotal,
+      delivery_fee: Number(deliveryFee) || 0,
       status: 'pending',
       order_number: orderNumber,
-      items: items || [],
+      orderNumber: orderNumber,
+      items: normalizedItems,
     });
 
     res.status(201).json({ success: true, message: 'Order created successfully', order: { ...order.toObject(), _id: order._id.toString() } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Failed to create order' });
+    console.error('POST /pharmacy/orders error:', err.message, err.stack);
+    // Return the actual error message so the client can display it
+    res.status(500).json({ success: false, message: err.message || 'Failed to create order' });
   }
 });
 
@@ -286,11 +423,14 @@ router.put('/update_order_status/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled'];
+    // Normalize underscore vs hyphen variants
+    if (status === 'out_for_delivery') status = 'out-for-delivery';
+
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed', 'rejected'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
+      return res.status(400).json({ success: false, message: `Invalid status: ${status}` });
     }
 
     const update = { status };
@@ -314,11 +454,14 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled'];
+    // Normalize underscore vs hyphen variants
+    if (status === 'out_for_delivery') status = 'out-for-delivery';
+
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed', 'rejected'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
+      return res.status(400).json({ success: false, message: `Invalid status: ${status}` });
     }
 
     const update = { status };
@@ -335,6 +478,24 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to update order' });
+  }
+});
+
+// ─── CANCEL ORDER ─────────────────────────────────────────────────────────────
+router.put('/orders/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const order = await PharmacyOrder.findOneAndUpdate(
+      { _id: toId(req.params.id), patient_id: userId, status: { $in: ['pending', 'confirmed'] } },
+      { $set: { status: 'cancelled', cancellation_reason: req.body.reason || '' } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found or cannot be cancelled' });
+    res.json({ success: true, message: 'Order cancelled', order: { ...order.toObject(), _id: order._id.toString() } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to cancel order' });
   }
 });
 

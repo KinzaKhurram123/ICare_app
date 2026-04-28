@@ -187,7 +187,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                           child: ListView(
                             padding: EdgeInsets.all(isDesktop ? 32 : 20),
                             children: [
-                              // Book Appointment Now — large button at top
+                              // Book Appointment Now button
                               SizedBox(
                                 width: double.infinity,
                                 height: 56,
@@ -217,47 +217,54 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
 
-                              // Pending first
-                              if (_getAppointmentsByStatus('pending').isNotEmpty) ...[
-                                _buildSectionHeader('Pending Requests', const Color(0xFFF59E0B), Icons.hourglass_empty_rounded),
-                                const SizedBox(height: 12),
-                                ..._getAppointmentsByStatus('pending').map(
-                                  (a) => _buildBookingCard(a, const Color(0xFFF59E0B), showCancel: true),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-
-                              // Confirmed / upcoming
-                              if (_getAppointmentsByStatus('confirmed').isNotEmpty) ...[
-                                _buildSectionHeader('Confirmed Appointments', const Color(0xFF10B981), Icons.check_circle_rounded),
-                                const SizedBox(height: 12),
-                                ..._getAppointmentsByStatus('confirmed').map(
-                                  (a) => _buildBookingCard(a, const Color(0xFF10B981), showCancel: true),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-
-                              // Completed — show prescription / notes
-                              if (_getAppointmentsByStatus('completed').isNotEmpty) ...[
-                                _buildSectionHeader('Completed', const Color(0xFF3B82F6), Icons.task_alt_rounded),
-                                const SizedBox(height: 12),
-                                ..._getAppointmentsByStatus('completed').map(
-                                  (a) => _buildBookingCard(a, const Color(0xFF3B82F6), showNotes: true),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-
-                              // Cancelled
-                              if (_getAppointmentsByStatus('cancelled').isNotEmpty) ...[
-                                _buildSectionHeader('Cancelled', const Color(0xFFEF4444), Icons.cancel_rounded),
-                                const SizedBox(height: 12),
-                                ..._getAppointmentsByStatus('cancelled').map(
-                                  (a) => _buildBookingCard(a, const Color(0xFFEF4444)),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
+                              // Category rows — old design
+                              _buildCategoryCard(
+                                'In Progress Bookings',
+                                'Currently active appointments',
+                                _getCountByStatus('confirmed'),
+                                const Color(0xFF3B82F6),
+                                Icons.play_circle_outline_rounded,
+                                _getAppointmentsByStatus('confirmed'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCategoryCard(
+                                'Upcoming Bookings',
+                                'Scheduled for later',
+                                _upcomingAppointments.length,
+                                const Color(0xFF0EA5E9),
+                                Icons.access_time_rounded,
+                                _upcomingAppointments,
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCategoryCard(
+                                'Cancelled Bookings',
+                                'Appointments you cancelled',
+                                _getCountByStatus('cancelled'),
+                                const Color(0xFFEF4444),
+                                Icons.cancel_outlined,
+                                _getAppointmentsByStatus('cancelled'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCategoryCard(
+                                'Completed Bookings',
+                                'Past successful visits',
+                                _getCountByStatus('completed'),
+                                const Color(0xFF10B981),
+                                Icons.check_circle_outline_rounded,
+                                _getAppointmentsByStatus('completed'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCategoryCard(
+                                'Pending Bookings',
+                                'Awaiting confirmation',
+                                _getCountByStatus('pending'),
+                                const Color(0xFFF59E0B),
+                                Icons.hourglass_empty_rounded,
+                                _getAppointmentsByStatus('pending'),
+                              ),
+                              const SizedBox(height: 20),
 
                               if (_appointments.isEmpty)
                                 Center(

@@ -37,14 +37,66 @@
     <img src="icare_logo.png" alt="iCare" style="width:160px;height:160px;object-fit:contain;">
     <div class="spinner"></div>
   </div>
+  <!-- Agora Web SDK -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
   <script>
     window.addEventListener('flutter-first-frame', function() {
       var loading = document.getElementById('loading');
       if (loading) loading.style.display = 'none';
     });
+
+    // ── Agora Web helpers called from Flutter via JS interop ──────────────
+    var _agoraClient = null;
+    var _localAudioTrack = null;
+    var _localVideoTrack = null;
+
+    window.agoraJoin = async function(appId, channel, token, uid) {
+      try {
+        _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+        _agoraClient.on('user-published', async (user, mediaType) => {
+          await _agoraClient.subscribe(user, mediaType);
+          if (mediaType === 'video') {
+            var remoteDiv = document.getElementById('agora-remote');
+            if (remoteDiv) user.videoTrack.play('agora-remote');
+          }
+          if (mediaType === 'audio') user.audioTrack.play();
+        });
+
+        _agoraClient.on('user-unpublished', (user) => {
+          var remoteDiv = document.getElementById('agora-remote');
+          if (remoteDiv) remoteDiv.innerHTML = '';
+        });
+
+        await _agoraClient.join(appId, channel, token, uid || null);
+        _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        await _agoraClient.publish([_localAudioTrack, _localVideoTrack]);
+        _localVideoTrack.play('agora-local');
+        return 'ok';
+      } catch(e) {
+        console.error('agoraJoin error:', e);
+        return 'error:' + e.message;
+      }
+    };
+
+    window.agoraLeave = async function() {
+      try {
+        if (_localAudioTrack) { _localAudioTrack.stop(); _localAudioTrack.close(); }
+        if (_localVideoTrack) { _localVideoTrack.stop(); _localVideoTrack.close(); }
+        if (_agoraClient) await _agoraClient.leave();
+        _agoraClient = null; _localAudioTrack = null; _localVideoTrack = null;
+      } catch(e) { console.error('agoraLeave error:', e); }
+    };
+
+    window.agoraMuteMic = function(mute) {
+      if (_localAudioTrack) _localAudioTrack.setEnabled(!mute);
+    };
+
+    window.agoraMuteCam = function(mute) {
+      if (_localVideoTrack) _localVideoTrack.setEnabled(!mute);
+    };
   </script>
-  <!-- Agora Web SDK for video calls — iris bridge is compiled into main.dart.js by agora_rtc_engine 6.5.3 -->
-  <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.21.0/AgoraRTC_N-production.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

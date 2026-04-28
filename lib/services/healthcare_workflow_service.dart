@@ -147,8 +147,12 @@ class HealthcareWorkflowService {
       data['symptoms'] = [history!.chiefComplaint];
     }
 
-    if (medicines != null && medicines.isNotEmpty) {
-      data['prescription'] = {'medicines': medicines};
+    if ((medicines != null && medicines.isNotEmpty) || (labTests != null && labTests.isNotEmpty)) {
+      data['prescription'] = {
+        if (medicines != null && medicines.isNotEmpty) 'medicines': medicines,
+        if (labTests != null && labTests.isNotEmpty)
+          'labTests': labTests.map((name) => {'name': name, 'urgency': 'Routine'}).toList(),
+      };
     }
 
     if (labTests != null && labTests.isNotEmpty) {

@@ -1,12 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:icare/services/api_config.dart';
 import 'package:icare/services/api_service.dart';
-import 'package:icare/services/auth_service.dart';
 
 class InstructorService {
   final ApiService _apiService = ApiService();
-  final Dio _dio = Dio();
   String? _cachedInstructorId;
 
   // Q&A Management
@@ -61,7 +57,8 @@ class InstructorService {
   Future<Map<String, dynamic>> getMyProfile() async {
     final response = await _apiService.get('/instructors/me');
     final instructor = response.data['instructor'];
-    _cachedInstructorId = instructor['_id'];
+    // Cache the user_id (not profile _id) — courses/precautions are keyed by user_id
+    _cachedInstructorId = instructor['user_id'] as String? ?? instructor['_id'];
     return instructor;
   }
 
@@ -91,24 +88,31 @@ class InstructorService {
       return _cachedInstructorId!;
     }
     final profile = await getMyProfile();
-    return profile['_id'];
+    // user_id is the User._id — this is what instructor_id in Course refers to
+    return profile['user_id'] as String? ?? profile['_id'] as String;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
   // COURSES MANAGEMENT
   // ═══════════════════════════════════════════════════════════════════════
 
-  // Get my courses
+  // Get my courses — tries token-based endpoint first, falls back to query param
   Future<List<dynamic>> getMyCourses() async {
     try {
-      final instructorId = await _getInstructorId();
-      final response = await _apiService.get(
-        '/instructors/courses?instructorId=$instructorId',
-      );
+      // Try new token-based endpoint first
+      final response = await _apiService.get('/instructors/my-courses');
       return response.data['courses'] as List;
     } catch (e) {
-      debugPrint('Error getting my courses: $e');
-      rethrow;
+      debugPrint('my-courses failed, trying fallback: $e');
+      try {
+        // Fallback: use courses endpoint without instructorId filter
+        // Backend will return all courses; we filter by token on backend
+        final response = await _apiService.get('/instructors/courses');
+        return response.data['courses'] as List;
+      } catch (e2) {
+        debugPrint('Error getting my courses: $e2');
+        rethrow;
+      }
     }
   }
 
@@ -240,7 +244,7 @@ class InstructorService {
       return response.data['stats'] ?? {};
     } catch (e) {
       debugPrint('Error getting stats: $e');
-      rethrow;
+      return {};
     }
   }
 
@@ -255,83 +259,41 @@ class InstructorService {
     }
   }
 
-  // Upload video file for course lessons
+  // Store video URL (URL-based — no file upload on Vercel serverless)
   Future<Map<String, dynamic>> uploadVideo({
     String? filePath,
     List<int>? bytes,
     required String fileName,
+    String? videoUrl,
   }) async {
     try {
-      final token = await AuthService().getToken();
-
-      MultipartFile file;
-      if (kIsWeb) {
-        if (bytes == null) throw Exception('Bytes required for web upload');
-        file = MultipartFile.fromBytes(bytes, filename: fileName);
-      } else {
-        if (filePath == null) {
-          throw Exception('File path required for mobile upload');
-        }
-        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      // If a direct URL is provided, just return it
+      if (videoUrl != null && videoUrl.isNotEmpty) {
+        return {'success': true, 'videoUrl': videoUrl};
       }
-
-      final formData = FormData.fromMap({'video': file});
-
-      final response = await _dio.post(
-        '${ApiConfig.baseUrl}/instructors/videos/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      return response.data;
+      // Fallback: return empty (file upload not supported on Vercel)
+      return {'success': false, 'message': 'Please provide a video URL (YouTube, Vimeo, or direct link)'};
     } catch (e) {
-      debugPrint('❌ Failed to upload video: $e');
-      throw Exception('Failed to upload video: $e');
+      debugPrint('❌ uploadVideo error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  // Upload thumbnail image for course
+  // Store thumbnail URL
   Future<Map<String, dynamic>> uploadThumbnail({
     String? filePath,
     List<int>? bytes,
     required String fileName,
+    String? thumbnailUrl,
   }) async {
     try {
-      final token = await AuthService().getToken();
-
-      MultipartFile file;
-      if (kIsWeb) {
-        if (bytes == null) throw Exception('Bytes required for web upload');
-        file = MultipartFile.fromBytes(bytes, filename: fileName);
-      } else {
-        if (filePath == null) {
-          throw Exception('File path required for mobile upload');
-        }
-        file = await MultipartFile.fromFile(filePath, filename: fileName);
+      if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+        return {'success': true, 'thumbnailUrl': thumbnailUrl};
       }
-
-      final formData = FormData.fromMap({'thumbnail': file});
-
-      final response = await _dio.post(
-        '${ApiConfig.baseUrl}/instructors/thumbnails/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      return response.data;
+      return {'success': false, 'message': 'Please provide a thumbnail URL'};
     } catch (e) {
-      debugPrint('❌ Failed to upload thumbnail: $e');
-      throw Exception('Failed to upload thumbnail: $e');
+      debugPrint('❌ uploadThumbnail error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 }

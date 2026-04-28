@@ -72,24 +72,31 @@ class _FillLabFormState extends State<FillLabForm> {
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('🔍 LAB BOOKING DEBUG - Full labData: ${widget.labData}');
       final labId = widget.labData?['_id'] ?? widget.labData?['id'];
+      debugPrint('🔍 LAB BOOKING DEBUG - Extracted labId: $labId');
+      debugPrint('🔍 LAB BOOKING DEBUG - labData keys: ${widget.labData?.keys.toList()}');
+      
       if (labId == null) {
         throw Exception("Laboratory ID missing");
       }
 
+      // Backend expects: testType (required), testDate (optional), notes (optional)
+      final tests = widget.selectedTests ?? ["Complete Blood Count (CBC)"];
       final bookingData = {
-        'patientName': _patientNameController.text,
-        'age': int.tryParse(_ageController.text) ?? 25,
-        'phoneNumber': _phoneController.text,
-        'location': _locationController.text,
+        'testType': tests.join(', '),  // Backend expects single string
+        'test_type': tests.join(', '), // Alias for compatibility
+        'testDate': _dateController.text,
         'date': _dateController.text,
-        'time': _timeController.text,
-        'tests': widget.selectedTests ?? ["Complete Blood Count (CBC)"],
-        'homeSampleAvailable': _homeSample,
-        'totalPrice': (widget.selectedTests?.length ?? 1) * 3000,
+        'notes': 'Patient: ${_patientNameController.text}, Age: ${_ageController.text}, Phone: ${_phoneController.text}, Location: ${_locationController.text}, Time: ${_timeController.text}, Home Sample: $_homeSample',
       };
 
+      debugPrint('🔍 LAB BOOKING DEBUG - Booking data: $bookingData');
+      debugPrint('🔍 LAB BOOKING DEBUG - Calling createBooking with labId: $labId');
+      
       final booking = await _labService.createBooking(labId, bookingData);
+      
+      debugPrint('✅ LAB BOOKING DEBUG - Booking created successfully: $booking');
 
       if (mounted) {
         Navigator.of(context).push(
@@ -216,7 +223,7 @@ class _FillLabFormState extends State<FillLabForm> {
             children: [
               CustomInputField(
                 controller: _locationController,
-                hintText: "Location",
+                hintText: "Address",
                 borderRadius: 0,
                 hintStyle: TextStyle(
                   color: AppColors.grayColor.withAlpha(70),
@@ -451,8 +458,8 @@ class _FillLabFormState extends State<FillLabForm> {
                         children: [
                           Expanded(
                             child: _buildWebInputField(
-                              "Location",
-                              "Enter sample location",
+                              "Address",
+                              "Enter patient address",
                               Icons.location_on_outlined,
                               _locationController,
                             ),

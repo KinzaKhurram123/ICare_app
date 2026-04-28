@@ -13,18 +13,62 @@ class LabBookingDetails extends ConsumerWidget {
 
   const LabBookingDetails({super.key, required this.booking});
 
+  /// Safely parse results from raw booking data — handles null, wrong types,
+  /// and legacy formats without throwing.
+  List<LabResult> _parseResults(dynamic raw) {
+    try {
+      if (raw == null || raw is! List) return [];
+      return raw.map((r) {
+        try {
+          if (r is! Map) return null;
+          return LabResult.fromJson(Map<String, dynamic>.from(r as Map));
+        } catch (_) {
+          return null;
+        }
+      }).whereType<LabResult>().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role = ref.watch(authProvider).userRole;
-    final status = booking['status'] ?? 'pending';
-    final date = DateTime.tryParse(booking['date'] ?? '') ?? DateTime.now();
-    final patient = booking['patient'];
-    final testName = booking['testName'] ?? 'Test';
-    final results =
-        (booking['results'] as List?)
-            ?.map((r) => LabResult.fromJson(r))
-            .toList() ??
-        [];
+    final rawRole = ref.watch(authProvider).userRole;
+    // Normalize: backend stores 'lab' → frontend normalizes to 'Lab', but
+    // some paths produce 'Laboratory'. Accept both.
+    final isLab = rawRole.toLowerCase() == 'lab' ||
+        rawRole.toLowerCase() == 'laboratory';
+
+    final status =
+        (booking['status'] ?? 'pending').toString().replaceAll('-', '_');
+
+    // Support all field name variants
+    final testName = booking['test_type']?.toString() ??
+        booking['testType']?.toString() ??
+        booking['testName']?.toString() ??
+        booking['name']?.toString() ??
+        'Test';
+
+    final dateStr = booking['test_date']?.toString() ??
+        booking['testDate']?.toString() ??
+        booking['date']?.toString() ??
+        booking['createdAt']?.toString() ??
+        '';
+    final date = DateTime.tryParse(dateStr) ?? DateTime.now();
+
+    // Patient name — try all possible fields
+    String patientName = 'Unknown Patient';
+    try {
+      patientName = booking['patient_name']?.toString() ??
+          booking['patientName']?.toString() ??
+          (booking['patient'] is Map
+              ? (booking['patient']['name']?.toString() ??
+                  booking['patient']['username']?.toString())
+              : null) ??
+          'Unknown Patient';
+    } catch (_) {}
+
+    final results = _parseResults(booking['results']);
     final hasCriticalAlert = booking['criticalAlert'] == true;
 
     return Scaffold(
@@ -49,10 +93,10 @@ class LabBookingDetails extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (hasCriticalAlert) _buildCriticalAlert(),
-            _buildInfoCard(testName, status, date, patient),
+            _buildInfoCard(testName, status, date, patientName),
             const SizedBox(height: 24),
-            if (role == 'Laboratory') _buildActionButtons(context, status),
-            if (role != 'Laboratory' && status.toLowerCase() == 'completed')
+            if (isLab) _buildActionButtons(context, status),
+            if (!isLab && status.toLowerCase() == 'completed')
               _buildRateLabButton(context),
             const SizedBox(height: 24),
             if (results.isNotEmpty) _buildResultsSection(results),
@@ -138,7 +182,7 @@ class LabBookingDetails extends ConsumerWidget {
     String testName,
     String status,
     DateTime date,
-    dynamic patient,
+    String patientName,
   ) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -174,7 +218,7 @@ class LabBookingDetails extends ConsumerWidget {
           _buildInfoRow(
             Icons.person_rounded,
             'Patient Name',
-            patient?['name'] ?? booking['patientName'] ?? 'N/A',
+            patientName,
           ),
           _buildInfoRow(
             Icons.calendar_today_rounded,
@@ -241,14 +285,15 @@ class LabBookingDetails extends ConsumerWidget {
 
   Widget _buildStatusBadge(String status) {
     final color = _getStatusColor(status);
+    final label = _statusLabel(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        status.toUpperCase(),
+        label,
         style: TextStyle(
           color: color,
           fontSize: 11,
@@ -256,6 +301,20 @@ class LabBookingDetails extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
+      case 'pending': return 'PENDING';
+      case 'confirmed': return 'ACCEPTED';
+      case 'sample_collected': return 'SAMPLE COLLECTED';
+      case 'awaiting_reports': return 'AWAITING REPORTS';
+      case 'reporting_done': return 'REPORTING DONE';
+      case 'completed': return 'COMPLETED';
+      case 'cancelled': return 'CANCELLED';
+      case 'declined': return 'DECLINED';
+      default: return status.toUpperCase().replaceAll('_', ' ');
+    }
   }
 
   Widget _buildResultsSection(List<LabResult> results) {
@@ -455,7 +514,9 @@ class LabBookingDetails extends ConsumerWidget {
             Colors.orange,
             () => _updateStatus(context, 'sample_collected'),
           ),
-        if (currentStatus.toLowerCase() == 'sample_collected' || currentStatus.toLowerCase() == 'sample collected')
+        if (currentStatus.toLowerCase() == 'sample_collected' || 
+            currentStatus.toLowerCase() == 'sample-collected' ||
+            currentStatus.toLowerCase() == 'sample collected')
           _buildActionButton(
             context,
             'Enter Results',
@@ -473,13 +534,50 @@ class LabBookingDetails extends ConsumerWidget {
               }
             },
           ),
-        if (currentStatus.toLowerCase() == 'awaiting_reports' || currentStatus.toLowerCase() == 'awaiting reports')
+        if (currentStatus.toLowerCase() == 'awaiting_reports' || 
+            currentStatus.toLowerCase() == 'awaiting-reports' ||
+            currentStatus.toLowerCase() == 'awaiting reports')
           _buildActionButton(
             context,
             'Mark Reporting Done',
             Icons.done_all_rounded,
             Colors.green,
             () => _updateStatus(context, 'reporting_done'),
+          ),
+        // reporting_done → Mark Completed
+        if (currentStatus.toLowerCase() == 'reporting_done' ||
+            currentStatus.toLowerCase() == 'reporting-done')
+          _buildActionButton(
+            context,
+            'Mark as Completed',
+            Icons.check_circle_rounded,
+            Colors.green,
+            () => _updateStatus(context, 'completed'),
+          ),
+        // completed — show re-enter results option
+        if (currentStatus.toLowerCase() == 'completed')
+          _buildActionButton(
+            context,
+            'View / Update Results',
+            Icons.biotech_rounded,
+            const Color(0xFF8B5CF6),
+            () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => LabResultEntryScreen(booking: booking),
+                ),
+              );
+            },
+          ),
+        // Cancel button for non-terminal statuses
+        if (!['completed', 'cancelled', 'declined', 'reporting_done'].contains(currentStatus.toLowerCase()))
+          _buildActionButton(
+            context,
+            'Cancel Booking',
+            Icons.cancel_outlined,
+            Colors.red,
+            () => _updateStatus(context, 'cancelled'),
           ),
       ],
     );
@@ -521,6 +619,66 @@ class LabBookingDetails extends ConsumerWidget {
   }
 
   Future<void> _updateStatus(BuildContext context, String newStatus) async {
+    // Cancellation / decline requires a mandatory reason
+    if (newStatus == 'cancelled' || newStatus == 'declined') {
+      final reasonController = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            newStatus == 'declined' ? 'Decline Booking' : 'Cancel Booking',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason (required):',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Enter reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Back'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                if (reasonController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Reason is required to cancel/decline')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              child: Text(newStatus == 'declined' ? 'Decline' : 'Cancel Booking'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     try {
       final labService = LaboratoryService();
       await labService.updateBookingStatus(booking['_id'], newStatus);
@@ -540,14 +698,21 @@ class LabBookingDetails extends ConsumerWidget {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().replaceAll('_', '-')) {
       case 'pending':
         return Colors.orange;
       case 'confirmed':
         return Colors.blue;
+      case 'sample-collected':
+        return Colors.indigo;
+      case 'awaiting-reports':
+        return const Color(0xFF8B5CF6);
+      case 'reporting-done':
+        return const Color(0xFF10B981);
       case 'completed':
         return Colors.green;
       case 'cancelled':
+      case 'declined':
         return Colors.red;
       default:
         return Colors.grey;
