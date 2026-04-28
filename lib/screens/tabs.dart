@@ -141,8 +141,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         activePage = const InstructorDashboardScreen();
       } else if (currentIndex == 1) {
         activePage = InstructorCoursesManagementScreen();
-      } else if (currentIndex == 2) {
-        activePage = ChatListScreen();
       }
     } else if (role == "Student") {
       if (currentIndex == 0) {
@@ -361,7 +359,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
       items = [
         _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', index: 0),
         _SidebarItem(icon: Icons.school_outlined, label: 'Courses', index: 1),
-        _SidebarItem(icon: Icons.chat_bubble_outline, label: 'Messages', index: 2),
       ];
     } else if (role == 'Patient') {
       items = [
