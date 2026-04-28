@@ -949,16 +949,15 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   Future<void> _uploadVideoFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.any, // Use 'any' for web compatibility
+        type: FileType.any,
         allowMultiple: false,
-        withData: true, // Required for web
-        allowedExtensions: null,
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
-      
-      // Validate it's a video file by extension
+
+      // Validate video extension
       final ext = (file.extension ?? '').toLowerCase();
       final validVideoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv'];
       if (!validVideoExts.contains(ext)) {
@@ -1000,32 +999,38 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
 
       setState(() => _isUploadingVideo = true);
 
-      // Upload to Cloudinary unsigned
       const cloudName = 'dzlcnyxgb';
       const uploadPreset = 'icare_videos';
 
-      // Use multipart form data
+      // Use Dio with proper multipart - no Content-Type header override
+      // (Dio sets it automatically with boundary for multipart)
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(
           file.bytes!,
-          filename: file.name,
+          filename: '${file.name}',
         ),
         'upload_preset': uploadPreset,
         'folder': 'icare_lessons',
-        // Do NOT set resource_type in form data — it's in the URL
+        'resource_type': 'video',
       });
 
       final dio = Dio();
-      // resource_type=video in the URL
-      final response = await dio.post(
-        'https://api.cloudinary.com/v1_1/$cloudName/video/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
+      Response response;
+      try {
+        response = await dio.post(
+          'https://api.cloudinary.com/v1_1/$cloudName/auto/upload',
+          data: formData,
+          // Do NOT set Content-Type manually — Dio handles multipart boundary
+        );
+      } on DioException catch (dioErr) {
+        debugPrint('❌ Cloudinary error: ${dioErr.response?.data}');
+        debugPrint('❌ Cloudinary status: ${dioErr.response?.statusCode}');
+        // Extract Cloudinary error message
+        final errMsg = dioErr.response?.data?['error']?['message']?.toString()
+            ?? dioErr.response?.data?.toString()
+            ?? 'Upload failed';
+        throw Exception(errMsg);
+      }
 
       if (response.statusCode == 200) {
         final videoUrl = response.data['secure_url'] as String;
@@ -1051,8 +1056,9 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Upload failed. Please paste a video URL instead.'),
+            content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
             action: SnackBarAction(
               label: 'Paste URL',
               textColor: Colors.white,
