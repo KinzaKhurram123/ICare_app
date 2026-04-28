@@ -21,10 +21,12 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # Flutter ko AGP 8 compatible version pe pin kiya hai
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.24.5'     # ← Yeh version AGP 9 issues se bachata hai
           cache: true
 
       - name: Clean project
@@ -33,12 +35,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # === FIX 1: Disable new DSL (AGP 9 error fix) ===
-      - name: Disable AGP 9 new DSL
-        run: |
-          echo "android.newDsl=false" >> android/gradle.properties
-
-      # === FIX 2: Namespace fix for zego_zim (purana error) ===
+      # Namespace fix for zego_zim (important)
       - name: Fix zego_zim namespace issue
         run: |
           echo '
