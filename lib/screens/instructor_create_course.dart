@@ -949,17 +949,37 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   Future<void> _uploadVideoFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.video,
+        type: FileType.any, // Use 'any' for web compatibility
         allowMultiple: false,
-        withData: true,
+        withData: true, // Required for web
+        allowedExtensions: null,
       );
       if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
-      if (file.bytes == null) {
+      
+      // Validate it's a video file by extension
+      final ext = (file.extension ?? '').toLowerCase();
+      final validVideoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv'];
+      if (!validVideoExts.contains(ext)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file. Try pasting a URL instead.'), backgroundColor: Colors.orange),
+            SnackBar(
+              content: Text('Please select a video file (${validVideoExts.join(', ')})'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (file.bytes == null || file.bytes!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not read file. Try pasting a URL instead.'),
+              backgroundColor: Colors.orange,
+            ),
           );
         }
         return;
@@ -969,7 +989,10 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       if (file.size > 100 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File too large. Max 100MB. Please use a URL instead.'), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text('File too large. Max 100MB. Please use a URL instead.'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         return;
@@ -977,27 +1000,31 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
 
       setState(() => _isUploadingVideo = true);
 
-      // Upload to Cloudinary (free unsigned upload)
-      const cloudName = 'dzlcnyxgb'; // Cloudinary cloud name
-      const uploadPreset = 'icare_videos'; // unsigned upload preset
+      // Upload to Cloudinary unsigned
+      const cloudName = 'dzlcnyxgb';
+      const uploadPreset = 'icare_videos';
 
+      // Use multipart form data
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(
           file.bytes!,
           filename: file.name,
         ),
         'upload_preset': uploadPreset,
-        'resource_type': 'video',
         'folder': 'icare_lessons',
+        // Do NOT set resource_type in form data — it's in the URL
       });
 
       final dio = Dio();
+      // resource_type=video in the URL
       final response = await dio.post(
         'https://api.cloudinary.com/v1_1/$cloudName/video/upload',
         data: formData,
-        onSendProgress: (sent, total) {
-          // Could show progress here
-        },
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -1009,7 +1036,10 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Video uploaded successfully!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('✅ Video uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } else {
@@ -1017,8 +1047,8 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       }
     } catch (e) {
       setState(() => _isUploadingVideo = false);
+      debugPrint('❌ Video upload error: $e');
       if (mounted) {
-        // If Cloudinary fails, offer URL option
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Upload failed. Please paste a video URL instead.'),
