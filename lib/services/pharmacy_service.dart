@@ -185,18 +185,32 @@ class PharmacyService {
     String address = '',
   }) async {
     // Backend uses POST /pharmacy/orders with items array
-    final items = medicines.map((m) => {
-      'productName': m['name'] ?? m['productName'] ?? '',
-      'quantity': 1,
-      'price': m['price'] ?? 0,
-      'dosage': m['dosage'] ?? '',
-      'frequency': m['frequency'] ?? '',
+    // Default price Rs. 500 per medicine if not specified
+    const int defaultMedicinePrice = 500;
+    final items = medicines.map((m) {
+      final price = (m['price'] != null && (m['price'] as num) > 0)
+          ? (m['price'] as num).toInt()
+          : defaultMedicinePrice;
+      return {
+        'productName': m['name'] ?? m['productName'] ?? '',
+        'product_name': m['name'] ?? m['productName'] ?? '',
+        'quantity': 1,
+        'price': price,
+        'dosage': m['dosage'] ?? '',
+        'frequency': m['frequency'] ?? '',
+      };
     }).toList();
+
+    // Calculate total from items
+    final totalAmount = items.fold<int>(
+      0, (sum, item) => sum + ((item['price'] as int) * (item['quantity'] as int)),
+    );
+
     final response = await _apiService.post('/pharmacy/orders', {
       'pharmacyId': pharmacyId,
       'items': items,
       'deliveryAddress': address,
-      'totalAmount': 0,
+      'totalAmount': totalAmount,
       'deliveryFee': 0,
       if (medicalRecordId != null) 'prescriptionId': medicalRecordId,
     });
