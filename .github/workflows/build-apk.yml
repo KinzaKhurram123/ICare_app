@@ -33,6 +33,24 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # ←←← THIS IS THE IMPORTANT FIX ←←←
+      - name: Fix namespace issue for old plugins (zego_zim)
+        run: |
+          echo "Applying namespace fix for zego_zim plugin..."
+          cat << EOF >> android/build.gradle
+
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android') && !project.android.hasProperty('namespace')) {
+                      println "Adding namespace to \${project.name}"
+                      project.android {
+                          namespace = "com.zego.\${project.name.replace('-', '_')}"
+                      }
+                  }
+              }
+          }
+          EOF
+
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
