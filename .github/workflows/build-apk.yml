@@ -21,12 +21,11 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # ✅ Updated Flutter (Dart 3.9 supported)
-      - name: Setup Flutter
+      - name: Setup Flutter (Latest Stable)
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.29.0'   # ← IMPORTANT FIX
+          flutter-version: '3.41.8'     # Latest as of April 2026
           cache: true
 
       - name: Clean project
@@ -35,30 +34,37 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ✅ Namespace fix
-      - name: Fix zego_zim namespace issue
+      # === AGP 9 + afterEvaluate Error Fix ===
+      - name: Fix AGP 9 afterEvaluate & Namespace Issue
         run: |
-          echo '
+          # Create or append gradle.properties
+          echo "android.newDsl=false" >> android/gradle.properties
+          
+          # Strong namespace fix for old plugins like zego_zim
+          cat << 'EOF' >> android/build.gradle
+
           subprojects {
               afterEvaluate { project ->
-                  if (project.hasProperty("android") && !project.android.hasProperty("namespace")) {
-                      project.android.namespace = "com.zego.zim"
+                  if (project.hasProperty('android')) {
+                      if (!project.android.hasProperty('namespace') || project.android.namespace == null) {
+                          project.android.namespace = "com.zego.zim"
+                      }
                   }
               }
           }
-          ' >> android/build.gradle
+          EOF
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Verify APK exists
+      - name: Verify APK
         run: ls -lah build/app/outputs/flutter-apk/
 
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
 
-      - name: Rename APK with date
+      - name: Rename APK
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk \
              build/app/outputs/flutter-apk/icare-${{ steps.date.outputs.date }}.apk
@@ -70,7 +76,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: Upload dated APK
+      - name: Upload Dated APK
         uses: actions/upload-artifact@v4
         with:
           name: icare-${{ steps.date.outputs.date }}
