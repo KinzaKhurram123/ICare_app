@@ -29,26 +29,23 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow all vercel.app subdomains, localhost, and no-origin requests (mobile/Postman)
-    if (
-      !origin ||
-      /\.vercel\.app$/.test(origin) ||
-      /^http:\/\/localhost(:\d+)?$/.test(origin) ||
-      origin === 'https://icare-virtual-hospital.com' ||
-      origin === 'https://www.icare-virtual-hospital.com'
-    ) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Allow all during development — tighten in prod
-    }
-  },
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: false,
 };
 app.use(cors(corsOptions));
-app.options('/{*path}', cors(corsOptions));
+
+// Handle preflight for ALL routes explicitly
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
