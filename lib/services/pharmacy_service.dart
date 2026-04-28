@@ -12,18 +12,17 @@ class PharmacyService {
     final list = response.data['pharmacies'] as List? ?? [];
     return list.map((p) {
       final map = Map<String, dynamic>.from(p);
-      final user = map['user'] as Map<String, dynamic>? ?? {};
-      // userId = User._id — used for order creation (pharmacy_id in backend)
-      final userId = user['_id']?.toString() ?? map['userId']?.toString() ?? map['_id']?.toString();
+      // Backend returns flat structure: {_id: userId, pharmacy_name: ..., name: username, ...}
+      // No nested 'user' object
+      final userId = map['_id']?.toString() ?? map['id']?.toString();
       map['userId'] = userId;
-      map['profileId'] = map['_id']?.toString();
-      // _id must be User._id so that pharmacy_id in orders matches
       map['_id'] = userId;
       map['id'] = userId;
-      final displayName = map['pharmacyName']?.toString()
-          ?? map['pharmacy_name']?.toString()
-          ?? map['ownerName']?.toString()
-          ?? user['name']?.toString()
+      // pharmacy_name is the actual pharmacy name set in profile
+      // name/username is the account username (fallback)
+      final displayName = map['pharmacy_name']?.toString()
+          ?? map['pharmacyName']?.toString()
+          ?? map['name']?.toString()
           ?? 'Pharmacy';
       map['pharmacyName'] = displayName;
       map['pharmacy_name'] = displayName;

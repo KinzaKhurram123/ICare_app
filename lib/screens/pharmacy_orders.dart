@@ -71,7 +71,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'items': ((o['items'] as List?)?.length ?? 0) +
                 ((o['prescriptionItems'] as List?)?.length ?? 0),
             'itemsList': (o['items'] as List?) ?? [],
-            'total': (o['totalAmount'] ?? 0).toDouble(),
+            'total': _calcOrderTotal(o),
             'status': o['status'] ?? 'pending',
             'date': o['createdAt'] != null
                 ? DateTime.parse(o['createdAt'])
@@ -1029,6 +1029,20 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
         .replaceAll(RegExp(r',\s*,'), ',')
         .trim();
     return cleaned.isEmpty ? null : cleaned;
+  }
+
+  /// Calculate order total: use saved totalAmount if > 0,
+  /// otherwise sum items price × quantity
+  double _calcOrderTotal(Map<String, dynamic> o) {
+    final saved = o['totalAmount'];
+    if (saved != null && saved is num && saved > 0) return saved.toDouble();
+    final items = o['items'] as List? ?? [];
+    if (items.isEmpty) return 0;
+    return items.fold(0.0, (sum, item) {
+      final price = (item['price'] ?? 0) as num;
+      final qty = (item['quantity'] ?? 1) as num;
+      return sum + (price * qty);
+    });
   }
 
   Color _getStatusColor(String status) {

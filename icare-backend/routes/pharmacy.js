@@ -321,6 +321,10 @@ router.post('/orders', authMiddleware, async (req, res) => {
       price: Number(i.price) || 0,
     })) : [];
 
+    // Calculate total from items if totalAmount not provided or is 0
+    const calculatedTotal = normalizedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const finalTotal = Number(totalAmount) > 0 ? Number(totalAmount) : calculatedTotal;
+
     // Generate unique order number with random suffix to avoid collisions
     const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
 
@@ -329,7 +333,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
       pharmacy_id: resolvedPharmacyId,
       prescription_id: prescriptionId || undefined,
       delivery_address: deliveryAddress || '',
-      total_amount: Number(totalAmount) || 0,
+      total_amount: finalTotal,
       delivery_fee: Number(deliveryFee) || 0,
       status: 'pending',
       order_number: orderNumber,
@@ -350,11 +354,14 @@ router.put('/update_order_status/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled'];
+    // Normalize underscore vs hyphen variants
+    if (status === 'out_for_delivery') status = 'out-for-delivery';
+
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed', 'rejected'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
+      return res.status(400).json({ success: false, message: `Invalid status: ${status}` });
     }
 
     const update = { status };
@@ -378,11 +385,14 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled'];
+    // Normalize underscore vs hyphen variants
+    if (status === 'out_for_delivery') status = 'out-for-delivery';
+
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed', 'rejected'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
+      return res.status(400).json({ success: false, message: `Invalid status: ${status}` });
     }
 
     const update = { status };
