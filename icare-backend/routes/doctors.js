@@ -16,14 +16,25 @@ router.get('/stats', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const doctorId = toId(req.user.id);
-    const [total, pending, confirmed, completed, cancelled] = await Promise.all([
+    const [total, pending, confirmed, completed, cancelled, profile] = await Promise.all([
       Appointment.countDocuments({ doctor_id: doctorId }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'pending' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'confirmed' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'completed' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'cancelled' }),
+      DoctorProfile.findOne({ user_id: doctorId }).lean(),
     ]);
-    const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
+
+    // Revenue = completed appointments × consultation fee
+    const consultationFee = profile?.consultation_fee || 0;
+    const revenue = completed * consultationFee;
+
+    // Satisfaction = percentage of non-cancelled appointments that completed
+    const attempted = total - cancelled;
+    const satisfaction = attempted > 0 ? Math.round((completed / attempted) * 100) : 0;
+
+    const avgRating = profile?.rating || 0;
+
     res.json({
       success: true,
       stats: {
@@ -32,8 +43,12 @@ router.get('/stats', authMiddleware, async (req, res) => {
         confirmedAppointments: confirmed,
         completedAppointments: completed,
         cancelledAppointments: cancelled,
-        rating: profile?.rating || 0,
+        rating: avgRating,
         totalReviews: profile?.total_reviews || 0,
+        revenue,
+        satisfaction,
+        avgRating,
+        consultationFee,
       },
     });
   } catch (e) {

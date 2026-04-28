@@ -185,14 +185,83 @@ router.get('/analytics', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const orders = await PharmacyOrder.find({ pharmacy_id: userId }).lean();
-    const totalRevenue = orders.filter(o => ['delivered', 'completed'].includes(o.status)).reduce((s, o) => s + (o.total_amount || 0), 0);
+
+    const [orders, products] = await Promise.all([
+      PharmacyOrder.find({ pharmacy_id: userId }).lean(),
+      Product.find({ pharmacy_id: userId }).lean(),
+    ]);
+
+    const completedOrders = orders.filter(o => ['delivered', 'completed'].includes(o.status));
+    const totalRevenue = completedOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
     const totalOrders = orders.length;
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    res.json({ success: true, totalRevenue: Math.round(totalRevenue), totalOrders, averageOrderValue: parseFloat(avgOrderValue.toFixed(2)), topSellingProducts: [] });
+
+    const ordersAccepted = orders.filter(o => !['pending', 'cancelled', 'rejected'].includes(o.status)).length;
+    const ordersCompleted = completedOrders.length;
+    const failedDeliveries = orders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length;
+    const outOfStockCount = products.filter(p => (p.stock_quantity ?? 0) === 0).length;
+
+    // Top selling: aggregate order items by product name
+    const productSales = {};
+    for (const order of orders) {
+      for (const item of (order.items || [])) {
+        const name = item.product_name || 'Unknown';
+        if (!productSales[name]) productSales[name] = { name, sales: 0, revenue: 0 };
+        productSales[name].sales += item.quantity || 1;
+        productSales[name].revenue += (item.quantity || 1) * (item.price || 0);
+      }
+    }
+    const topSellingProducts = Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5)
+      .map(p => ({ name: p.name, sales: p.sales, revenue: Math.round(p.revenue) }));
+
+    res.json({
+      success: true,
+      totalRevenue: Math.round(totalRevenue),
+      totalOrders,
+      averageOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+      ordersAccepted,
+      ordersCompleted,
+      failedDeliveries,
+      outOfStockCount,
+      complaintsCount: 0,
+      averageRating: 0,
+      averageProcessTime: 'N/A',
+      responseTime: '< 30m',
+      topSellingProducts,
+    });
   } catch (err) {
     console.error(err);
-    res.json({ success: true, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0, topSellingProducts: [] });
+    res.json({ success: true, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0, ordersAccepted: 0, ordersCompleted: 0, failedDeliveries: 0, outOfStockCount: 0, complaintsCount: 0, averageRating: 0, averageProcessTime: 'N/A', responseTime: '< 30m', topSellingProducts: [] });
+  }
+});
+
+// ─── TOP SELLING PRODUCTS ─────────────────────────────────────────────────────
+router.get('/top-selling', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const orders = await PharmacyOrder.find({ pharmacy_id: userId }).lean();
+
+    const productSales = {};
+    for (const order of orders) {
+      for (const item of (order.items || [])) {
+        const name = item.product_name || 'Unknown';
+        if (!productSales[name]) productSales[name] = { name, sales: 0, revenue: 0 };
+        productSales[name].sales += item.quantity || 1;
+        productSales[name].revenue += (item.quantity || 1) * (item.price || 0);
+      }
+    }
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5)
+      .map(p => ({ name: p.name, sales: p.sales, revenue: Math.round(p.revenue) }));
+
+    res.json({ success: true, topProducts });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: true, topProducts: [] });
   }
 });
 

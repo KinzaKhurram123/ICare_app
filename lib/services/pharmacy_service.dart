@@ -267,36 +267,80 @@ class PharmacyService {
       );
       final medicines = medicinesResponse.data['medicines'] as List;
 
-      // Calculate total revenue
-      final totalRevenue = orders
-          .where((o) => o['status'] == 'completed')
-          .fold<double>(
-            0,
-            (sum, o) => sum + (o['totalAmount'] ?? 0).toDouble(),
-          );
+      // Revenue from delivered/completed orders
+      final completedOrders = orders
+          .where((o) => ['delivered', 'completed'].contains(o['status']))
+          .toList();
+      final totalRevenue = completedOrders.fold<double>(
+        0,
+        (sum, o) => sum + (o['totalAmount'] ?? 0).toDouble(),
+      );
 
       final totalOrders = orders.length;
-      final averageOrderValue = totalOrders > 0
-          ? totalRevenue / totalOrders
-          : 0;
+      final averageOrderValue =
+          totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
 
-      // Get real top selling products from backend
-      List<dynamic> topSellingProducts = [];
-      try {
-        final topSellingResponse = await _apiService.get(
-          '/pharmacy/top-selling',
-        );
-        topSellingProducts = topSellingResponse.data['topProducts'] ?? [];
-      } catch (e) {
-        debugPrint('Error getting top selling products: $e');
-        // Fallback to empty list if endpoint fails
-        topSellingProducts = [];
+      // Order status breakdown
+      final ordersAccepted = orders
+          .where((o) =>
+              !['pending', 'cancelled', 'rejected'].contains(o['status']))
+          .length;
+      final ordersCompleted = completedOrders.length;
+      final ordersProcessing = orders
+          .where((o) =>
+              ['confirmed', 'preparing', 'out-for-delivery']
+                  .contains(o['status']))
+          .length;
+      final ordersPending =
+          orders.where((o) => o['status'] == 'pending').length;
+      final failedDeliveries = orders
+          .where((o) => ['cancelled', 'rejected'].contains(o['status']))
+          .length;
+
+      // Product metrics
+      final outOfStockCount =
+          medicines.where((m) => (m['stock_quantity'] ?? 0) == 0).length;
+
+      // Top selling products — aggregate from order items
+      final Map<String, Map<String, dynamic>> productSales = {};
+      for (final order in orders) {
+        final items = order['items'] as List? ?? [];
+        for (final item in items) {
+          final name =
+              item['product_name']?.toString() ?? 'Unknown';
+          final qty = (item['quantity'] ?? 1).toDouble();
+          final price = (item['price'] ?? 0).toDouble();
+          productSales.putIfAbsent(
+              name, () => {'name': name, 'sales': 0.0, 'revenue': 0.0});
+          productSales[name]!['sales'] =
+              (productSales[name]!['sales'] as double) + qty;
+          productSales[name]!['revenue'] =
+              (productSales[name]!['revenue'] as double) + (qty * price);
+        }
       }
+      final sortedProducts = productSales.values.toList()
+        ..sort((a, b) =>
+            (b['sales'] as double).compareTo(a['sales'] as double));
+      final topSellingProducts = sortedProducts.take(5).map((p) => {
+            'name': p['name'],
+            'sales': (p['sales'] as double).toInt(),
+            'revenue': (p['revenue'] as double).toInt(),
+          }).toList();
 
       return {
         'totalRevenue': totalRevenue.toInt(),
         'totalOrders': totalOrders,
         'averageOrderValue': averageOrderValue,
+        'ordersAccepted': ordersAccepted,
+        'ordersCompleted': ordersCompleted,
+        'ordersProcessing': ordersProcessing,
+        'ordersPending': ordersPending,
+        'failedDeliveries': failedDeliveries,
+        'outOfStockCount': outOfStockCount,
+        'complaintsCount': 0,
+        'averageRating': 0.0,
+        'averageProcessTime': 'N/A',
+        'responseTime': '< 30m',
         'topSellingProducts': topSellingProducts,
       };
     } catch (e) {

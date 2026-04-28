@@ -743,6 +743,12 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
   }
 
   Widget _buildOrdersBreakdown() {
+    final completed = (_stats['ordersCompleted'] as num?)?.toInt() ?? 0;
+    final processing = (_stats['ordersProcessing'] as num?)?.toInt() ?? 0;
+    final pending = (_stats['ordersPending'] as num?)?.toInt() ?? 0;
+    final cancelled = (_stats['failedDeliveries'] as num?)?.toInt() ?? 0;
+    final total = completed + processing + pending + cancelled;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -768,18 +774,17 @@ class _PharmacyAnalyticsState extends State<PharmacyAnalytics> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildBreakdownItem('Completed', 128, const Color(0xFF10B981)),
-          _buildBreakdownItem('Processing', 15, const Color(0xFF3B82F6)),
-          _buildBreakdownItem('Pending', 8, const Color(0xFFF59E0B)),
-          _buildBreakdownItem('Cancelled', 5, const Color(0xFFEF4444)),
+          _buildBreakdownItem('Completed', completed, total, const Color(0xFF10B981)),
+          _buildBreakdownItem('Processing', processing, total, const Color(0xFF3B82F6)),
+          _buildBreakdownItem('Pending', pending, total, const Color(0xFFF59E0B)),
+          _buildBreakdownItem('Cancelled', cancelled, total, const Color(0xFFEF4444)),
         ],
       ),
     );
   }
 
-  Widget _buildBreakdownItem(String label, int count, Color color) {
-    final total = 156;
-    final percentage = (count / total);
+  Widget _buildBreakdownItem(String label, int count, int total, Color color) {
+    final percentage = total > 0 ? count / total : 0.0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
