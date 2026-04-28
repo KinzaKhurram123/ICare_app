@@ -41,7 +41,19 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
   Future<void> _addToCart(dynamic med) async {
     final id = med['_id']?.toString() ?? '';
-    if (id.isEmpty || _addingToCart.contains(id)) return;
+    // Skip mock medicines (they don't exist in database)
+    if (id.isEmpty || id.startsWith('mock_')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${med['productName']} — contact pharmacy directly to order'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ));
+      }
+      return;
+    }
+    if (_addingToCart.contains(id)) return;
     setState(() => _addingToCart.add(id));
     try {
       await _cartService.addItem(id, 1);
@@ -641,6 +653,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _buildMedicineCard(dynamic med) {
     final id = med['_id']?.toString() ?? '';
     final isAdding = _addingToCart.contains(id);
+    final isMock = id.startsWith('mock_');
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -702,7 +715,11 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isAdding ? Colors.grey[300] : AppColors.primaryColor,
+                    color: isMock
+                        ? Colors.grey[300]
+                        : isAdding
+                            ? Colors.grey[300]
+                            : AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: isAdding
@@ -713,9 +730,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
+                      : Icon(
+                          isMock ? Icons.info_outline_rounded : Icons.add_rounded,
+                          color: isMock ? Colors.grey[600] : Colors.white,
                           size: 20,
                         ),
                 ),
