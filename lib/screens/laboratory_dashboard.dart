@@ -57,7 +57,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
   }
 
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 45), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted && !_isLoading) {
         _checkForNewBookings();
       }
@@ -72,9 +72,15 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
 
       if (currentCount > _lastKnownBookingCount && _lastKnownBookingCount > 0) {
         _showNewBookingNotification();
-        _loadData(); // Full refresh to update UI
       }
       _lastKnownBookingCount = currentCount;
+
+      // Always update stats so completed/pending counts stay live
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
+      }
     } catch (e) {
       debugPrint('Error auto-refreshing: $e');
     }
@@ -376,11 +382,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
+                      ),
+                    );
+                    _loadData();
+                  },
                   icon: const Icon(
                     Icons.notifications_none_rounded,
                     color: Colors.white,
@@ -664,14 +673,17 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                 _buildActionButton(
                   'New Requests',
                   Icons.pending_actions_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'New Requests',
-                        initialFilter: 'pending',
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(
+                          title: 'New Requests',
+                          initialFilter: 'pending',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                    _loadData();
+                  },
                   isMobile,
                 ),
                 _buildActionButton(
@@ -687,11 +699,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                 _buildActionButton(
                   'Orders',
                   Icons.list_alt_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(),
-                    ),
-                  ),
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
+                      ),
+                    );
+                    _loadData();
+                  },
                   isMobile,
                 ),
                 _buildActionButton(

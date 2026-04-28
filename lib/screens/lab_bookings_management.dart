@@ -64,9 +64,10 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         _labId = profile['_id'];
       }
 
+      final currentFilter = _selectedFilter;
       final bookings = await _labService.getBookings(
         _labId!,
-        status: _selectedFilter == 'all' ? null : _selectedFilter,
+        status: currentFilter == 'all' ? null : currentFilter,
       );
 
       if (mounted) {
@@ -90,13 +91,17 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     setState(() => _isLoading = true);
 
     try {
-      final profile = await _labService.getProfile();
-      _labId = profile['_id'];
-      if (_labId == null) throw Exception('Laboratory ID not found');
+      // Only fetch profile once; reuse cached _labId on filter changes
+      if (_labId == null) {
+        final profile = await _labService.getProfile();
+        _labId = profile['_id'];
+        if (_labId == null) throw Exception('Laboratory ID not found');
+      }
 
+      final currentFilter = _selectedFilter; // snapshot before any async gap
       final bookings = await _labService.getBookings(
         _labId!,
-        status: _selectedFilter == 'all' ? null : _selectedFilter,
+        status: currentFilter == 'all' ? null : currentFilter,
       );
 
       // Sort by date — oldest first (date-wise priority)
@@ -1038,7 +1043,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    status.toUpperCase(),
+                    _statusLabel(status),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 10,
@@ -1284,6 +1289,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
+      case 'pending': return 'PENDING';
+      case 'confirmed': return 'ACCEPTED';
+      case 'sample_collected': return 'SAMPLE COLLECTED';
+      case 'awaiting_reports': return 'AWAITING REPORTS';
+      case 'reporting_done': return 'REPORTING DONE';
+      case 'completed': return 'COMPLETED';
+      case 'cancelled': return 'CANCELLED';
+      case 'declined': return 'DECLINED';
+      default: return status.toUpperCase().replaceAll('_', ' ');
     }
   }
 }

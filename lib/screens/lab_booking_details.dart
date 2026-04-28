@@ -13,37 +13,62 @@ class LabBookingDetails extends ConsumerWidget {
 
   const LabBookingDetails({super.key, required this.booking});
 
+  /// Safely parse results from raw booking data — handles null, wrong types,
+  /// and legacy formats without throwing.
+  List<LabResult> _parseResults(dynamic raw) {
+    try {
+      if (raw == null || raw is! List) return [];
+      return raw.map((r) {
+        try {
+          if (r is! Map) return null;
+          return LabResult.fromJson(Map<String, dynamic>.from(r as Map));
+        } catch (_) {
+          return null;
+        }
+      }).whereType<LabResult>().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role = ref.watch(authProvider).userRole;
-    final status = (booking['status'] ?? 'pending').toString().replaceAll('-', '_');
-    
+    final rawRole = ref.watch(authProvider).userRole;
+    // Normalize: backend stores 'lab' → frontend normalizes to 'Lab', but
+    // some paths produce 'Laboratory'. Accept both.
+    final isLab = rawRole.toLowerCase() == 'lab' ||
+        rawRole.toLowerCase() == 'laboratory';
+
+    final status =
+        (booking['status'] ?? 'pending').toString().replaceAll('-', '_');
+
     // Support all field name variants
-    final testName = booking['test_type']?.toString()
-        ?? booking['testType']?.toString()
-        ?? booking['testName']?.toString()
-        ?? booking['name']?.toString()
-        ?? 'Test';
-    
-    final dateStr = booking['test_date']?.toString()
-        ?? booking['testDate']?.toString()
-        ?? booking['date']?.toString()
-        ?? booking['createdAt']?.toString()
-        ?? '';
+    final testName = booking['test_type']?.toString() ??
+        booking['testType']?.toString() ??
+        booking['testName']?.toString() ??
+        booking['name']?.toString() ??
+        'Test';
+
+    final dateStr = booking['test_date']?.toString() ??
+        booking['testDate']?.toString() ??
+        booking['date']?.toString() ??
+        booking['createdAt']?.toString() ??
+        '';
     final date = DateTime.tryParse(dateStr) ?? DateTime.now();
-    
+
     // Patient name — try all possible fields
-    final patientName = booking['patient_name']?.toString()
-        ?? booking['patientName']?.toString()
-        ?? booking['patient']?['name']?.toString()
-        ?? booking['patient']?['username']?.toString()
-        ?? 'Unknown Patient';
-    
-    final results =
-        (booking['results'] as List?)
-            ?.map((r) => LabResult.fromJson(r))
-            .toList() ??
-        [];
+    String patientName = 'Unknown Patient';
+    try {
+      patientName = booking['patient_name']?.toString() ??
+          booking['patientName']?.toString() ??
+          (booking['patient'] is Map
+              ? (booking['patient']['name']?.toString() ??
+                  booking['patient']['username']?.toString())
+              : null) ??
+          'Unknown Patient';
+    } catch (_) {}
+
+    final results = _parseResults(booking['results']);
     final hasCriticalAlert = booking['criticalAlert'] == true;
 
     return Scaffold(
@@ -70,8 +95,8 @@ class LabBookingDetails extends ConsumerWidget {
             if (hasCriticalAlert) _buildCriticalAlert(),
             _buildInfoCard(testName, status, date, patientName),
             const SizedBox(height: 24),
-            if (role == 'Laboratory') _buildActionButtons(context, status),
-            if (role != 'Laboratory' && status.toLowerCase() == 'completed')
+            if (isLab) _buildActionButtons(context, status),
+            if (!isLab && status.toLowerCase() == 'completed')
               _buildRateLabButton(context),
             const SizedBox(height: 24),
             if (results.isNotEmpty) _buildResultsSection(results),
@@ -260,14 +285,15 @@ class LabBookingDetails extends ConsumerWidget {
 
   Widget _buildStatusBadge(String status) {
     final color = _getStatusColor(status);
+    final label = _statusLabel(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        status.toUpperCase(),
+        label,
         style: TextStyle(
           color: color,
           fontSize: 11,
@@ -275,6 +301,20 @@ class LabBookingDetails extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
+      case 'pending': return 'PENDING';
+      case 'confirmed': return 'ACCEPTED';
+      case 'sample_collected': return 'SAMPLE COLLECTED';
+      case 'awaiting_reports': return 'AWAITING REPORTS';
+      case 'reporting_done': return 'REPORTING DONE';
+      case 'completed': return 'COMPLETED';
+      case 'cancelled': return 'CANCELLED';
+      case 'declined': return 'DECLINED';
+      default: return status.toUpperCase().replaceAll('_', ' ');
+    }
   }
 
   Widget _buildResultsSection(List<LabResult> results) {
