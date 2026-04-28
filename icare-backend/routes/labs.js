@@ -162,8 +162,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     const [total, pending, completed, todayCount] = await Promise.all([
       LabTestRequest.countDocuments({ lab_id: userId }),
-      LabTestRequest.countDocuments({ lab_id: userId, status: 'pending' }),
-      LabTestRequest.countDocuments({ lab_id: userId, status: 'completed' }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['pending'] } }),
+      LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['completed', 'reporting_done', 'reporting-done'] } }),
       LabTestRequest.countDocuments({ lab_id: userId, createdAt: { $gte: today } }),
     ]);
 

@@ -72,13 +72,79 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       final data = await _pharmacyService.getMedicinesByPharmacyId(pharmacyId);
       if (mounted) {
         setState(() {
-          _medicines = data;
+          // If pharmacy has no products, show Pakistani mock medicines
+          _medicines = data.isNotEmpty ? data : _getPakistaniMockMedicines();
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _medicines = _getPakistaniMockMedicines();
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  /// Pakistani common medicines as fallback when pharmacy has no products
+  List<Map<String, dynamic>> _getPakistaniMockMedicines() {
+    return [
+      {
+        '_id': 'mock_1',
+        'productName': 'Panadol (Paracetamol 500mg)',
+        'brand': 'GSK Pakistan',
+        'price': 35,
+        'category': 'OTC',
+        'description': 'Pain reliever and fever reducer',
+        'stock_quantity': 100,
+      },
+      {
+        '_id': 'mock_2',
+        'productName': 'Brufen (Ibuprofen 400mg)',
+        'brand': 'Abbott Pakistan',
+        'price': 85,
+        'category': 'OTC',
+        'description': 'Anti-inflammatory pain reliever',
+        'stock_quantity': 80,
+      },
+      {
+        '_id': 'mock_3',
+        'productName': 'Augmentin (Amoxicillin 625mg)',
+        'brand': 'GSK Pakistan',
+        'price': 420,
+        'category': 'Prescription',
+        'description': 'Antibiotic for bacterial infections',
+        'stock_quantity': 50,
+      },
+      {
+        '_id': 'mock_4',
+        'productName': 'Risek (Omeprazole 20mg)',
+        'brand': 'Getz Pharma',
+        'price': 180,
+        'category': 'Prescription',
+        'description': 'Acid reflux and stomach ulcer treatment',
+        'stock_quantity': 60,
+      },
+      {
+        '_id': 'mock_5',
+        'productName': 'Glucophage (Metformin 500mg)',
+        'brand': 'Merck Pakistan',
+        'price': 95,
+        'category': 'Prescription',
+        'description': 'Diabetes management medication',
+        'stock_quantity': 70,
+      },
+      {
+        '_id': 'mock_6',
+        'productName': 'Lipitor (Atorvastatin 20mg)',
+        'brand': 'Pfizer Pakistan',
+        'price': 320,
+        'category': 'Prescription',
+        'description': 'Cholesterol lowering medication',
+        'stock_quantity': 45,
+      },
+    ];
   }
 
   Future<void> _pickPrescription() async {

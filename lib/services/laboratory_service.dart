@@ -191,7 +191,7 @@ class LaboratoryService {
           .where((b) => b['status'] == 'pending')
           .length;
       final completedBookings = bookings
-          .where((b) => b['status'] == 'completed')
+          .where((b) => b['status'] == 'completed' || b['status'] == 'reporting_done')
           .length;
       final todayBookings = bookings.where((b) {
         final bookingDate =

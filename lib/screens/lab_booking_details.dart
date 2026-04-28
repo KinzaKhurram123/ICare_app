@@ -504,8 +504,34 @@ class LabBookingDetails extends ConsumerWidget {
             Colors.green,
             () => _updateStatus(context, 'reporting_done'),
           ),
-        // Cancel button always available for non-completed/cancelled
-        if (!['completed', 'cancelled', 'reporting_done'].contains(currentStatus.toLowerCase()))
+        // reporting_done → Mark Completed
+        if (currentStatus.toLowerCase() == 'reporting_done' ||
+            currentStatus.toLowerCase() == 'reporting-done')
+          _buildActionButton(
+            context,
+            'Mark as Completed',
+            Icons.check_circle_rounded,
+            Colors.green,
+            () => _updateStatus(context, 'completed'),
+          ),
+        // completed — show re-enter results option
+        if (currentStatus.toLowerCase() == 'completed')
+          _buildActionButton(
+            context,
+            'View / Update Results',
+            Icons.biotech_rounded,
+            const Color(0xFF8B5CF6),
+            () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => LabResultEntryScreen(booking: booking),
+                ),
+              );
+            },
+          ),
+        // Cancel button for non-terminal statuses
+        if (!['completed', 'cancelled', 'declined', 'reporting_done'].contains(currentStatus.toLowerCase()))
           _buildActionButton(
             context,
             'Cancel Booking',
@@ -632,14 +658,21 @@ class LabBookingDetails extends ConsumerWidget {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().replaceAll('_', '-')) {
       case 'pending':
         return Colors.orange;
       case 'confirmed':
         return Colors.blue;
+      case 'sample-collected':
+        return Colors.indigo;
+      case 'awaiting-reports':
+        return const Color(0xFF8B5CF6);
+      case 'reporting-done':
+        return const Color(0xFF10B981);
       case 'completed':
         return Colors.green;
       case 'cancelled':
+      case 'declined':
         return Colors.red;
       default:
         return Colors.grey;
