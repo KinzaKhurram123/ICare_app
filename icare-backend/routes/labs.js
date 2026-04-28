@@ -408,17 +408,17 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
 
     // Fetch patient info to include in response
     const patient = await User.findById(patientId).lean();
-    const patientName = patient?.username || patient?.name || 'Unknown';
+    const patientNameFromDB = patient?.username || patient?.name || 'Unknown';
 
-    res.status(201).json({ 
-      success: true, 
-      message: 'Booking created', 
-      booking: { 
-        ...booking.toObject(), 
+    res.status(201).json({
+      success: true,
+      message: 'Booking created',
+      booking: {
+        ...booking.toObject(),
         _id: booking._id.toString(),
-        patient_name: patientName,
+        patient_name: patientNameFromDB,
         patient_email: patient?.email,
-      } 
+      }
     });
   } catch (error) {
     console.error('❌ LAB BOOKING - Error:', error);
