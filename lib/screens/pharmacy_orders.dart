@@ -45,9 +45,10 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
   Future<void> _loadOrders() async {
     try {
       setState(() => _isLoading = true);
-      final status = _getCurrentStatus();
-      debugPrint('📋 Loading orders with status: $status');
-      final orders = await _pharmacyService.getPharmacyOrders(status: status);
+      // Always load ALL orders, then filter client-side by tab
+      // This avoids backend comma-separated status issues
+      debugPrint('📋 Loading all orders...');
+      final orders = await _pharmacyService.getPharmacyOrders(status: 'all');
       debugPrint('✅ Received ${orders.length} orders from backend');
 
       setState(() {
@@ -55,28 +56,34 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
           final user = o['user'] as Map<String, dynamic>?;
           final orderId = o['_id']?.toString();
 
-          // Skip orders with invalid IDs
           if (orderId == null || orderId.isEmpty) {
             debugPrint('⚠️ Skipping order with missing ID');
             return null;
           }
 
-          debugPrint('📦 Order ID: $orderId, Status: ${o['status']}');
+          // Normalize status: replace hyphens with underscores
+          final rawStatus = (o['status'] ?? 'pending').toString();
+          final normalizedStatus = rawStatus.replaceAll('-', '_');
+
+          debugPrint('📦 Order ID: $orderId, Status: $normalizedStatus');
 
           return {
             '_id': orderId,
             'id': o['orderNumber'] ?? '#${orderId.substring(0, 8)}',
             'customerName': user?['name'] ?? user?['username'] ?? 'Patient',
             'customerPhone': user?['phoneNumber'] ?? user?['phone'] ?? 'N/A',
+            'customerEmail': user?['email'] ?? '',
             'items': ((o['items'] as List?)?.length ?? 0) +
                 ((o['prescriptionItems'] as List?)?.length ?? 0),
             'itemsList': (o['items'] as List?) ?? [],
             'total': _calcOrderTotal(o),
-            'status': o['status'] ?? 'pending',
+            'status': normalizedStatus,
             'date': o['createdAt'] != null
                 ? DateTime.parse(o['createdAt'])
                 : DateTime.now(),
             'orderType': o['orderType'] ?? 'cart',
+            'deliveryAddress': o['deliveryAddress'] ?? o['delivery_address'] ?? '',
+            'expectedDeliveryTime': o['expectedDeliveryTime'] ?? o['expected_delivery_time'] ?? '',
             'medicines': [
               ...((o['items'] as List?) ?? []).map((item) {
                 final name = (item['product_name'] ??
@@ -96,7 +103,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
             'medicalRecord': o['medicalRecord'],
             'prescriptionId': o['prescriptionId'],
           };
-        }).whereType<Map<String, dynamic>>().toList(); // Filter out null entries
+        }).whereType<Map<String, dynamic>>().toList();
         debugPrint('✅ Processed ${_orders.length} valid orders');
         _isLoading = false;
       });
@@ -388,15 +395,34 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     if (status == 'all') return _orders;
 
     if (status == 'processing') {
-      // Processing tab includes: confirmed, preparing, out_for_delivery
+      // Processing tab: confirmed, preparing, out_for_delivery, out-for-delivery
       return _orders.where((o) {
-        final s = o['status']?.toString() ?? '';
+        final s = (o['status']?.toString() ?? '').replaceAll('-', '_');
         return s == 'confirmed' || s == 'preparing' || s == 'out_for_delivery';
       }).toList();
     }
 
-    // For specific status (pending, completed, rejected)
-    return _orders.where((o) => o['status'] == status).toList();
+    if (status == 'pending') {
+      // Awaiting Fulfillment: pending orders
+      return _orders.where((o) {
+        final s = (o['status']?.toString() ?? '').replaceAll('-', '_');
+        return s == 'pending';
+      }).toList();
+    }
+
+    if (status == 'completed') {
+      // Dispensed: completed/delivered orders
+      return _orders.where((o) {
+        final s = (o['status']?.toString() ?? '').replaceAll('-', '_');
+        return s == 'completed' || s == 'delivered';
+      }).toList();
+    }
+
+    // Fallback: exact match
+    return _orders.where((o) {
+      final s = (o['status']?.toString() ?? '').replaceAll('-', '_');
+      return s == status.replaceAll('-', '_');
+    }).toList();
   }
 
   @override
@@ -619,6 +645,36 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                          if ((order['customerPhone'] ?? 'N/A') != 'N/A') ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(Icons.phone_rounded, size: 11, color: Color(0xFF94A3B8)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  order['customerPhone'],
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if ((order['deliveryAddress'] ?? '').toString().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on_rounded, size: 11, color: Color(0xFF94A3B8)),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    order['deliveryAddress'],
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -632,7 +688,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        status.toUpperCase(),
+                        _getStatusLabel(status),
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -890,7 +946,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                       ),
                     ),
                   ),
-                ] else if (status == 'out_for_delivery') ...[
+                ] else if (status == 'out_for_delivery' || status == 'out-for-delivery') ...[
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -1046,17 +1102,38 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
       case 'pending':
-        return const Color(0xFFF59E0B);
-      case 'processing':
-        return const Color(0xFF3B82F6);
+        return const Color(0xFFF59E0B);       // Orange - Awaiting
+      case 'confirmed':
+        return const Color(0xFF3B82F6);       // Blue - Accepted
+      case 'preparing':
+        return const Color(0xFF8B5CF6);       // Purple - Preparing
+      case 'out_for_delivery':
+        return const Color(0xFF0EA5E9);       // Sky - Dispatched
       case 'completed':
-        return const Color(0xFF10B981);
+      case 'delivered':
+        return const Color(0xFF10B981);       // Green - Done
       case 'cancelled':
-        return const Color(0xFFEF4444);
+      case 'rejected':
+        return const Color(0xFFEF4444);       // Red - Cancelled
       default:
         return const Color(0xFF64748B);
+    }
+  }
+
+  /// Human-readable status label
+  String _getStatusLabel(String status) {
+    switch (status.toLowerCase().replaceAll('-', '_')) {
+      case 'pending':        return 'AWAITING';
+      case 'confirmed':      return 'ACCEPTED';
+      case 'preparing':      return 'PREPARING';
+      case 'out_for_delivery': return 'DISPATCHED';
+      case 'completed':
+      case 'delivered':      return 'DELIVERED';
+      case 'cancelled':      return 'CANCELLED';
+      case 'rejected':       return 'REJECTED';
+      default:               return status.toUpperCase();
     }
   }
 }
