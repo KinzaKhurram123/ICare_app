@@ -33,23 +33,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ←←← THIS IS THE IMPORTANT FIX ←←←
-      - name: Fix namespace issue for old plugins (zego_zim)
+      # === FIX 1: Disable new DSL (AGP 9 error fix) ===
+      - name: Disable AGP 9 new DSL
         run: |
-          echo "Applying namespace fix for zego_zim plugin..."
-          cat << EOF >> android/build.gradle
+          echo "android.newDsl=false" >> android/gradle.properties
 
+      # === FIX 2: Namespace fix for zego_zim (purana error) ===
+      - name: Fix zego_zim namespace issue
+        run: |
+          echo '
           subprojects {
               afterEvaluate { project ->
-                  if (project.hasProperty('android') && !project.android.hasProperty('namespace')) {
-                      println "Adding namespace to \${project.name}"
-                      project.android {
-                          namespace = "com.zego.\${project.name.replace('-', '_')}"
-                      }
+                  if (project.hasProperty("android") && !project.android.hasProperty("namespace")) {
+                      project.android.namespace = "com.zego.zim"
                   }
               }
           }
-          EOF
+          ' >> android/build.gradle
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
