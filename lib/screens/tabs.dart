@@ -399,17 +399,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     : (role == 'Student' ? 'My Programs' : 'Appointments')),
           index: 1,
         ),
-        _SidebarItem(
-          icon: role == 'Pharmacy'
-              ? Icons.inventory_2_outlined
-              : (role == 'Laboratory'
-                    ? Icons.upload_file_outlined
-                    : Icons.chat_bubble_outline),
-          label: role == 'Pharmacy'
-              ? 'Inventory'
-              : (role == 'Laboratory' ? 'Records' : 'Messages'),
-          index: 2,
-        ),
+        if (role != 'Student')
+          _SidebarItem(
+            icon: role == 'Pharmacy'
+                ? Icons.inventory_2_outlined
+                : (role == 'Laboratory'
+                      ? Icons.upload_file_outlined
+                      : Icons.chat_bubble_outline),
+            label: role == 'Pharmacy'
+                ? 'Inventory'
+                : (role == 'Laboratory' ? 'Records' : 'Messages'),
+            index: 2,
+          ),
       ];
     }
 
