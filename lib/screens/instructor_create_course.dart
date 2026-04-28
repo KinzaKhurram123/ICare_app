@@ -978,8 +978,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
       setState(() => _isUploadingVideo = true);
 
       // Upload to Cloudinary (free unsigned upload)
-      // Using icare's Cloudinary cloud - unsigned upload preset
-      const cloudName = 'demoicare'; // Cloudinary cloud name
+      const cloudName = 'dzlcnyxgb'; // Cloudinary cloud name
       const uploadPreset = 'icare_videos'; // unsigned upload preset
 
       final formData = FormData.fromMap({
