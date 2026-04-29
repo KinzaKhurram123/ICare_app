@@ -64,7 +64,56 @@ class BookingCard extends ConsumerWidget {
     );
 
     Widget action =
-        (appointment.status.toLowerCase() == 'pending' ||
+        appointment.status.toLowerCase() == 'in_progress'
+        ? Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.fiber_manual_record, color: Color(0xFF8B5CF6), size: 10),
+                    SizedBox(width: 8),
+                    Text(
+                      'Consultation in Progress',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF8B5CF6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: ScallingConfig.scale(8)),
+              CustomButton(
+                label: "Rejoin Consultation",
+                height: isDesktop ? 48 : Utils.windowHeight(context) * 0.055,
+                borderRadius: 30,
+                labelSize: 15,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => VideoCall(
+                        channelName: appointment.id,
+                        remoteUserName: selectedRole == 'Doctor'
+                            ? appointment.patientName
+                            : appointment.doctorName,
+                        appointmentId: appointment.id,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          )
+        : (appointment.status.toLowerCase() == 'pending' ||
             appointment.status.toLowerCase() == 'confirmed')
         ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
