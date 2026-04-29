@@ -29,6 +29,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   int _step = 0;
 
   bool _isBooking = false;
+  bool _appointmentForMyself = true; // toggle between Myself / Someone else
   final _nameController = TextEditingController();
   final _reasonController = TextEditingController();
 
@@ -116,7 +117,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       appBar: AppBar(
         leading: _step > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.primaryColor),
                 onPressed: () => setState(() => _step--),
               )
             : const CustomBackButton(),
@@ -569,9 +570,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _forChip('Myself', true),
+                  _forChip('Myself', _appointmentForMyself, () => setState(() => _appointmentForMyself = true)),
                   const SizedBox(width: 10),
-                  _forChip('+ Someone else', false),
+                  _forChip('+ Someone else', !_appointmentForMyself, () => setState(() => _appointmentForMyself = false)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -723,29 +724,32 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
-  Widget _forChip(String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primaryColor.withOpacity(0.1) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+  Widget _forChip(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isSelected)
-            Icon(Icons.check_rounded, size: 14, color: AppColors.primaryColor),
-          if (isSelected) const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColors.primaryColor : const Color(0xFF64748B),
-              )),
-        ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected)
+              Icon(Icons.check_rounded, size: 14, color: AppColors.primaryColor),
+            if (isSelected) const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? AppColors.primaryColor : const Color(0xFF64748B),
+                )),
+          ],
+        ),
       ),
     );
   }
