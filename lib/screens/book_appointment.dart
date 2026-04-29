@@ -405,6 +405,18 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        leading: _step > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.primaryColor),
+                onPressed: () => setState(() => _step--),
+              )
+            : const CustomBackButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         title: Text(
           _step == 2 ? 'Checkout' : 'Book Appointment',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
@@ -823,9 +835,64 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 16),
+
+          // Certification checkbox
+          GestureDetector(
+            onTap: () => setState(() => _certifyChecked = !_certifyChecked),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: _certifyChecked ? AppColors.primaryColor : Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
+                      width: 2,
+                    ),
+                  ),
+                  child: _certifyChecked
+                      ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'I certify that all the information I provided is correct.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Confirm Booking button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isBooking ? null : _confirmBooking,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              child: _isBooking
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Confirm Booking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+            ),
+          ),
         ],
       ),
-    );
+    );  // end summaryCard
 
     final formCard = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1049,59 +1116,8 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        // Certification checkbox — right above Confirm Booking
-        GestureDetector(
-          onTap: () => setState(() => _certifyChecked = !_certifyChecked),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: _certifyChecked ? AppColors.primaryColor : Colors.white,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
-                    width: 2,
-                  ),
-                ),
-                child: _certifyChecked
-                    ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'I certify that all the information I provided is correct.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Confirm Booking button — placed here so it's always below the checkbox
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isBooking ? null : _confirmBooking,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: _isBooking
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Confirm Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-          ),
-        ),
       ],
-    );
+    );  // end formCard
 
     if (isDesktop) {
       return SingleChildScrollView(
