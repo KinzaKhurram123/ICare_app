@@ -16,7 +16,8 @@ async function getAppointments(userId, userRole) {
   const uid = toId(userId);
   let appointments;
 
-  if (userRole === 'doctor') {
+  // Case-insensitive role check — some accounts have 'Doctor', some have 'doctor'
+  if (userRole?.toLowerCase() === 'doctor') {
     appointments = await Appointment.find({ doctor_id: uid }).lean();
     const patientIds = [...new Set(appointments.map(a => a.patient_id.toString()))];
     const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();

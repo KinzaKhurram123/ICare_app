@@ -99,7 +99,7 @@ router.get('/get_all_doctors', authMiddleware, async (req, res) => {
 router.post('/add_doctor_details', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    if (req.user.role !== 'doctor') {
+    if (req.user.role?.toLowerCase() !== 'doctor') {
       return res.status(403).json({ success: false, message: 'Only doctors can update doctor profiles' });
     }
     const userId = toId(req.user.id);
@@ -146,7 +146,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const id = toId(req.params.id);
     if (!id) return res.status(400).json({ success: false, message: 'Invalid doctor ID' });
 
-    const user = await User.findOne({ _id: id, role: 'doctor' }).lean();
+    const user = await User.findOne({ _id: id, role: /^doctor$/i }).lean();
     if (!user) return res.status(404).json({ success: false, message: 'Doctor not found' });
 
     const profile = await DoctorProfile.findOne({ user_id: id }).lean() || {};
