@@ -19,13 +19,17 @@ import 'package:icare/widgets/custom_button.dart';
 class SelectPaymentMethod extends StatefulWidget {
   final String? courseId;
   final String? labBookingId;
+  final String? appointmentId;
   final double? amount;
+  final VoidCallback? onPaymentSuccess;
 
   const SelectPaymentMethod({
     super.key,
     this.courseId,
     this.labBookingId,
+    this.appointmentId,
     this.amount,
+    this.onPaymentSuccess,
   });
 
   @override
@@ -67,7 +71,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
 
   Future<void> _processPayment() async {
     // Validate inputs
-    if (widget.courseId == null && widget.labBookingId == null) {
+    if (widget.courseId == null && widget.labBookingId == null && widget.appointmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Invalid payment request. Please try again."),
@@ -82,7 +86,19 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
       // Simulate real-world payment processing delay
       await Future.delayed(const Duration(seconds: 2));
 
-      if (widget.courseId != null) {
+      if (widget.appointmentId != null) {
+        // Appointment payment — simulate success
+        if (mounted) {
+          if (widget.onPaymentSuccess != null) {
+            widget.onPaymentSuccess!();
+          } else {
+            _showSuccessDialog(
+              "Appointment Confirmed!",
+              "Your appointment has been booked and payment received. You will receive a confirmation shortly.",
+            );
+          }
+        }
+      } else if (widget.courseId != null) {
         log("Attempting to buy course with ID: ${widget.courseId}");
 
         // Validate courseId is not empty

@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/doctor.dart';
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
-class BookAppointmentScreen extends StatefulWidget {
+class BookAppointmentScreen extends ConsumerStatefulWidget {
   const BookAppointmentScreen({super.key, required this.doctor});
   final Doctor doctor;
 
   @override
-  State<BookAppointmentScreen> createState() => _BookAppointmentScreenState();
+  ConsumerState<BookAppointmentScreen> createState() => _BookAppointmentScreenState();
 }
 
-class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
+class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   final AppointmentService _appointmentService = AppointmentService();
   final PageController _datePageController = PageController();
 
@@ -32,6 +35,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   bool _appointmentForMyself = true; // toggle between Myself / Someone else
   final _nameController = TextEditingController();
   final _reasonController = TextEditingController();
+  final _genderController = TextEditingController();
+  final _ageController = TextEditingController();
+  bool _certifyChecked = false; // "I certify all details are correct"
 
   // Morning slots 9:00 AM - 11:45 AM (15 min intervals)
   final List<String> _morningSlots = [
@@ -56,9 +62,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   @override
   void initState() {
     super.initState();
-    // Generate next 8 days
+    // Generate next 8 days starting from today (no past dates)
     final today = DateTime.now();
     _dateRange = List.generate(8, (i) => today.add(Duration(days: i)));
+    // Auto-fill user details for "Myself"
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fillMyselfDetails());
   }
 
   @override
@@ -66,39 +74,73 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     _datePageController.dispose();
     _nameController.dispose();
     _reasonController.dispose();
+    _genderController.dispose();
+    _ageController.dispose();
     super.dispose();
+  }
+
+  void _fillMyselfDetails() {
+    final user = ref.read(authProvider).user;
+    if (user != null && _appointmentForMyself) {
+      _nameController.text = user.name;
+      // gender/age not in User model — leave blank for user to fill
+    }
   }
 
   DateTime get _selectedDate => _dateRange[_selectedDateIndex];
 
   Future<void> _confirmBooking() async {
     if (_selectedSlot == null) return;
+
+    // Validate reason
+    if (_reasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter Reason for Consultation'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Validate certification checkbox
+    if (!_certifyChecked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please confirm that all details are correct'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isBooking = true);
 
     final result = await _appointmentService.bookAppointment(
       doctorId: widget.doctor.id,
       date: _selectedDate,
       timeSlot: _selectedSlot!,
-      reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
+      reason: _reasonController.text.trim(),
     );
 
     setState(() => _isBooking = false);
     if (!mounted) return;
 
     if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 10),
-            Text('Appointment booked successfully!'),
-          ]),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      final appointmentId = result['appointment']?['_id']?.toString() ?? result['appointmentId']?.toString() ?? '';
+      final fee = widget.doctor.consultationFee ?? 0;
+      // Show Pay Now popup
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SelectPaymentMethod(
+            appointmentId: appointmentId,
+            amount: fee.toDouble(),
+          ),
         ),
       );
-      Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -107,6 +149,32 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  /// Returns true if a time slot string is in the past for today's date
+  bool _isSlotPast(String slot) {
+    final selectedDate = _selectedDate;
+    final now = DateTime.now();
+    // Only check past for today
+    if (selectedDate.year != now.year ||
+        selectedDate.month != now.month ||
+        selectedDate.day != now.day) {
+      return false;
+    }
+    // Parse slot time e.g. "09:00 AM"
+    try {
+      final parts = slot.split(' ');
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final isPm = parts[1] == 'PM';
+      if (isPm && hour != 12) hour += 12;
+      if (!isPm && hour == 12) hour = 0;
+      final slotTime = DateTime(now.year, now.month, now.day, hour, minute);
+      return slotTime.isBefore(now);
+    } catch (_) {
+      return false;
     }
   }
 
@@ -320,15 +388,24 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
             runSpacing: 8,
             children: slots.map((slot) {
               final isSelected = _selectedSlot == slot;
+              final isPast = _isSlotPast(slot);
               return GestureDetector(
-                onTap: () => setState(() => _selectedSlot = slot),
+                onTap: isPast ? null : () => setState(() => _selectedSlot = slot),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryColor : Colors.white,
+                    color: isPast
+                        ? const Color(0xFFF1F5F9)
+                        : isSelected
+                            ? AppColors.primaryColor
+                            : Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                      color: isPast
+                          ? const Color(0xFFE2E8F0)
+                          : isSelected
+                              ? AppColors.primaryColor
+                              : const Color(0xFFE2E8F0),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -337,7 +414,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                      color: isPast
+                          ? const Color(0xFFCBD5E1)
+                          : isSelected
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
+                      decoration: isPast ? TextDecoration.lineThrough : null,
                     ),
                   ),
                 ),
@@ -570,21 +652,117 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _forChip('Myself', _appointmentForMyself, () => setState(() => _appointmentForMyself = true)),
+                  _forChip('Myself', _appointmentForMyself, () {
+                    setState(() => _appointmentForMyself = true);
+                    _fillMyselfDetails();
+                  }),
                   const SizedBox(width: 10),
-                  _forChip('+ Someone else', !_appointmentForMyself, () => setState(() => _appointmentForMyself = false)),
+                  _forChip('+ Someone else', !_appointmentForMyself, () {
+                    setState(() {
+                      _appointmentForMyself = false;
+                      _nameController.clear();
+                      _genderController.clear();
+                      _ageController.clear();
+                    });
+                  }),
                 ],
               ),
               const SizedBox(height: 16),
+              // Patient Name
               const Text('Patient Name',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
               const SizedBox(height: 8),
               TextField(
                 controller: _nameController,
+                readOnly: _appointmentForMyself,
                 decoration: InputDecoration(
-                  hintText: 'Enter your name',
+                  hintText: 'Enter patient name',
                   hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
                   prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                  filled: true,
+                  fillColor: _appointmentForMyself ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Gender + Age row
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Gender',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _genderController,
+                          decoration: InputDecoration(
+                            hintText: 'Male / Female',
+                            hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Age',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _ageController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 30',
+                            hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Reason for Consultation — MANDATORY
+              Row(
+                children: [
+                  const Text('Reason for Consultation',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text('Mandatory',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.red)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Describe your symptoms or reason for visit...',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
@@ -593,20 +771,36 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Reason (optional)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _reasonController,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Describe your symptoms...',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+              // Certification checkbox
+              GestureDetector(
+                onTap: () => setState(() => _certifyChecked = !_certifyChecked),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _certifyChecked ? AppColors.primaryColor : Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
+                          width: 2,
+                        ),
+                      ),
+                      child: _certifyChecked
+                          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'I certify that all the details provided above are correct and accurate.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
