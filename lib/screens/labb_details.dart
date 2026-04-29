@@ -58,7 +58,7 @@ class _LabDetailsState extends State<LabDetails> {
 
     // Get dynamic tests if available, otherwise use defaults
     // Backend may return tests as Strings OR as Maps {name, price, ...}
-    final List<String> availableTests = (labData?['tests'] is List)
+    final List<String> labTests = (labData?['tests'] is List)
         ? (labData!['tests'] as List).map((t) {
             if (t is String) return t;
             if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
@@ -70,6 +70,16 @@ class _LabDetailsState extends State<LabDetails> {
             "Liver Function Test (LFT)",
             "Kidney Profile (KFT)",
           ];
+
+    // Merge prescribed tests with lab's available tests
+    // Prescribed tests always appear first, then lab's other tests
+    final List<String> prescribedList = widget.prescribedTests ?? [];
+    final Set<String> allTestsSet = <String>{};
+    // Add prescribed tests first (they must appear)
+    allTestsSet.addAll(prescribedList);
+    // Then add lab's own tests
+    allTestsSet.addAll(labTests);
+    final List<String> availableTests = allTestsSet.toList();
 
     return Scaffold(
       appBar: isDesktop
@@ -702,11 +712,13 @@ class _LabDetailsState extends State<LabDetails> {
 
   Widget _buildWebCheckbox(String label) {
     final bool isSelected = _selectedTests.contains(label);
+    final bool isPrescribed = (widget.prescribedTests ?? []).contains(label);
     return InkWell(
       onTap: () {
         setState(() {
           if (isSelected) {
-            _selectedTests.remove(label);
+            // Don't allow deselecting prescribed tests
+            if (!isPrescribed) _selectedTests.remove(label);
           } else {
             _selectedTests.add(label);
           }
@@ -721,9 +733,12 @@ class _LabDetailsState extends State<LabDetails> {
               : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryColor
-                : const Color(0xFFF1F5F9),
+            color: isPrescribed
+                ? const Color(0xFF8B5CF6)
+                : isSelected
+                    ? AppColors.primaryColor
+                    : const Color(0xFFF1F5F9),
+            width: isPrescribed || isSelected ? 2 : 1,
           ),
         ),
         child: Row(
@@ -747,10 +762,35 @@ class _LabDetailsState extends State<LabDetails> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CustomText(
-                text: label,
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  if (isPrescribed) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                      ),
+                      child: const Text(
+                        'Prescribed',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8B5CF6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const CustomText(
