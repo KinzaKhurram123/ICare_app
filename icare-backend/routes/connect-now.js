@@ -103,19 +103,27 @@ router.post('/accept', authMiddleware, async (req, res) => {
     try {
       const Appointment = require('../models/Appointment');
       const mongoose = require('mongoose');
-      const appt = await Appointment.create({
-        patient_id: request.patientId,
-        doctor_id: req.user.id,
-        appointment_date: new Date(),
-        appointment_time: new Date().toTimeString().slice(0, 5),
-        timeSlot: new Date().toTimeString().slice(0, 5),
-        status: 'in_progress',
-        consultation_type: 'video',
-        notes: `Instant consultation via Connect Now. Channel: ${request.channelName}`,
-        channel_name: request.channelName,
-      });
-      appointmentId = appt._id.toString();
-      request.appointmentId = appt._id;
+      const patientObjId = mongoose.Types.ObjectId.isValid(request.patientId)
+        ? new mongoose.Types.ObjectId(request.patientId)
+        : null;
+      const doctorObjId = mongoose.Types.ObjectId.isValid(req.user.id)
+        ? new mongoose.Types.ObjectId(req.user.id)
+        : null;
+
+      if (patientObjId && doctorObjId) {
+        const now = new Date();
+        const appt = await Appointment.create({
+          patient_id: patientObjId,
+          doctor_id: doctorObjId,
+          appointment_date: now.toISOString().split('T')[0],
+          appointment_time: now.toTimeString().slice(0, 5),
+          status: 'in_progress',
+          consultation_type: 'video',
+          notes: `Instant consultation via Connect Now. Channel: ${request.channelName}`,
+        });
+        appointmentId = appt._id.toString();
+        request.appointmentId = appt._id;
+      }
     } catch (apptErr) {
       console.warn('Could not create appointment for connect-now:', apptErr.message);
     }
