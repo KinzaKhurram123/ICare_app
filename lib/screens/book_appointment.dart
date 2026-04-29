@@ -960,6 +960,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                         const SizedBox(height: 8),
                         TextField(
                           controller: _genderController,
+                          readOnly: _appointmentForMyself,
                           decoration: InputDecoration(
                             hintText: 'Male / Female',
                             hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
@@ -967,7 +968,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: _appointmentForMyself ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                           ),
                         ),
                       ],
@@ -983,6 +984,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                         const SizedBox(height: 8),
                         TextField(
                           controller: _ageController,
+                          readOnly: _appointmentForMyself,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             hintText: 'e.g. 30',
@@ -991,7 +993,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: _appointmentForMyself ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                           ),
                         ),
                       ],

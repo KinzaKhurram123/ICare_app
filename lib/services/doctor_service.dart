@@ -242,6 +242,17 @@ class DoctorService {
     }
   }
 
+  /// Set doctor online/offline status
+  Future<void> setOnlineStatus(bool isOnline) async {
+    try {
+      await _apiService.post('/doctors/online-status', {'isOnline': isOnline});
+      debugPrint('✅ Doctor online status set to: $isOnline');
+    } catch (e) {
+      debugPrint('⚠️ Could not update online status (non-critical): $e');
+      // Non-critical — don't rethrow
+    }
+  }
+
   Future<Map<String, dynamic>> getPatientHistory(String patientId) async {
     try {
       final response = await _apiService.get(

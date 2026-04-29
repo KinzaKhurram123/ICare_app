@@ -49,6 +49,15 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     super.initState();
     _loadData();
     _loadInstantConsultToggle();
+    // Mark doctor as online when dashboard is active
+    _doctorService.setOnlineStatus(true);
+  }
+
+  @override
+  void dispose() {
+    // Mark doctor as offline when leaving dashboard
+    _doctorService.setOnlineStatus(false);
+    super.dispose();
   }
 
   Future<void> _loadInstantConsultToggle() async {
