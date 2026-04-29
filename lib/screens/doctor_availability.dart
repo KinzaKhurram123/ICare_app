@@ -30,6 +30,8 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
   bool _isSaving = false;
   int _bufferTime = 15;
 
+  bool _is24x7 = false;
+
   @override
   void initState() {
     super.initState();
@@ -172,6 +174,29 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
     });
   }
 
+  void _enable24x7() {
+    setState(() {
+      _is24x7 = true;
+      _startTime = const TimeOfDay(hour: 0, minute: 0);
+      _endTime = const TimeOfDay(hour: 23, minute: 59);
+      // All 7 days with full-day slot
+      for (final day in _days) {
+        _weeklySlots[day] = [
+          {'name': 'Slot 1', 'start': '00:00', 'end': '23:59'}
+        ];
+      }
+    });
+  }
+
+  void _disable24x7() {
+    setState(() {
+      _is24x7 = false;
+      _startTime = const TimeOfDay(hour: 9, minute: 0);
+      _endTime = const TimeOfDay(hour: 17, minute: 0);
+      _initDefaultSlots();
+    });
+  }
+
   void _saveAvailability() async {
     setState(() => _isSaving = true);
 
@@ -231,6 +256,8 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _build24x7Toggle(),
+                      const SizedBox(height: 24),
                       _buildWorkingHours(),
                       const SizedBox(height: 24),
                       _buildWeeklySchedule(),
@@ -266,6 +293,88 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _build24x7Toggle() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _is24x7
+              ? [const Color(0xFF0036BC), const Color(0xFF3B82F6)]
+              : [Colors.white, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _is24x7 ? const Color(0xFF0036BC) : const Color(0xFFE2E8F0),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (_is24x7 ? const Color(0xFF0036BC) : Colors.black)
+                .withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _is24x7
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : const Color(0xFF0036BC).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.all_inclusive_rounded,
+              color: _is24x7 ? Colors.white : const Color(0xFF0036BC),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '24/7 Available',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: _is24x7 ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _is24x7
+                      ? 'You are available all day, every day'
+                      : 'Enable to be available round the clock',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _is24x7
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _is24x7,
+            onChanged: (val) => val ? _enable24x7() : _disable24x7(),
+            activeColor: Colors.white,
+            activeTrackColor: Colors.white.withValues(alpha: 0.3),
+            inactiveThumbColor: const Color(0xFF0036BC),
+            inactiveTrackColor: const Color(0xFF0036BC).withValues(alpha: 0.15),
+          ),
+        ],
+      ),
     );
   }
 

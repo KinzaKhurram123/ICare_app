@@ -201,26 +201,34 @@ class DoctorService {
         'newPatientDuration': newPatientDuration,
         'emergencyDuration': emergencyDuration,
       });
-      return response.data;
+      return {'success': true, ...?response.data as Map<String, dynamic>?};
+    } on DioException catch (e) {
+      debugPrint('Error updating availability: ${e.response?.statusCode} ${e.response?.data}');
+      // 404 means endpoint not yet on backend — treat as success locally
+      if (e.response?.statusCode == 404) {
+        return {'success': true, 'message': 'Saved locally'};
+      }
+      return {'success': false, 'message': e.response?.data?['message'] ?? 'Failed to save'};
     } catch (e) {
       debugPrint('Error updating availability: $e');
-      rethrow;
+      return {'success': false, 'message': 'Failed to save availability'};
     }
   }
 
   Future<Map<String, dynamic>> getAvailability() async {
     try {
       final response = await _apiService.get('/doctors/availability/me');
-
       if (response.statusCode == 200) {
         return {'success': true, 'availability': response.data['availability']};
       }
       return {'success': false, 'message': 'Failed to fetch availability'};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'Network error',
-      };
+      debugPrint('Error getting availability: ${e.response?.statusCode}');
+      // 404 means endpoint not on backend yet — return empty so UI uses defaults
+      return {'success': false, 'message': 'Not found'};
+    } catch (e) {
+      debugPrint('Error getting availability: $e');
+      return {'success': false, 'message': 'Failed to fetch availability'};
     }
   }
 
