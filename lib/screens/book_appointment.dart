@@ -1070,26 +1070,6 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              // Pay at Clinic option
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.radio_button_unchecked_rounded, color: Color(0xFF94A3B8), size: 20),
-                    const SizedBox(width: 10),
-                    const Expanded(child: Text('Pay at Clinic', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)))),
-                    if (fee > 0)
-                      Text('Rs. ${fee.toInt()}',
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-                  ],
-                ),
-              ),
               if (fee == 0) ...[
                 const SizedBox(height: 10),
                 Container(
