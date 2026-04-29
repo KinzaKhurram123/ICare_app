@@ -752,38 +752,6 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Certification checkbox
-              GestureDetector(
-                onTap: () => setState(() => _certifyChecked = !_certifyChecked),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: _certifyChecked ? AppColors.primaryColor : Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
-                          width: 2,
-                        ),
-                      ),
-                      child: _certifyChecked
-                          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                          : null,
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'I certify that all the information I provided is correct.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -865,6 +833,39 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Certification checkbox — right above Confirm Booking
+        GestureDetector(
+          onTap: () => setState(() => _certifyChecked = !_certifyChecked),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: _certifyChecked ? AppColors.primaryColor : Colors.white,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
+                    width: 2,
+                  ),
+                ),
+                child: _certifyChecked
+                    ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'I certify that all the information I provided is correct.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+                ),
+              ),
             ],
           ),
         ),
