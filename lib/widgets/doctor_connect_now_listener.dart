@@ -21,6 +21,8 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
   final SharedPref _sharedPref = SharedPref();
   Timer? _timer;
   bool _dialogShowing = false;
+  // Track request IDs already handled (accepted or declined) to avoid re-showing
+  final Set<String> _handledRequestIds = {};
 
   @override
   void initState() {
@@ -48,6 +50,14 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
       final result = await _service.checkPending();
       if (result['hasPending'] == true && mounted) {
         final request = result['request'] as Map<String, dynamic>;
+        final requestId = request['id']?.toString() ?? '';
+
+        // Skip if already handled
+        if (requestId.isNotEmpty && _handledRequestIds.contains(requestId)) {
+          debugPrint('⏭️ Skipping already-handled request: $requestId');
+          return;
+        }
+
         debugPrint('🚨 Pending request found: ${request['patientName']}');
         _dialogShowing = true;
         try {
@@ -81,6 +91,8 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         pageBuilder: (ctx, _, __) => _ConnectNowRequestDialog(
           patientName: patientName,
           onAccept: () async {
+            // Mark as handled immediately so it never shows again
+            if (requestId.isNotEmpty) _handledRequestIds.add(requestId);
             try {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
@@ -96,7 +108,6 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               );
             } catch (e) {
               debugPrint('❌ Accept failed: $e — trying with channel directly');
-              // Even if backend accept fails, still join the channel
               nav.pop();
               nav.push(
                 MaterialPageRoute(
@@ -108,7 +119,11 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               );
             }
           },
-          onDecline: () => nav.pop(),
+          onDecline: () {
+            // Mark as handled so it doesn't pop up again
+            if (requestId.isNotEmpty) _handledRequestIds.add(requestId);
+            nav.pop();
+          },
         ),
       ),
     );
