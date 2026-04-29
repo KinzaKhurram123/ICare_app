@@ -52,6 +52,11 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           )
           .length;
     }
+    if (status == 'In Progress') {
+      return _appointments
+          .where((a) => a.status.toLowerCase() == 'in_progress')
+          .length;
+    }
     return _appointments
         .where((a) => a.status.toLowerCase() == status.toLowerCase())
         .length;

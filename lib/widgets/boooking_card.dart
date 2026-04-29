@@ -7,6 +7,7 @@ import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/chat_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -312,9 +313,13 @@ class _WebBookingCardState extends State<_WebBookingCard> {
         ? const Color(0xFF3B82F6)
         : widget.appointment.status.toLowerCase() == 'cancelled'
         ? const Color(0xFFEF4444)
+        : widget.appointment.status.toLowerCase() == 'in_progress'
+        ? const Color(0xFF8B5CF6)
         : const Color(0xFF22C55E);
 
-    String statusLabel = widget.appointment.status.toUpperCase();
+    String statusLabel = widget.appointment.status.toLowerCase() == 'in_progress'
+        ? 'CONSULTATION IN PROGRESS'
+        : widget.appointment.status.toUpperCase();
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -607,6 +612,64 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               ),
                             );
                           },
+                        ),
+                      ] else if (widget.appointment.status.toLowerCase() ==
+                          'in_progress') ...[
+                        // Consultation in Progress — Rejoin button
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8, height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF8B5CF6),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Consultation in Progress',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF8B5CF6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => VideoCall(
+                                  channelName: widget.appointment.id,
+                                  remoteUserName: widget.selectedRole == 'Doctor'
+                                      ? widget.appointment.patientName
+                                      : widget.appointment.doctorName,
+                                  appointmentId: widget.appointment.id,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.video_call_rounded, size: 18),
+                          label: const Text('Rejoin Consultation',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
                         ),
                       ] else if (widget.appointment.status.toLowerCase() ==
                           'cancelled') ...[

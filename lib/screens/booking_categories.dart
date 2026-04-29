@@ -4,7 +4,7 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/app_enums.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
-
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -167,6 +167,12 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
   }
 
   static const List<Map<String, dynamic>> _tabs = [
+    {
+      "label": "In Progress",
+      "icon": Icons.video_call_rounded,
+      "color": Color(0xFF8B5CF6),
+      "status": BookingStatus.upcoming,
+    },
     {
       "label": "Upcoming",
       "icon": Icons.schedule_rounded,
@@ -338,12 +344,14 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                           widget.appointments
                                               .where((a) {
                                                 if (index == 0)
+                                                  return a.status.toLowerCase() == 'in_progress';
+                                                if (index == 1)
                                                   return a.status
                                                               .toLowerCase() ==
                                                           'pending' ||
                                                       a.status.toLowerCase() ==
                                                           'confirmed';
-                                                if (index == 1)
+                                                if (index == 2)
                                                   return a.status
                                                           .toLowerCase() ==
                                                       'cancelled';
@@ -399,6 +407,15 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                 "Total Bookings",
                                 widget.appointments.length.toString(),
                                 const Color(0xFF3B82F6),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildStatRow(
+                                "In Progress",
+                                widget.appointments
+                                    .where((a) => a.status.toLowerCase() == 'in_progress')
+                                    .length
+                                    .toString(),
+                                const Color(0xFF8B5CF6),
                               ),
                               const SizedBox(height: 12),
                               _buildStatRow(
@@ -497,8 +514,9 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                 ),
                                 child: Text(
                                   "${widget.appointments.where((a) {
-                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'pending' || a.status.toLowerCase() == 'confirmed';
-                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'cancelled';
+                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'in_progress';
+                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'pending' || a.status.toLowerCase() == 'confirmed';
+                                    if (_selectedTab == 2) return a.status.toLowerCase() == 'cancelled';
                                     return a.status.toLowerCase() == 'completed';
                                   }).length} bookings",
                                   style: TextStyle(
@@ -528,9 +546,11 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                             status: _tabs[_selectedTab]["status"],
                             data: widget.appointments.where((a) {
                               if (_selectedTab == 0)
+                                return a.status.toLowerCase() == 'in_progress';
+                              if (_selectedTab == 1)
                                 return a.status.toLowerCase() == 'pending' ||
                                     a.status.toLowerCase() == 'confirmed';
-                              if (_selectedTab == 1)
+                              if (_selectedTab == 2)
                                 return a.status.toLowerCase() == 'cancelled';
                               return a.status.toLowerCase() == 'completed';
                             }).toList(),
