@@ -98,6 +98,8 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
                     channelName: widget.appointment.id ?? 'consultation',
                     remoteUserName: widget.appointment.doctor?.name ?? 'Doctor',
                     isAudioOnly: false,
+                    appointmentId: widget.appointment.id,
+                    patientId: widget.appointment.patient?.id,
                   ),
                 ),
               );

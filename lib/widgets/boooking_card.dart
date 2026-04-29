@@ -665,6 +665,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                   appointmentId: widget.appointment.id,
                                   currentUserName: widget.currentUserName,
                                   currentUserId: widget.currentUserId,
+                                  patientId: widget.appointment.patient?.id,
                                 ),
                               ),
                             );

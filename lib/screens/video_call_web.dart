@@ -9,6 +9,7 @@ import '../services/agora_service.dart';
 import '../services/api_service.dart';
 import '../services/appointment_service.dart';
 import '../services/call_service.dart';
+import '../services/medical_record_service.dart';
 import '../utils/theme.dart';
 
 // JS interop
@@ -32,6 +33,8 @@ class VideoCall extends StatefulWidget {
   final String currentUserName;
   /// Optional appointment ID — used to mark consultation in progress / end
   final String? appointmentId;
+  /// Patient's user ID — used to load patient history (doctor-side only)
+  final String? patientId;
 
   const VideoCall({
     super.key,
@@ -41,6 +44,7 @@ class VideoCall extends StatefulWidget {
     this.currentUserId = '',
     this.currentUserName = 'User',
     this.appointmentId,
+    this.patientId,
   });
 
   @override
@@ -68,6 +72,11 @@ class _VideoCallWebState extends State<VideoCall> {
   // Timer for 15-min session
   Timer? _sessionTimer;
   int _sessionSeconds = 0;
+
+  // Patient history (real data from backend)
+  List<Map<String, dynamic>> _historyRecords = [];
+  bool _historyLoading = false;
+  bool _historyLoaded = false;
 
   final String _viewId =
       'agora-call-${DateTime.now().millisecondsSinceEpoch}';
@@ -140,6 +149,26 @@ class _VideoCallWebState extends State<VideoCall> {
       }
     } catch (_) {
       // Non-critical — silently ignore poll errors
+    }
+  }
+
+  Future<void> _loadPatientHistory() async {
+    final pid = widget.patientId;
+    if (pid == null || pid.isEmpty || _historyLoading) return;
+    setState(() => _historyLoading = true);
+    try {
+      final result = await MedicalRecordService().getPatientRecords(pid);
+      if (mounted) {
+        final raw = result['records'];
+        final records = (raw is List) ? raw.cast<Map<String, dynamic>>() : <Map<String, dynamic>>[];
+        setState(() {
+          _historyRecords = records;
+          _historyLoaded = true;
+          _historyLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() { _historyLoading = false; _historyLoaded = true; });
     }
   }
 
@@ -470,10 +499,15 @@ class _VideoCallWebState extends State<VideoCall> {
                             icon: Icons.history_rounded,
                             label: 'Patient History',
                             active: _showHistory,
-                            onTap: () => setState(() {
-                              _showHistory = !_showHistory;
-                              if (_showHistory) _showChat = false;
-                            }),
+                            onTap: () {
+                              setState(() {
+                                _showHistory = !_showHistory;
+                                if (_showHistory) _showChat = false;
+                              });
+                              if (_showHistory && !_historyLoaded) {
+                                _loadPatientHistory();
+                              }
+                            },
                           ),
                           const SizedBox(width: 12),
                           _sideBtn(
@@ -753,27 +787,125 @@ class _VideoCallWebState extends State<VideoCall> {
                   'Session: $_sessionTimeStr',
                 ]),
                 const SizedBox(height: 16),
-                _historySection('Previous Visits',
-                    Icons.calendar_today_rounded, const Color(0xFF10B981), [
-                  'No previous records available',
-                  'Records will appear here after consultation',
-                ]),
-                const SizedBox(height: 16),
-                _historySection('Prescriptions',
-                    Icons.medication_rounded, const Color(0xFFF59E0B), [
-                  'No prescriptions on file',
-                ]),
-                const SizedBox(height: 16),
-                _historySection('Lab Reports',
-                    Icons.biotech_rounded, const Color(0xFF8B5CF6), [
-                  'No lab reports available',
-                ]),
+                if (_historyLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(
+                          color: Color(0xFF10B981), strokeWidth: 2),
+                    ),
+                  )
+                else if (!_historyLoaded && widget.patientId == null)
+                  _historySection('Previous Records',
+                      Icons.info_outline_rounded, const Color(0xFF64748B), [
+                    'Patient history not available',
+                    'No patient ID provided',
+                  ])
+                else ..._buildRealHistorySections(),
               ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  List<Widget> _buildRealHistorySections() {
+    if (_historyRecords.isEmpty) {
+      return [
+        _historySection('Previous Visits', Icons.calendar_today_rounded,
+            const Color(0xFF10B981), ['No previous records found']),
+        const SizedBox(height: 16),
+        _historySection('Prescriptions', Icons.medication_rounded,
+            const Color(0xFFF59E0B), ['No prescriptions on file']),
+        const SizedBox(height: 16),
+        _historySection('Lab Reports', Icons.biotech_rounded,
+            const Color(0xFF8B5CF6), ['No lab reports available']),
+      ];
+    }
+
+    final visitItems = <String>[];
+    final prescriptionItems = <String>[];
+    final labItems = <String>[];
+
+    for (final rec in _historyRecords) {
+      final dateStr = rec['createdAt'] != null
+          ? DateTime.tryParse(rec['createdAt'].toString())
+                  ?.toLocal()
+                  .toString()
+                  .substring(0, 10) ??
+              'Unknown date'
+          : 'Unknown date';
+      final complaint = rec['chiefComplaint']?.toString() ?? '';
+      final diagnosis = rec['diagnosis']?.toString() ?? '';
+      final doctorName = (rec['doctor'] is Map)
+          ? (rec['doctor']['name']?.toString() ?? 'Doctor')
+          : 'Doctor';
+
+      if (complaint.isNotEmpty || diagnosis.isNotEmpty) {
+        visitItems.add('$dateStr — $doctorName');
+        if (complaint.isNotEmpty) visitItems.add('Complaint: $complaint');
+        if (diagnosis.isNotEmpty) visitItems.add('Diagnosis: $diagnosis');
+        visitItems.add('');
+      }
+
+      final prescriptions = rec['prescriptions'];
+      if (prescriptions is List && prescriptions.isNotEmpty) {
+        for (final p in prescriptions) {
+          if (p is Map) {
+            final med = p['medication']?.toString() ?? p['name']?.toString() ?? '';
+            final dosage = p['dosage']?.toString() ?? '';
+            final freq = p['frequency']?.toString() ?? '';
+            if (med.isNotEmpty) {
+              prescriptionItems.add(
+                  '$med${dosage.isNotEmpty ? ' — $dosage' : ''}${freq.isNotEmpty ? ' ($freq)' : ''}');
+            }
+          } else if (p is String && p.isNotEmpty) {
+            prescriptionItems.add(p);
+          }
+        }
+      }
+
+      final labReports = rec['labReports'] ?? rec['labResults'];
+      if (labReports is List && labReports.isNotEmpty) {
+        for (final l in labReports) {
+          if (l is Map) {
+            final test = l['test']?.toString() ?? l['name']?.toString() ?? '';
+            final result = l['result']?.toString() ?? '';
+            if (test.isNotEmpty) {
+              labItems.add('$test${result.isNotEmpty ? ': $result' : ''}');
+            }
+          } else if (l is String && l.isNotEmpty) {
+            labItems.add(l);
+          }
+        }
+      }
+    }
+
+    // Remove trailing empty strings
+    while (visitItems.isNotEmpty && visitItems.last.isEmpty) visitItems.removeLast();
+
+    return [
+      _historySection(
+          'Previous Visits (${_historyRecords.length})',
+          Icons.calendar_today_rounded,
+          const Color(0xFF10B981),
+          visitItems.isEmpty ? ['No visit details recorded'] : visitItems),
+      const SizedBox(height: 16),
+      _historySection(
+          'Prescriptions',
+          Icons.medication_rounded,
+          const Color(0xFFF59E0B),
+          prescriptionItems.isEmpty
+              ? ['No prescriptions on file']
+              : prescriptionItems),
+      const SizedBox(height: 16),
+      _historySection(
+          'Lab Reports',
+          Icons.biotech_rounded,
+          const Color(0xFF8B5CF6),
+          labItems.isEmpty ? ['No lab reports available'] : labItems),
+    ];
   }
 
   Widget _historySection(
