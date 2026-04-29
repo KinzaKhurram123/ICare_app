@@ -68,6 +68,7 @@ class _VideoCallWebState extends State<VideoCall> {
   final ScrollController _chatScroll = ScrollController();
   Timer? _chatPollTimer;
   int _lastChatTimestamp = 0; // epoch ms of last fetched message
+  bool _pollInProgress = false; // prevents overlapping polls
 
   // Timer for 15-min session
   Timer? _sessionTimer;
@@ -105,6 +106,9 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   Future<void> _fetchNewMessages() async {
+    // Prevent overlapping polls — if previous fetch is still running, skip
+    if (_pollInProgress) return;
+    _pollInProgress = true;
     try {
       final api = ApiService();
       final response = await api.get(
@@ -114,25 +118,24 @@ class _VideoCallWebState extends State<VideoCall> {
       final msgs = response.data['messages'] as List? ?? [];
       if (msgs.isEmpty) return;
 
+      // Update timestamp FIRST (before UI update) so any concurrent call won't re-fetch
+      final lastTs = msgs.last['createdAt'];
+      if (lastTs != null) {
+        final parsed = DateTime.tryParse(lastTs.toString())?.millisecondsSinceEpoch;
+        if (parsed != null) _lastChatTimestamp = parsed;
+      }
+
       // Filter out messages we already showed optimistically (our own sent msgs)
       final newMsgs = <Map<String, String>>[];
       for (final m in msgs) {
         final sender = m['sender']?.toString() ?? '';
         final text = m['text']?.toString() ?? '';
-        // Skip our own messages — already shown optimistically
+        // Skip our own messages — already shown optimistically (match by sender+text)
         final alreadyShown = sender == _mySenderName &&
             _chatMessages.any((c) => c['sender'] == sender && c['text'] == text);
         if (!alreadyShown) {
           newMsgs.add({'sender': sender, 'text': text});
         }
-      }
-
-      // Update last timestamp from the latest fetched message
-      final lastTs = msgs.last['createdAt'];
-      if (lastTs != null) {
-        _lastChatTimestamp = DateTime.tryParse(lastTs.toString())
-                ?.millisecondsSinceEpoch ??
-            _lastChatTimestamp;
       }
 
       if (mounted && newMsgs.isNotEmpty) {
@@ -149,6 +152,8 @@ class _VideoCallWebState extends State<VideoCall> {
       }
     } catch (_) {
       // Non-critical — silently ignore poll errors
+    } finally {
+      _pollInProgress = false;
     }
   }
 

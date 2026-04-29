@@ -52,6 +52,11 @@
 
     window.agoraJoin = async function(appId, channel, token, uid) {
       try {
+        // Clean up any stale previous session so mic/cam aren't "in use"
+        if (_localAudioTrack) { try { _localAudioTrack.stop(); _localAudioTrack.close(); } catch(_){} _localAudioTrack = null; }
+        if (_localVideoTrack) { try { _localVideoTrack.stop(); _localVideoTrack.close(); } catch(_){} _localVideoTrack = null; }
+        if (_agoraClient) { try { await _agoraClient.leave(); } catch(_){} _agoraClient = null; }
+
         _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
 
         _agoraClient.on('user-published', async (user, mediaType) => {

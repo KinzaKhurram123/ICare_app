@@ -109,7 +109,8 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
   /// If appointment is confirmed/pending but date+time has passed → show as 'completed'
   String _effectiveStatus(AppointmentDetail appointment) {
     final raw = appointment.status.toLowerCase();
-    if (raw == 'cancelled' || raw == 'completed') return raw;
+    // These statuses must never be overridden by time logic
+    if (raw == 'cancelled' || raw == 'completed' || raw == 'in_progress') return raw;
 
     // Parse appointment date + time slot to get exact datetime
     try {
