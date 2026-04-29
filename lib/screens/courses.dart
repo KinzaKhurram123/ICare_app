@@ -450,8 +450,10 @@ class _WebCoursesListState extends State<_WebCoursesList> {
     }
 
     final filteredCourses = _courses.where((item) {
-      if (widget.searchQuery.isEmpty) return true;
       final course = widget.myPurchased ? item['course'] : item;
+      if (course == null) return false;
+
+      if (widget.searchQuery.isEmpty) return true;
       final title = (course["title"] ?? course["name"] ?? "")
           .toString()
           .toLowerCase();
@@ -477,7 +479,7 @@ class _WebCoursesListState extends State<_WebCoursesList> {
       ),
       itemBuilder: (ctx, i) {
         final item = filteredCourses[i];
-        final course = widget.myPurchased ? item['course'] : item;
+        final course = (widget.myPurchased ? item['course'] : item) ?? {};
 
         return InkWell(
           borderRadius: BorderRadius.circular(20),
@@ -713,13 +715,15 @@ class _WebCertificatesListState extends State<_WebCertificatesList> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_certificates.isEmpty) {
+    final validCertificates = _certificates.where((c) => c != null).toList();
+
+    if (validCertificates.isEmpty) {
       return const Center(child: Text("No certificates available"));
     }
 
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      itemCount: _certificates.length,
+      itemCount: validCertificates.length,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 500,
         crossAxisSpacing: 24,
@@ -727,8 +731,8 @@ class _WebCertificatesListState extends State<_WebCertificatesList> {
         childAspectRatio: 2.2,
       ),
       itemBuilder: (ctx, i) {
-        final item = _certificates[i];
-        final course = item['course'] ?? {};
+        final item = validCertificates[i];
+        final course = (item['course'] is Map) ? item['course'] : {};
 
         return Container(
           decoration: BoxDecoration(

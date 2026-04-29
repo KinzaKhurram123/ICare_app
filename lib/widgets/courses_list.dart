@@ -84,10 +84,14 @@ class _CoursesListState extends State<CoursesList> {
     }
 
     final List<dynamic> filteredCourses = _courses.where((item) {
+      if (item == null) return false;
+      final course = widget.mypurchased ? item['course'] : item;
+      if (course == null) return false;
+
       if (widget.searchQuery.isEmpty) return true;
-      final Map<String, dynamic> courseData = widget.mypurchased
-          ? (item['course'] as Map<String, dynamic>? ?? {})
-          : (item as Map<String, dynamic>? ?? {});
+
+      final Map<String, dynamic> courseData =
+          course is Map ? Map<String, dynamic>.from(course) : {};
 
       final title = (courseData["title"] ?? courseData["name"] ?? "")
           .toString()
@@ -125,11 +129,10 @@ class _CoursesListState extends State<CoursesList> {
           mainAxisSpacing: 20,
         ),
         itemBuilder: (ctx, i) {
-          final course = filteredCourses[i];
-          // Handle both direct course objects and enrollment objects (which have a 'course' field)
-          final Map<String, dynamic> courseData = widget.mypurchased
-              ? Map<String, dynamic>.from(course['course'] as Map? ?? {})
-              : Map<String, dynamic>.from(course as Map? ?? {});
+          final item = filteredCourses[i];
+          final course = widget.mypurchased ? item['course'] : item;
+          final Map<String, dynamic> courseData =
+              course is Map ? Map<String, dynamic>.from(course) : {};
 
           if (widget.mypurchased) {
             courseData['isPurchased'] = true;

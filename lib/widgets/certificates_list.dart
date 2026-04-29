@@ -48,7 +48,10 @@ class _CertificatesListState extends State<CertificatesList> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_certificates.isEmpty) {
+    final validCertificates =
+        _certificates.where((c) => c != null && c is Map).toList();
+
+    if (validCertificates.isEmpty) {
       return const Center(child: Text("No completed programs found"));
     }
 
@@ -57,9 +60,9 @@ class _CertificatesListState extends State<CertificatesList> {
       child: ListView.builder(
         shrinkWrap: false,
         padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemCount: _certificates.length,
+        itemCount: validCertificates.length,
         itemBuilder: (ctx, i) {
-          final item = _certificates[i] as Map<String, dynamic>;
+          final item = validCertificates[i] as Map<String, dynamic>;
           return CertifcateCard(
             certificateData: item,
             courseTitle: item['title'] ?? 'Completed Program',
