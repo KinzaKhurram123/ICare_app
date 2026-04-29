@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/lab_list.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/widgets/rating_dialog.dart';
 import 'package:icare/utils/theme.dart';
@@ -74,6 +75,8 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
         return const Color(0xFFEF4444);
       case 'completed':
         return const Color(0xFF3B82F6);
+      case 'in_progress':
+        return const Color(0xFF8B5CF6);
       default:
         return const Color(0xFF64748B);
     }
@@ -89,6 +92,8 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
         return Icons.cancel_rounded;
       case 'completed':
         return Icons.task_alt_rounded;
+      case 'in_progress':
+        return Icons.video_call_rounded;
       default:
         return Icons.info_rounded;
     }
@@ -447,6 +452,53 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                         side: const BorderSide(color: Color(0xFFF59E0B)),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
+                                    ),
+                                  ),
+                                ],
+
+                                // Consultation in Progress — Rejoin button
+                                if (appointment.status.toLowerCase() == 'in_progress') ...[
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.video_call_rounded, color: Color(0xFF8B5CF6), size: 20),
+                                        const SizedBox(width: 10),
+                                        const Expanded(
+                                          child: Text(
+                                            'Consultation in Progress',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF8B5CF6),
+                                            ),
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => VideoCall(
+                                                channelName: appointment.id,
+                                                remoteUserName: appointment.doctorName,
+                                                appointmentId: appointment.id,
+                                              ),
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF8B5CF6),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          child: const Text('Rejoin', style: TextStyle(fontWeight: FontWeight.w700)),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
