@@ -150,7 +150,7 @@ router.put('/update_status', authMiddleware, async (req, res) => {
     const { appointmentId, status } = req.body;
     const userId = toId(req.user.id);
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
@@ -179,7 +179,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const userId = toId(req.user.id);
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }

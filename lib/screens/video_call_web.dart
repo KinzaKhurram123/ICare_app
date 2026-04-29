@@ -213,8 +213,19 @@ class _VideoCallWebState extends State<VideoCall> {
   /// Red button — leave video but keep consultation "in progress"
   Future<void> _leaveVideo() async {
     try { await _agoraLeave().toDart; } catch (_) {}
+
+    // Mark appointment as in_progress so patient can rejoin
+    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty &&
+        widget.appointmentId != 'connect_now') {
+      try {
+        await AppointmentService().updateAppointmentStatus(
+          appointmentId: widget.appointmentId!,
+          status: 'in_progress',
+        );
+      } catch (_) {}
+    }
+
     if (mounted) Navigator.pop(context);
-    // Note: appointment status stays as-is (in progress) — patient can rejoin
   }
 
   /// End Consultation button — properly ends the session
