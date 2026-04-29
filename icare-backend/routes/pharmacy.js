@@ -96,7 +96,7 @@ router.post('/add_pharmacy_details', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { pharmacyName, licenseNumber, operatingHours, deliveryAvailable, deliveryFee, address, city, drapCompliance } = req.body;
+    const { pharmacyName, licenseNumber, operatingHours, deliveryAvailable, deliveryFee, address, city, drapCompliance, profilePicture } = req.body;
 
     const profile = await PharmacyProfile.findOneAndUpdate(
       { user_id: userId },
@@ -110,6 +110,11 @@ router.post('/add_pharmacy_details', authMiddleware, async (req, res) => {
       },
       { new: true, upsert: true }
     );
+
+    // Save profilePicture to User model
+    if (profilePicture !== undefined) {
+      await User.findByIdAndUpdate(userId, { $set: { profilePicture } });
+    }
 
     res.json({ success: true, pharmacy: profile, existingProfile: profile });
   } catch (err) {

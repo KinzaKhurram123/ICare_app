@@ -107,6 +107,7 @@ router.post('/add_doctor_details', authMiddleware, async (req, res) => {
       specialization, experience, licenseNumber,
       consultationFee, availableDays, availableTime,
       degrees, clinicName, clinicAddress, consultationType, languages,
+      profilePicture,
     } = req.body;
 
     const update = {};
@@ -131,6 +132,11 @@ router.post('/add_doctor_details', authMiddleware, async (req, res) => {
       { $set: update },
       { new: true, upsert: true }
     );
+
+    // Save profilePicture to User model so it's returned by /users/profile
+    if (profilePicture !== undefined) {
+      await User.findByIdAndUpdate(userId, { $set: { profilePicture } });
+    }
 
     res.json({ success: true, message: 'Profile updated successfully', profile });
   } catch (error) {

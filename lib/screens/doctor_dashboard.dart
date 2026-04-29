@@ -177,6 +177,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   Widget _buildWelcomeHeader(String userName) {
     final avgRating = _stats['avgRating'] ?? '0.0';
     final satisfaction = _stats['satisfaction'] ?? '0%';
+    final profilePic = ref.watch(authProvider).user?.profilePicture;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -197,11 +198,12 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           CircleAvatar(
             radius: 28,
             backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.primaryColor,
-              size: 30,
-            ),
+            backgroundImage: (profilePic != null && profilePic.isNotEmpty)
+                ? NetworkImage(profilePic) as ImageProvider
+                : null,
+            child: (profilePic == null || profilePic.isEmpty)
+                ? const Icon(Icons.person, color: AppColors.primaryColor, size: 30)
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

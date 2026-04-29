@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/doctor_service.dart';
+import 'package:icare/services/api_service.dart';
+import 'package:icare/models/user.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:image_picker/image_picker.dart';
@@ -118,6 +121,17 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
     if (!mounted) return;
 
     if (result['success']) {
+      // Re-fetch user profile to update auth provider with new photo
+      try {
+        final apiService = ApiService();
+        final response = await apiService.get('/users/profile');
+        if (response.data != null && mounted) {
+          final updatedUser = User.fromJson(response.data);
+          await ref.read(authProvider.notifier).setUser(updatedUser);
+        }
+      } catch (e) {
+        debugPrint('Could not refresh user profile: $e');
+      }
       _showSuccessModal();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

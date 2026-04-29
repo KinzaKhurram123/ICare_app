@@ -108,6 +108,12 @@ router.post('/add_laboratory_details', authMiddleware, async (req, res) => {
       { new: true, upsert: true }
     );
 
+    // Save profilePicture to User model
+    const { profilePicture } = req.body;
+    if (profilePicture !== undefined) {
+      await User.findByIdAndUpdate(userId, { $set: { profilePicture } });
+    }
+
     const result = { ...profile.toObject(), _id: profile._id.toString() };
     res.json({ success: true, message: 'Lab profile saved', laboratory: result, existingProfile: result });
   } catch (error) {

@@ -29,6 +29,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
       username: user.username || user.name || '',
       isApproved: user.is_approved !== false && user.isApproved !== false,
       createdAt: user.createdAt,
+      profilePicture: user.profilePicture || null,
     });
   } catch (error) {
     console.error('Get user profile error:', error);
@@ -70,6 +71,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
       username: user.username || user.name || '',
       isApproved: user.is_approved !== false,
       createdAt: user.createdAt,
+      profilePicture: user.profilePicture || null,
     });
   } catch (error) {
     console.error('Update profile error:', error);

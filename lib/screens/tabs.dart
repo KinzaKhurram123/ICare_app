@@ -474,9 +474,26 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.primaryColor, width: 2),
                     ),
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: AssetImage(ImagePaths.user7),
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final profilePic = ref.watch(authProvider).user?.profilePicture;
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                          backgroundImage: (profilePic != null && profilePic.isNotEmpty)
+                              ? NetworkImage(profilePic) as ImageProvider
+                              : null,
+                          child: (profilePic == null || profilePic.isEmpty)
+                              ? Consumer(builder: (ctx, r, _) {
+                                  final name = r.watch(authProvider).user?.name ?? 'U';
+                                  return Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                                  );
+                                })
+                              : null,
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1614,9 +1631,24 @@ class _WebTopBar extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(width: 10),
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundImage: AssetImage(ImagePaths.user7),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final profilePic = ref.watch(authProvider).user?.profilePicture;
+                      final name = ref.watch(authProvider).user?.name ?? 'U';
+                      return CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                        backgroundImage: (profilePic != null && profilePic.isNotEmpty)
+                            ? NetworkImage(profilePic) as ImageProvider
+                            : null,
+                        child: (profilePic == null || profilePic.isEmpty)
+                            ? Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ],
               ),

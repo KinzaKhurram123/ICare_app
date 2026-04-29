@@ -124,6 +124,7 @@ const login = async (req, res) => {
           phone: user.phone,
           role: user.role,
           isApproved: user.is_approved !== false && user.isApproved !== false,
+          profilePicture: user.profilePicture || null,
         },
       },
     });
