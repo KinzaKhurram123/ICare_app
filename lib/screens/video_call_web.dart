@@ -99,22 +99,34 @@ class _VideoCallWebState extends State<VideoCall> {
     try {
       final api = ApiService();
       final response = await api.get(
-        '/call-chat/messages/${Uri.encodeComponent(widget.channelName)}?since=$_lastChatTimestamp',
+        '/call-chat/messages/${Uri.encodeComponent(widget.channelName)}',
+        queryParameters: {'since': _lastChatTimestamp.toString()},
       );
       final msgs = response.data['messages'] as List? ?? [];
       if (msgs.isEmpty) return;
-      final newMsgs = msgs.map<Map<String, String>>((m) => {
-        'sender': m['sender']?.toString() ?? '',
-        'text': m['text']?.toString() ?? '',
-      }).toList();
-      // Update last timestamp
+
+      // Filter out messages we already showed optimistically (our own sent msgs)
+      final newMsgs = <Map<String, String>>[];
+      for (final m in msgs) {
+        final sender = m['sender']?.toString() ?? '';
+        final text = m['text']?.toString() ?? '';
+        // Skip our own messages — already shown optimistically
+        final alreadyShown = sender == _mySenderName &&
+            _chatMessages.any((c) => c['sender'] == sender && c['text'] == text);
+        if (!alreadyShown) {
+          newMsgs.add({'sender': sender, 'text': text});
+        }
+      }
+
+      // Update last timestamp from the latest fetched message
       final lastTs = msgs.last['createdAt'];
       if (lastTs != null) {
         _lastChatTimestamp = DateTime.tryParse(lastTs.toString())
                 ?.millisecondsSinceEpoch ??
             _lastChatTimestamp;
       }
-      if (mounted) {
+
+      if (mounted && newMsgs.isNotEmpty) {
         setState(() => _chatMessages.addAll(newMsgs));
         Future.delayed(const Duration(milliseconds: 100), () {
           if (_chatScroll.hasClients) {
@@ -293,29 +305,45 @@ class _VideoCallWebState extends State<VideoCall> {
     if (mounted) setState(() {});
   }
 
+  String get _mySenderName =>
+      widget.currentUserName.isNotEmpty ? widget.currentUserName : 'User';
+
   void _sendChatMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
 
-    final senderName = widget.currentUserName.isNotEmpty
-        ? widget.currentUserName
-        : 'User';
-
     _chatController.clear();
 
-    // Send to backend
+    // Show message immediately (optimistic)
+    if (mounted) {
+      setState(() => _chatMessages.add({'sender': _mySenderName, 'text': text}));
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_chatScroll.hasClients) {
+          _chatScroll.animateTo(
+            _chatScroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+
+    // Send to backend (update lastTimestamp so poll skips duplicates)
     ApiService().post('/call-chat/send', {
       'channelName': widget.channelName,
-      'sender': senderName,
+      'sender': _mySenderName,
       'text': text,
-    }).then((_) {
-      // Immediately fetch to show own message
-      _fetchNewMessages();
+    }).then((res) {
+      // Update lastTimestamp from the saved message so poll won't duplicate it
+      try {
+        final createdAt = res.data['message']?['createdAt']?.toString();
+        if (createdAt != null) {
+          final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
+          if (ts != null) _lastChatTimestamp = ts;
+        }
+      } catch (_) {}
     }).catchError((_) {
-      // Show locally even if backend fails
-      if (mounted) {
-        setState(() => _chatMessages.add({'sender': senderName, 'text': text}));
-      }
+      // Message already shown optimistically — no action needed
     });
   }
 
@@ -324,13 +352,23 @@ class _VideoCallWebState extends State<VideoCall> {
       final result = await FilePicker.platform.pickFiles(withData: true);
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      setState(() {
-        _chatMessages.add({
-          'sender': 'You',
-          'text': '📎 ${file.name}',
-          'type': 'file',
-        });
-      });
+      final fileMsg = '📎 ${file.name}';
+      // Show locally immediately
+      if (mounted) setState(() => _chatMessages.add({'sender': _mySenderName, 'text': fileMsg}));
+      // Also send to backend so other party sees it
+      ApiService().post('/call-chat/send', {
+        'channelName': widget.channelName,
+        'sender': _mySenderName,
+        'text': fileMsg,
+      }).then((res) {
+        try {
+          final createdAt = res.data['message']?['createdAt']?.toString();
+          if (createdAt != null) {
+            final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
+            if (ts != null) _lastChatTimestamp = ts;
+          }
+        } catch (_) {}
+      }).catchError((_) {});
     } catch (_) {}
   }
 
@@ -561,10 +599,8 @@ class _VideoCallWebState extends State<VideoCall> {
                   itemCount: _chatMessages.length,
                   itemBuilder: (ctx, i) {
                     final msg = _chatMessages[i];
-                    final myName = widget.currentUserName.isNotEmpty
-                        ? widget.currentUserName
-                        : 'You';
-                    final isMe = msg['sender'] == myName;
+                    final isMe = msg['sender'] == _mySenderName;
+                    final displaySender = isMe ? 'You' : (msg['sender'] ?? '');
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
@@ -577,21 +613,29 @@ class _VideoCallWebState extends State<VideoCall> {
                           color: isMe
                               ? AppColors.primaryColor
                               : const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(12),
+                            topRight: const Radius.circular(12),
+                            bottomLeft: Radius.circular(isMe ? 12 : 2),
+                            bottomRight: Radius.circular(isMe ? 2 : 12),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: isMe
                               ? CrossAxisAlignment.end
                               : CrossAxisAlignment.start,
                           children: [
-                            if (!isMe)
-                              Text(
-                                msg['sender'] ?? '',
-                                style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600),
+                            Text(
+                              displaySender,
+                              style: TextStyle(
+                                color: isMe
+                                    ? Colors.white70
+                                    : const Color(0xFF60A5FA),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
                               ),
+                            ),
+                            const SizedBox(height: 2),
                             Text(
                               msg['text'] ?? '',
                               style: const TextStyle(

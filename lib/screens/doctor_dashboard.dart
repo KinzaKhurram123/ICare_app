@@ -41,7 +41,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   List<AppointmentDetail> _appointments = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
-  bool _availableForInstantConsultation = false; // toggle for instant consult requests
+  bool _availableForInstantConsultation = true; // default ON — doctor receives requests when online
   bool _isInConsultation = false; // true when doctor is in active video call
 
   @override
@@ -63,7 +63,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   Future<void> _loadInstantConsultToggle() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final val = prefs.getBool('doctor_instant_consult_available') ?? false;
+      final val = prefs.getBool('doctor_instant_consult_available') ?? true;
       if (mounted) setState(() => _availableForInstantConsultation = val);
     } catch (_) {}
   }

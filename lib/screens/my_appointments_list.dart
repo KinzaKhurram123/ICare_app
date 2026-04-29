@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/models/user.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/lab_list.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/rating_dialog.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -23,6 +25,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
   final AppointmentService _appointmentService = AppointmentService();
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
+  User? _currentUser;
 
   @override
   void initState() {
@@ -47,6 +50,9 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
 
   Future<void> _loadAppointments() async {
     setState(() => _isLoading = true);
+
+    // Load current user for chat sender name
+    _currentUser ??= await SharedPref().getUserData();
 
     final result = await _appointmentService.getMyAppointmentsDetailed();
 
@@ -487,6 +493,8 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                                 channelName: appointment.id,
                                                 remoteUserName: appointment.doctorName,
                                                 appointmentId: appointment.id,
+                                                currentUserName: _currentUser?.name ?? '',
+                                                currentUserId: _currentUser?.id ?? '',
                                               ),
                                             ),
                                           ),

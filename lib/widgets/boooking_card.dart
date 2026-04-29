@@ -164,12 +164,15 @@ class BookingCard extends ConsumerWidget {
             ],
           );
 
+    final currentUser = ref.watch(authProvider).user;
     return isDesktop
         ? _WebBookingCard(
             appointment: appointment,
             onTap: onTap,
             showActions: showActions,
             selectedRole: selectedRole,
+            currentUserName: currentUser?.name ?? '',
+            currentUserId: currentUser?.id ?? '',
           )
         : GestureDetector(
             onTap: onTap ?? () {},
@@ -289,12 +292,16 @@ class _WebBookingCard extends StatefulWidget {
   final VoidCallback? onTap;
   final bool showActions;
   final String selectedRole;
+  final String currentUserName;
+  final String currentUserId;
 
   const _WebBookingCard({
     required this.appointment,
     this.onTap,
     required this.showActions,
     required this.selectedRole,
+    this.currentUserName = '',
+    this.currentUserId = '',
   });
 
   @override
@@ -656,6 +663,8 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                       ? widget.appointment.patientName
                                       : widget.appointment.doctorName,
                                   appointmentId: widget.appointment.id,
+                                  currentUserName: widget.currentUserName,
+                                  currentUserId: widget.currentUserId,
                                 ),
                               ),
                             );

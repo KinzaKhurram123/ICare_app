@@ -64,7 +64,10 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
   }
 
   void _startPolling() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _checkPending());
+    // Poll every 2 seconds so doctor gets request faster
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _checkPending());
+    // Also fire once immediately on start
+    Future.delayed(const Duration(milliseconds: 500), _checkPending);
   }
 
   Future<void> _checkPending() async {
@@ -78,9 +81,10 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
     if (token == null || token.isEmpty) return;
 
     // Check if doctor has toggled "Available for Instant Consultation"
+    // Default = true so doctor receives requests as soon as they're online
     try {
       final prefs = await SharedPreferences.getInstance();
-      final isAvailable = prefs.getBool('doctor_instant_consult_available') ?? false;
+      final isAvailable = prefs.getBool('doctor_instant_consult_available') ?? true;
       if (!isAvailable) {
         debugPrint('⏸️ Doctor not available for instant consultation — skipping poll');
         return;
