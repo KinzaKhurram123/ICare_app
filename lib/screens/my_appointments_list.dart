@@ -94,6 +94,44 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
     }
   }
 
+  /// Returns effective display status:
+  /// If appointment is confirmed/pending but date+time has passed → show as 'completed'
+  String _effectiveStatus(AppointmentDetail appointment) {
+    final raw = appointment.status.toLowerCase();
+    if (raw == 'cancelled' || raw == 'completed') return raw;
+
+    // Parse appointment date + time slot to get exact datetime
+    try {
+      final timeStr = appointment.timeSlot; // e.g. "10:30 AM"
+      final parts = timeStr.split(' ');
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final isPm = parts.length > 1 && parts[1].toUpperCase() == 'PM';
+      if (isPm && hour != 12) hour += 12;
+      if (!isPm && hour == 12) hour = 0;
+
+      final appointmentDateTime = DateTime(
+        appointment.date.year,
+        appointment.date.month,
+        appointment.date.day,
+        hour,
+        minute,
+      );
+
+      if (appointmentDateTime.isBefore(DateTime.now())) {
+        return 'completed';
+      }
+    } catch (_) {
+      // If time parsing fails, fall back to date-only check
+      if (appointment.date.isBefore(DateTime.now())) {
+        return 'completed';
+      }
+    }
+
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
@@ -179,7 +217,8 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                 itemCount: _appointments.length,
                 itemBuilder: (context, index) {
                   final appointment = _appointments[index];
-                  final statusColor = _getStatusColor(appointment.status);
+                  final effectiveStatus = _effectiveStatus(appointment);
+                  final statusColor = _getStatusColor(effectiveStatus);
                   final isPast = appointment.date.isBefore(DateTime.now());
 
                   return GestureDetector(
@@ -231,7 +270,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    _getStatusIcon(appointment.status),
+                                    _getStatusIcon(effectiveStatus),
                                     color: statusColor,
                                     size: 24,
                                   ),
@@ -243,7 +282,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        appointment.status.toUpperCase(),
+                                        effectiveStatus.toUpperCase(),
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
@@ -392,7 +431,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                 ),
 
                                 // Rate Doctor button (completed appointments)
-                                if (appointment.status.toLowerCase() == 'completed') ...[
+                                if (effectiveStatus == 'completed') ...[
                                   const SizedBox(height: 16),
                                   SizedBox(
                                     width: double.infinity,
