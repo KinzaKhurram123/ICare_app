@@ -222,4 +222,27 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /appointments/:id/rate — patient rates a completed appointment
+router.post('/:id/rate', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { rating, comment } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: 'Rating must be 1-5' });
+    }
+    const appt = await Appointment.findById(toId(req.params.id));
+    if (!appt) return res.status(404).json({ success: false, message: 'Appointment not found' });
+
+    appt.rating = rating;
+    appt.ratingComment = comment || '';
+    appt.ratedAt = new Date();
+    await appt.save();
+
+    res.json({ success: true, message: 'Rating submitted successfully' });
+  } catch (error) {
+    console.error('Rate appointment error:', error);
+    res.status(500).json({ success: false, message: 'Failed to submit rating' });
+  }
+});
+
 module.exports = router;
