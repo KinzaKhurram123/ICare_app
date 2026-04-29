@@ -77,6 +77,22 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
     final token = await _sharedPref.getToken();
     if (token == null || token.isEmpty) return;
 
+    // Check if doctor has toggled "Available for Instant Consultation"
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isAvailable = prefs.getBool('doctor_instant_consult_available') ?? false;
+      if (!isAvailable) {
+        debugPrint('⏸️ Doctor not available for instant consultation — skipping poll');
+        return;
+      }
+      // Check if doctor is currently in a consultation
+      final isInConsultation = prefs.getBool('doctor_in_consultation') ?? false;
+      if (isInConsultation) {
+        debugPrint('🔒 Doctor is in active consultation — skipping instant consult requests');
+        return;
+      }
+    } catch (_) {}
+
     debugPrint('🩺 Checking for Connect Now requests...');
 
     try {
@@ -126,6 +142,11 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
           onAccept: () async {
             // Mark as handled immediately — persisted so survives app restart
             await _markHandled(requestId);
+            // Mark doctor as in consultation — blocks further instant consult requests
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('doctor_in_consultation', true);
+            } catch (_) {}
             try {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
@@ -133,9 +154,11 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               nav.pop();
               nav.push(
                 MaterialPageRoute(
-                  builder: (_) => VideoCall(
-                    channelName: callChannel,
-                    remoteUserName: callPatient,
+                  builder: (_) => _ConsultationWrapper(
+                    child: VideoCall(
+                      channelName: callChannel,
+                      remoteUserName: callPatient,
+                    ),
                   ),
                 ),
               );
@@ -144,9 +167,11 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               nav.pop();
               nav.push(
                 MaterialPageRoute(
-                  builder: (_) => VideoCall(
-                    channelName: channelName,
-                    remoteUserName: patientName,
+                  builder: (_) => _ConsultationWrapper(
+                    child: VideoCall(
+                      channelName: channelName,
+                      remoteUserName: patientName,
+                    ),
                   ),
                 ),
               );
@@ -272,4 +297,28 @@ class _ConnectNowRequestDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Wraps VideoCall and clears doctor_in_consultation flag when call ends
+class _ConsultationWrapper extends StatefulWidget {
+  final Widget child;
+  const _ConsultationWrapper({required this.child});
+
+  @override
+  State<_ConsultationWrapper> createState() => _ConsultationWrapperState();
+}
+
+class _ConsultationWrapperState extends State<_ConsultationWrapper> {
+  @override
+  void dispose() {
+    // Clear in-consultation flag when video call screen is disposed
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('doctor_in_consultation', false);
+      debugPrint('✅ Cleared doctor_in_consultation flag');
+    });
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

@@ -26,6 +26,7 @@ import 'package:icare/screens/credential_vault_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DoctorDashboard extends ConsumerStatefulWidget {
   const DoctorDashboard({super.key});
@@ -40,11 +41,22 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   List<AppointmentDetail> _appointments = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
+  bool _availableForInstantConsultation = false; // toggle for instant consult requests
+  bool _isInConsultation = false; // true when doctor is in active video call
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadInstantConsultToggle();
+  }
+
+  Future<void> _loadInstantConsultToggle() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final val = prefs.getBool('doctor_instant_consult_available') ?? false;
+      if (mounted) setState(() => _availableForInstantConsultation = val);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -140,6 +152,10 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                       children: [
                         // 1. Welcome Header with rating + satisfaction
                         _buildWelcomeHeader(userName),
+                        const SizedBox(height: 16),
+
+                        // 1b. Instant Consultation Toggle
+                        _buildInstantConsultToggle(),
                         const SizedBox(height: 24),
 
                         // 2. Appointment Requests (pending — Accept/Decline)
@@ -172,6 +188,127 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               ),
             ),
     );
+  }
+
+  Widget _buildInstantConsultToggle() {
+    return GestureDetector(
+      onTap: () {
+        if (_isInConsultation) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cannot change availability during an active consultation'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+        setState(() => _availableForInstantConsultation = !_availableForInstantConsultation);
+        // Persist toggle state
+        _saveInstantConsultToggle(_availableForInstantConsultation);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: _availableForInstantConsultation
+              ? const LinearGradient(
+                  colors: [Color(0xFF0036BC), Color(0xFF3B82F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: _availableForInstantConsultation ? null : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _availableForInstantConsultation
+                ? const Color(0xFF0036BC)
+                : const Color(0xFFE2E8F0),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (_availableForInstantConsultation
+                      ? const Color(0xFF0036BC)
+                      : Colors.black)
+                  .withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _availableForInstantConsultation
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : const Color(0xFF0036BC).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.video_call_rounded,
+                color: _availableForInstantConsultation
+                    ? Colors.white
+                    : const Color(0xFF0036BC),
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Available for Instant Consultation',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: _availableForInstantConsultation
+                          ? Colors.white
+                          : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _availableForInstantConsultation
+                        ? 'Patients can connect with you instantly'
+                        : 'Toggle ON to receive instant consultation requests',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _availableForInstantConsultation
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: _availableForInstantConsultation,
+              onChanged: _isInConsultation
+                  ? null
+                  : (val) {
+                      setState(() => _availableForInstantConsultation = val);
+                      _saveInstantConsultToggle(val);
+                    },
+              activeColor: Colors.white,
+              activeTrackColor: Colors.white.withValues(alpha: 0.3),
+              inactiveThumbColor: const Color(0xFF0036BC),
+              inactiveTrackColor:
+                  const Color(0xFF0036BC).withValues(alpha: 0.15),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveInstantConsultToggle(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('doctor_instant_consult_available', value);
+    } catch (_) {}
   }
 
   Widget _buildWelcomeHeader(String userName) {

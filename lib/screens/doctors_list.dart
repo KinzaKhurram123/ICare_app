@@ -776,20 +776,27 @@ class DoctorProfileCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar
+                  // Avatar with profile picture
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-                    child: Text(
-                      displayDoctor.user.name.isNotEmpty
-                          ? displayDoctor.user.name.substring(0, 1).toUpperCase()
-                          : 'D',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryColor,
-                      ),
-                    ),
+                    backgroundImage: displayDoctor.user.profilePicture != null &&
+                            displayDoctor.user.profilePicture!.isNotEmpty
+                        ? NetworkImage(displayDoctor.user.profilePicture!)
+                        : null,
+                    child: displayDoctor.user.profilePicture == null ||
+                            displayDoctor.user.profilePicture!.isEmpty
+                        ? Text(
+                            displayDoctor.user.name.isNotEmpty
+                                ? displayDoctor.user.name.substring(0, 1).toUpperCase()
+                                : 'D',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryColor,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 14),
 
@@ -896,94 +903,77 @@ class DoctorProfileCard extends StatelessWidget {
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
               const SizedBox(height: 12),
 
-              // Bottom row: availability + fee + buttons
+              // Bottom row: availability + online status + fee
               Row(
                 children: [
-                  // Availability
-                  Expanded(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.videocam_rounded, size: 16, color: Color(0xFF64748B)),
-                        const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Online Video Consultation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 6, height: 6,
-                                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF10B981)),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text('Available today', style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        if (fee != null && fee > 0)
-                          Text(
-                            'Rs. ${fee.toInt()}',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                          ),
-                      ],
+                  // Online/Offline dot
+                  Container(
+                    width: 8, height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: displayDoctor.isOnline
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF94A3B8),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  Text(
+                    displayDoctor.isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: displayDoctor.isOnline
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Available today badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Available Today',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (fee != null && fee > 0)
+                    Text(
+                      'Rs. ${fee.toInt()}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
                 ],
               ),
 
               const SizedBox(height: 12),
 
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        if (doctor != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.videocam_rounded, size: 16),
-                      label: const Text('Video Consultation'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryColor,
-                        side: BorderSide(color: AppColors.primaryColor.withOpacity(0.4)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
+              // Action button — Book Appointment only
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (doctor != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (doctor != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (ctx) => DoctorDetailScreen(doctor: displayDoctor),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Book Appointment'),
-                    ),
-                  ),
-                ],
+                  child: const Text('Book Appointment'),
+                ),
               ),
             ],
           ),
