@@ -442,6 +442,41 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                   ],
                                 ),
 
+                                // Join Video Call — confirmed appointments
+                                if (effectiveStatus == 'confirmed') ...[
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => VideoCall(
+                                              channelName: appointment.id,
+                                              remoteUserName: appointment.doctorName,
+                                              appointmentId: appointment.id,
+                                              currentUserName: _currentUser?.name ?? '',
+                                              currentUserId: _currentUser?.id ?? '',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.video_call_rounded, size: 20),
+                                      label: const Text(
+                                        'Join Video Call',
+                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primaryColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        elevation: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+
                                 // Rate Doctor button (completed appointments)
                                 if (effectiveStatus == 'completed') ...[
                                   const SizedBox(height: 16),

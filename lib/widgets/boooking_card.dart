@@ -6,6 +6,7 @@ import 'package:icare/models/app_enums.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/chat_screen.dart';
+import 'package:icare/screens/consultation_workflow.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:intl/intl.dart';
@@ -607,19 +608,36 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                           isOutlined: true,
                         ),
                         const SizedBox(width: 12),
-                        _buildWebButton(
-                          "View Full Details",
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) =>
-                                    ProfileOrAppointmentViewScreen(
-                                      appointment: widget.appointment,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
+                        // Doctor sees "Start Consultation"; Patient sees "View Details"
+                        if (widget.selectedRole == 'Doctor' &&
+                            widget.appointment.status.toLowerCase() == 'confirmed') ...[
+                          _buildWebButton(
+                            "Start Consultation",
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => ConsultationWorkflowScreen(
+                                    appointment: widget.appointment,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ] else ...[
+                          _buildWebButton(
+                            "View Full Details",
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) =>
+                                      ProfileOrAppointmentViewScreen(
+                                        appointment: widget.appointment,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ] else if (widget.appointment.status.toLowerCase() ==
                           'in_progress') ...[
                         // Consultation in Progress — Rejoin button
