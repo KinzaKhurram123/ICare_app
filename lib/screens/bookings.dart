@@ -104,7 +104,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 0,
+                initialTabIndex: 1,
               ),
             ),
           );
@@ -124,7 +124,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 1,
+                initialTabIndex: 2,
               ),
             ),
           );
@@ -144,7 +144,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 2,
+                initialTabIndex: 3,
               ),
             ),
           );
@@ -164,7 +164,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 0,
+                initialTabIndex: 1,
               ),
             ),
           );

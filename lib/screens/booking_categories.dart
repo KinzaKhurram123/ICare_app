@@ -33,7 +33,7 @@ class _BookingCategoriesState extends State<BookingCategories>
   void initState() {
     super.initState();
     controller = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
@@ -58,20 +58,26 @@ class _BookingCategoriesState extends State<BookingCategories>
           indicatorColor: AppColors.themeBlack,
           tabs: [
             CustomText(
+              text: "In Progress",
+              padding: EdgeInsets.only(bottom: 5),
+              width: Utils.windowWidth(context) * 0.25,
+              textAlign: TextAlign.center,
+            ),
+            CustomText(
               text: "Upcoming",
               padding: EdgeInsets.only(bottom: 5),
-              width: Utils.windowWidth(context) * 0.33,
+              width: Utils.windowWidth(context) * 0.25,
               textAlign: TextAlign.center,
             ),
             CustomText(
               text: "Cancelled",
               padding: EdgeInsets.only(bottom: 5),
-              width: Utils.windowWidth(context) * 0.33,
+              width: Utils.windowWidth(context) * 0.25,
               textAlign: TextAlign.center,
             ),
             CustomText(
               padding: EdgeInsets.only(bottom: 5),
-              width: Utils.windowWidth(context) * 0.33,
+              width: Utils.windowWidth(context) * 0.25,
               textAlign: TextAlign.center,
               text: "Completed",
             ),
@@ -81,6 +87,12 @@ class _BookingCategoriesState extends State<BookingCategories>
       body: TabBarView(
         controller: controller,
         children: [
+          UpcomingBOokingsList(
+            status: BookingStatus.upcoming,
+            data: widget.appointments
+                .where((a) => a.status.toLowerCase() == 'in_progress')
+                .toList(),
+          ),
           UpcomingBOokingsList(
             status: BookingStatus.upcoming,
             data: widget.appointments

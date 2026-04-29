@@ -98,10 +98,15 @@ class BookingCard extends ConsumerWidget {
                 borderRadius: 30,
                 labelSize: 15,
                 onPressed: () {
+                  // Extract real channelName from notes if stored there
+                  String channelName = appointment.id;
+                  final notes = appointment.reason ?? '';
+                  final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                  if (match != null) channelName = match.group(1)!;
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => VideoCall(
-                        channelName: appointment.id,
+                        channelName: channelName,
                         remoteUserName: selectedRole == 'Doctor'
                             ? appointment.patientName
                             : appointment.doctorName,
@@ -722,10 +727,15 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         const SizedBox(width: 12),
                         ElevatedButton.icon(
                           onPressed: () {
+                            // Extract real channelName from notes if stored there
+                            String channelName = widget.appointment.id;
+                            final notes = widget.appointment.reason ?? '';
+                            final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                            if (match != null) channelName = match.group(1)!;
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => VideoCall(
-                                  channelName: widget.appointment.id,
+                                  channelName: channelName,
                                   remoteUserName: widget.selectedRole == 'Doctor'
                                       ? widget.appointment.patientName
                                       : widget.appointment.doctorName,

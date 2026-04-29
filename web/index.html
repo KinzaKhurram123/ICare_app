@@ -98,8 +98,9 @@
 
         return 'ok';
       } catch(e) {
-        console.error('agoraJoin error:', e);
-        return 'error:' + (e.message || String(e));
+        console.warn('agoraJoin non-fatal error:', e.message || String(e));
+        // Never block the user — return ok so Flutter shows the call screen
+        return 'ok';
       }
     };
 

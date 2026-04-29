@@ -284,8 +284,7 @@ class _VideoCallWebState extends State<VideoCall> {
     try { await _agoraLeave().toDart; } catch (_) {}
 
     // Mark appointment as in_progress so patient can rejoin
-    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty &&
-        widget.appointmentId != 'connect_now') {
+    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
       try {
         await AppointmentService().updateAppointmentStatus(
           appointmentId: widget.appointmentId!,
