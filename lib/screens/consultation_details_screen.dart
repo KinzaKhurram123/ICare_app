@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/add_card.dart';
 import 'package:icare/screens/connect_now_waiting_screen.dart';
-import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 
 /// Pre-screen shown before "Connect to Doctor Now" waiting screen.
 /// Collects patient details (Myself / Someone else), reason, and certification.
+/// After validation → shows Pay Now bottom sheet → then waiting screen.
 class ConsultationDetailsScreen extends ConsumerStatefulWidget {
   const ConsultationDetailsScreen({super.key});
 
@@ -24,7 +25,6 @@ class _ConsultationDetailsScreenState
   final _ageController = TextEditingController();
   final _reasonController = TextEditingController();
   bool _certifyChecked = false;
-  bool _isProceeding = false;
 
   @override
   void initState() {
@@ -49,31 +49,20 @@ class _ConsultationDetailsScreenState
   }
 
   void _proceed() {
-    // Validate name
     if (_nameController.text.trim().isEmpty) {
       _showError('Please enter patient name');
       return;
     }
-    // Validate reason
     if (_reasonController.text.trim().isEmpty) {
       _showError('Please enter Reason for Consultation');
       return;
     }
-    // Validate certification
     if (!_certifyChecked) {
       _showError('Please confirm that all details are correct');
       return;
     }
-
-    // Navigate to Pay Now → then waiting screen
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => _PayAndConnectScreen(
-          patientName: _nameController.text.trim(),
-          reason: _reasonController.text.trim(),
-        ),
-      ),
-    );
+    // Show Pay Now popup
+    _showPayNowPopup();
   }
 
   void _showError(String msg) {
@@ -82,6 +71,228 @@ class _ConsultationDetailsScreenState
         content: Text(msg),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── Pay Now Bottom Sheet ──────────────────────────────────────────────────
+  void _showPayNowPopup() {
+    const double amount = 500; // instant consultation fee
+    final List<Map<String, String>> savedCards = [
+      {'type': 'VISA', 'number': '**** **** **** 1313', 'expiry': '08/26'},
+      {'type': 'MasterCard', 'number': '**** **** **** 4242', 'expiry': '12/27'},
+    ];
+    String? selectedCard = savedCards.first['number'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.payment_rounded,
+                          color: AppColors.primaryColor, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Pay Now',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A))),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text('Rs. 500',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryColor)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Existing Payment Methods
+                const Text('Existing Payment Method',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B))),
+                const SizedBox(height: 12),
+
+                ...savedCards.map((card) {
+                  final isSelected = selectedCard == card['number'];
+                  return GestureDetector(
+                    onTap: () =>
+                        setSheet(() => selectedCard = card['number']),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryColor.withOpacity(0.05)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : const Color(0xFFE2E8F0),
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Text(card['type'] ?? '',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF0F172A))),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(card['number'] ?? '',
+                                    style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                        letterSpacing: 1)),
+                                Text('Expires ${card['expiry']}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF94A3B8))),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded,
+                                color: AppColors.primaryColor, size: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 8),
+
+                // Add new card
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AddCard()),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primaryColor.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_circle_outline_rounded,
+                            color: AppColors.primaryColor, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Add Card Details',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryColor)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Pay & Connect button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx); // close bottom sheet
+                      // Navigate to waiting screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ConnectNowWaitingScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Pay Rs. 500 & Connect',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -115,20 +326,27 @@ class _ConsultationDetailsScreenState
               decoration: BoxDecoration(
                 color: AppColors.primaryColor.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+                border: Border.all(
+                    color: AppColors.primaryColor.withOpacity(0.2)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.video_call_rounded, color: AppColors.primaryColor, size: 28),
+                  Icon(Icons.video_call_rounded,
+                      color: AppColors.primaryColor, size: 28),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Connect to a Doctor Now',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryColor)),
-                        Text('A doctor will connect with you within 3 minutes',
-                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryColor)),
+                        Text(
+                            'A doctor will connect with you within 3 minutes',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -137,7 +355,7 @@ class _ConsultationDetailsScreenState
             ),
             const SizedBox(height: 24),
 
-            // Consultation For
+            // Details card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -149,7 +367,10 @@ class _ConsultationDetailsScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Consultation For',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A))),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -170,7 +391,6 @@ class _ConsultationDetailsScreenState
                   ),
                   const SizedBox(height: 16),
 
-                  // Patient Name
                   _label('Patient Name'),
                   const SizedBox(height: 8),
                   _textField(
@@ -181,7 +401,6 @@ class _ConsultationDetailsScreenState
                   ),
                   const SizedBox(height: 12),
 
-                  // Gender + Age
                   Row(
                     children: [
                       Expanded(
@@ -190,7 +409,9 @@ class _ConsultationDetailsScreenState
                           children: [
                             _label('Gender'),
                             const SizedBox(height: 8),
-                            _textField(controller: _genderController, hint: 'Male / Female'),
+                            _textField(
+                                controller: _genderController,
+                                hint: 'Male / Female'),
                           ],
                         ),
                       ),
@@ -219,13 +440,17 @@ class _ConsultationDetailsScreenState
                       _label('Reason for Consultation'),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text('Mandatory',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.red)),
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.red)),
                       ),
                     ],
                   ),
@@ -234,74 +459,91 @@ class _ConsultationDetailsScreenState
                     controller: _reasonController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'Describe your symptoms or reason for consultation...',
-                      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      hintText:
+                          'Describe your symptoms or reason for consultation...',
+                      hintStyle:
+                          const TextStyle(color: Color(0xFF94A3B8)),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE2E8F0))),
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE2E8F0))),
                       focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: AppColors.primaryColor)),
+                          borderSide: BorderSide(
+                              color: AppColors.primaryColor)),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Certification checkbox
-                  GestureDetector(
-                    onTap: () => setState(() => _certifyChecked = !_certifyChecked),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: _certifyChecked ? AppColors.primaryColor : Colors.white,
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(
-                              color: _certifyChecked ? AppColors.primaryColor : const Color(0xFFCBD5E1),
-                              width: 2,
-                            ),
-                          ),
-                          child: _certifyChecked
-                              ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'I certify that all the information I provided is correct.',
-                            style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Proceed button
+            // Certification checkbox — above Pay Now button
+            GestureDetector(
+              onTap: () =>
+                  setState(() => _certifyChecked = !_certifyChecked),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: _certifyChecked
+                          ? AppColors.primaryColor
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: _certifyChecked
+                            ? AppColors.primaryColor
+                            : const Color(0xFFCBD5E1),
+                        width: 2,
+                      ),
+                    ),
+                    child: _certifyChecked
+                        ? const Icon(Icons.check_rounded,
+                            size: 14, color: Colors.white)
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'I certify that all the information I provided is correct.',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF334155),
+                          height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Pay Now button
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: _isProceeding ? null : _proceed,
+                onPressed: _proceed,
                 icon: const Icon(Icons.payment_rounded),
                 label: const Text('Pay Now & Connect',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w800)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
               ),
@@ -315,31 +557,43 @@ class _ConsultationDetailsScreenState
 
   Widget _label(String text) => Text(
         text,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+        style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B)),
       );
 
   Widget _chip(String label, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor.withOpacity(0.1) : Colors.white,
+          color: isSelected
+              ? AppColors.primaryColor.withOpacity(0.1)
+              : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? AppColors.primaryColor
+                : const Color(0xFFE2E8F0),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isSelected) Icon(Icons.check_rounded, size: 14, color: AppColors.primaryColor),
+            if (isSelected)
+              Icon(Icons.check_rounded,
+                  size: 14, color: AppColors.primaryColor),
             if (isSelected) const SizedBox(width: 4),
             Text(label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.primaryColor : const Color(0xFF64748B),
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : const Color(0xFF64748B),
                 )),
           ],
         ),
@@ -361,7 +615,9 @@ class _ConsultationDetailsScreenState
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-        prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF94A3B8)) : null,
+        prefixIcon: icon != null
+            ? Icon(icon, color: const Color(0xFF94A3B8))
+            : null,
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
@@ -372,29 +628,9 @@ class _ConsultationDetailsScreenState
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: AppColors.primaryColor)),
         filled: true,
-        fillColor: readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+        fillColor:
+            readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
       ),
-    );
-  }
-}
-
-/// Internal screen: shows Pay Now (SelectPaymentMethod) then navigates to waiting screen
-class _PayAndConnectScreen extends StatelessWidget {
-  final String patientName;
-  final String reason;
-
-  const _PayAndConnectScreen({required this.patientName, required this.reason});
-
-  @override
-  Widget build(BuildContext context) {
-    return SelectPaymentMethod(
-      appointmentId: 'connect_now',
-      amount: 500, // default instant consultation fee
-      onPaymentSuccess: () {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ConnectNowWaitingScreen()),
-        );
-      },
     );
   }
 }
