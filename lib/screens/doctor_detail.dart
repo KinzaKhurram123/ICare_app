@@ -128,7 +128,9 @@ class DoctorDetailScreen extends ConsumerWidget {
                   child: _buildStatCard(
                     icon: Icons.work_history_rounded,
                     label: 'Experience',
-                    value: doctor.experience ?? 'N/A',
+                    value: (doctor.experience != null && doctor.experience!.isNotEmpty && doctor.experience != '0')
+                        ? doctor.experience!
+                        : 'Not set',
                     color: const Color(0xFF3B82F6),
                   ),
                 ),
@@ -139,7 +141,7 @@ class DoctorDetailScreen extends ConsumerWidget {
                     label: 'Rating',
                     value: averageRating > 0
                         ? averageRating.toStringAsFixed(1)
-                        : 'N/A',
+                        : 'New',
                     color: const Color(0xFFF59E0B),
                   ),
                 ),
@@ -150,6 +152,17 @@ class DoctorDetailScreen extends ConsumerWidget {
                     label: 'Reviews',
                     value: '${doctor.reviewCount}',
                     color: const Color(0xFF10B981),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.payments_rounded,
+                    label: 'Fee',
+                    value: (doctor.consultationFee != null && doctor.consultationFee! > 0)
+                        ? 'Rs. ${doctor.consultationFee!.toInt()}'
+                        : 'Free',
+                    color: const Color(0xFF8B5CF6),
                   ),
                 ),
               ],
@@ -612,7 +625,9 @@ class DoctorDetailScreen extends ConsumerWidget {
                           child: _buildGlassStatCard(
                             icon: Icons.work_history_rounded,
                             label: 'Experience',
-                            value: doctor.experience ?? 'N/A',
+                            value: (doctor.experience != null && doctor.experience!.isNotEmpty && doctor.experience != '0')
+                                ? doctor.experience!
+                                : 'Not set',
                             color: const Color(0xFF3B82F6),
                           ),
                         ),
@@ -623,7 +638,7 @@ class DoctorDetailScreen extends ConsumerWidget {
                             label: 'Rating',
                             value: averageRating > 0
                                 ? averageRating.toStringAsFixed(1)
-                                : 'N/A',
+                                : 'New',
                             color: const Color(0xFFF59E0B),
                           ),
                         ),

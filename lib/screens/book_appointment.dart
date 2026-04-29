@@ -458,206 +458,266 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   Widget _buildCheckout() {
     final fee = widget.doctor.consultationFee ?? 0;
     final dateStr = DateFormat('MMM dd').format(_selectedDate);
+    final bool isDesktop = Utils.windowWidth(context) > 700;
 
-    return SingleChildScrollView(
+    final summaryCard = Container(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: form
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Appointment For
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Appointment For',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _forChip('Myself', true),
-                          const SizedBox(width: 10),
-                          _forChip('+ Someone else', false),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Patient Name',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Enter your name',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Reason (optional)',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _reasonController,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          hintText: 'Describe your symptoms...',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                        ),
-                      ),
-                    ],
-                  ),
+          // Doctor mini card
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                child: Text(
+                  widget.doctor.user.name.isNotEmpty
+                      ? widget.doctor.user.name.substring(0, 1).toUpperCase()
+                      : 'D',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
                 ),
-                const SizedBox(height: 16),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Dr. ${widget.doctor.user.name}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                    Text(widget.doctor.specialization ?? 'General Physician',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 8),
 
-                // Payment method
+          // Date + time
+          Row(
+            children: [
+              const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              Text('$dateStr, $_selectedSlot',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Consultation type + fee
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Consultation Fee', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              Text(
+                fee > 0 ? 'Rs. ${fee.toInt()}' : 'To be confirmed',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: fee > 0 ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Confirm button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isBooking ? null : _confirmBooking,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              child: _isBooking
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Confirm Booking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final formCard = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Appointment For
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Appointment For',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _forChip('Myself', true),
+                  const SizedBox(width: 10),
+                  _forChip('+ Someone else', false),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('Patient Name',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your name',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF94A3B8)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Reason (optional)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _reasonController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Describe your symptoms...',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Payment method
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Select Payment Method',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              const SizedBox(height: 12),
+              // Online Payment option
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.radio_button_checked_rounded, color: AppColors.primaryColor, size: 20),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('Online Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
+                    if (fee > 0)
+                      Text('Rs. ${fee.toInt()}',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Pay at Clinic option
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.radio_button_unchecked_rounded, color: Color(0xFF94A3B8), size: 20),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('Pay at Clinic', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)))),
+                    if (fee > 0)
+                      Text('Rs. ${fee.toInt()}',
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              ),
+              if (fee == 0) ...[
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: const Row(
                     children: [
-                      const Text('Select Payment Method',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.primaryColor.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.radio_button_checked_rounded, color: AppColors.primaryColor, size: 20),
-                            const SizedBox(width: 10),
-                            const Expanded(child: Text('Online Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
-                            if (fee > 0)
-                              Text('Rs. ${fee.toInt()}',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                          ],
+                      Icon(Icons.info_outline_rounded, color: Color(0xFFF59E0B), size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Consultation fee will be confirmed by the doctor.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-            ),
+            ],
           ),
+        ),
+      ],
+    );
 
-          const SizedBox(width: 16),
+    if (isDesktop) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 3, child: formCard),
+            const SizedBox(width: 16),
+            Expanded(flex: 2, child: summaryCard),
+          ],
+        ),
+      );
+    }
 
-          // Right: summary + confirm
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Doctor mini card
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-                        child: Text(
-                          widget.doctor.user.name.isNotEmpty
-                              ? widget.doctor.user.name.substring(0, 1).toUpperCase()
-                              : 'D',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Dr. ${widget.doctor.user.name}',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                            Text(widget.doctor.specialization ?? 'General Physician',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(color: Color(0xFFF1F5F9)),
-                  const SizedBox(height: 8),
-
-                  // Consultation type + fee
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Video consultation', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      if (fee > 0)
-                        Text('Rs. ${fee.toInt()}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Date + time
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF64748B)),
-                      const SizedBox(width: 4),
-                      Text('$dateStr, $_selectedSlot',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Confirm button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isBooking ? null : _confirmBooking,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
-                      ),
-                      child: _isBooking
-                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Confirm booking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    // Mobile: stacked layout
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          summaryCard,
+          const SizedBox(height: 16),
+          formCard,
+          const SizedBox(height: 24),
         ],
       ),
     );
