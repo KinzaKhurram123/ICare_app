@@ -796,7 +796,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
-                        'I certify that all the details provided above are correct and accurate.',
+                        'I certify that all the information I provided is correct.',
                         style: TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
                       ),
                     ),
