@@ -610,25 +610,6 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Confirm button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isBooking ? null : _confirmBooking,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-              child: _isBooking
-                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Confirm Booking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-            ),
-          ),
         ],
       ),
     );
@@ -885,6 +866,24 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                 ),
               ],
             ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Confirm Booking button — placed here so it's always below the checkbox
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isBooking ? null : _confirmBooking,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: _isBooking
+                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Confirm Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ),
       ],
