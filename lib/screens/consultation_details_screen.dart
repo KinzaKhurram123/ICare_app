@@ -36,6 +36,8 @@ class _ConsultationDetailsScreenState
     final user = ref.read(authProvider).user;
     if (user != null && _forMyself) {
       _nameController.text = user.name;
+      _genderController.text = user.gender ?? '';
+      _ageController.text = user.age ?? '';
     }
   }
 
@@ -410,8 +412,10 @@ class _ConsultationDetailsScreenState
                             _label('Gender'),
                             const SizedBox(height: 8),
                             _textField(
-                                controller: _genderController,
-                                hint: 'Male / Female'),
+                              controller: _genderController,
+                              hint: _forMyself ? 'Not set in profile' : 'Male / Female',
+                              readOnly: _forMyself,
+                            ),
                           ],
                         ),
                       ),
@@ -424,8 +428,9 @@ class _ConsultationDetailsScreenState
                             const SizedBox(height: 8),
                             _textField(
                               controller: _ageController,
-                              hint: 'e.g. 30',
+                              hint: _forMyself ? 'Not set in profile' : 'e.g. 30',
                               keyboardType: TextInputType.number,
+                              readOnly: _forMyself,
                             ),
                           ],
                         ),

@@ -30,6 +30,8 @@ router.get('/profile', authMiddleware, async (req, res) => {
       isApproved: user.is_approved !== false && user.isApproved !== false,
       createdAt: user.createdAt,
       profilePicture: user.profilePicture || null,
+      gender: user.gender || null,
+      age: user.age != null ? user.age.toString() : null,
     });
   } catch (error) {
     console.error('Get user profile error:', error);
@@ -41,7 +43,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const { name, phoneNumber, phone, profilePicture, cnic, age, height, weight, address } = req.body;
+    const { name, phoneNumber, phone, profilePicture, cnic, age, gender, height, weight, address } = req.body;
     const update = {};
     if (name) { update.name = name; update.username = name; }
     const finalPhone = phoneNumber || phone;
@@ -49,6 +51,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
     if (profilePicture !== undefined) update.profilePicture = profilePicture;
     if (cnic !== undefined) update.cnic = cnic;
     if (age !== undefined) update.age = age;
+    if (gender !== undefined) update.gender = gender;
     if (height !== undefined) update.height = height;
     if (weight !== undefined) update.weight = weight;
     if (address !== undefined) update.address = address;
@@ -72,6 +75,8 @@ router.put('/profile', authMiddleware, async (req, res) => {
       isApproved: user.is_approved !== false,
       createdAt: user.createdAt,
       profilePicture: user.profilePicture || null,
+      gender: user.gender || null,
+      age: user.age != null ? user.age.toString() : null,
     });
   } catch (error) {
     console.error('Update profile error:', error);

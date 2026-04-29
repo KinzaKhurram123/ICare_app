@@ -6,6 +6,8 @@ class User {
   final String role;
   final String? profilePicture;
   final DateTime? createdAt;
+  final String? gender;
+  final String? age;
 
   User({
     required this.id,
@@ -15,6 +17,8 @@ class User {
     required this.role,
     this.profilePicture,
     this.createdAt,
+    this.gender,
+    this.age,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class User {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
+      gender: json['gender']?.toString(),
+      age: json['age']?.toString(),
     );
   }
 
@@ -40,6 +46,8 @@ class User {
       'role': role,
       'profilePicture': profilePicture,
       'createdAt': createdAt?.toIso8601String(),
+      if (gender != null) 'gender': gender,
+      if (age != null) 'age': age,
     };
   }
 
@@ -51,6 +59,8 @@ class User {
     String? role,
     String? profilePicture,
     DateTime? createdAt,
+    String? gender,
+    String? age,
   }) {
     return User(
       id: id ?? this.id,
@@ -60,6 +70,8 @@ class User {
       role: role ?? this.role,
       profilePicture: profilePicture ?? this.profilePicture,
       createdAt: createdAt ?? this.createdAt,
+      gender: gender ?? this.gender,
+      age: age ?? this.age,
     );
   }
 }

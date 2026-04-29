@@ -83,7 +83,8 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     final user = ref.read(authProvider).user;
     if (user != null && _appointmentForMyself) {
       _nameController.text = user.name;
-      // gender/age not in User model — leave blank for user to fill
+      _genderController.text = user.gender ?? '';
+      _ageController.text = user.age ?? '';
     }
   }
 
