@@ -69,14 +69,32 @@
         });
 
         await _agoraClient.join(appId, channel, token, uid || null);
-        _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-        await _agoraClient.publish([_localAudioTrack, _localVideoTrack]);
-        _localVideoTrack.play('agora-local');
+
+        // Try mic + camera; if mic fails, try camera only; if both fail, join audio-only
+        try {
+          _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        } catch(micErr) {
+          console.warn('Mic not available:', micErr.message, '— joining without mic');
+          _localAudioTrack = null;
+        }
+
+        try {
+          _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        } catch(camErr) {
+          console.warn('Camera not available:', camErr.message, '— joining without camera');
+          _localVideoTrack = null;
+        }
+
+        var tracks = [];
+        if (_localAudioTrack) tracks.push(_localAudioTrack);
+        if (_localVideoTrack) tracks.push(_localVideoTrack);
+        if (tracks.length > 0) await _agoraClient.publish(tracks);
+        if (_localVideoTrack) _localVideoTrack.play('agora-local');
+
         return 'ok';
       } catch(e) {
         console.error('agoraJoin error:', e);
-        return 'error:' + e.message;
+        return 'error:' + (e.message || String(e));
       }
     };
 

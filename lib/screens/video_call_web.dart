@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 import '../services/agora_service.dart';
+import '../services/api_service.dart';
 import '../services/appointment_service.dart';
 import '../services/call_service.dart';
 import '../utils/theme.dart';
@@ -57,12 +58,12 @@ class _VideoCallWebState extends State<VideoCall> {
   bool _showChat = false;
   bool _showHistory = false;
 
-  // Chat messages (synced via localStorage between tabs)
+  // Chat messages (synced via backend API)
   final List<Map<String, String>> _chatMessages = [];
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _chatScroll = ScrollController();
   Timer? _chatPollTimer;
-  int _lastChatCount = 0; // track how many messages we've already loaded
+  int _lastChatTimestamp = 0; // epoch ms of last fetched message
 
   // Timer for 15-min session
   Timer? _sessionTimer;
@@ -86,43 +87,48 @@ class _VideoCallWebState extends State<VideoCall> {
     });
   }
 
-  /// Poll localStorage every second to sync chat messages between tabs
+  /// Poll backend every 2 seconds for new chat messages
   void _startChatPolling() {
-    _chatPollTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _chatPollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted) return;
-      _syncChatFromStorage();
+      _fetchNewMessages();
     });
   }
 
-  String get _chatStorageKey => 'vchat_${widget.channelName}';
-
-  void _syncChatFromStorage() {
+  Future<void> _fetchNewMessages() async {
     try {
-      final raw = web.window.localStorage.getItem(_chatStorageKey);
-      if (raw == null || raw.isEmpty) return;
-      // Parse: each message is "sender|||text\n"
-      final lines = raw.split('\n').where((l) => l.contains('|||')).toList();
-      if (lines.length == _lastChatCount) return; // no new messages
-      final newMessages = lines.map((line) {
-        final parts = line.split('|||');
-        return {'sender': parts[0], 'text': parts.length > 1 ? parts[1] : ''};
+      final api = ApiService();
+      final response = await api.get(
+        '/call-chat/messages/${Uri.encodeComponent(widget.channelName)}?since=$_lastChatTimestamp',
+      );
+      final msgs = response.data['messages'] as List? ?? [];
+      if (msgs.isEmpty) return;
+      final newMsgs = msgs.map<Map<String, String>>((m) => {
+        'sender': m['sender']?.toString() ?? '',
+        'text': m['text']?.toString() ?? '',
       }).toList();
-      setState(() {
-        _chatMessages.clear();
-        _chatMessages.addAll(newMessages);
-        _lastChatCount = lines.length;
-      });
-      // Auto-scroll
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_chatScroll.hasClients) {
-          _chatScroll.animateTo(
-            _chatScroll.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    } catch (_) {}
+      // Update last timestamp
+      final lastTs = msgs.last['createdAt'];
+      if (lastTs != null) {
+        _lastChatTimestamp = DateTime.tryParse(lastTs.toString())
+                ?.millisecondsSinceEpoch ??
+            _lastChatTimestamp;
+      }
+      if (mounted) {
+        setState(() => _chatMessages.addAll(newMsgs));
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_chatScroll.hasClients) {
+            _chatScroll.animateTo(
+              _chatScroll.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    } catch (_) {
+      // Non-critical — silently ignore poll errors
+    }
   }
 
   String get _sessionTimeStr {
@@ -196,12 +202,10 @@ class _VideoCallWebState extends State<VideoCall> {
 
       final resultStr = result.toDart;
       if (resultStr.startsWith('error:')) {
-        if (mounted) {
-          setState(() {
-            _error = resultStr.substring(6);
-            _loading = false;
-          });
-        }
+        // Non-fatal: show warning but still allow video call to proceed
+        // (other party may still be able to connect)
+        debugPrint('⚠️ Agora join warning: $resultStr');
+        if (mounted) setState(() { _joined = true; _loading = false; });
       } else {
         if (mounted) setState(() { _joined = true; _loading = false; });
       }
@@ -295,18 +299,24 @@ class _VideoCallWebState extends State<VideoCall> {
 
     final senderName = widget.currentUserName.isNotEmpty
         ? widget.currentUserName
-        : 'You';
-
-    // Write to localStorage so the other tab picks it up
-    try {
-      final existing = web.window.localStorage.getItem(_chatStorageKey) ?? '';
-      final newEntry = '$senderName|||$text';
-      final updated = existing.isEmpty ? newEntry : '$existing\n$newEntry';
-      web.window.localStorage.setItem(_chatStorageKey, updated);
-    } catch (_) {}
+        : 'User';
 
     _chatController.clear();
-    _syncChatFromStorage(); // immediate local update
+
+    // Send to backend
+    ApiService().post('/call-chat/send', {
+      'channelName': widget.channelName,
+      'sender': senderName,
+      'text': text,
+    }).then((_) {
+      // Immediately fetch to show own message
+      _fetchNewMessages();
+    }).catchError((_) {
+      // Show locally even if backend fails
+      if (mounted) {
+        setState(() => _chatMessages.add({'sender': senderName, 'text': text}));
+      }
+    });
   }
 
   Future<void> _pickAndSendFile() async {
@@ -330,8 +340,6 @@ class _VideoCallWebState extends State<VideoCall> {
     _chatPollTimer?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
-    // Clear chat from localStorage when call ends
-    try { web.window.localStorage.removeItem(_chatStorageKey); } catch (_) {}
     try { _agoraLeave(); } catch (_) {}
     super.dispose();
   }

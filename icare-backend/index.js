@@ -24,6 +24,7 @@ const callRoutes = require('./routes/call');
 const connectNowRoutes = require('./routes/connect-now');
 const instructorsRoutes = require('./routes/instructors');
 const courseQuestionsRoutes = require('./routes/course-questions');
+const callChatRoutes = require('./routes/call-chat');
 
 const app = express();
 
@@ -107,7 +108,8 @@ const makeStub = (emptyKey) => {
   r.all('/', (req, res) => res.json({ success: true, [emptyKey]: [], count: 0 }));
   return r;
 };
-app.use('/api/chat', makeStub('messages'));
+app.use('/api/call-chat', callChatRoutes);
+app.use('/api/chat', callChatRoutes); // alias
 app.use('/api/users', usersRoutes);
 
 // Error handling middleware
