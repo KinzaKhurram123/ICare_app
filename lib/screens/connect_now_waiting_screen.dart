@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/connect_now_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/app_keys.dart';
 
@@ -100,16 +101,20 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     });
   }
 
-  void _onDoctorAccepted(String channelName, String doctorName) {
+  void _onDoctorAccepted(String channelName, String doctorName) async {
     if (!mounted) return;
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
+    // Get current user (patient) name
+    final userData = await SharedPref().getUserData();
+    final patientName = userData?.name ?? 'Patient';
     // Auto-navigate directly — no button click required
     appNavigatorKey.currentState?.pushReplacement(
       MaterialPageRoute(
         builder: (_) => VideoCall(
           channelName: channelName,
           remoteUserName: doctorName.isNotEmpty ? doctorName : 'Doctor',
+          currentUserName: patientName,
         ),
       ),
     );

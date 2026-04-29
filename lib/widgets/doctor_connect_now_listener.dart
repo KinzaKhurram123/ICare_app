@@ -151,6 +151,9 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
               final callPatient = result['patientName']?.toString() ?? patientName;
+              // Get doctor's own name
+              final userData = await _sharedPref.getUserData();
+              final doctorName = userData?.name ?? 'Doctor';
               nav.pop();
               nav.push(
                 MaterialPageRoute(
@@ -158,6 +161,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                     child: VideoCall(
                       channelName: callChannel,
                       remoteUserName: callPatient,
+                      currentUserName: doctorName,
                     ),
                   ),
                 ),
@@ -171,6 +175,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                     child: VideoCall(
                       channelName: channelName,
                       remoteUserName: patientName,
+                      currentUserName: 'Doctor',
                     ),
                   ),
                 ),

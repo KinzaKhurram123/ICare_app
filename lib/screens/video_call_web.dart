@@ -23,7 +23,6 @@ external void _agoraMuteMic(JSBoolean mute);
 
 @JS('agoraMuteCam')
 external void _agoraMuteCam(JSBoolean mute);
-
 class VideoCall extends StatefulWidget {
   final String channelName;
   final String remoteUserName;
@@ -58,10 +57,12 @@ class _VideoCallWebState extends State<VideoCall> {
   bool _showChat = false;
   bool _showHistory = false;
 
-  // Chat messages (in-session only)
+  // Chat messages (synced via localStorage between tabs)
   final List<Map<String, String>> _chatMessages = [];
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _chatScroll = ScrollController();
+  Timer? _chatPollTimer;
+  int _lastChatCount = 0; // track how many messages we've already loaded
 
   // Timer for 15-min session
   Timer? _sessionTimer;
@@ -76,12 +77,52 @@ class _VideoCallWebState extends State<VideoCall> {
     _registerView();
     _joinCall();
     _startSessionTimer();
+    _startChatPolling();
   }
 
   void _startSessionTimer() {
     _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _sessionSeconds++);
     });
+  }
+
+  /// Poll localStorage every second to sync chat messages between tabs
+  void _startChatPolling() {
+    _chatPollTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      _syncChatFromStorage();
+    });
+  }
+
+  String get _chatStorageKey => 'vchat_${widget.channelName}';
+
+  void _syncChatFromStorage() {
+    try {
+      final raw = web.window.localStorage.getItem(_chatStorageKey);
+      if (raw == null || raw.isEmpty) return;
+      // Parse: each message is "sender|||text\n"
+      final lines = raw.split('\n').where((l) => l.contains('|||')).toList();
+      if (lines.length == _lastChatCount) return; // no new messages
+      final newMessages = lines.map((line) {
+        final parts = line.split('|||');
+        return {'sender': parts[0], 'text': parts.length > 1 ? parts[1] : ''};
+      }).toList();
+      setState(() {
+        _chatMessages.clear();
+        _chatMessages.addAll(newMessages);
+        _lastChatCount = lines.length;
+      });
+      // Auto-scroll
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_chatScroll.hasClients) {
+          _chatScroll.animateTo(
+            _chatScroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } catch (_) {}
   }
 
   String get _sessionTimeStr {
@@ -240,19 +281,21 @@ class _VideoCallWebState extends State<VideoCall> {
   void _sendChatMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
-    setState(() {
-      _chatMessages.add({'sender': 'You', 'text': text, 'type': 'text'});
-    });
+
+    final senderName = widget.currentUserName.isNotEmpty
+        ? widget.currentUserName
+        : 'You';
+
+    // Write to localStorage so the other tab picks it up
+    try {
+      final existing = web.window.localStorage.getItem(_chatStorageKey) ?? '';
+      final newEntry = '$senderName|||$text';
+      final updated = existing.isEmpty ? newEntry : '$existing\n$newEntry';
+      web.window.localStorage.setItem(_chatStorageKey, updated);
+    } catch (_) {}
+
     _chatController.clear();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_chatScroll.hasClients) {
-        _chatScroll.animateTo(
-          _chatScroll.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    _syncChatFromStorage(); // immediate local update
   }
 
   Future<void> _pickAndSendFile() async {
@@ -273,8 +316,11 @@ class _VideoCallWebState extends State<VideoCall> {
   @override
   void dispose() {
     _sessionTimer?.cancel();
+    _chatPollTimer?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
+    // Clear chat from localStorage when call ends
+    try { web.window.localStorage.removeItem(_chatStorageKey); } catch (_) {}
     try { _agoraLeave(); } catch (_) {}
     super.dispose();
   }
@@ -496,7 +542,10 @@ class _VideoCallWebState extends State<VideoCall> {
                   itemCount: _chatMessages.length,
                   itemBuilder: (ctx, i) {
                     final msg = _chatMessages[i];
-                    final isMe = msg['sender'] == 'You';
+                    final myName = widget.currentUserName.isNotEmpty
+                        ? widget.currentUserName
+                        : 'You';
+                    final isMe = msg['sender'] == myName;
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
@@ -511,10 +560,25 @@ class _VideoCallWebState extends State<VideoCall> {
                               : const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          msg['text'] ?? '',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
+                        child: Column(
+                          crossAxisAlignment: isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            if (!isMe)
+                              Text(
+                                msg['sender'] ?? '',
+                                style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            Text(
+                              msg['text'] ?? '',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 13),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -578,6 +642,15 @@ class _VideoCallWebState extends State<VideoCall> {
 
   // ── Patient History Panel ───────────────────────────────────────────────
   Widget _buildHistoryPanel() {
+    // currentUserName = patient (the one viewing this screen)
+    // remoteUserName = doctor (the other side)
+    final patientName = widget.currentUserName.isNotEmpty
+        ? widget.currentUserName
+        : 'Patient';
+    final doctorName = widget.remoteUserName.isNotEmpty
+        ? widget.remoteUserName
+        : 'Doctor';
+
     return Column(
       children: [
         Container(
@@ -612,9 +685,9 @@ class _VideoCallWebState extends State<VideoCall> {
               children: [
                 _historySection('Current Consultation',
                     Icons.video_call_rounded, const Color(0xFF3B82F6), [
-                  'Patient: ${widget.remoteUserName}',
+                  'Patient: $patientName',
+                  'Doctor: $doctorName',
                   'Session: $_sessionTimeStr',
-                  'Channel: ${widget.channelName}',
                 ]),
                 const SizedBox(height: 16),
                 _historySection('Previous Visits',
