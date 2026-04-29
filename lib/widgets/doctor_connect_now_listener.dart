@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/connect_now_service.dart';
 import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
@@ -21,13 +22,45 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
   final SharedPref _sharedPref = SharedPref();
   Timer? _timer;
   bool _dialogShowing = false;
-  // Track request IDs already handled (accepted or declined) to avoid re-showing
+
+  // In-memory cache (fast lookup)
   final Set<String> _handledRequestIds = {};
+
+  // SharedPreferences key for persisting handled IDs across app restarts
+  static const String _kHandledKey = 'connect_now_handled_ids';
 
   @override
   void initState() {
     super.initState();
-    _startPolling();
+    _loadHandledIds().then((_) => _startPolling());
+  }
+
+  /// Load previously handled request IDs from persistent storage
+  Future<void> _loadHandledIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getStringList(_kHandledKey) ?? [];
+      _handledRequestIds.addAll(stored);
+      debugPrint('📋 Loaded ${stored.length} handled request IDs');
+    } catch (e) {
+      debugPrint('⚠️ Could not load handled IDs: $e');
+    }
+  }
+
+  /// Persist a handled request ID so it survives app restarts
+  Future<void> _markHandled(String requestId) async {
+    if (requestId.isEmpty) return;
+    _handledRequestIds.add(requestId);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Keep only last 50 IDs to avoid unbounded growth
+      final list = _handledRequestIds.toList();
+      if (list.length > 50) list.removeRange(0, list.length - 50);
+      await prefs.setStringList(_kHandledKey, list);
+      debugPrint('✅ Marked request $requestId as handled (persisted)');
+    } catch (e) {
+      debugPrint('⚠️ Could not persist handled ID: $e');
+    }
   }
 
   void _startPolling() {
@@ -52,7 +85,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         final request = result['request'] as Map<String, dynamic>;
         final requestId = request['id']?.toString() ?? '';
 
-        // Skip if already handled
+        // Skip if already handled (persisted across restarts)
         if (requestId.isNotEmpty && _handledRequestIds.contains(requestId)) {
           debugPrint('⏭️ Skipping already-handled request: $requestId');
           return;
@@ -91,8 +124,8 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
         pageBuilder: (ctx, _, __) => _ConnectNowRequestDialog(
           patientName: patientName,
           onAccept: () async {
-            // Mark as handled immediately so it never shows again
-            if (requestId.isNotEmpty) _handledRequestIds.add(requestId);
+            // Mark as handled immediately — persisted so survives app restart
+            await _markHandled(requestId);
             try {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
@@ -119,9 +152,9 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               );
             }
           },
-          onDecline: () {
-            // Mark as handled so it doesn't pop up again
-            if (requestId.isNotEmpty) _handledRequestIds.add(requestId);
+          onDecline: () async {
+            // Mark as handled — persisted so survives app restart
+            await _markHandled(requestId);
             nav.pop();
           },
         ),
