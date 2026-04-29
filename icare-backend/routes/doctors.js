@@ -57,6 +57,29 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── SET ONLINE STATUS ────────────────────────────────────────────────────────
+router.post('/online-status', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    if (req.user.role?.toLowerCase() !== 'doctor') {
+      return res.status(403).json({ success: false, message: 'Only doctors can update online status' });
+    }
+    const userId = toId(req.user.id);
+    const { isOnline } = req.body;
+
+    await DoctorProfile.findOneAndUpdate(
+      { user_id: userId },
+      { $set: { is_online: !!isOnline, last_seen: new Date() } },
+      { upsert: true }
+    );
+
+    res.json({ success: true, isOnline: !!isOnline });
+  } catch (e) {
+    console.error('Online status error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ─── GET ALL DOCTORS ──────────────────────────────────────────────────────────
 router.get('/get_all_doctors', authMiddleware, async (req, res) => {
   try {
@@ -70,6 +93,12 @@ router.get('/get_all_doctors', authMiddleware, async (req, res) => {
 
     const result = doctors.map(d => {
       const p = profileMap[d._id.toString()] || {};
+      // Consider online if last_seen within 5 minutes
+      const lastSeen = p.last_seen ? new Date(p.last_seen) : null;
+      const isOnline = p.is_online === true &&
+        lastSeen &&
+        (Date.now() - lastSeen.getTime()) < 5 * 60 * 1000;
+
       return {
         id: d._id.toString(),
         _id: d._id.toString(),
@@ -85,6 +114,7 @@ router.get('/get_all_doctors', authMiddleware, async (req, res) => {
         availableTime: p.available_hours,
         rating: p.rating || 0,
         totalReviews: p.total_reviews || 0,
+        isOnline: !!isOnline,
       };
     });
 
