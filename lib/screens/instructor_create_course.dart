@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
+import 'package:icare/screens/instructor_assign_course_screen.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -37,6 +38,7 @@ class _InstructorCreateCourseScreenState
   String? _uploadedThumbnailUrl;
   List<String> _healthConditions = [];
   List<CourseModule> _modules = [];
+  Course? _savedCourse; // set after successful create/update
 
   @override
   void initState() {
@@ -64,19 +66,54 @@ class _InstructorCreateCourseScreenState
     }
   }
 
+  bool _isUploadingThumbnail = false;
+
   Future<void> _pickAndUploadThumbnail() async {
-    // Show dialog to paste image URL
-    final urlController = TextEditingController(text: _thumbnailController.text);
-    final result = await showDialog<String>(
+    // Show options: URL paste OR file upload
+    final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Course Thumbnail'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.link_rounded, color: Color(0xFF3B82F6)),
+              title: const Text('Paste Image URL'),
+              subtitle: const Text('Imgur, Cloudinary, or any direct link'),
+              onTap: () => Navigator.pop(ctx, 'url'),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.upload_file_rounded, color: Color(0xFF10B981)),
+              title: const Text('Upload Image File'),
+              subtitle: const Text('JPG, PNG, WebP (max 5MB)'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == 'url') {
+      await _pasteThumbnailUrl();
+    } else if (choice == 'file') {
+      await _uploadThumbnailFile();
+    }
+  }
+
+  Future<void> _pasteThumbnailUrl() async {
+    final urlController = TextEditingController(text: _thumbnailController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Paste Image URL'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Paste an image URL (Imgur, Cloudinary, or any direct image link):',
+              'Paste any direct image link:',
               style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 12),
@@ -102,12 +139,85 @@ class _InstructorCreateCourseScreenState
         ],
       ),
     );
-
     if (result != null && result.isNotEmpty) {
       setState(() {
         _uploadedThumbnailUrl = result;
         _thumbnailController.text = result;
       });
+    }
+  }
+
+  Future<void> _uploadThumbnailFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      if (file.bytes == null || file.bytes!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not read file. Try pasting a URL instead.'), backgroundColor: Colors.orange),
+          );
+        }
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image too large. Max 5MB.'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+
+      setState(() => _isUploadingThumbnail = true);
+
+      const cloudName = 'dzlcnyxgb';
+      const uploadPreset = 'icare_videos';
+
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        'upload_preset': uploadPreset,
+        'folder': 'icare_thumbnails',
+      });
+
+      final dio = Dio();
+      final response = await dio.post(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+        data: formData,
+      );
+
+      if (response.statusCode == 200) {
+        final imageUrl = response.data['secure_url'] as String;
+        setState(() {
+          _uploadedThumbnailUrl = imageUrl;
+          _thumbnailController.text = imageUrl;
+          _isUploadingThumbnail = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Thumbnail uploaded!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw Exception('Upload failed');
+      }
+    } catch (e) {
+      setState(() => _isUploadingThumbnail = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Upload failed. Try pasting a URL instead.'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(label: 'Paste URL', textColor: Colors.white, onPressed: _pasteThumbnailUrl),
+          ),
+        );
+      }
     }
   }
 
@@ -151,25 +261,96 @@ class _InstructorCreateCourseScreenState
         'visibility': 'private',
       };
 
+      Course? savedCourse;
       if (_isEditing) {
         await _instructorService.updateCourse(widget.course!.id ?? '', courseData);
+        savedCourse = widget.course;
       } else {
-        await _instructorService.createCourse(courseData);
+        final result = await _instructorService.createCourse(courseData);
+        try {
+          if (result is Map<String, dynamic>) {
+            savedCourse = Course.fromJson(result);
+          }
+        } catch (_) {}
       }
 
       if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isEditing
-                  ? 'Course updated successfully!'
-                  : 'Course created successfully!',
+        setState(() {
+          _isLoading = false;
+          _savedCourse = savedCourse;
+        });
+
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            contentPadding: const EdgeInsets.all(28),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _isEditing ? 'Course Updated!' : 'Course Created!',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Would you like to assign this course to specific users?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => InstructorAssignCourseScreen(
+                            initialCourse: _savedCourse,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.person_add_rounded),
+                    label: const Text('Assign to Users'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.pop(context, true);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
             ),
-            backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -259,6 +440,31 @@ class _InstructorCreateCourseScreenState
                     : (_isEditing ? 'Update Course' : 'Create Course'),
                 onPressed: _isLoading ? null : _saveCourse,
               ),
+              if (_isEditing) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => InstructorAssignCourseScreen(
+                          initialCourse: widget.course,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.person_add_rounded),
+                    label: const Text('Assign Course to Users'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryColor,
+                      side: const BorderSide(color: AppColors.primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -316,7 +522,29 @@ class _InstructorCreateCourseScreenState
                 width: 1.5,
               ),
             ),
-            child: _uploadedThumbnailUrl != null
+            child: _isUploadingThumbnail
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 12),
+                            Text(
+                              'Uploading image...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _uploadedThumbnailUrl != null
                     ? Stack(
                         children: [
                           ClipRRect(
@@ -360,9 +588,9 @@ class _InstructorCreateCourseScreenState
                             child: Icon(Icons.add_photo_alternate_outlined, size: 32, color: AppColors.primaryColor),
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            'Upload Course Thumbnail',
-                            style: TextStyle(
+                          Text(
+                            _isUploadingThumbnail ? 'Uploading...' : 'Upload Course Thumbnail',
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                               color: Color(0xFF1E293B),

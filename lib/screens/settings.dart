@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/about_us.dart';
 import 'package:icare/screens/change_password.dart';
+import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/courses.dart' show Courses;
 import 'package:icare/screens/help_and_support.dart';
 import 'package:icare/screens/notification_settings.dart';
@@ -651,7 +652,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _SettingsItem(
               title: 'Certificates',
               icon: Icons.workspace_premium_outlined,
-              onTap: () => _comingSoon(context, 'Certificates'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CertificatesScreen()),
+              ),
             ),
             _SettingsItem(
               title: 'Course Notifications',
