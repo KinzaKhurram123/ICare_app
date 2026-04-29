@@ -81,11 +81,11 @@ router.post('/accept', authMiddleware, async (req, res) => {
         success: true,
         channelName: request.channelName,
         patientName: request.patientName,
+        appointmentId: request.appointmentId?.toString() || '',
       });
     }
 
     if (!request || request.status !== 'pending') {
-      // Try finding by channelName as fallback
       request = await ConnectNow.findOne({ status: 'pending' }).sort({ createdAt: -1 }).catch(() => null);
       if (!request) {
         return res.status(404).json({ success: false, message: 'No pending request found' });
@@ -97,12 +97,36 @@ router.post('/accept', authMiddleware, async (req, res) => {
       doctorId: req.user.id,
       doctorName: doctorName || 'Doctor',
     };
+
+    // Create an appointment record so patient can rejoin via "Consultation in Progress"
+    let appointmentId = '';
+    try {
+      const Appointment = require('../models/Appointment');
+      const mongoose = require('mongoose');
+      const appt = await Appointment.create({
+        patient_id: request.patientId,
+        doctor_id: req.user.id,
+        appointment_date: new Date(),
+        appointment_time: new Date().toTimeString().slice(0, 5),
+        timeSlot: new Date().toTimeString().slice(0, 5),
+        status: 'in_progress',
+        consultation_type: 'video',
+        notes: `Instant consultation via Connect Now. Channel: ${request.channelName}`,
+        channel_name: request.channelName,
+      });
+      appointmentId = appt._id.toString();
+      request.appointmentId = appt._id;
+    } catch (apptErr) {
+      console.warn('Could not create appointment for connect-now:', apptErr.message);
+    }
+
     await request.save();
 
     res.json({
       success: true,
       channelName: request.channelName,
       patientName: request.patientName,
+      appointmentId,
     });
   } catch (err) {
     console.error('Connect now accept error:', err);
@@ -125,6 +149,7 @@ router.get('/status/:requestId', authMiddleware, async (req, res) => {
       status: request.status,
       channelName: request.channelName,
       acceptedBy: request.acceptedBy,
+      appointmentId: request.appointmentId?.toString() || '',
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

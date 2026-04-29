@@ -93,7 +93,26 @@ class _VideoCallWebState extends State<VideoCall> {
 
   void _startSessionTimer() {
     _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _sessionSeconds++);
+      if (mounted) {
+        setState(() => _sessionSeconds++);
+        // At exactly 15 minutes — show a non-blocking notification
+        if (_sessionSeconds == 900) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.timer_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 10),
+                  Text('15 minutes reached — consultation continues until you end it'),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade700,
+              duration: const Duration(seconds: 5),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     });
   }
 

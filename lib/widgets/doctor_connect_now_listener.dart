@@ -155,6 +155,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
               final callPatient = result['patientName']?.toString() ?? patientName;
+              final appointmentId = result['appointmentId']?.toString() ?? '';
               // Get doctor's own name
               final userData = await _sharedPref.getUserData();
               final doctorName = userData?.name ?? 'Doctor';
@@ -166,6 +167,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                       channelName: callChannel,
                       remoteUserName: callPatient,
                       currentUserName: doctorName,
+                      appointmentId: appointmentId.isNotEmpty ? appointmentId : null,
                     ),
                   ),
                 ),

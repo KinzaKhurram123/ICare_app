@@ -88,9 +88,11 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
           _countdownTimer?.cancel();
           final acceptedBy = status['acceptedBy'] as Map? ?? {};
           final doctorName = (acceptedBy['doctorName'] ?? acceptedBy['name'] ?? 'Doctor').toString();
+          final appointmentId = status['appointmentId']?.toString() ?? '';
           _onDoctorAccepted(
             status['channelName']?.toString() ?? _channelName ?? '',
             doctorName,
+            appointmentId,
           );
         } else if (status['status'] == 'expired') {
           timer.cancel();
@@ -101,20 +103,19 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     });
   }
 
-  void _onDoctorAccepted(String channelName, String doctorName) async {
+  void _onDoctorAccepted(String channelName, String doctorName, String appointmentId) async {
     if (!mounted) return;
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
-    // Get current user (patient) name
     final userData = await SharedPref().getUserData();
     final patientName = userData?.name ?? 'Patient';
-    // Auto-navigate directly — no button click required
     appNavigatorKey.currentState?.pushReplacement(
       MaterialPageRoute(
         builder: (_) => VideoCall(
           channelName: channelName,
           remoteUserName: doctorName.isNotEmpty ? doctorName : 'Doctor',
           currentUserName: patientName,
+          appointmentId: appointmentId.isNotEmpty ? appointmentId : null,
         ),
       ),
     );
