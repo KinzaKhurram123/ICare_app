@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/screens/doctor_dashboard.dart';
 import 'package:icare/screens/lab_test_template_screen.dart';
 import 'package:icare/screens/soap_notes_redesign.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/clinical_service.dart';
+import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/icd_code_selector.dart';
@@ -20,6 +22,7 @@ class EndConsultationWorkflow extends StatefulWidget {
 
 class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
   final ClinicalService _clinicalService = ClinicalService();
+  final MedicalRecordService _medicalRecordService = MedicalRecordService();
 
   // Diagnosis state
   bool _diagnosisCompleted = false;
@@ -110,44 +113,127 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Save diagnosis with ICD codes
+      final appointmentId = widget.appointment.id;
+      final patientId = widget.appointment.patient?.id ?? '';
+
+      // 1. Save SOAP notes with diagnosis + ICD codes
       if (_diagnosisCompleted && _selectedICDCodes.isNotEmpty) {
-        await _clinicalService.saveSoapNotes(widget.appointment.id, {
-          'diagnosis': _diagnosisNotesController.text,
+        await _clinicalService.saveSoapNotes(appointmentId, {
+          'assessment': _diagnosisNotesController.text,
           'icdCodes': _selectedICDCodes,
         });
       }
 
-      // Save "No Prescription" reason if applicable
-      if (_noPrescription && _noPrescriptionReason.isNotEmpty) {
-        await _clinicalService.saveSoapNotes(widget.appointment.id, {
-          'noPrescriptionReason': _noPrescriptionReason,
+      // 2. Build prescription medicines list with Day/Noon/Night dosage
+      final List<Map<String, dynamic>> medicines = _prescriptionMedicines.map((m) => {
+        'name': m['name'] ?? '',
+        'dosage': [
+          if ((m['day'] ?? '').isNotEmpty) 'Day: ${m['day']}',
+          if ((m['noon'] ?? '').isNotEmpty) 'Noon: ${m['noon']}',
+          if ((m['night'] ?? '').isNotEmpty) 'Night: ${m['night']}',
+        ].join(' | '),
+        'day': m['day'] ?? '',
+        'noon': m['noon'] ?? '',
+        'night': m['night'] ?? '',
+        'duration': m['duration'] ?? '',
+        'notes': m['notes'] ?? '',
+      }).toList();
+
+      // 3. Build lab tests list from selected template
+      final List<String> labTests = _selectedLabTemplate != null
+          ? (_selectedLabTemplate!['tests'] as List)
+              .map((t) => t['name']?.toString() ?? '')
+              .where((n) => n.isNotEmpty)
+              .toList()
+          : [];
+
+      // 4. Build diagnosis string from ICD codes + notes
+      final diagnosisText = _selectedICDCodes.isNotEmpty
+          ? '${_selectedICDCodes.map((c) => '${c['code']} - ${c['description']}').join(', ')}'
+              '${_diagnosisNotesController.text.trim().isNotEmpty ? '\n${_diagnosisNotesController.text.trim()}' : ''}'
+          : _diagnosisNotesController.text.trim();
+
+      // 5. Create medical record — this makes data visible to patient
+      if (patientId.isNotEmpty) {
+        await _medicalRecordService.createMedicalRecord({
+          'patientId': patientId,
+          'appointmentId': appointmentId,
+          'diagnosis': diagnosisText.isNotEmpty ? diagnosisText : 'Consultation completed',
+          'symptoms': [],
+          'prescription': {
+            'medicines': medicines,
+            'labTests': labTests,
+            'noPrescriptionReason': _noPrescription ? _noPrescriptionReason : '',
+            'noLabTestsReason': _noLabTests ? _noLabTestsReason : '',
+          },
+          'labTests': labTests,
+          'notes': _noPrescription
+              ? 'No prescription: $_noPrescriptionReason'
+              : (_noLabTests ? 'No lab tests: $_noLabTestsReason' : ''),
         });
       }
 
-      // Save "No Lab Tests" reason if applicable
-      if (_noLabTests && _noLabTestsReason.isNotEmpty) {
-        await _clinicalService.saveSoapNotes(widget.appointment.id, {
-          'noLabTestsReason': _noLabTestsReason,
-        });
-      }
-
-      // Mark appointment as completed
+      // 6. Mark appointment as completed
       await AppointmentService().updateAppointmentStatus(
-        appointmentId: widget.appointment.id,
+        appointmentId: appointmentId,
         status: 'completed',
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Consultation ended successfully'),
-            backgroundColor: Colors.green,
+        // Show success dialog then navigate to doctor dashboard
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Consultation Ended',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'All records have been saved and are now visible to the patient.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Go to Dashboard', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
-        // Pop twice - close this screen and the video call screen
-        Navigator.pop(context);
-        Navigator.pop(context);
+
+        // Navigate to doctor dashboard, clearing all previous routes
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const DoctorDashboard()),
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
