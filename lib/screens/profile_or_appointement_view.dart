@@ -800,6 +800,14 @@ class _WebPatientProfileView extends StatelessWidget {
                               onPressed: () async {
                                 final me = await SharedPref().getUserData();
                                 if (!context.mounted) return;
+                                // Update status to in_progress so patient sees Rejoin button
+                                try {
+                                  await AppointmentService().updateAppointmentStatus(
+                                    appointmentId: appointment.id ?? '',
+                                    status: 'in_progress',
+                                  );
+                                } catch (_) {}
+                                if (!context.mounted) return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

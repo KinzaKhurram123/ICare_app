@@ -9,6 +9,7 @@ import 'package:icare/screens/create_medical_record.dart';
 import 'package:icare/screens/prescription_templates_screen.dart';
 import 'package:icare/screens/doctor_assign_program_screen.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/doctor_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
@@ -91,8 +92,15 @@ class _ConsultationWorkflowScreenState extends State<ConsultationWorkflowScreen>
             ),
             tooltip: 'Start Video Consultation',
             onPressed: () async {
-              // Doctor starts call — remote user = patient, current user = doctor
+              // Doctor starts call — update status to in_progress so patient sees Rejoin
               final me = await SharedPref().getUserData();
+              if (!context.mounted) return;
+              try {
+                await AppointmentService().updateAppointmentStatus(
+                  appointmentId: widget.appointment.id ?? '',
+                  status: 'in_progress',
+                );
+              } catch (_) {}
               if (!context.mounted) return;
               Navigator.push(
                 context,

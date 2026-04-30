@@ -27,6 +27,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   bool _isLoading = true;
   Timer? _reminderTimer;
   final Set<String> _notifiedAppointments = {};
+  final Set<String> _notifiedInProgress = {};
 
   @override
   void initState() {
@@ -42,8 +43,59 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
 
   void _startReminderTimer() {
     _reminderTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _checkUpcomingReminders();
+      if (mounted) {
+        _refreshAppointments();
+        _checkUpcomingReminders();
+      }
     });
+  }
+
+  Future<void> _refreshAppointments() async {
+    final result = await _appointmentService.getMyAppointmentsDetailed();
+    if (!mounted) return;
+    if (result['success']) {
+      final updated = result['appointments'] as List<AppointmentDetail>;
+      // Check for newly in_progress appointments → show banner to patient
+      for (final appt in updated) {
+        if (appt.status.toLowerCase() == 'in_progress' &&
+            !_notifiedInProgress.contains(appt.id)) {
+          _notifiedInProgress.add(appt.id);
+          _showCallStartedBanner(appt);
+        }
+      }
+      setState(() => _appointments = updated);
+    }
+  }
+
+  void _showCallStartedBanner(AppointmentDetail appt) {
+    if (!mounted) return;
+    final doctorName = appt.doctorName.isNotEmpty ? appt.doctorName : 'Your doctor';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.videocam_rounded, color: Colors.white, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Consultation Started!',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 15)),
+                  Text('$doctorName is waiting — tap "In Progress" to join',
+                      style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF6366F1),
+        duration: const Duration(seconds: 12),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
   }
 
   void _checkUpcomingReminders() {
