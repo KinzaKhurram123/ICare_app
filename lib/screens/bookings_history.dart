@@ -43,268 +43,253 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
 
   Future<void> _loadAppointments() async {
     setState(() => _isLoading = true);
-
     final result = await _appointmentService.getMyAppointmentsDetailed();
-
-    debugPrint('📋 Bookings History - Load result: ${result['success']}');
-
     if (result['success']) {
-      final appointments = result['appointments'] as List<AppointmentDetail>;
-      debugPrint('📋 Bookings History - Loaded ${appointments.length} appointments');
-      for (var apt in appointments) {
-        debugPrint(
-          '   - ${apt.status}: ${apt.doctor?.name ?? "Unknown"} on ${apt.date}',
-        );
-      }
-
       setState(() {
-        _appointments = appointments;
+        _appointments = result['appointments'] as List<AppointmentDetail>;
         _isLoading = false;
       });
     } else {
-      debugPrint('❌ Bookings History - Failed to load: ${result['message']}');
       setState(() => _isLoading = false);
     }
   }
 
-  int _getCountByStatus(String status) {
-    return _appointments
-        .where((a) => a.status.toLowerCase() == status.toLowerCase())
-        .length;
-  }
+  int _getCountByStatus(String status) =>
+      _appointments.where((a) => a.status.toLowerCase() == status.toLowerCase()).length;
 
-  List<AppointmentDetail> _getAppointmentsByStatus(String status) {
-    return _appointments
-        .where((a) => a.status.toLowerCase() == status.toLowerCase())
-        .toList();
-  }
+  List<AppointmentDetail> _getAppointmentsByStatus(String status) =>
+      _appointments.where((a) => a.status.toLowerCase() == status.toLowerCase()).toList();
 
-  List<AppointmentDetail> get _inProgressAppointments =>
-      _getAppointmentsByStatus('in_progress');
+  List<AppointmentDetail> get _inProgressAppointments => _getAppointmentsByStatus('in_progress');
 
   List<AppointmentDetail> get _upcomingAppointments {
     final now = DateTime.now();
-    return _appointments.where((a) {
-      return a.status.toLowerCase() == 'confirmed' && a.date.isAfter(now);
-    }).toList();
+    return _appointments
+        .where((a) => a.status.toLowerCase() == 'confirmed' && a.date.isAfter(now))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
+    final pad = isDesktop ? 32.0 : 20.0;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E3A5F), Color(0xFF0F172A)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: EdgeInsets.all(isDesktop ? 32 : 20),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                              SizedBox(width: 6),
-                              Text('Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.calendar_month_rounded,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Bookings History',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        fontFamily: 'Gilroy-Bold',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Stay on top of your schedule with real-time updates',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    // Stats Row
-                    _isLoading
-                        ? const SizedBox()
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildStatChip(
-                                'Total',
-                                _appointments.length,
-                                const Color(0xFF3B82F6),
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatChip(
-                                'Live',
-                                _getCountByStatus('in_progress'),
-                                const Color(0xFFEF4444),
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatChip(
-                                'Done',
-                                _getCountByStatus('completed'),
-                                const Color(0xFF8B5CF6),
-                              ),
-                            ],
-                          ),
-                  ],
-                ),
-              ),
-
-              // Content
-              Expanded(
-                child: Container(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: RefreshIndicator(
+        onRefresh: _loadAppointments,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ── Collapsing gradient header ──────────────────────────────
+            SliverAppBar(
+              expandedHeight: 260,
+              collapsedHeight: 60,
+              pinned: true,
+              automaticallyImplyLeading: false,
+              backgroundColor: const Color(0xFF1E3A5F),
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
+                background: Container(
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF1E3A5F), Color(0xFF0F172A)],
                     ),
                   ),
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : RefreshIndicator(
-                          onRefresh: _loadAppointments,
-                          child: ListView(
-                            padding: EdgeInsets.all(isDesktop ? 32 : 20),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: pad),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Back button row
+                          Row(
                             children: [
-                              // Book Appointment Now button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (ctx) => const DoctorsList(),
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryColor,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  icon: const Icon(Icons.add_rounded, size: 22),
-                                  label: const Text(
-                                    'Book Appointment Now',
-                                    style: TextStyle(
+                              GestureDetector(
+                                onTap: () => Navigator.of(context)
+                                    .popUntil((route) => route.isFirst),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.arrow_back_ios_new_rounded,
+                                        color: Colors.white, size: 18),
+                                    SizedBox(width: 6),
+                                    Text('Home',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.calendar_month_rounded,
+                                color: Colors.white, size: 36),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Bookings History',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Stay on top of your schedule',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.7)),
+                          ),
+                          const SizedBox(height: 16),
+                          // Stats chips
+                          if (!_isLoading)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _statChip('Total', _appointments.length,
+                                    const Color(0xFF3B82F6)),
+                                const SizedBox(width: 10),
+                                _statChip('Live',
+                                    _getCountByStatus('in_progress'),
+                                    const Color(0xFFEF4444)),
+                                const SizedBox(width: 10),
+                                _statChip('Done',
+                                    _getCountByStatus('completed'),
+                                    const Color(0xFF8B5CF6)),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Collapsed title
+                title: const Text(
+                  'Bookings History',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800),
+                ),
+                centerTitle: true,
+              ),
+            ),
+
+            // ── Body content ────────────────────────────────────────────
+            if (_isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              SliverPadding(
+                padding: EdgeInsets.all(pad),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Book Now button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const DoctorsList()),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.add_rounded, size: 22),
+                        label: const Text('Book Appointment Now',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // In Progress card
+                    _buildInProgressCard(),
+                    const SizedBox(height: 12),
+
+                    // Category cards
+                    _categoryCard(
+                      'Upcoming Bookings',
+                      'Scheduled for later',
+                      _upcomingAppointments.length,
+                      const Color(0xFF0EA5E9),
+                      Icons.access_time_rounded,
+                      _upcomingAppointments,
+                    ),
+                    const SizedBox(height: 12),
+                    _categoryCard(
+                      'Cancelled Bookings',
+                      'Appointments you cancelled',
+                      _getCountByStatus('cancelled'),
+                      const Color(0xFFEF4444),
+                      Icons.cancel_outlined,
+                      _getAppointmentsByStatus('cancelled'),
+                    ),
+                    const SizedBox(height: 12),
+                    _categoryCard(
+                      'Completed Bookings',
+                      'Past successful visits',
+                      _getCountByStatus('completed'),
+                      const Color(0xFF10B981),
+                      Icons.check_circle_outline_rounded,
+                      _getAppointmentsByStatus('completed'),
+                    ),
+                    const SizedBox(height: 12),
+                    _categoryCard(
+                      'Pending Bookings',
+                      'Awaiting confirmation',
+                      _getCountByStatus('pending'),
+                      const Color(0xFFF59E0B),
+                      Icons.hourglass_empty_rounded,
+                      _getAppointmentsByStatus('pending'),
+                    ),
+                    const SizedBox(height: 20),
+
+                    if (_appointments.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Column(
+                            children: [
+                              Icon(Icons.calendar_today_rounded,
+                                  size: 60, color: Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              const Text('No bookings yet',
+                                  style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-
-                              // In Progress — with Rejoin button
-                              _buildInProgressCard(),
-                              const SizedBox(height: 12),
-                              _buildCategoryCard(
-                                'Upcoming Bookings',
-                                'Scheduled for later',
-                                _upcomingAppointments.length,
-                                const Color(0xFF0EA5E9),
-                                Icons.access_time_rounded,
-                                _upcomingAppointments,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildCategoryCard(
-                                'Cancelled Bookings',
-                                'Appointments you cancelled',
-                                _getCountByStatus('cancelled'),
-                                const Color(0xFFEF4444),
-                                Icons.cancel_outlined,
-                                _getAppointmentsByStatus('cancelled'),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildCategoryCard(
-                                'Completed Bookings',
-                                'Past successful visits',
-                                _getCountByStatus('completed'),
-                                const Color(0xFF10B981),
-                                Icons.check_circle_outline_rounded,
-                                _getAppointmentsByStatus('completed'),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildCategoryCard(
-                                'Pending Bookings',
-                                'Awaiting confirmation',
-                                _getCountByStatus('pending'),
-                                const Color(0xFFF59E0B),
-                                Icons.hourglass_empty_rounded,
-                                _getAppointmentsByStatus('pending'),
-                              ),
-                              const SizedBox(height: 20),
-
-                              if (_appointments.isEmpty)
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(40),
-                                    child: Column(
-                                      children: [
-                                        Icon(Icons.calendar_today_rounded, size: 60, color: Colors.grey.shade300),
-                                        const SizedBox(height: 16),
-                                        const Text(
-                                          'No bookings yet',
-                                          style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                      color: Color(0xFF64748B))),
                             ],
                           ),
                         ),
+                      ),
+                  ]),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
+  // ── In Progress card with smart Rejoin ──────────────────────────────────
   Widget _buildInProgressCard() {
     final appts = _inProgressAppointments;
     const color = Color(0xFFEF4444);
@@ -316,10 +301,9 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -340,36 +324,28 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Consultation In Progress',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
+                    Text('Consultation In Progress',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A))),
                     SizedBox(height: 4),
-                    Text(
-                      'Tap Rejoin to continue your video call',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
+                    Text('Tap Rejoin to continue your video call',
+                        style:
+                            TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${appts.length}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
+                    color: color, borderRadius: BorderRadius.circular(12)),
+                child: Text('${appts.length}',
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white)),
               ),
             ],
           ),
@@ -377,30 +353,43 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFE2E8F0)),
             const SizedBox(height: 12),
-            ...appts.map((appt) => _buildRejoinRow(appt)),
+            ...appts.map((a) => _rejoinRow(a)),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildRejoinRow(AppointmentDetail appt) {
+  Widget _rejoinRow(AppointmentDetail appt) {
+    // Only the appointment with a valid channelName gets an active Rejoin button
+    final hasChannel =
+        appt.channelName != null && appt.channelName!.isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F1),
+        color: hasChannel
+            ? const Color(0xFFFFF1F1)
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
+        border: Border.all(
+          color: hasChannel
+              ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+              : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Row(
         children: [
+          // Avatar
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+              gradient: LinearGradient(
+                colors: hasChannel
+                    ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
+                    : [Colors.grey.shade400, Colors.grey.shade300],
               ),
               borderRadius: BorderRadius.circular(10),
             ),
@@ -408,10 +397,9 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               child: Text(
                 (appt.doctor?.name ?? 'D').substring(0, 1).toUpperCase(),
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white),
               ),
             ),
           ),
@@ -422,36 +410,60 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               children: [
                 Text(
                   appt.doctor?.name ?? 'Doctor',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: hasChannel
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFF94A3B8)),
                 ),
                 Text(
                   DateFormat('dd MMM yyyy').format(appt.date),
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF64748B)),
                 ),
               ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: () => _rejoinConsultation(appt),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 0,
-            ),
-            icon: const Icon(Icons.video_call_rounded, size: 18),
-            label: const Text(
-              'Rejoin',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-          ),
+          // ── Rejoin button: active only if channelName is valid ──
+          hasChannel
+              ? ElevatedButton.icon(
+                  onPressed: () => _rejoinConsultation(appt),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.video_call_rounded, size: 18),
+                  label: const Text('Rejoin',
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700)),
+                )
+              : Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.video_call_rounded,
+                          size: 18, color: Colors.grey.shade400),
+                      const SizedBox(width: 6),
+                      Text('Rejoin',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade400)),
+                    ],
+                  ),
+                ),
         ],
       ),
     );
@@ -461,7 +473,8 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
     final channel = appt.channelName;
     if (channel == null || channel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No video channel found for this appointment')),
+        const SnackBar(
+            content: Text('No active video session for this appointment')),
       );
       return;
     }
@@ -486,255 +499,8 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
     }
   }
 
-  Widget _buildSectionHeader(String title, Color color, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 16),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBookingCard(
-    AppointmentDetail appointment,
-    Color color, {
-    bool showCancel = false,
-    bool showNotes = false,
-  }) {
-    final statusLabel = appointment.status[0].toUpperCase() + appointment.status.substring(1);
-    final isConfirmed = appointment.status == 'confirmed';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    appointment.doctor?.name.substring(0, 1).toUpperCase() ?? 'D',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appointment.doctor?.name ?? 'Doctor',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today_rounded, size: 12, color: color),
-                        const SizedBox(width: 4),
-                        Text(
-                          DateFormat('dd MMM yyyy').format(appointment.date),
-                          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.access_time_rounded, size: 12, color: color),
-                        const SizedBox(width: 4),
-                        Text(
-                          appointment.timeSlot,
-                          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isConfirmed ? const Color(0xFF10B981).withValues(alpha: 0.1) : color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  isConfirmed ? 'Confirmed' : statusLabel,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isConfirmed ? const Color(0xFF10B981) : color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Notes/prescription for completed appointments
-          if (showNotes) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
-            const SizedBox(height: 12),
-            if (appointment.reason != null && appointment.reason!.isNotEmpty) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.medical_information_outlined, size: 14, color: Color(0xFF64748B)),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Reason: ${appointment.reason}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF64748B)),
-                    SizedBox(width: 6),
-                    Text(
-                      'Prescription & SOAP notes available',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProfileOrAppointmentViewScreen(appointment: appointment),
-                    ),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'View Details',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-
-          // Cancel button at bottom for pending/confirmed
-          if (showCancel) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Cancel Appointment?'),
-                      content: const Text('Are you sure you want to cancel this appointment?'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true && mounted) {
-                    final svc = AppointmentService();
-                    await svc.updateAppointmentStatus(
-                      appointmentId: appointment.id,
-                      status: 'cancelled',
-                    );
-                    _loadAppointments();
-                  }
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFEF4444),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                ),
-                child: const Text('Cancel Appointment', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip(String label, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$count',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(
+  // ── Category card ────────────────────────────────────────────────────────
+  Widget _categoryCard(
     String title,
     String subtitle,
     int count,
@@ -752,13 +518,13 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
+          border:
+              Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
+                color: color.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -776,52 +542,42 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A))),
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF64748B))),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$count',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
+                  color: color, borderRadius: BorderRadius.circular(12)),
+              child: Text('$count',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white)),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 18,
-              color: count > 0 ? const Color(0xFF64748B) : Colors.grey.shade300,
-            ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 18,
+                color: count > 0
+                    ? const Color(0xFF64748B)
+                    : Colors.grey.shade300),
           ],
         ),
       ),
     );
   }
 
+  // ── Bottom sheet ─────────────────────────────────────────────────────────
   void _showAppointmentsList(
     String title,
     List<AppointmentDetail> appointments,
@@ -831,28 +587,25 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
+      builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,
         maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
+        builder: (_, scrollController) => Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
+            borderRadius:
+                BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
+              // Sheet header
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: Column(
                   children: [
@@ -860,9 +613,8 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2)),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -870,34 +622,26 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.calendar_month_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                              color: color,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.calendar_month_rounded,
+                              color: Colors.white, size: 22),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
+                              Text(title,
+                                  style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A))),
                               Text(
                                 '${appointments.length} appointment${appointments.length != 1 ? 's' : ''}',
                                 style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF64748B),
-                                ),
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B)),
                               ),
                             ],
                           ),
@@ -912,10 +656,8 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                   controller: scrollController,
                   padding: const EdgeInsets.all(20),
                   itemCount: appointments.length,
-                  itemBuilder: (context, index) {
-                    final appointment = appointments[index];
-                    return _buildAppointmentCard(appointment, color);
-                  },
+                  itemBuilder: (_, i) =>
+                      _appointmentCard(appointments[i], color),
                 ),
               ),
             ],
@@ -925,7 +667,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
     );
   }
 
-  Widget _buildAppointmentCard(AppointmentDetail appointment, Color color) {
+  Widget _appointmentCard(AppointmentDetail appt, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -935,76 +677,117 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color, color.withValues(alpha: 0.7)],
-              ),
+                  colors: [color, color.withValues(alpha: 0.7)]),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: Text(
-                appointment.doctor?.name.substring(0, 1).toUpperCase() ?? 'D',
+                appt.doctor?.name.substring(0, 1).toUpperCase() ?? 'D',
                 style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  appointment.doctor?.name ?? 'Doctor',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
+                Text(appt.doctor?.name ?? 'Doctor',
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A))),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_rounded, size: 12, color: color),
+                    Icon(Icons.calendar_today_rounded,
+                        size: 12, color: color),
                     const SizedBox(width: 4),
-                    Text(
-                      DateFormat('MMM dd, yyyy').format(appointment.date),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(DateFormat('MMM dd, yyyy').format(appt.date),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: color,
+                            fontWeight: FontWeight.w600)),
                     const SizedBox(width: 8),
-                    Icon(Icons.access_time_rounded, size: 12, color: color),
+                    Icon(Icons.access_time_rounded,
+                        size: 12, color: color),
                     const SizedBox(width: 4),
-                    Text(
-                      appointment.timeSlot,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(appt.timeSlot,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: color,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
               ],
             ),
           ),
+          if (appt.status == 'completed')
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ProfileOrAppointmentViewScreen(appointment: appt),
+                ),
+              ),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('Details',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  Widget _statChip(String label, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$count',
+              style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white)),
+          const SizedBox(width: 5),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.8))),
         ],
       ),
     );
