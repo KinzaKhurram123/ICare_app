@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 import '../services/agora_service.dart';
 import '../services/api_service.dart';
+import '../models/appointment_detail.dart';
 import '../services/appointment_service.dart';
 import '../services/call_service.dart';
 import '../services/medical_record_service.dart';
