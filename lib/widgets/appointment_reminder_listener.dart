@@ -20,12 +20,12 @@ class AppointmentReminderListener extends StatefulWidget {
 class _AppointmentReminderListenerState
     extends State<AppointmentReminderListener> {
   Timer? _timer;
-  final Set<String> _shownReminders = {};
+  final Set<String> _shownReminders = {}; // key = "apptId_mins"
   final AppointmentService _service = AppointmentService();
   final SharedPref _sharedPref = SharedPref();
 
-  // How many minutes before the appointment to fire the reminder
-  static const int _reminderMinutes = 5;
+  // Reminder windows in minutes
+  static const List<int> _reminderWindows = [10, 5];
 
   @override
   void initState() {
@@ -72,10 +72,16 @@ class _AppointmentReminderListenerState
 
         final diff = apptDateTime.difference(now);
 
-        // Fire if appointment is within the reminder window (5 min) and not in the past
-        if (diff.inSeconds > 0 && diff.inMinutes <= _reminderMinutes) {
-          _shownReminders.add(appt.id);
-          _showReminder(appt, diff.inMinutes);
+        // Fire at each reminder window
+        for (final window in _reminderWindows) {
+          final key = '${appt.id}_$window';
+          if (_shownReminders.contains(key)) continue;
+          // Within this window and not past
+          if (diff.inSeconds > 0 && diff.inMinutes <= window) {
+            _shownReminders.add(key);
+            _showReminder(appt, diff.inMinutes);
+            break; // only one banner at a time per appointment
+          }
         }
       }
     } catch (e) {

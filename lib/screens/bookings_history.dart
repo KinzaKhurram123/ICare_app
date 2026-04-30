@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/video_call_web.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
-import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
 
 class BookingsHistoryScreen extends StatefulWidget {
@@ -19,10 +21,23 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   final AppointmentService _appointmentService = AppointmentService();
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
+  String _currentUserId = '';
+  String _currentUserName = '';
 
   @override
   void initState() {
     super.initState();
+    _loadUserAndAppointments();
+  }
+
+  Future<void> _loadUserAndAppointments() async {
+    final user = await SharedPref().getUserData();
+    if (mounted && user != null) {
+      setState(() {
+        _currentUserId = user.id ?? '';
+        _currentUserName = user.name ?? user.email ?? 'User';
+      });
+    }
     _loadAppointments();
   }
 
@@ -63,6 +78,9 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         .where((a) => a.status.toLowerCase() == status.toLowerCase())
         .toList();
   }
+
+  List<AppointmentDetail> get _inProgressAppointments =>
+      _getAppointmentsByStatus('in_progress');
 
   List<AppointmentDetail> get _upcomingAppointments {
     final now = DateTime.now();
@@ -154,9 +172,9 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                               ),
                               const SizedBox(width: 12),
                               _buildStatChip(
-                                'Active',
-                                _getCountByStatus('confirmed'),
-                                const Color(0xFF10B981),
+                                'Live',
+                                _getCountByStatus('in_progress'),
+                                const Color(0xFFEF4444),
                               ),
                               const SizedBox(width: 12),
                               _buildStatChip(
@@ -219,15 +237,8 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                               ),
                               const SizedBox(height: 20),
 
-                              // Category rows — old design
-                              _buildCategoryCard(
-                                'In Progress Bookings',
-                                'Currently active appointments',
-                                _getCountByStatus('confirmed'),
-                                const Color(0xFF3B82F6),
-                                Icons.play_circle_outline_rounded,
-                                _getAppointmentsByStatus('confirmed'),
-                              ),
+                              // In Progress — with Rejoin button
+                              _buildInProgressCard(),
                               const SizedBox(height: 12),
                               _buildCategoryCard(
                                 'Upcoming Bookings',
@@ -292,6 +303,187 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildInProgressCard() {
+    final appts = _inProgressAppointments;
+    const color = Color(0xFFEF4444);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.videocam_rounded, color: color, size: 28),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Consultation In Progress',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap Rejoin to continue your video call',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${appts.length}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (appts.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 12),
+            ...appts.map((appt) => _buildRejoinRow(appt)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRejoinRow(AppointmentDetail appt) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                (appt.doctor?.name ?? 'D').substring(0, 1).toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appt.doctor?.name ?? 'Doctor',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  DateFormat('dd MMM yyyy').format(appt.date),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => _rejoinConsultation(appt),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            icon: const Icon(Icons.video_call_rounded, size: 18),
+            label: const Text(
+              'Rejoin',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _rejoinConsultation(AppointmentDetail appt) {
+    final channel = appt.channelName;
+    if (channel == null || channel.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No video channel found for this appointment')),
+      );
+      return;
+    }
+    if (kIsWeb) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoCall(
+            channelName: channel,
+            remoteUserName: appt.doctor?.name ?? 'Doctor',
+            currentUserId: _currentUserId,
+            currentUserName: _currentUserName,
+            appointmentId: appt.id,
+            patientId: appt.patient?.id,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video call is available on web')),
+      );
+    }
   }
 
   Widget _buildSectionHeader(String title, Color color, IconData icon) {
