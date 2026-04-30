@@ -742,263 +742,399 @@ class InProgressConsultationsScreen extends StatelessWidget {
 
   const InProgressConsultationsScreen({super.key, required this.appointments});
 
-  String _getChannelName(AppointmentDetail appt) {
-    // Use stored channelName first
+  /// Returns valid channelName only if it's a real video channel
+  String? _getValidChannelName(AppointmentDetail appt) {
+    // Stored channel_name field — most reliable
     if (appt.channelName != null && appt.channelName!.isNotEmpty) {
       return appt.channelName!;
     }
-    // Fallback: parse from notes
+    // Parse from notes
     final notes = appt.reason ?? '';
     final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
     if (match != null) return match.group(1)!;
-    return appt.id;
+    // No valid channel — this is not a video consultation
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    // Sort: video consultations (with channelName) first
+    final sorted = [...appointments]..sort((a, b) {
+        final aHas = _getValidChannelName(a) != null ? 0 : 1;
+        final bHas = _getValidChannelName(b) != null ? 0 : 1;
+        return aHas.compareTo(bHas);
+      });
+
+    final videoCount = sorted.where((a) => _getValidChannelName(a) != null).length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const CustomBackButton(),
-        title: const Text(
-          'Active Consultations',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-      ),
-      body: appointments.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.video_call_rounded,
-                      size: 56,
-                      color: Color(0xFF8B5CF6),
-                    ),
+      body: CustomScrollView(
+        slivers: [
+          // ── Sticky header ──
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: videoCount > 0 ? 140 : 80,
+            backgroundColor: const Color(0xFF1E1B4B),
+            leading: const CustomBackButton(),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1E1B4B), Color(0xFF4C1D95)],
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'No active consultations',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Your in-progress consultations will appear here',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: appointments.length,
-              itemBuilder: (ctx, i) {
-                final appt = appointments[i];
-                final channelName = _getChannelName(appt);
-                final isVideo = appt.channelName != null &&
-                    appt.channelName!.isNotEmpty;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                ),
+                child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(60, 12, 20, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Status badge
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF8B5CF6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Text(
-                                    'CONSULTATION IN PROGRESS',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF8B5CF6),
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            if (isVideo)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.videocam_rounded,
-                                        size: 14, color: Colors.green),
-                                    SizedBox(width: 4),
-                                    Text('Video',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.green,
-                                            fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                          ],
+                        const Text(
+                          'Active Consultations',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Doctor info
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor:
-                                  AppColors.primaryColor.withOpacity(0.1),
-                              child: Text(
-                                appt.doctorName.isNotEmpty
-                                    ? appt.doctorName[0].toUpperCase()
-                                    : 'D',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryColor,
-                                ),
-                              ),
+                        const SizedBox(height: 6),
+                        if (videoCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    appt.doctorName,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today_rounded,
-                                          size: 12, color: Color(0xFF94A3B8)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        DateFormat('MMM dd, yyyy')
-                                            .format(appt.date),
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF64748B)),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Icon(Icons.access_time_rounded,
-                                          size: 12, color: Color(0xFF94A3B8)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        appt.timeSlot,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF64748B)),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Rejoin button — full width, always visible
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(ctx).push(
-                                MaterialPageRoute(
-                                  builder: (_) => VideoCall(
-                                    channelName: channelName,
-                                    remoteUserName: appt.doctorName,
-                                    appointmentId: appt.id,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF4ADE80),
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(Icons.video_call_rounded, size: 20),
-                            label: const Text(
-                              'Rejoin Consultation',
-                              style: TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w800),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
+                                const SizedBox(width: 6),
+                                Text(
+                                  '$videoCount video session${videoCount > 1 ? 's' : ''} active — tap Rejoin to reconnect',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Content ──
+          appointments.isEmpty
+              ? SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.video_call_rounded,
+                              size: 56, color: Color(0xFF8B5CF6)),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('No active consultations',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A))),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Your in-progress consultations will appear here',
+                          style: TextStyle(
+                              fontSize: 14, color: Color(0xFF94A3B8)),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.all(20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                        final appt = sorted[i];
+                        final channelName = _getValidChannelName(appt);
+                        final isVideo = channelName != null;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isVideo
+                                  ? const Color(0xFF8B5CF6).withOpacity(0.4)
+                                  : const Color(0xFFE2E8F0),
+                              width: isVideo ? 2 : 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isVideo
+                                    ? const Color(0xFF8B5CF6).withOpacity(0.1)
+                                    : Colors.black.withOpacity(0.03),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Status + type badge
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isVideo
+                                            ? const Color(0xFF8B5CF6)
+                                                .withOpacity(0.1)
+                                            : const Color(0xFF64748B)
+                                                .withOpacity(0.08),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 7,
+                                            height: 7,
+                                            decoration: BoxDecoration(
+                                              color: isVideo
+                                                  ? const Color(0xFF8B5CF6)
+                                                  : const Color(0xFF94A3B8),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            isVideo
+                                                ? 'VIDEO CONSULTATION'
+                                                : 'IN PROGRESS',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              color: isVideo
+                                                  ? const Color(0xFF8B5CF6)
+                                                  : const Color(0xFF94A3B8),
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      DateFormat('MMM dd').format(appt.date),
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF94A3B8)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+
+                                // Doctor info
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 22,
+                                      backgroundColor: isVideo
+                                          ? const Color(0xFF8B5CF6)
+                                              .withOpacity(0.1)
+                                          : AppColors.primaryColor
+                                              .withOpacity(0.1),
+                                      child: Text(
+                                        appt.doctorName.isNotEmpty
+                                            ? appt.doctorName[0].toUpperCase()
+                                            : 'D',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: isVideo
+                                              ? const Color(0xFF8B5CF6)
+                                              : AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            appt.doctorName,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          Text(
+                                            appt.timeSlot,
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Button
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: isVideo
+                                      ? ElevatedButton.icon(
+                                          onPressed: () {
+                                            Navigator.of(ctx).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => VideoCall(
+                                                  channelName: channelName,
+                                                  remoteUserName:
+                                                      appt.doctorName,
+                                                  appointmentId: appt.id,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(
+                                              Icons.video_call_rounded,
+                                              size: 18),
+                                          label: const Text(
+                                            'Rejoin Consultation',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w800),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF8B5CF6),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            elevation: 0,
+                                          ),
+                                        )
+                                      : OutlinedButton.icon(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: ctx,
+                                              builder: (dialogCtx) =>
+                                                  AlertDialog(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16)),
+                                                title: const Row(
+                                                  children: [
+                                                    Icon(
+                                                        Icons
+                                                            .info_outline_rounded,
+                                                        color: Color(
+                                                            0xFF94A3B8)),
+                                                    SizedBox(width: 8),
+                                                    Text('No Active Session'),
+                                                  ],
+                                                ),
+                                                content: const Text(
+                                                  'This appointment does not have an active video session. It may have been a scheduled appointment that was marked in-progress manually.',
+                                                ),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            dialogCtx),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          AppColors.primaryColor,
+                                                      foregroundColor:
+                                                          Colors.white,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10)),
+                                                    ),
+                                                    child: const Text('OK'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(
+                                              Icons.info_outline_rounded,
+                                              size: 16),
+                                          label: const Text(
+                                            'No Active Video Session',
+                                            style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor:
+                                                const Color(0xFF94A3B8),
+                                            side: const BorderSide(
+                                                color: Color(0xFFE2E8F0)),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 10),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: sorted.length,
+                    ),
+                  ),
+                ),
+        ],
+      ),
     );
   }
 }
