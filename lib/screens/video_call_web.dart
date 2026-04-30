@@ -74,6 +74,9 @@ class _VideoCallWebState extends State<VideoCall> {
   Timer? _sessionTimer;
   int _sessionSeconds = 0;
 
+  // Poll appointment status — if doctor ends consultation, patient side closes too
+  Timer? _statusPollTimer;
+
   // Patient history (real data from backend)
   List<Map<String, dynamic>> _historyRecords = [];
   bool _historyLoading = false;
@@ -89,6 +92,72 @@ class _VideoCallWebState extends State<VideoCall> {
     _joinCall();
     _startSessionTimer();
     _startChatPolling();
+    // Only poll status if we have an appointmentId (not for quick calls)
+    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
+      _startStatusPolling();
+    }
+  }
+
+  /// Poll appointment status every 5 seconds.
+  /// If doctor marks it 'completed', patient side auto-closes.
+  void _startStatusPolling() {
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted || widget.appointmentId == null) return;
+      try {
+        final api = ApiService();
+        final response = await api.get(
+          '/appointments/getAppointments',
+        );
+        final appts = response.data['appointments'] as List? ?? [];
+        final match = appts.firstWhere(
+          (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
+          orElse: () => null,
+        );
+        if (match != null && match['status'] == 'completed' && mounted) {
+          _statusPollTimer?.cancel();
+          // Doctor ended the consultation — close patient side too
+          try { await _agoraLeave().toDart; } catch (_) {}
+          if (mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                title: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded,
+                        color: Colors.green, size: 28),
+                    SizedBox(width: 8),
+                    Text('Consultation Ended',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                  ],
+                ),
+                content: const Text(
+                    'The doctor has ended this consultation. Thank you!'),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        // Non-critical — silently ignore
+      }
+    });
   }
 
   void _startSessionTimer() {
@@ -432,6 +501,7 @@ class _VideoCallWebState extends State<VideoCall> {
   void dispose() {
     _sessionTimer?.cancel();
     _chatPollTimer?.cancel();
+    _statusPollTimer?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
     try { _agoraLeave(); } catch (_) {}
