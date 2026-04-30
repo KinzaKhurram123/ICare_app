@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/models/user.dart';
@@ -26,16 +27,88 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
   User? _currentUser;
+  Timer? _reminderTimer;
+  final Set<String> _notifiedAppointments = {};
 
   @override
   void initState() {
     super.initState();
     _loadAppointments();
+    _startReminderTimer();
+  }
+
+  void _startReminderTimer() {
+    _reminderTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _checkUpcomingReminders();
+    });
+  }
+
+  void _checkUpcomingReminders() {
+    final now = DateTime.now();
+    for (final appt in _appointments) {
+      final status = appt.status.toLowerCase();
+      if (status != 'confirmed' && status != 'pending') continue;
+      if (_notifiedAppointments.contains(appt.id)) continue;
+
+      try {
+        final timeStr = appt.timeSlot;
+        final parts = timeStr.split(' ');
+        final timeParts = parts[0].split(':');
+        int hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        final isPm = parts.length > 1 && parts[1].toUpperCase() == 'PM';
+        if (isPm && hour != 12) hour += 12;
+        if (!isPm && hour == 12) hour = 0;
+
+        final apptTime = DateTime(
+          appt.date.year, appt.date.month, appt.date.day, hour, minute,
+        );
+        final diff = apptTime.difference(now).inMinutes;
+
+        if (diff >= 0 && diff <= 5) {
+          _notifiedAppointments.add(appt.id);
+          _showReminderNotification(appt, diff);
+        }
+      } catch (_) {}
+    }
+  }
+
+  void _showReminderNotification(AppointmentDetail appt, int minutesLeft) {
+    if (!mounted) return;
+    final msg = minutesLeft == 0
+        ? 'Your appointment is starting now!'
+        : 'Your appointment starts in $minutesLeft minute${minutesLeft == 1 ? '' : 's'}!';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.alarm_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(msg, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                  Text('Dr. ${appt.doctorName} • ${appt.timeSlot}',
+                      style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF7C3AED),
+        duration: const Duration(seconds: 8),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void dispose() {
+    _reminderTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _rateDoctor(AppointmentDetail appointment) async {
@@ -55,8 +128,6 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
 
   Future<void> _loadAppointments() async {
     setState(() => _isLoading = true);
-
-    // Load current user for chat sender name
     _currentUser ??= await SharedPref().getUserData();
 
     final result = await _appointmentService.getMyAppointmentsDetailed();
@@ -528,17 +599,24 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                           ),
                                         ),
                                         ElevatedButton(
-                                          onPressed: () => Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) => VideoCall(
-                                                channelName: appointment.id,
-                                                remoteUserName: appointment.doctorName,
-                                                appointmentId: appointment.id,
-                                                currentUserName: _currentUser?.name ?? '',
-                                                currentUserId: _currentUser?.id ?? '',
+                                          onPressed: () {
+                                            // Extract real channelName from notes for Connect Now appointments
+                                            String channelName = appointment.id;
+                                            final notes = appointment.reason ?? '';
+                                            final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                                            if (match != null) channelName = match.group(1)!;
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => VideoCall(
+                                                  channelName: channelName,
+                                                  remoteUserName: appointment.doctorName,
+                                                  appointmentId: appointment.id,
+                                                  currentUserName: _currentUser?.name ?? '',
+                                                  currentUserId: _currentUser?.id ?? '',
+                                                ),
                                               ),
-                                            ),
-                                          ).then((_) => _loadAppointments()),
+                                            ).then((_) => _loadAppointments());
+                                          },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF8B5CF6),
                                             foregroundColor: Colors.white,
