@@ -697,51 +697,46 @@ class _WebBookingList extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            BookingCard(appointment: appointment, showActions: true),
+            BookingCard(appointment: appointment, showActions: !isInProgress),
             if (isInProgress)
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.05),
+                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                      width: 10, height: 10,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF8B5CF6), shape: BoxShape.circle,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8, height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF8B5CF6), shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Consultation in Progress',
-                            style: TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w700,
-                              color: Color(0xFF8B5CF6),
-                            ),
-                          ),
-                        ],
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Consultation in Progress',
+                        style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w700,
+                          color: Color(0xFF8B5CF6),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () {
-                        String channelName = appointment.id;
+                        // Use stored channelName, fallback to notes, then appointment id
+                        String channelName = appointment.channelName?.isNotEmpty == true
+                            ? appointment.channelName!
+                            : appointment.id;
                         final notes = appointment.reason ?? '';
                         final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
-                        if (match != null) channelName = match.group(1)!;
+                        if (match != null && channelName == appointment.id) {
+                          channelName = match.group(1)!;
+                        }
                         Navigator.of(ctx).push(
                           MaterialPageRoute(
                             builder: (_) => VideoCall(
@@ -759,14 +754,14 @@ class _WebBookingList extends ConsumerWidget {
                       },
                       icon: const Icon(Icons.video_call_rounded, size: 18),
                       label: const Text(
-                        'Rejoin Consultation',
+                        'Rejoin',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
                     ),
