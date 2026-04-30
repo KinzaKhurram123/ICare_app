@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/booking_categories.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
+import 'package:intl/intl.dart';
 
 class BookingsScreen extends ConsumerStatefulWidget {
   const BookingsScreen({super.key, this.tabs = false});
@@ -158,19 +160,19 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
         "title": "In Progress Bookings",
         "subtitle": "Currently active appointments",
         "icon": Icons.play_circle_outline_rounded,
-        "color": const Color(0xFF3B82F6),
-        "bgColor": const Color(0xFF3B82F6).withOpacity(0.08),
+        "color": const Color(0xFF8B5CF6),
+        "bgColor": const Color(0xFF8B5CF6).withOpacity(0.08),
         "count": _getCount('In Progress').toString(),
         "image": ImagePaths.inProgress,
         "onPressed": () async {
-          // Reload fresh data first so Rejoin button shows correctly
           await _loadAppointments();
           if (!mounted) return;
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (ctx) => BookingCategories(
-                appointments: _appointments,
-                initialTabIndex: 0,
+              builder: (ctx) => InProgressConsultationsScreen(
+                appointments: _appointments
+                    .where((a) => a.status.toLowerCase() == 'in_progress')
+                    .toList(),
               ),
             ),
           ).then((_) => _loadAppointments());
@@ -729,6 +731,274 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+// ─── Dedicated In Progress Consultations Screen ──────────────────────────────
+class InProgressConsultationsScreen extends StatelessWidget {
+  final List<AppointmentDetail> appointments;
+
+  const InProgressConsultationsScreen({super.key, required this.appointments});
+
+  String _getChannelName(AppointmentDetail appt) {
+    // Use stored channelName first
+    if (appt.channelName != null && appt.channelName!.isNotEmpty) {
+      return appt.channelName!;
+    }
+    // Fallback: parse from notes
+    final notes = appt.reason ?? '';
+    final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+    if (match != null) return match.group(1)!;
+    return appt.id;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: const CustomBackButton(),
+        title: const Text(
+          'Active Consultations',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ),
+      body: appointments.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.video_call_rounded,
+                      size: 56,
+                      color: Color(0xFF8B5CF6),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'No active consultations',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your in-progress consultations will appear here',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: appointments.length,
+              itemBuilder: (ctx, i) {
+                final appt = appointments[i];
+                final channelName = _getChannelName(appt);
+                final isVideo = appt.channelName != null &&
+                    appt.channelName!.isNotEmpty;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Status badge
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF8B5CF6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    'CONSULTATION IN PROGRESS',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF8B5CF6),
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            if (isVideo)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.videocam_rounded,
+                                        size: 14, color: Colors.green),
+                                    SizedBox(width: 4),
+                                    Text('Video',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Doctor info
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor:
+                                  AppColors.primaryColor.withOpacity(0.1),
+                              child: Text(
+                                appt.doctorName.isNotEmpty
+                                    ? appt.doctorName[0].toUpperCase()
+                                    : 'D',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    appt.doctorName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today_rounded,
+                                          size: 12, color: Color(0xFF94A3B8)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        DateFormat('MMM dd, yyyy')
+                                            .format(appt.date),
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF64748B)),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.access_time_rounded,
+                                          size: 12, color: Color(0xFF94A3B8)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        appt.timeSlot,
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF64748B)),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Rejoin button — full width, always visible
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(ctx).push(
+                                MaterialPageRoute(
+                                  builder: (_) => VideoCall(
+                                    channelName: channelName,
+                                    remoteUserName: appt.doctorName,
+                                    appointmentId: appt.id,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.video_call_rounded, size: 20),
+                            label: const Text(
+                              'Rejoin Consultation',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w800),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
