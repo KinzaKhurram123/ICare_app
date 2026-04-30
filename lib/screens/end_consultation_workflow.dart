@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/lab_test_template_screen.dart';
 import 'package:icare/screens/soap_notes_redesign.dart';
-import 'package:icare/screens/tabs.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/clinical_service.dart';
 import 'package:icare/services/medical_record_service.dart';
@@ -227,12 +227,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
           ),
         );
 
-        // Navigate to TabsScreen (doctor dashboard inside sidebar layout), clearing all previous routes
+        // Use go_router to navigate to /dashboard — fixes white screen on web
         if (mounted) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const TabsScreen()),
-            (route) => false,
-          );
+          context.go('/dashboard');
         }
       }
     } catch (e) {
