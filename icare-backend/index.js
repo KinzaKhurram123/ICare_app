@@ -25,6 +25,7 @@ const connectNowRoutes = require('./routes/connect-now');
 const instructorsRoutes = require('./routes/instructors');
 const courseQuestionsRoutes = require('./routes/course-questions');
 const callChatRoutes = require('./routes/call-chat');
+const clinicalRoutes = require('./routes/clinical');
 
 const app = express();
 
@@ -111,6 +112,8 @@ const makeStub = (emptyKey) => {
 app.use('/api/call-chat', callChatRoutes);
 app.use('/api/chat', callChatRoutes); // alias
 app.use('/api/users', usersRoutes);
+app.use('/api/clinical', clinicalRoutes);
+app.use('/api/icd-codes', clinicalRoutes); // alias for ICD endpoints
 
 // Error handling middleware
 app.use((err, req, res, next) => {
