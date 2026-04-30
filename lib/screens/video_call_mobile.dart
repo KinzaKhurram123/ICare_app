@@ -3,6 +3,10 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import '../config/agora_config.dart';
 import '../services/agora_service.dart';
 import '../services/call_service.dart';
+import '../services/api_service.dart';
+import '../models/appointment_detail.dart';
+import '../screens/end_consultation_workflow.dart';
+import '../utils/shared_pref.dart';
 
 /// Agora RTC video call — Android / iOS / Desktop
 class VideoCall extends StatefulWidget {
@@ -11,6 +15,10 @@ class VideoCall extends StatefulWidget {
   final bool isAudioOnly;
   final String currentUserId;
   final String currentUserName;
+  /// Optional appointment ID — used to mark consultation in progress / end
+  final String? appointmentId;
+  /// Patient's user ID — used to load patient history (doctor-side only)
+  final String? patientId;
 
   const VideoCall({
     super.key,
@@ -19,6 +27,8 @@ class VideoCall extends StatefulWidget {
     this.isAudioOnly = false,
     this.currentUserId = '',
     this.currentUserName = 'User',
+    this.appointmentId,
+    this.patientId,
   });
 
   @override
@@ -124,14 +134,82 @@ class _VideoCallMobileState extends State<VideoCall> {
     }
   }
 
-  Future<void> _endCall() async {
-    try {
-      await CallService().endCall(widget.channelName);
-    } catch (_) {}
+  /// Leave video call only (red button)
+  Future<void> _leaveCall() async {
     await _engine?.leaveChannel();
     await _engine?.release();
     _engine = null;
     if (mounted) Navigator.pop(context);
+  }
+
+  /// End Consultation button — opens workflow screen for doctor to complete documentation
+  Future<void> _endConsultation() async {
+    // Check if this is a doctor ending consultation (has appointment details)
+    if (widget.appointmentId == null || widget.appointmentId!.isEmpty) {
+      // No appointment ID - just leave the call (for quick calls)
+      try { await CallService().endCall(widget.channelName); } catch (_) {}
+      await _leaveCall();
+      return;
+    }
+
+    // Check if current user is doctor
+    final currentUser = await SharedPref().getUserData();
+    final isDoctor = currentUser?.role?.toLowerCase() == 'doctor';
+
+    if (!isDoctor) {
+      // Patient cannot end consultation - only leave video
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only the doctor can end the consultation'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Doctor ending consultation - fetch appointment details and open workflow
+    try {
+      final api = ApiService();
+      final response = await api.get('/appointments/getAppointments');
+      final appts = response.data['appointments'] as List? ?? [];
+      final match = appts.firstWhere(
+        (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
+        orElse: () => null,
+      );
+
+      if (match == null) {
+        throw Exception('Appointment not found');
+      }
+
+      final appointment = AppointmentDetail.fromJson(match);
+
+      // Leave video call first
+      await _engine?.leaveChannel();
+      await _engine?.release();
+      _engine = null;
+
+      if (!mounted) return;
+
+      // Open End Consultation Workflow screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EndConsultationWorkflow(appointment: appointment),
+        ),
+      );
+
+      // After workflow completes, close video call screen
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _toggleMic() async {
@@ -259,31 +337,50 @@ class _VideoCallMobileState extends State<VideoCall> {
             bottom: 40,
             left: 0,
             right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
               children: [
-                _controlBtn(
-                  icon: _micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                  color: _micMuted ? Colors.grey : Colors.white,
-                  bg: Colors.white24,
-                  onTap: _toggleMic,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _controlBtn(
+                      icon: _micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                      color: _micMuted ? Colors.grey : Colors.white,
+                      bg: Colors.white24,
+                      onTap: _toggleMic,
+                    ),
+                    const SizedBox(width: 20),
+                    // Red button — leave video only
+                    _controlBtn(
+                      icon: Icons.call_end_rounded,
+                      color: Colors.white,
+                      bg: Colors.red,
+                      onTap: _leaveCall,
+                      size: 64,
+                    ),
+                    const SizedBox(width: 20),
+                    if (!widget.isAudioOnly)
+                      _controlBtn(
+                        icon: _camOff ? Icons.videocam_off_rounded : Icons.videocam_rounded,
+                        color: _camOff ? Colors.grey : Colors.white,
+                        bg: Colors.white24,
+                        onTap: _toggleCam,
+                      ),
+                    const SizedBox(width: 20),
+                    // End Consultation button (purple)
+                    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty)
+                      _controlBtn(
+                        icon: Icons.stop_circle_rounded,
+                        color: Colors.white,
+                        bg: const Color(0xFF7C3AED),
+                        onTap: _endConsultation,
+                      ),
+                  ],
                 ),
-                const SizedBox(width: 20),
-                _controlBtn(
-                  icon: Icons.call_end_rounded,
-                  color: Colors.white,
-                  bg: Colors.red,
-                  onTap: _endCall,
-                  size: 64,
+                const SizedBox(height: 8),
+                const Text(
+                  'Red = Leave Video  •  Purple = End Consultation',
+                  style: TextStyle(color: Colors.white38, fontSize: 11),
                 ),
-                const SizedBox(width: 20),
-                if (!widget.isAudioOnly)
-                  _controlBtn(
-                    icon: _camOff ? Icons.videocam_off_rounded : Icons.videocam_rounded,
-                    color: _camOff ? Colors.grey : Colors.white,
-                    bg: Colors.white24,
-                    onTap: _toggleCam,
-                  ),
               ],
             ),
           ),

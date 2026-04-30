@@ -12,6 +12,8 @@ import '../services/appointment_service.dart';
 import '../services/call_service.dart';
 import '../services/medical_record_service.dart';
 import '../utils/theme.dart';
+import '../screens/end_consultation_workflow.dart';
+import '../utils/shared_pref.dart';
 
 // JS interop
 @JS('agoraJoin')
@@ -70,6 +72,7 @@ class _VideoCallWebState extends State<VideoCall> {
   Timer? _chatPollTimer;
   int _lastChatTimestamp = 0; // epoch ms of last fetched message
   bool _pollInProgress = false; // prevents overlapping polls
+  int _unreadChatCount = 0; // unread message count for notification badge
 
   // Timer for 15-min session
   Timer? _sessionTimer;
@@ -228,7 +231,13 @@ class _VideoCallWebState extends State<VideoCall> {
       }
 
       if (mounted && newMsgs.isNotEmpty) {
-        setState(() => _chatMessages.addAll(newMsgs));
+        setState(() {
+          _chatMessages.addAll(newMsgs);
+          // Increment unread count only if chat panel is closed
+          if (!_showChat) {
+            _unreadChatCount += newMsgs.length;
+          }
+        });
         Future.delayed(const Duration(milliseconds: 100), () {
           if (_chatScroll.hasClients) {
             _chatScroll.animateTo(
@@ -398,51 +407,73 @@ class _VideoCallWebState extends State<VideoCall> {
 
     if (mounted) Navigator.pop(context);
   }
-  /// End Consultation button — properly ends the session
+  /// End Consultation button — opens workflow screen for doctor to complete documentation
   Future<void> _endConsultation() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('End Consultation',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text(
-            'Are you sure you want to end this consultation? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('End Consultation'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try { await CallService().endCall(widget.channelName); } catch (_) {}
-    try { await _agoraLeave().toDart; } catch (_) {}
-
-    // Mark appointment as completed if ID provided
-    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
-      try {
-        await AppointmentService().updateAppointmentStatus(
-          appointmentId: widget.appointmentId!,
-          status: 'completed',
-        );
-      } catch (_) {}
+    // Check if this is a doctor ending consultation (has appointment details)
+    if (widget.appointmentId == null || widget.appointmentId!.isEmpty) {
+      // No appointment ID - just leave the call (for quick calls)
+      try { await CallService().endCall(widget.channelName); } catch (_) {}
+      try { await _agoraLeave().toDart; } catch (_) {}
+      if (mounted) Navigator.pop(context);
+      return;
     }
 
-    if (mounted) Navigator.pop(context);
+    // Check if current user is doctor
+    final currentUser = await SharedPref().getUserData();
+    final isDoctor = currentUser?.role?.toLowerCase() == 'doctor';
+
+    if (!isDoctor) {
+      // Patient cannot end consultation - only leave video
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only the doctor can end the consultation'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Doctor ending consultation - fetch appointment details and open workflow
+    try {
+      final api = ApiService();
+      final response = await api.get('/appointments/getAppointments');
+      final appts = response.data['appointments'] as List? ?? [];
+      final match = appts.firstWhere(
+        (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
+        orElse: () => null,
+      );
+
+      if (match == null) {
+        throw Exception('Appointment not found');
+      }
+
+      final appointment = AppointmentDetail.fromJson(match);
+
+      // Leave video call first
+      try { await _agoraLeave().toDart; } catch (_) {}
+
+      if (!mounted) return;
+
+      // Open End Consultation Workflow screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EndConsultationWorkflow(appointment: appointment),
+        ),
+      );
+
+      // After workflow completes, close video call screen
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// Mute mic ONLY — does NOT affect camera
@@ -625,6 +656,7 @@ class _VideoCallWebState extends State<VideoCall> {
                             icon: Icons.history_rounded,
                             label: 'Patient History',
                             active: _showHistory,
+                            badgeCount: 0,
                             onTap: () {
                               setState(() {
                                 _showHistory = !_showHistory;
@@ -641,9 +673,13 @@ class _VideoCallWebState extends State<VideoCall> {
                             icon: Icons.chat_bubble_outline_rounded,
                             label: 'Chat',
                             active: _showChat,
+                            badgeCount: _unreadChatCount,
                             onTap: () => setState(() {
                               _showChat = !_showChat;
-                              if (_showChat) _showHistory = false;
+                              if (_showChat) {
+                                _showHistory = false;
+                                _unreadChatCount = 0; // Clear unread count when opening chat
+                              }
                             }),
                           ),
                         ],
@@ -1117,33 +1153,66 @@ class _VideoCallWebState extends State<VideoCall> {
     required String label,
     required bool active,
     required VoidCallback onTap,
+    int badgeCount = 0,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: active
-              ? AppColors.primaryColor.withOpacity(0.3)
-              : Colors.white12,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active ? AppColors.primaryColor : Colors.transparent,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: active
+                  ? AppColors.primaryColor.withOpacity(0.3)
+                  : Colors.white12,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: active ? AppColors.primaryColor : Colors.transparent,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon,
+                    color: active ? Colors.white : Colors.white60, size: 16),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: TextStyle(
+                        color: active ? Colors.white : Colors.white60,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: active ? Colors.white : Colors.white60, size: 16),
-            const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    color: active ? Colors.white : Colors.white60,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
-          ],
-        ),
+          // Notification badge
+          if (badgeCount > 0)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                child: Center(
+                  child: Text(
+                    badgeCount > 9 ? '9+' : '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
