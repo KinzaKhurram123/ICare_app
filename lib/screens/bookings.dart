@@ -138,8 +138,12 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           .length;
     }
     if (status == 'In Progress') {
+      final now = DateTime.now();
       return _appointments
-          .where((a) => a.status.toLowerCase() == 'in_progress')
+          .where((a) =>
+              a.status.toLowerCase() == 'in_progress' &&
+              (a.channelName?.isNotEmpty == true) &&
+              now.difference(a.createdAt).inHours <= 4)
           .length;
     }
     return _appointments
@@ -175,8 +179,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     .toList(),
               ),
             ),
-          ).then((_) => _loadAppointments());
-        },
+          ).then((_) => _loadAppointments());        },
       },
       {
         "id": 2,
@@ -742,30 +745,37 @@ class InProgressConsultationsScreen extends StatelessWidget {
 
   const InProgressConsultationsScreen({super.key, required this.appointments});
 
-  /// Returns valid channelName only if it's a real video channel
+  /// Returns valid channelName only if it's a RECENT video channel (last 4 hours)
   String? _getValidChannelName(AppointmentDetail appt) {
-    // Stored channel_name field — most reliable
+    // Must have a stored channel_name
+    String? channel;
     if (appt.channelName != null && appt.channelName!.isNotEmpty) {
-      return appt.channelName!;
+      channel = appt.channelName!;
+    } else {
+      // Parse from notes
+      final notes = appt.reason ?? '';
+      final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+      if (match != null) channel = match.group(1)!;
     }
-    // Parse from notes
-    final notes = appt.reason ?? '';
-    final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
-    if (match != null) return match.group(1)!;
-    // No valid channel — this is not a video consultation
-    return null;
+    if (channel == null) return null;
+
+    // Only consider it "active" if created within last 4 hours
+    final now = DateTime.now();
+    final diff = now.difference(appt.createdAt);
+    if (diff.inHours > 4) return null;
+
+    return channel;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Sort: video consultations (with channelName) first
-    final sorted = [...appointments]..sort((a, b) {
-        final aHas = _getValidChannelName(a) != null ? 0 : 1;
-        final bHas = _getValidChannelName(b) != null ? 0 : 1;
-        return aHas.compareTo(bHas);
-      });
+    // Only show appointments with valid (recent) channelName
+    final activeAppointments = appointments
+        .where((a) => _getValidChannelName(a) != null)
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt)); // newest first
 
-    final videoCount = sorted.where((a) => _getValidChannelName(a) != null).length;
+    final videoCount = activeAppointments.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -777,7 +787,9 @@ class InProgressConsultationsScreen extends StatelessWidget {
             expandedHeight: videoCount > 0 ? 140 : 80,
             backgroundColor: const Color(0xFF1E1B4B),
             leading: const CustomBackButton(),
+            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -790,11 +802,12 @@ class InProgressConsultationsScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(60, 12, 20, 12),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
                           'Active Consultations',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -823,7 +836,7 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '$videoCount video session${videoCount > 1 ? 's' : ''} active — tap Rejoin to reconnect',
+                                  '$videoCount active session${videoCount > 1 ? 's' : ''} — tap Rejoin',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.white,
@@ -842,7 +855,7 @@ class InProgressConsultationsScreen extends StatelessWidget {
           ),
 
           // ── Content ──
-          appointments.isEmpty
+          activeAppointments.isEmpty
               ? SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -865,7 +878,7 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                 color: Color(0xFF0F172A))),
                         const SizedBox(height: 8),
                         const Text(
-                          'Your in-progress consultations will appear here',
+                          'Start a consultation and use the red button\nto leave — then come back here to rejoin',
                           style: TextStyle(
                               fontSize: 14, color: Color(0xFF94A3B8)),
                           textAlign: TextAlign.center,
@@ -879,26 +892,21 @@ class InProgressConsultationsScreen extends StatelessWidget {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (ctx, i) {
-                        final appt = sorted[i];
-                        final channelName = _getValidChannelName(appt);
-                        final isVideo = channelName != null;
+                        final appt = activeAppointments[i];
+                        final channelName = _getValidChannelName(appt)!;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFFFFF5F5),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isVideo
-                                  ? const Color(0xFF8B5CF6).withOpacity(0.4)
-                                  : const Color(0xFFE2E8F0),
-                              width: isVideo ? 2 : 1,
+                              color: Colors.red.withOpacity(0.4),
+                              width: 2,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: isVideo
-                                    ? const Color(0xFF8B5CF6).withOpacity(0.1)
-                                    : Colors.black.withOpacity(0.03),
+                                color: Colors.red.withOpacity(0.08),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
@@ -909,18 +917,14 @@ class InProgressConsultationsScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Status + type badge
+                                // Status badge
                                 Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isVideo
-                                            ? const Color(0xFF8B5CF6)
-                                                .withOpacity(0.1)
-                                            : const Color(0xFF64748B)
-                                                .withOpacity(0.08),
+                                        color: Colors.red.withOpacity(0.1),
                                         borderRadius:
                                             BorderRadius.circular(20),
                                       ),
@@ -930,24 +934,18 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                           Container(
                                             width: 7,
                                             height: 7,
-                                            decoration: BoxDecoration(
-                                              color: isVideo
-                                                  ? const Color(0xFF8B5CF6)
-                                                  : const Color(0xFF94A3B8),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
                                               shape: BoxShape.circle,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          Text(
-                                            isVideo
-                                                ? 'VIDEO CONSULTATION'
-                                                : 'IN PROGRESS',
+                                          const Text(
+                                            '● LIVE',
                                             style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 11,
                                               fontWeight: FontWeight.w800,
-                                              color: isVideo
-                                                  ? const Color(0xFF8B5CF6)
-                                                  : const Color(0xFF94A3B8),
+                                              color: Colors.red,
                                               letterSpacing: 0.5,
                                             ),
                                           ),
@@ -956,9 +954,10 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                     ),
                                     const Spacer(),
                                     Text(
-                                      DateFormat('MMM dd').format(appt.date),
+                                      DateFormat('MMM dd, hh:mm a')
+                                          .format(appt.createdAt.toLocal()),
                                       style: const TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           color: Color(0xFF94A3B8)),
                                     ),
                                   ],
@@ -970,21 +969,16 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                   children: [
                                     CircleAvatar(
                                       radius: 22,
-                                      backgroundColor: isVideo
-                                          ? const Color(0xFF8B5CF6)
-                                              .withOpacity(0.1)
-                                          : AppColors.primaryColor
-                                              .withOpacity(0.1),
+                                      backgroundColor:
+                                          Colors.red.withOpacity(0.1),
                                       child: Text(
                                         appt.doctorName.isNotEmpty
                                             ? appt.doctorName[0].toUpperCase()
                                             : 'D',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: isVideo
-                                              ? const Color(0xFF8B5CF6)
-                                              : AppColors.primaryColor,
+                                          color: Colors.red,
                                         ),
                                       ),
                                     ),
@@ -1003,10 +997,11 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                             ),
                                           ),
                                           Text(
-                                            appt.timeSlot,
-                                            style: const TextStyle(
+                                            'Video Consultation',
+                                            style: TextStyle(
                                                 fontSize: 12,
-                                                color: Color(0xFF64748B)),
+                                                color: Colors.red
+                                                    .withOpacity(0.7)),
                                           ),
                                         ],
                                       ),
@@ -1016,120 +1011,48 @@ class InProgressConsultationsScreen extends StatelessWidget {
 
                                 const SizedBox(height: 14),
 
-                                // Button
+                                // Rejoin button — red, full width
                                 SizedBox(
                                   width: double.infinity,
-                                  child: isVideo
-                                      ? ElevatedButton.icon(
-                                          onPressed: () {
-                                            Navigator.of(ctx).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => VideoCall(
-                                                  channelName: channelName,
-                                                  remoteUserName:
-                                                      appt.doctorName,
-                                                  appointmentId: appt.id,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          icon: const Icon(
-                                              Icons.video_call_rounded,
-                                              size: 18),
-                                          label: const Text(
-                                            'Rejoin Consultation',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w800),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF8B5CF6),
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                            elevation: 0,
-                                          ),
-                                        )
-                                      : OutlinedButton.icon(
-                                          onPressed: () {
-                                            showDialog(
-                                              context: ctx,
-                                              builder: (dialogCtx) =>
-                                                  AlertDialog(
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            16)),
-                                                title: const Row(
-                                                  children: [
-                                                    Icon(
-                                                        Icons
-                                                            .info_outline_rounded,
-                                                        color: Color(
-                                                            0xFF94A3B8)),
-                                                    SizedBox(width: 8),
-                                                    Text('No Active Session'),
-                                                  ],
-                                                ),
-                                                content: const Text(
-                                                  'This appointment does not have an active video session. It may have been a scheduled appointment that was marked in-progress manually.',
-                                                ),
-                                                actions: [
-                                                  ElevatedButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                            dialogCtx),
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          AppColors.primaryColor,
-                                                      foregroundColor:
-                                                          Colors.white,
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          10)),
-                                                    ),
-                                                    child: const Text('OK'),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          icon: const Icon(
-                                              Icons.info_outline_rounded,
-                                              size: 16),
-                                          label: const Text(
-                                            'No Active Video Session',
-                                            style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600),
-                                          ),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor:
-                                                const Color(0xFF94A3B8),
-                                            side: const BorderSide(
-                                                color: Color(0xFFE2E8F0)),
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 10),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.of(ctx).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => VideoCall(
+                                            channelName: channelName,
+                                            remoteUserName: appt.doctorName,
+                                            appointmentId: appt.id,
                                           ),
                                         ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                        Icons.video_call_rounded,
+                                        size: 18),
+                                    label: const Text(
+                                      'Rejoin Consultation',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10)),
+                                      elevation: 0,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         );
                       },
-                      childCount: sorted.length,
+                      childCount: activeAppointments.length,
                     ),
                   ),
                 ),
