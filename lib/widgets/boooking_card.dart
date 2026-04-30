@@ -322,7 +322,7 @@ class BookingCard extends ConsumerWidget {
                                 ),
                                 CustomText(
                                   text:
-                                      "Booking ID: #${appointment.id.substring(appointment.id.length - 8).toUpperCase()}",
+                                      "Booking ID: #${appointment.id.length > 8 ? appointment.id.substring(appointment.id.length - 8).toUpperCase() : appointment.id.toUpperCase()}",
                                   fontSize: 12,
                                   color: AppColors.darkGreyColor,
                                 ),
@@ -583,7 +583,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                "ID: #${widget.appointment.id.substring(widget.appointment.id.length - 8).toUpperCase()}",
+                                "ID: #${widget.appointment.id.length > 8 ? widget.appointment.id.substring(widget.appointment.id.length - 8).toUpperCase() : widget.appointment.id.toUpperCase()}",
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF64748B),

@@ -87,7 +87,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                 initialTabIndex: 0,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
@@ -107,7 +107,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                 initialTabIndex: 1,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {

@@ -33,6 +33,11 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
     _loadAppointments();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
   Future<void> _rateDoctor(AppointmentDetail appointment) async {
     await showRatingDialog(
       context: context,
@@ -459,7 +464,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                               currentUserId: _currentUser?.id ?? '',
                                             ),
                                           ),
-                                        );
+                                        ).then((_) => _loadAppointments());
                                       },
                                       icon: const Icon(Icons.video_call_rounded, size: 20),
                                       label: const Text(
@@ -533,7 +538,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                                 currentUserId: _currentUser?.id ?? '',
                                               ),
                                             ),
-                                          ),
+                                          ).then((_) => _loadAppointments()),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF8B5CF6),
                                             foregroundColor: Colors.white,
