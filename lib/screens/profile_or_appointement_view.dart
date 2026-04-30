@@ -8,10 +8,12 @@ import 'package:icare/screens/decline_appointment_redesign.dart';
 import 'package:icare/screens/intake_notes_screen.dart';
 import 'package:icare/screens/patient_profile_view.dart';
 import 'package:icare/screens/soap_notes_screen.dart';
+import 'package:icare/screens/video_call_web.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/utils/imagePaths.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -723,33 +725,6 @@ class _WebPatientProfileView extends StatelessWidget {
                       ],
                       if (selectedRole == "Doctor") ...[
                         const SizedBox(height: 24),
-                        _buildWebDetailsCard(
-                          "Scheduled Appointment",
-                          Icons.calendar_today_rounded,
-                          const Color(0xFF6366F1),
-                          {
-                            "Date": formattedDate,
-                            "Time": appointment.timeSlot,
-                            "Status": appointment.status.toUpperCase(),
-                            "Booking for": "Self",
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        // Patient/Doctor Info
-                        _buildWebDetailsCard(
-                          selectedRole == 'Doctor'
-                              ? "Patient Info"
-                              : "Doctor Info",
-                          Icons.person_outline_rounded,
-                          const Color(0xFF3B82F6),
-                          {
-                            "Name": otherPerson?.name ?? 'N/A',
-                            "Email": otherPerson?.email ?? 'N/A',
-                            "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                            "Reason": appointment.reason ?? 'N/A',
-                          },
-                        ),
-                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -816,6 +791,48 @@ class _WebPatientProfileView extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (appointment.status.toLowerCase() == 'confirmed' ||
+                            appointment.status.toLowerCase() == 'in_progress') ...[
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final me = await SharedPref().getUserData();
+                                if (!context.mounted) return;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => VideoCall(
+                                      channelName: appointment.id ?? 'consultation',
+                                      remoteUserName: otherPerson?.name ?? 'Patient',
+                                      isAudioOnly: false,
+                                      appointmentId: appointment.id,
+                                      patientId: otherPerson?.id,
+                                      currentUserName: me?.name ?? 'Doctor',
+                                      currentUserId: me?.id ?? '',
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.videocam_rounded, size: 22),
+                              label: const Text("Start Video Consultation"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         if (appointment.status.toLowerCase() == 'pending') ...[
                           const SizedBox(height: 32),
                           Row(
