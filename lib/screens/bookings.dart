@@ -33,6 +33,11 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
     _startReminderTimer();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
   void _startReminderTimer() {
     _reminderTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) _checkUpcomingReminders();
@@ -157,7 +162,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
         "bgColor": const Color(0xFF3B82F6).withOpacity(0.08),
         "count": _getCount('In Progress').toString(),
         "image": ImagePaths.inProgress,
-        "onPressed": () {
+        "onPressed": () async {
+          // Reload fresh data first so Rejoin button shows correctly
+          await _loadAppointments();
+          if (!mounted) return;
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(

@@ -300,7 +300,6 @@ class _VideoCallWebState extends State<VideoCall> {
 
     if (mounted) Navigator.pop(context);
   }
-
   /// End Consultation button — properly ends the session
   Future<void> _endConsultation() async {
     final confirm = await showDialog<bool>(
