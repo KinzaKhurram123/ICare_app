@@ -290,7 +290,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                 SizedBox(height: ScallingConfig.scale(20)),
                 Center(
                   child: CustomText(
-                    text: "Bookings Hsitory",
+                    text: "Bookings History",
                     fontSize: 25.27,
                     padding: EdgeInsets.only(
                       left: ScallingConfig.moderateScale(12),
@@ -298,6 +298,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     color: AppColors.themeBlue,
                     fontWeight: FontWeight.w700,
                     isBold: true,
+                    textAlign: TextAlign.center,
                   ),
                 ),
                 Center(

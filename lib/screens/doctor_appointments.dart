@@ -481,9 +481,10 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     ),
                   ),
 
-                  // Reason Section
+                  // Reason Section — hide raw channel names from connect_now
                   if (appointment.reason != null &&
-                      appointment.reason!.isNotEmpty) ...[
+                      appointment.reason!.isNotEmpty &&
+                      !appointment.reason!.contains('Channel:')) ...[
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(16),

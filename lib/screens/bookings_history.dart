@@ -146,41 +146,41 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Icon + title
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(18),
+                // Icon + title — centered
+                Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Icon(Icons.calendar_month_rounded,
+                            color: Colors.white, size: 32),
                       ),
-                      child: const Icon(Icons.calendar_month_rounded,
-                          color: Colors.white, size: 32),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Bookings History',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Bookings History',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'All your appointments in one place',
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.65)),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'All your appointments in one place',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.65)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
