@@ -60,7 +60,31 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   List<AppointmentDetail> _byStatus(String status) =>
       _appointments.where((a) => a.status.toLowerCase() == status).toList();
 
-  List<AppointmentDetail> get _inProgress => _byStatus('in_progress');
+  /// Extract the real Agora channel from an appointment.
+  /// Tries channelName field first, then parses it from reason/notes text.
+  String? _extractChannel(AppointmentDetail a) {
+    if (a.channelName != null && a.channelName!.trim().isNotEmpty) {
+      return a.channelName!.trim();
+    }
+    final notes = a.reason ?? '';
+    final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+    return match?.group(1);
+  }
+
+  /// Only show in_progress appointments that:
+  /// 1. Have a valid video channel (from channelName field OR reason text)
+  /// 2. Status was updated (set to in_progress) within the last 60 minutes
+  ///    — older sessions are considered stale/ended
+  List<AppointmentDetail> get _inProgress {
+    final now = DateTime.now();
+    return _appointments.where((a) {
+      if (a.status.toLowerCase() != 'in_progress') return false;
+      // Must have a real video channel
+      if (_extractChannel(a) == null) return false;
+      // Must be recently set to in_progress (within 60 min of last update)
+      return now.difference(a.updatedAt).inMinutes <= 60;
+    }).toList();
+  }
 
   List<AppointmentDetail> get _upcoming => _appointments
       .where((a) =>
@@ -240,7 +264,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
             _statCard('Total', _appointments.length,
                 const Color(0xFF60A5FA), Icons.list_alt_rounded),
             const SizedBox(width: 10),
-            _statCard('Live', _count('in_progress'),
+            _statCard('Live', _inProgress.length,
                 const Color(0xFFF87171), Icons.circle),
             const SizedBox(width: 10),
             _statCard('Done', _count('completed'),
@@ -271,9 +295,11 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
       ),
       const SizedBox(height: 20),
 
-      // In Progress
-      _buildInProgressSection(),
-      const SizedBox(height: 12),
+      // In Progress — only show if there are active sessions
+      if (_inProgress.isNotEmpty) ...[
+        _buildInProgressSection(),
+        const SizedBox(height: 12),
+      ],
 
       // Categories
       _categoryTile('Upcoming', 'Confirmed & scheduled',
@@ -391,23 +417,15 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   }
 
   Widget _rejoinRow(AppointmentDetail appt) {
-    // Active ONLY if channelName is present and non-empty
-    final bool active =
-        appt.channelName != null && appt.channelName!.trim().isNotEmpty;
-
+    // All rows here are guaranteed active (already filtered by _inProgress)
+    const red = Color(0xFFEF4444);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: active
-            ? const Color(0xFFFFF5F5)
-            : const Color(0xFFF8FAFC),
+        color: const Color(0xFFFFF5F5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: active
-              ? const Color(0xFFEF4444).withValues(alpha: 0.2)
-              : const Color(0xFFE2E8F0),
-        ),
+        border: Border.all(color: red.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -416,20 +434,18 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: active
-                    ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
-                    : [Colors.grey.shade300, Colors.grey.shade200],
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
               ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text(
                 (appt.doctor?.name ?? 'D').substring(0, 1).toUpperCase(),
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
-                    color: active ? Colors.white : Colors.grey.shade500),
+                    color: Colors.white),
               ),
             ),
           ),
@@ -440,12 +456,10 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               children: [
                 Text(
                   appt.doctor?.name ?? 'Doctor',
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: active
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFF94A3B8)),
+                      color: Color(0xFF0F172A)),
                 ),
                 Text(
                   DateFormat('dd MMM yyyy').format(appt.date),
@@ -455,48 +469,22 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               ],
             ),
           ),
-          // Rejoin button — active or greyed out
-          active
-              ? ElevatedButton.icon(
-                  onPressed: () => _rejoin(appt),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: const Icon(Icons.video_call_rounded, size: 17),
-                  label: const Text('Rejoin',
-                      style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700)),
-                )
-              : Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.video_call_rounded,
-                          size: 17, color: Colors.grey.shade400),
-                      const SizedBox(width: 5),
-                      Text('Rejoin',
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey.shade400)),
-                    ],
-                  ),
-                ),
+          ElevatedButton.icon(
+            onPressed: () => _rejoin(appt),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.video_call_rounded, size: 17),
+            label: const Text('Rejoin',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );
@@ -509,11 +497,13 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
       );
       return;
     }
+    final channel = _extractChannel(appt);
+    if (channel == null) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => VideoCall(
-          channelName: appt.channelName!,
+          channelName: channel,
           remoteUserName: appt.doctor?.name ?? 'Doctor',
           currentUserId: _currentUserId,
           currentUserName: _currentUserName,
