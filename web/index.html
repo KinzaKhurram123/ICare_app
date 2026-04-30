@@ -114,11 +114,24 @@
     };
 
     window.agoraMuteMic = function(mute) {
-      if (_localAudioTrack) _localAudioTrack.setEnabled(!mute);
+      if (_localAudioTrack) {
+        try {
+          // setMuted keeps track published — no republication, no video freeze
+          _localAudioTrack.setMuted(mute);
+        } catch(e) {
+          try { _localAudioTrack.setEnabled(!mute); } catch(_) {}
+        }
+      }
     };
 
     window.agoraMuteCam = function(mute) {
-      if (_localVideoTrack) _localVideoTrack.setEnabled(!mute);
+      if (_localVideoTrack) {
+        try {
+          _localVideoTrack.setMuted(mute);
+        } catch(e) {
+          try { _localVideoTrack.setEnabled(!mute); } catch(_) {}
+        }
+      }
     };
   </script>
   <script src="flutter_bootstrap.js" async></script>

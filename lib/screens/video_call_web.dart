@@ -246,22 +246,50 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   Future<void> _loadPatientHistory() async {
-    final pid = widget.patientId;
-    if (pid == null || pid.isEmpty || _historyLoading) return;
+    if (_historyLoading) return;
     setState(() => _historyLoading = true);
-    try {
-      final result = await MedicalRecordService().getPatientRecords(pid);
-      if (mounted) {
+
+    final pid = widget.patientId;
+    final records = <Map<String, dynamic>>[];
+
+    // 1. Try medical records (works when patientId is provided — doctor viewing patient)
+    if (pid != null && pid.isNotEmpty) {
+      try {
+        final result = await MedicalRecordService().getPatientRecords(pid);
         final raw = result['records'];
-        final records = (raw is List) ? raw.cast<Map<String, dynamic>>() : <Map<String, dynamic>>[];
-        setState(() {
-          _historyRecords = records;
-          _historyLoaded = true;
-          _historyLoading = false;
-        });
+        if (raw is List) records.addAll(raw.cast<Map<String, dynamic>>());
+      } catch (_) {}
+    }
+
+    // 2. Load past appointments for history — works for both patient and doctor
+    //    For the patient: shows their own history
+    //    For the doctor: shows appointments linked to this consultation channel
+    try {
+      final apptResult = await AppointmentService().getMyAppointmentsDetailed();
+      if (apptResult['success'] == true) {
+        final appts = apptResult['appointments'] as List<AppointmentDetail>? ?? [];
+        // Include completed appointments that have a complaint or notes
+        for (final a in appts) {
+          if (a.status.toLowerCase() == 'completed') {
+            records.add({
+              'type': 'appointment',
+              'date': a.date.toIso8601String(),
+              'createdAt': a.date.toIso8601String(),
+              'chiefComplaint': a.reason ?? '',
+              'doctor': {'name': a.doctorName},
+              'timeSlot': a.timeSlot,
+            });
+          }
+        }
       }
-    } catch (_) {
-      if (mounted) setState(() { _historyLoading = false; _historyLoaded = true; });
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _historyRecords = records;
+        _historyLoaded = true;
+        _historyLoading = false;
+      });
     }
   }
 
@@ -601,7 +629,8 @@ class _VideoCallWebState extends State<VideoCall> {
                                 _showHistory = !_showHistory;
                                 if (_showHistory) _showChat = false;
                               });
-                              if (_showHistory && !_historyLoaded) {
+                              // Always load history when panel opens (patientId optional)
+                              if (_showHistory && !_historyLoaded && !_historyLoading) {
                                 _loadPatientHistory();
                               }
                             },
@@ -892,12 +921,6 @@ class _VideoCallWebState extends State<VideoCall> {
                           color: Color(0xFF10B981), strokeWidth: 2),
                     ),
                   )
-                else if (!_historyLoaded && widget.patientId == null)
-                  _historySection('Previous Records',
-                      Icons.info_outline_rounded, const Color(0xFF64748B), [
-                    'Patient history not available',
-                    'No patient ID provided',
-                  ])
                 else ..._buildRealHistorySections(),
               ],
             ),
@@ -911,7 +934,7 @@ class _VideoCallWebState extends State<VideoCall> {
     if (_historyRecords.isEmpty) {
       return [
         _historySection('Previous Visits', Icons.calendar_today_rounded,
-            const Color(0xFF10B981), ['No previous records found']),
+            const Color(0xFF10B981), ['No previous consultations found']),
         const SizedBox(height: 16),
         _historySection('Prescriptions', Icons.medication_rounded,
             const Color(0xFFF59E0B), ['No prescriptions on file']),
@@ -924,28 +947,32 @@ class _VideoCallWebState extends State<VideoCall> {
     final visitItems = <String>[];
     final prescriptionItems = <String>[];
     final labItems = <String>[];
+    int visitCount = 0;
 
     for (final rec in _historyRecords) {
-      final dateStr = rec['createdAt'] != null
-          ? DateTime.tryParse(rec['createdAt'].toString())
-                  ?.toLocal()
-                  .toString()
-                  .substring(0, 10) ??
-              'Unknown date'
+      final rawDate = rec['date'] ?? rec['createdAt'];
+      final dateStr = rawDate != null
+          ? (DateTime.tryParse(rawDate.toString())?.toLocal().toString().substring(0, 10) ?? 'Unknown date')
           : 'Unknown date';
       final complaint = rec['chiefComplaint']?.toString() ?? '';
       final diagnosis = rec['diagnosis']?.toString() ?? '';
+      final timeSlot = rec['timeSlot']?.toString() ?? '';
       final doctorName = (rec['doctor'] is Map)
           ? (rec['doctor']['name']?.toString() ?? 'Doctor')
-          : 'Doctor';
+          : (rec['doctor']?.toString() ?? 'Doctor');
 
-      if (complaint.isNotEmpty || diagnosis.isNotEmpty) {
-        visitItems.add('$dateStr — $doctorName');
+      // Visit entry
+      final hasVisitInfo = complaint.isNotEmpty || diagnosis.isNotEmpty || rec['type'] == 'appointment';
+      if (hasVisitInfo) {
+        visitCount++;
+        if (visitItems.isNotEmpty) visitItems.add(''); // separator
+        visitItems.add('📅 $dateStr${timeSlot.isNotEmpty ? '  $timeSlot' : ''}');
+        visitItems.add('Dr. $doctorName');
         if (complaint.isNotEmpty) visitItems.add('Complaint: $complaint');
         if (diagnosis.isNotEmpty) visitItems.add('Diagnosis: $diagnosis');
-        visitItems.add('');
       }
 
+      // Prescriptions from medical records
       final prescriptions = rec['prescriptions'];
       if (prescriptions is List && prescriptions.isNotEmpty) {
         for (final p in prescriptions) {
@@ -963,6 +990,7 @@ class _VideoCallWebState extends State<VideoCall> {
         }
       }
 
+      // Lab reports from medical records
       final labReports = rec['labReports'] ?? rec['labResults'];
       if (labReports is List && labReports.isNotEmpty) {
         for (final l in labReports) {
@@ -979,23 +1007,22 @@ class _VideoCallWebState extends State<VideoCall> {
       }
     }
 
-    // Remove trailing empty strings
     while (visitItems.isNotEmpty && visitItems.last.isEmpty) visitItems.removeLast();
+
+    final visitLabel = visitCount > 0 ? 'Previous Visits ($visitCount)' : 'Previous Visits';
 
     return [
       _historySection(
-          'Previous Visits (${_historyRecords.length})',
+          visitLabel,
           Icons.calendar_today_rounded,
           const Color(0xFF10B981),
-          visitItems.isEmpty ? ['No visit details recorded'] : visitItems),
+          visitItems.isEmpty ? ['No previous consultations recorded'] : visitItems),
       const SizedBox(height: 16),
       _historySection(
           'Prescriptions',
           Icons.medication_rounded,
           const Color(0xFFF59E0B),
-          prescriptionItems.isEmpty
-              ? ['No prescriptions on file']
-              : prescriptionItems),
+          prescriptionItems.isEmpty ? ['No prescriptions on file'] : prescriptionItems),
       const SizedBox(height: 16),
       _historySection(
           'Lab Reports',
