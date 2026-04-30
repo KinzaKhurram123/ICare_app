@@ -7,6 +7,7 @@ const appointmentSchema = new mongoose.Schema({
   appointment_time: { type: String },
   consultation_type: { type: String, default: 'in-person' },
   notes: { type: String, default: '' },
+  channel_name: { type: String }, // for video consultations
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'],

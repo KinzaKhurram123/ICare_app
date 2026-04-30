@@ -119,6 +119,7 @@ router.post('/accept', authMiddleware, async (req, res) => {
           appointment_time: now.toTimeString().slice(0, 5),
           status: 'in_progress',
           consultation_type: 'video',
+          channel_name: request.channelName,
           notes: `Instant consultation via Connect Now. Channel: ${request.channelName}`,
         });
         appointmentId = appt._id.toString();

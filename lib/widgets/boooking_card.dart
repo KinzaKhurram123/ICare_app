@@ -98,11 +98,10 @@ class BookingCard extends ConsumerWidget {
                 borderRadius: 30,
                 labelSize: 15,
                 onPressed: () {
-                  // Extract real channelName from notes if stored there
-                  String channelName = appointment.id;
-                  final notes = appointment.reason ?? '';
-                  final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
-                  if (match != null) channelName = match.group(1)!;
+                  // Use stored channelName, fallback to appointment id
+                  final channelName = appointment.channelName?.isNotEmpty == true
+                      ? appointment.channelName!
+                      : appointment.id;
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => VideoCall(
@@ -727,11 +726,10 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         const SizedBox(width: 12),
                         ElevatedButton.icon(
                           onPressed: () {
-                            // Extract real channelName from notes if stored there
-                            String channelName = widget.appointment.id;
-                            final notes = widget.appointment.reason ?? '';
-                            final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
-                            if (match != null) channelName = match.group(1)!;
+                            // Use stored channelName, fallback to appointment id
+                            final channelName = widget.appointment.channelName?.isNotEmpty == true
+                                ? widget.appointment.channelName!
+                                : widget.appointment.id;
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => VideoCall(

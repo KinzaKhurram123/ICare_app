@@ -51,6 +51,7 @@ async function getAppointments(userId, userRole) {
       doctor_phone: dMap[a.doctor_id.toString()]?.phone,
       specialization: pMap[a.doctor_id.toString()]?.specialization,
       consultation_fee: pMap[a.doctor_id.toString()]?.consultation_fee,
+      channel_name: a.channel_name || '',
     }));
   }
 }

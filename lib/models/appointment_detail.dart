@@ -8,6 +8,7 @@ class AppointmentDetail {
   final String timeSlot;
   final String? reason;
   final String status;
+  final String? channelName; // for video consultations (connect_now)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class AppointmentDetail {
     required this.timeSlot,
     this.reason,
     required this.status,
+    this.channelName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -75,6 +77,7 @@ class AppointmentDetail {
       timeSlot: json['timeSlot']?.toString() ?? json['appointment_time']?.toString() ?? '',
       reason: json['reason']?.toString() ?? json['notes']?.toString(),
       status: json['status']?.toString() ?? 'pending',
+      channelName: json['channel_name']?.toString(),
       createdAt: DateTime.tryParse(
         json['createdAt']?.toString() ?? '',
       ) ?? DateTime.now(),

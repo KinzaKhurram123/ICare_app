@@ -290,7 +290,12 @@ class _VideoCallWebState extends State<VideoCall> {
           appointmentId: widget.appointmentId!,
           status: 'in_progress',
         );
-      } catch (_) {}
+        debugPrint('✅ Marked in_progress: ${widget.appointmentId}');
+      } catch (e) {
+        debugPrint('❌ Failed to mark in_progress: $e');
+      }
+    } else {
+      debugPrint('⚠️ appointmentId is null — cannot mark in_progress. channelName: ${widget.channelName}');
     }
 
     if (mounted) Navigator.pop(context);
