@@ -140,18 +140,33 @@ class _DoctorsListState extends State<DoctorsList> {
 
   void _sortDoctors() {
     setState(() {
-      if (_sortBy == 'rating') {
-        _filteredDoctors.sort((a, b) => b.averageRating.compareTo(a.averageRating));
-      } else if (_sortBy == 'experience') {
-        _filteredDoctors.sort((a, b) {
+      _filteredDoctors.sort((a, b) {
+        // Online doctors always appear first when no specific filter is applied
+        if (_availabilityFilter == null || _availabilityFilter == 'all') {
+          final onlineCmp = (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0);
+          if (onlineCmp != 0) return onlineCmp;
+        }
+        // Then by selected sort criteria
+        if (_sortBy == 'rating') {
+          return b.averageRating.compareTo(a.averageRating);
+        } else if (_sortBy == 'experience') {
           final aExp = int.tryParse(a.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
           final bExp = int.tryParse(b.experience?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0;
           return bExp.compareTo(aExp);
-        });
-      } else if (_sortBy == 'fees') {
-        // consultationFee not yet in Doctor model — skip sort
-      }
+        }
+        return 0;
+      });
     });
+  }
+
+  bool _isAvailableToday(Doctor doctor) {
+    if (doctor.isOnline) return true;
+    if (doctor.availableDays.isEmpty) return false;
+    final dayName = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+        [DateTime.now().weekday - 1];
+    return doctor.availableDays.any(
+      (d) => d.toLowerCase().startsWith(dayName.substring(0, 3)),
+    );
   }
 
   int get _onlineDoctorsCount {
@@ -743,6 +758,14 @@ class DoctorProfileCard extends StatelessWidget {
     final degrees = displayDoctor.degrees;
     final hasPmdc = displayDoctor.pmdcNumber != null && displayDoctor.pmdcNumber!.isNotEmpty;
 
+    // "Available Today" only if doctor is online OR has today as an available day
+    final todayIdx = DateTime.now().weekday - 1; // 0=Mon … 6=Sun
+    final todayPrefix = ['mon','tue','wed','thu','fri','sat','sun'][todayIdx];
+    final isAvailableToday = displayDoctor.isOnline ||
+        displayDoctor.availableDays.any(
+          (d) => d.toLowerCase().startsWith(todayPrefix),
+        );
+
     return GestureDetector(
       onTap: () {
         if (doctor != null) {
@@ -928,18 +951,19 @@ class DoctorProfileCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Available today badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6),
+                  // Available Today badge — only when doctor is actually available today
+                  if (isAvailableToday)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Available Today',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                      ),
                     ),
-                    child: const Text(
-                      'Available Today',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
-                    ),
-                  ),
                   const Spacer(),
                   if (fee != null && fee > 0)
                     Text(

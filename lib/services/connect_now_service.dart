@@ -62,4 +62,15 @@ class ConnectNowService {
     // No backend call - just let it expire
     debugPrint('Request $requestId rejected by doctor');
   }
+
+  // Doctor: set availability for instant consultation (notifies backend)
+  Future<void> setInstantAvailability(bool isAvailable) async {
+    try {
+      await _apiService.post('/connect-now/available', {'isAvailable': isAvailable});
+      debugPrint('✅ Instant availability set to: $isAvailable');
+    } catch (e) {
+      // Non-critical — frontend SharedPref toggle still controls behavior
+      debugPrint('⚠️ Could not sync instant availability to backend: $e');
+    }
+  }
 }

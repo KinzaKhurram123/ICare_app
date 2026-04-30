@@ -65,6 +65,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       final prefs = await SharedPreferences.getInstance();
       final val = prefs.getBool('doctor_instant_consult_available') ?? true;
       if (mounted) setState(() => _availableForInstantConsultation = val);
+      // Sync with backend on load so backend knows current state
+      ConnectNowService().setInstantAvailability(val);
     } catch (_) {}
   }
 
@@ -318,6 +320,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('doctor_instant_consult_available', value);
     } catch (_) {}
+    // Notify backend so it routes requests correctly
+    ConnectNowService().setInstantAvailability(value);
   }
 
   Widget _buildWelcomeHeader(String userName) {
