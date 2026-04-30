@@ -632,25 +632,27 @@ class _WebPatientProfileView extends StatelessWidget {
                           "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
                         ),
                         const SizedBox(height: 32),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => PatientProfileView(
-                                  patient: appointment.patient!,
+                        // View Full Details — only for Doctor role (patient object exists)
+                        if (selectedRole == 'Doctor' && appointment.patient != null)
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) => PatientProfileView(
+                                    patient: appointment.patient!,
+                                  ),
                                 ),
+                              );
+                            },
+                            child: const Text(
+                              "View Full Details →",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryColor,
                               ),
-                            );
-                          },
-                          child: const Text(
-                            "View Full Details →",
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -667,12 +669,18 @@ class _WebPatientProfileView extends StatelessWidget {
                         Icons.calendar_today_rounded,
                         appointment.status.toLowerCase() == 'confirmed'
                             ? const Color(0xFF10B981)
-                            : const Color(0xFF6366F1),
+                            : appointment.status.toLowerCase() == 'completed'
+                                ? const Color(0xFF3B82F6)
+                                : appointment.status.toLowerCase() == 'cancelled'
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF6366F1),
                         {
                           "Date": formattedDate,
                           "Time": appointment.timeSlot,
                           "Status": appointment.status.toUpperCase(),
-                          "Booking for": "Self",
+                          "Type": appointment.channelName?.isNotEmpty == true
+                              ? "Video Consultation"
+                              : "In-Person",
                         },
                       ),
                       const SizedBox(height: 24),
@@ -686,13 +694,19 @@ class _WebPatientProfileView extends StatelessWidget {
                         selectedRole == 'Patient'
                             ? {
                                 "Name": otherPerson?.name ?? 'N/A',
-                                "Reason": appointment.reason ?? 'N/A',
+                                if (appointment.reason != null &&
+                                    appointment.reason!.isNotEmpty &&
+                                    !appointment.reason!.contains('Channel:'))
+                                  "Reason": appointment.reason!,
                               }
                             : {
                                 "Name": otherPerson?.name ?? 'N/A',
                                 "Email": otherPerson?.email ?? 'N/A',
                                 "Phone": otherPerson?.phoneNumber ?? 'N/A',
-                                "Reason": appointment.reason ?? 'N/A',
+                                if (appointment.reason != null &&
+                                    appointment.reason!.isNotEmpty &&
+                                    !appointment.reason!.contains('Channel:'))
+                                  "Reason": appointment.reason!,
                               },
                       ),
                       if (selectedRole == "lab_technician") ...[
