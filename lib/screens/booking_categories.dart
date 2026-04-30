@@ -129,6 +129,7 @@ class UpcomingBOokingsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRole = ref.watch(authProvider).userRole;
+    final currentUser = ref.watch(authProvider).user;
     return ListView.builder(
       itemCount: data!.length,
       padding: EdgeInsets.only(
@@ -138,9 +139,72 @@ class UpcomingBOokingsList extends ConsumerWidget {
       ),
       itemBuilder: (ctx, i) {
         final appointment = data![i] as AppointmentDetail;
-        return (selectedRole == "lab_technician"
-            ? TestAppointment(status: status)
-            : BookingCard(appointment: appointment));
+        if (selectedRole == "lab_technician") return TestAppointment(status: status);
+
+        final isInProgress = appointment.status.toLowerCase() == 'in_progress';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BookingCard(appointment: appointment, showActions: !isInProgress),
+            if (isInProgress)
+              Padding(
+                padding: EdgeInsets.only(bottom: ScallingConfig.scale(12)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.fiber_manual_record, color: Color(0xFF8B5CF6), size: 10),
+                          SizedBox(width: 8),
+                          Text('Consultation in Progress',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        String channelName = appointment.id;
+                        final notes = appointment.reason ?? '';
+                        final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                        if (match != null) channelName = match.group(1)!;
+                        Navigator.of(ctx).push(
+                          MaterialPageRoute(
+                            builder: (_) => VideoCall(
+                              channelName: channelName,
+                              remoteUserName: selectedRole == 'Doctor'
+                                  ? appointment.patientName
+                                  : appointment.doctorName,
+                              appointmentId: appointment.id,
+                              currentUserName: currentUser?.name ?? '',
+                              currentUserId: currentUser?.id ?? '',
+                              patientId: appointment.patient?.id,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.video_call_rounded, size: 18),
+                      label: const Text('Rejoin Consultation'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
       },
     );
   }
@@ -616,6 +680,7 @@ class _WebBookingList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRole = ref.watch(authProvider).userRole;
+    final currentUser = ref.watch(authProvider).user;
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -625,9 +690,91 @@ class _WebBookingList extends ConsumerWidget {
           const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
       itemBuilder: (ctx, i) {
         final appointment = data[i] as AppointmentDetail;
-        return selectedRole == "lab_technician"
-            ? TestAppointment(status: status)
-            : BookingCard(appointment: appointment);
+        if (selectedRole == "lab_technician") return TestAppointment(status: status);
+
+        final isInProgress = appointment.status.toLowerCase() == 'in_progress';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BookingCard(appointment: appointment, showActions: !isInProgress),
+            if (isInProgress)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8, height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF8B5CF6), shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Consultation in Progress',
+                            style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700,
+                              color: Color(0xFF8B5CF6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        String channelName = appointment.id;
+                        final notes = appointment.reason ?? '';
+                        final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                        if (match != null) channelName = match.group(1)!;
+                        Navigator.of(ctx).push(
+                          MaterialPageRoute(
+                            builder: (_) => VideoCall(
+                              channelName: channelName,
+                              remoteUserName: selectedRole == 'Doctor'
+                                  ? appointment.patientName
+                                  : appointment.doctorName,
+                              appointmentId: appointment.id,
+                              currentUserName: currentUser?.name ?? '',
+                              currentUserId: currentUser?.id ?? '',
+                              patientId: appointment.patient?.id,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.video_call_rounded, size: 18),
+                      label: const Text(
+                        'Rejoin Consultation',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
       },
     );
   }
