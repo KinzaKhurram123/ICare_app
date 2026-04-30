@@ -697,7 +697,7 @@ class _WebBookingList extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            BookingCard(appointment: appointment, showActions: !isInProgress),
+            BookingCard(appointment: appointment, showActions: true),
             if (isInProgress)
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
