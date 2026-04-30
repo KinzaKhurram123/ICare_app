@@ -96,8 +96,12 @@ class _VideoCallWebState extends State<VideoCall> {
     _joinCall();
     _startSessionTimer();
     _startChatPolling();
-    // Only poll status if we have an appointmentId (not for quick calls)
-    if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
+    // Only poll status on PATIENT side (patientId is null when patient is viewing)
+    // Doctor side has patientId set — doctor doesn't need status polling
+    final isPatientSide = widget.patientId == null || widget.patientId!.isEmpty;
+    if (isPatientSide &&
+        widget.appointmentId != null &&
+        widget.appointmentId!.isNotEmpty) {
       _startStatusPolling();
     }
   }
