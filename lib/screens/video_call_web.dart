@@ -142,7 +142,7 @@ class _VideoCallWebState extends State<VideoCall> {
                   ],
                 ),
                 content: const Text(
-                    'The doctor has ended this consultation. Thank you!'),
+                    'The consultation has been ended.'),
                 actions: [
                   ElevatedButton(
                     onPressed: () {

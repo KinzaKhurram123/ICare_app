@@ -8,6 +8,10 @@ import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/labb_details.dart';
 import 'package:icare/screens/pharmacy_details.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
   const PatientPrescriptions({super.key});
@@ -778,18 +782,92 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   List<dynamic> _labs = [];
   bool _isLoading = true;
   String? _error;
+  double? _userLat;
+  double? _userLng;
 
   @override
   void initState() {
     super.initState();
     _fetchLabs();
+    _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      final completer = _LocationCompleter();
+      web.window.navigator.geolocation.getCurrentPosition(
+        ((web.GeolocationPosition pos) {
+          completer.complete(pos.coords.latitude.toDouble(), pos.coords.longitude.toDouble());
+        }).toJS,
+        ((web.GeolocationPositionError err) {
+          completer.fail();
+        }).toJS,
+      );
+      final pos = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => null,
+      );
+      if (pos != null && mounted) {
+        setState(() {
+          _userLat = pos[0];
+          _userLng = pos[1];
+          _locationLoading = false;
+          _sortByDistance();
+        });
+      } else {
+        if (mounted) setState(() => _locationLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _locationLoading = false);
+    }
+  }
+
+  double _haversineDistance(double lat1, double lng1, double lat2, double lng2) {
+    const R = 6371.0;
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLng = (lng2 - lng1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
+            math.sin(dLng / 2) * math.sin(dLng / 2);
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  void _sortByDistance() {
+    if (_userLat == null || _userLng == null) return;
+    _labs.sort((a, b) {
+      final aLat = (a['latitude'] ?? a['lat']) as double?;
+      final aLng = (a['longitude'] ?? a['lng']) as double?;
+      final bLat = (b['latitude'] ?? b['lat']) as double?;
+      final bLng = (b['longitude'] ?? b['lng']) as double?;
+      if (aLat == null || aLng == null) return 1;
+      if (bLat == null || bLng == null) return -1;
+      final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
+      final bDist = _haversineDistance(_userLat!, _userLng!, bLat, bLng);
+      return aDist.compareTo(bDist);
+    });
+  }
+
+  String? _getDistance(dynamic lab) {
+    if (_userLat == null || _userLng == null) return null;
+    final lat = (lab['latitude'] ?? lab['lat']) as double?;
+    final lng = (lab['longitude'] ?? lab['lng']) as double?;
+    if (lat == null || lng == null) return null;
+    final dist = _haversineDistance(_userLat!, _userLng!, lat, lng);
+    if (dist < 1) return '${(dist * 1000).toStringAsFixed(0)} m';
+    return '${dist.toStringAsFixed(1)} km';
   }
 
   Future<void> _fetchLabs() async {
     setState(() { _isLoading = true; _error = null; });
     try {
       final labs = await _labService.getAllLaboratories();
-      if (mounted) setState(() { _labs = labs; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _labs = labs;
+          _isLoading = false;
+          if (_userLat != null) _sortByDistance();
+        });
+      }
     } catch (e) {
       debugPrint('❌ Find Labs error: $e');
       if (mounted) setState(() { _isLoading = false; _error = e.toString(); });
@@ -852,6 +930,42 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Location banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _userLat != null
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _userLat != null
+                            ? const Color(0xFF10B981).withOpacity(0.4)
+                            : const Color(0xFFF59E0B).withOpacity(0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
+                          size: 16,
+                          color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _userLat != null
+                              ? 'Sorted by nearest to your location'
+                              : 'Allow location to see nearest labs first',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Ordered tests chips
@@ -934,6 +1048,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         'Laboratory';
     final address = lab['address']?.toString() ?? lab['location']?.toString() ?? '';
     final phone = lab['phone']?.toString() ?? lab['phoneNumber']?.toString() ?? '';
+    final distance = _getDistance(lab);
 
     return InkWell(
       onTap: () {
@@ -1017,8 +1132,31 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 16, color: Color(0xFF94A3B8)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (distance != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      distance,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: Color(0xFF94A3B8)),
+              ],
+            ),
           ],
         ),
       ),
@@ -1041,17 +1179,86 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
   final PharmacyService _pharmacyService = PharmacyService();
   List<dynamic> _pharmacies = [];
   bool _isLoading = true;
+  double? _userLat;
+  double? _userLng;
 
   @override
   void initState() {
     super.initState();
     _fetchPharmacies();
+    _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      final completer = _LocationCompleter();
+      web.window.navigator.geolocation.getCurrentPosition(
+        ((web.GeolocationPosition pos) {
+          completer.complete(pos.coords.latitude.toDouble(), pos.coords.longitude.toDouble());
+        }).toJS,
+        ((web.GeolocationPositionError err) {
+          completer.fail();
+        }).toJS,
+      );
+      final pos = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => null,
+      );
+      if (pos != null && mounted) {
+        setState(() {
+          _userLat = pos[0];
+          _userLng = pos[1];
+          _sortByDistance();
+        });
+      }
+    } catch (_) {}
+  }
+
+  double _haversineDistance(double lat1, double lng1, double lat2, double lng2) {
+    const R = 6371.0;
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLng = (lng2 - lng1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
+            math.sin(dLng / 2) * math.sin(dLng / 2);
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  void _sortByDistance() {
+    if (_userLat == null || _userLng == null) return;
+    _pharmacies.sort((a, b) {
+      final aLat = (a['latitude'] ?? a['lat']) as double?;
+      final aLng = (a['longitude'] ?? a['lng']) as double?;
+      final bLat = (b['latitude'] ?? b['lat']) as double?;
+      final bLng = (b['longitude'] ?? b['lng']) as double?;
+      if (aLat == null || aLng == null) return 1;
+      if (bLat == null || bLng == null) return -1;
+      final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
+      final bDist = _haversineDistance(_userLat!, _userLng!, bLat, bLng);
+      return aDist.compareTo(bDist);
+    });
+  }
+
+  String? _getDistance(dynamic pharmacy) {
+    if (_userLat == null || _userLng == null) return null;
+    final lat = (pharmacy['latitude'] ?? pharmacy['lat']) as double?;
+    final lng = (pharmacy['longitude'] ?? pharmacy['lng']) as double?;
+    if (lat == null || lng == null) return null;
+    final dist = _haversineDistance(_userLat!, _userLng!, lat, lng);
+    if (dist < 1) return '${(dist * 1000).toStringAsFixed(0)} m';
+    return '${dist.toStringAsFixed(1)} km';
   }
 
   Future<void> _fetchPharmacies() async {
     try {
       final pharmacies = await _pharmacyService.getAllPharmacies();
-      if (mounted) setState(() { _pharmacies = pharmacies; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _pharmacies = pharmacies;
+          _isLoading = false;
+          if (_userLat != null) _sortByDistance();
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1112,6 +1319,42 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // Location banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _userLat != null
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _userLat != null
+                            ? const Color(0xFF10B981).withOpacity(0.4)
+                            : const Color(0xFFF59E0B).withOpacity(0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
+                          size: 16,
+                          color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _userLat != null
+                              ? 'Sorted by nearest to your location'
+                              : 'Allow location to see nearest pharmacies first',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   const Text('Prescribed Medicines:',
                       style: TextStyle(
@@ -1170,6 +1413,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
         'Pharmacy';
     final address = pharmacy['address']?.toString() ?? pharmacy['location']?.toString() ?? '';
     final phone = pharmacy['phone']?.toString() ?? pharmacy['phoneNumber']?.toString() ?? '';
+    final distance = _getDistance(pharmacy);
 
     return InkWell(
       onTap: () {
@@ -1249,11 +1493,44 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 16, color: Color(0xFF94A3B8)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (distance != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      distance,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: Color(0xFF94A3B8)),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+// Helper: Browser Geolocation Completer
+class _LocationCompleter {
+  final _c = Completer<List<double>?>();
+  Future<List<double>?> get future => _c.future;
+  void complete(double lat, double lng) {
+    if (!_c.isCompleted) _c.complete([lat, lng]);
+  }
+  void fail() { if (!_c.isCompleted) _c.complete(null); }
 }

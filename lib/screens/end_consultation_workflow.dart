@@ -512,7 +512,7 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _selectedICDCodes.isEmpty || _diagnosisNotesController.text.trim().isEmpty
+                      onPressed: _selectedICDCodes.isEmpty
                           ? null
                           : () {
                               setState(() => _diagnosisCompleted = true);
