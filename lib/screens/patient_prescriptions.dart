@@ -1178,27 +1178,14 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
 
   Future<void> _getUserLocation() async {
     try {
-      final completer = _LocationCompleter();
-      html.window.navigator.geolocation.getCurrentPosition(
-        (html.Geoposition pos) {
-          completer.complete(
-            pos.coords!.latitude!.toDouble(),
-            pos.coords!.longitude!.toDouble(),
-          );
-        },
-        (html.PositionError err) {
-          completer.fail();
-        },
-      );
-      final pos = await completer.future.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => null,
-      );
-      if (pos != null && mounted) {
+      final pos = await html.window.navigator.geolocation
+          .getCurrentPosition()
+          .timeout(const Duration(seconds: 10));
+      if (mounted) {
         setState(() {
-          _userLat = pos[0];
-          _userLng = pos[1];
-          _sortByDistance();
+          _userLat = pos.coords?.latitude?.toDouble();
+          _userLng = pos.coords?.longitude?.toDouble();
+          if (_userLat != null) _sortByDistance();
         });
       }
     } catch (_) {
