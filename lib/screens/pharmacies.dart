@@ -93,8 +93,10 @@ class _PharmaciesScreenState extends State<PharmaciesScreen> {
         final address = (p['address'] ?? '').toString().toLowerCase();
         final city = (p['city'] ?? '').toString().toLowerCase();
         final area = (p['area'] ?? '').toString().toLowerCase();
+        // Also match pharmacy name so "Clifton Pharmacy" search works
+        final name = (p['pharmacy_name'] ?? p['pharmacyName'] ?? p['name'] ?? '').toString().toLowerCase();
         final q = query.toLowerCase();
-        return address.contains(q) || city.contains(q) || area.contains(q);
+        return address.contains(q) || city.contains(q) || area.contains(q) || name.contains(q);
       }).toList();
     });
   }
@@ -630,7 +632,11 @@ class PharmacyWidget extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: CustomText(
-                                    text: pharmacy['user']?['name'] ?? 'Pharmacy',
+                                    text: pharmacy['pharmacy_name']?.toString()
+                                        ?? pharmacy['pharmacyName']?.toString()
+                                        ?? pharmacy['user']?['name']?.toString()
+                                        ?? pharmacy['name']?.toString()
+                                        ?? 'Pharmacy',
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
                                     fontFamily: "Gilroy-Bold",
