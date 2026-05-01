@@ -636,6 +636,20 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                       ),
                       _drawerActionItem(
                         context,
+                        'Manage Doctors',
+                        const Color(0xFF3B82F6),
+                        Icons.medical_services_outlined,
+                        () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (ctx) =>
+                                  const TabsScreen(initialAdminTab: 'Doctor'),
+                            ),
+                          );
+                        },
+                      ),
+                      _drawerActionItem(
+                        context,
                         'Manage Students',
                         const Color(0xFF6366F1),
                         Icons.school_outlined,

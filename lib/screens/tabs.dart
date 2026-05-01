@@ -1209,7 +1209,25 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     Icons.verified_user_outlined,
                     'Verify Applications',
                     () {
-                      onSelect(0); // Trigger reload with tab
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (ctx) =>
+                              const TabsScreen(initialAdminTab: 'Pending'),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildExtraNavItem(
+                    context,
+                    Icons.medical_services_outlined,
+                    'Manage Doctors',
+                    () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (ctx) =>
+                              const TabsScreen(initialAdminTab: 'Doctor'),
+                        ),
+                      );
                     },
                   ),
                   _buildExtraNavItem(
@@ -1217,7 +1235,6 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                     Icons.school_outlined,
                     'Manage Students',
                     () {
-                      // Logic to set tab and refresh
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                           builder: (ctx) =>

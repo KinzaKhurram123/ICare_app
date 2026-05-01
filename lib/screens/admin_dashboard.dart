@@ -37,13 +37,37 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     _fetchUsers();
   }
 
+  @override
+  void didUpdateWidget(AdminDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      _currentTab = widget.initialTab;
+      _fetchUsers();
+    }
+  }
+
   Future<void> _fetchUsers() async {
     setState(() => _isLoading = true);
 
     try {
-      final endpoint = _currentTab == 'Pending'
-          ? '/admin/pending-users'
-          : '/admin/approved-users?role=$_currentTab';
+      final String endpoint;
+      if (_currentTab == 'Pending') {
+        endpoint = '/admin/pending-users';
+      } else if (_currentTab == 'PatientRecords') {
+        await _fetchPatientRecords();
+        return;
+      } else {
+        // Map tab name to backend role
+        final roleMap = {
+          'Doctor': 'doctor',
+          'Student': 'student',
+          'Pharmacy': 'pharmacy',
+          'Laboratory': 'lab',
+          'Instructor': 'instructor',
+        };
+        final role = roleMap[_currentTab] ?? _currentTab.toLowerCase();
+        endpoint = '/admin/approved-users?role=$role';
+      }
 
       final response = await _apiService.get(endpoint);
 
@@ -179,6 +203,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             child: Row(
               children: [
                 _buildTabItem('Pending', Icons.pending_actions_rounded),
+                _buildTabItem('Doctor', Icons.medical_services_rounded),
                 _buildTabItem('Student', Icons.school_rounded),
                 _buildTabItem('Pharmacy', Icons.local_pharmacy_rounded),
                 _buildTabItem('Laboratory', Icons.science_rounded),
