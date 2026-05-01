@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html show window;
 import '../services/pharmacy_service.dart';
 import 'pharmacist_dashboard.dart';
 import 'tabs.dart';
@@ -29,6 +32,9 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
 
   bool _deliveryAvailable = false;
   bool _drapCompliance = false;
+  double? _latitude;
+  double? _longitude;
+  bool _gettingLocation = false;
 
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
@@ -73,6 +79,8 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
         _openHoursFromController.text = profile['openHours']?['from'] ?? '';
         _openHoursToController.text = profile['openHours']?['to'] ?? '';
         _deliveryAvailable = profile['deliveryAvailable'] ?? false;
+        _latitude = (profile['latitude'] as num?)?.toDouble();
+        _longitude = (profile['longitude'] as num?)?.toDouble();
         _isLoading = false;
       });
     } catch (e) {
@@ -81,6 +89,36 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
+      }
+    }
+  }
+
+  Future<void> _getGpsLocation() async {
+    if (!kIsWeb) return;
+    setState(() => _gettingLocation = true);
+    try {
+      final pos = await html.window.navigator.geolocation
+          .getCurrentPosition()
+          .timeout(const Duration(seconds: 15));
+      if (mounted) {
+        setState(() {
+          _latitude = pos.coords?.latitude?.toDouble();
+          _longitude = pos.coords?.longitude?.toDouble();
+          _gettingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location captured successfully!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _gettingLocation = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get location. Please allow location access.')),
+        );
       }
     }
   }
@@ -102,6 +140,8 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
           'to': _openHoursToController.text,
         },
         'deliveryAvailable': _deliveryAvailable,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
       });
 
       if (mounted) {
@@ -221,6 +261,38 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                         controller: _cityController,
                         label: 'City',
                         icon: Icons.location_city,
+                      ),
+                      const SizedBox(height: 16),
+                      // GPS Location Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _gettingLocation ? null : _getGpsLocation,
+                          icon: _gettingLocation
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Icon(
+                                  _latitude != null ? Icons.my_location : Icons.location_searching,
+                                  color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                                ),
+                          label: Text(
+                            _latitude != null
+                                ? '✓ Location saved (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})'
+                                : 'Use My Current Location',
+                            style: TextStyle(
+                              color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
                       ),
                     ]),
                     const SizedBox(height: 24),

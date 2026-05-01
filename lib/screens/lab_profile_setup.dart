@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html show window;
 import '../services/laboratory_service.dart';
 import 'laboratory_dashboard.dart';
 import 'tabs.dart';
@@ -35,6 +38,9 @@ class _LabProfileSetupState extends State<LabProfileSetup>
 
   bool _homeSampleAvailable = false;
   bool _drapCompliance = false;
+  double? _latitude;
+  double? _longitude;
+  bool _gettingLocation = false;
 
   // Profile Image
   Uint8List? _imageBytes;
@@ -100,6 +106,8 @@ class _LabProfileSetupState extends State<LabProfileSetup>
             profile['workingHours']?['from'] ?? '';
         _workingHoursToController.text = profile['workingHours']?['to'] ?? '';
         _homeSampleAvailable = profile['homeSampleAvailable'] ?? false;
+        _latitude = (profile['latitude'] as num?)?.toDouble();
+        _longitude = (profile['longitude'] as num?)?.toDouble();
         _isLoading = false;
       });
       _animationController.forward();
@@ -109,6 +117,41 @@ class _LabProfileSetupState extends State<LabProfileSetup>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Unable to load data. Please try again.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _getGpsLocation() async {
+    if (!kIsWeb) return;
+    setState(() => _gettingLocation = true);
+    try {
+      final pos = await html.window.navigator.geolocation
+          .getCurrentPosition()
+          .timeout(const Duration(seconds: 15));
+      if (mounted) {
+        setState(() {
+          _latitude = pos.coords?.latitude?.toDouble();
+          _longitude = pos.coords?.longitude?.toDouble();
+          _gettingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location captured successfully!'),
+            backgroundColor: Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _gettingLocation = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not get location. Please allow location access.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -138,6 +181,8 @@ class _LabProfileSetupState extends State<LabProfileSetup>
           'to': _workingHoursToController.text,
         },
         'homeSampleAvailable': _homeSampleAvailable,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
       });
 
       if (mounted) {
@@ -286,6 +331,38 @@ class _LabProfileSetupState extends State<LabProfileSetup>
                                 label: 'City',
                                 icon: Icons.location_city_rounded,
                                 hint: 'Lahore',
+                              ),
+                              const SizedBox(height: 16),
+                              // GPS Location Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _gettingLocation ? null : _getGpsLocation,
+                                  icon: _gettingLocation
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : Icon(
+                                          _latitude != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
+                                          color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF1565C0),
+                                        ),
+                                  label: Text(
+                                    _latitude != null
+                                        ? '✓ Location saved (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})'
+                                        : 'Use My Current Location',
+                                    style: TextStyle(
+                                      color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF1565C0),
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF1565C0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
