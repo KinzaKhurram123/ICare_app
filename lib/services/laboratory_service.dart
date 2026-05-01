@@ -23,37 +23,44 @@ class LaboratoryService {
       debugPrint('🔍 LAB SERVICE - Fetching all laboratories...');
       final response = await _apiService.get('/laboratories/get_all_laboratories');
       final list = (response.data['laboratories'] ?? []) as List;
-      debugPrint('🔍 LAB SERVICE - Received ${list.length} laboratories from backend');
-      
-      return list.map((l) {
-        final map = Map<String, dynamic>.from(l);
-        debugPrint('🔍 LAB SERVICE - Processing lab: ${map['lab_name'] ?? map['name']}');
-        debugPrint('🔍 LAB SERVICE - Raw lab data keys: ${map.keys.toList()}');
-        debugPrint('🔍 LAB SERVICE - Raw _id: ${map['_id']}, id: ${map['id']}');
-        
-        // Backend returns flat structure: {_id: userId, lab_name: ..., ...}
-        // No nested 'user' object
-        final userId = map['_id']?.toString() ?? map['id']?.toString();
-        debugPrint('🔍 LAB SERVICE - Extracted userId: $userId');
-        
-        map['userId'] = userId;
-        map['_id'] = userId;
-        map['id'] = userId;
-        final displayName = map['lab_name']?.toString()
-            ?? map['labName']?.toString()
-            ?? map['name']?.toString()
-            ?? 'Laboratory';
-        map['labName'] = displayName;
-        map['lab_name'] = displayName;
-        map['name'] = displayName;
-        
-        debugPrint('🔍 LAB SERVICE - Final lab object _id: ${map['_id']}');
-        return map;
-      }).toList();
+      return _mapLabs(list);
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getAllLaboratories');
       rethrow;
     }
+  }
+
+  // Get nearby laboratories within radius (km)
+  Future<List<dynamic>> getNearbyLaboratories(double lat, double lng, {double radius = 20}) async {
+    try {
+      debugPrint('🔍 LAB SERVICE - Fetching nearby labs at $lat,$lng radius=${radius}km');
+      final response = await _apiService.get(
+        '/laboratories/nearby?lat=$lat&lng=$lng&radius=$radius',
+      );
+      final list = (response.data['laboratories'] ?? response.data['labs'] ?? []) as List;
+      return _mapLabs(list);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError(e, stackTrace, context: 'getNearbyLaboratories');
+      rethrow;
+    }
+  }
+
+  List<dynamic> _mapLabs(List list) {
+    return list.map((l) {
+      final map = Map<String, dynamic>.from(l);
+      final userId = map['_id']?.toString() ?? map['id']?.toString();
+      map['userId'] = userId;
+      map['_id'] = userId;
+      map['id'] = userId;
+      final displayName = map['lab_name']?.toString()
+          ?? map['labName']?.toString()
+          ?? map['name']?.toString()
+          ?? 'Laboratory';
+      map['labName'] = displayName;
+      map['lab_name'] = displayName;
+      map['name'] = displayName;
+      return map;
+    }).toList();
   }
 
   // Get laboratory profile

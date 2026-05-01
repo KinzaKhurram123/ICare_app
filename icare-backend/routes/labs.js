@@ -11,6 +11,16 @@ function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
 
+// ─── HAVERSINE DISTANCE (km) ──────────────────────────────────────────────────
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // ─── GET ALL LABS ─────────────────────────────────────────────────────────────
 async function getAllLabs() {
   await connectMongoDB();
@@ -28,6 +38,7 @@ async function getAllLabs() {
       lab_name: p.lab_name, license_number: p.license_number,
       accreditation: p.accreditation, services: p.services,
       operating_hours: p.operating_hours, address: p.address, city: p.city,
+      latitude: p.latitude ?? null, longitude: p.longitude ?? null,
       drap_compliance: p.drap_compliance, createdAt: u.createdAt,
     };
   });
@@ -50,6 +61,41 @@ router.get('/get_all_laboratories', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.json({ success: true, laboratories: [], labs: [] });
+  }
+});
+
+// ─── GET NEARBY LABS ──────────────────────────────────────────────────────────
+// GET /laboratories/nearby?lat=31.5&lng=74.3&radius=20
+router.get('/nearby', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userLat = parseFloat(req.query.lat);
+    const userLng = parseFloat(req.query.lng);
+    const radius = parseFloat(req.query.radius) || 20;
+
+    if (isNaN(userLat) || isNaN(userLng)) {
+      return res.status(400).json({ success: false, message: 'lat and lng are required' });
+    }
+
+    const allLabs = await getAllLabs();
+    const labs = allLabs
+      .map(l => {
+        const distance = (l.latitude != null && l.longitude != null)
+          ? haversineKm(userLat, userLng, l.latitude, l.longitude)
+          : null;
+        return { ...l, distance_km: distance };
+      })
+      .filter(l => l.distance_km === null || l.distance_km <= radius)
+      .sort((a, b) => {
+        if (a.distance_km === null) return 1;
+        if (b.distance_km === null) return -1;
+        return a.distance_km - b.distance_km;
+      });
+
+    res.json({ success: true, laboratories: labs, labs, count: labs.length });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to fetch nearby labs' });
   }
 });
 
@@ -88,6 +134,7 @@ router.post('/add_laboratory_details', authMiddleware, async (req, res) => {
       labName, lab_name, licenseNumber, license_number,
       accreditation, services, operatingHours, operating_hours,
       address, city, drapCompliance, drap_compliance,
+      latitude, longitude,
     } = req.body;
 
     const update = {};
@@ -101,6 +148,8 @@ router.post('/add_laboratory_details', authMiddleware, async (req, res) => {
     if (address !== undefined) update.address = address;
     if (city !== undefined) update.city = city;
     update.drap_compliance = drapCompliance ?? drap_compliance ?? false;
+    if (latitude != null) update.latitude = parseFloat(latitude);
+    if (longitude != null) update.longitude = parseFloat(longitude);
 
     const profile = await LabProfile.findOneAndUpdate(
       { user_id: userId },

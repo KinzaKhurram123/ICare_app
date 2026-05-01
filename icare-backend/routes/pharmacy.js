@@ -12,6 +12,16 @@ function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
 
+// ─── HAVERSINE DISTANCE (km) ──────────────────────────────────────────────────
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // ─── GET ALL PHARMACIES ───────────────────────────────────────────────────────
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -29,7 +39,8 @@ router.get('/', authMiddleware, async (req, res) => {
         name: u.username || u.name, email: u.email, phone: u.phone,
         pharmacy_name: p.pharmacy_name, license_number: p.license_number,
         operating_hours: p.operating_hours, delivery_available: p.delivery_available,
-        delivery_fee: p.delivery_fee,
+        delivery_fee: p.delivery_fee, address: p.address, city: p.city,
+        latitude: p.latitude ?? null, longitude: p.longitude ?? null,
       };
     });
     res.json({ success: true, pharmacies });
@@ -55,13 +66,64 @@ router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
         name: u.username || u.name, email: u.email, phone: u.phone,
         pharmacy_name: p.pharmacy_name, license_number: p.license_number,
         operating_hours: p.operating_hours, delivery_available: p.delivery_available,
-        delivery_fee: p.delivery_fee,
+        delivery_fee: p.delivery_fee, address: p.address, city: p.city,
+        latitude: p.latitude ?? null, longitude: p.longitude ?? null,
       };
     });
     res.json({ success: true, pharmacies });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch pharmacies' });
+  }
+});
+
+// ─── GET NEARBY PHARMACIES ────────────────────────────────────────────────────
+// GET /pharmacy/nearby?lat=31.5&lng=74.3&radius=20
+router.get('/nearby', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userLat = parseFloat(req.query.lat);
+    const userLng = parseFloat(req.query.lng);
+    const radius = parseFloat(req.query.radius) || 20; // default 20 km
+
+    if (isNaN(userLat) || isNaN(userLng)) {
+      return res.status(400).json({ success: false, message: 'lat and lng are required' });
+    }
+
+    const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
+    const ids = users.map(u => u._id);
+    const profiles = await PharmacyProfile.find({ user_id: { $in: ids } }).lean();
+    const pMap = {};
+    profiles.forEach(p => { pMap[p.user_id.toString()] = p; });
+
+    const pharmacies = users
+      .map(u => {
+        const p = pMap[u._id.toString()] || {};
+        const lat = p.latitude ?? null;
+        const lng = p.longitude ?? null;
+        const distance = (lat != null && lng != null)
+          ? haversineKm(userLat, userLng, lat, lng)
+          : null;
+        return {
+          id: u._id.toString(), _id: u._id.toString(),
+          name: u.username || u.name, email: u.email, phone: u.phone,
+          pharmacy_name: p.pharmacy_name, license_number: p.license_number,
+          operating_hours: p.operating_hours, delivery_available: p.delivery_available,
+          delivery_fee: p.delivery_fee, address: p.address, city: p.city,
+          latitude: lat, longitude: lng, distance_km: distance,
+        };
+      })
+      .filter(p => p.distance_km === null || p.distance_km <= radius)
+      .sort((a, b) => {
+        if (a.distance_km === null) return 1;
+        if (b.distance_km === null) return -1;
+        return a.distance_km - b.distance_km;
+      });
+
+    res.json({ success: true, pharmacies, count: pharmacies.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch nearby pharmacies' });
   }
 });
 
@@ -96,7 +158,7 @@ router.post('/add_pharmacy_details', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    const { pharmacyName, licenseNumber, operatingHours, deliveryAvailable, deliveryFee, address, city, drapCompliance, profilePicture } = req.body;
+    const { pharmacyName, licenseNumber, operatingHours, deliveryAvailable, deliveryFee, address, city, drapCompliance, profilePicture, latitude, longitude } = req.body;
 
     const profile = await PharmacyProfile.findOneAndUpdate(
       { user_id: userId },
@@ -106,6 +168,8 @@ router.post('/add_pharmacy_details', authMiddleware, async (req, res) => {
           operating_hours: operatingHours, delivery_available: deliveryAvailable ?? false,
           delivery_fee: deliveryFee ?? 0, address, city,
           drap_compliance: drapCompliance ?? false,
+          ...(latitude != null && { latitude: parseFloat(latitude) }),
+          ...(longitude != null && { longitude: parseFloat(longitude) }),
         },
       },
       { new: true, upsert: true }

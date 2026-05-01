@@ -801,8 +801,9 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         setState(() {
           _userLat = pos.coords?.latitude?.toDouble();
           _userLng = pos.coords?.longitude?.toDouble();
-          if (_userLat != null) _sortByDistance();
         });
+        // Re-fetch with location so backend filters by 20km radius
+        if (_userLat != null) _fetchLabs();
       }
     } catch (_) {
       // Location unavailable — show all results without sorting
@@ -847,7 +848,12 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   Future<void> _fetchLabs() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final labs = await _labService.getAllLaboratories();
+      final List<dynamic> labs;
+      if (_userLat != null && _userLng != null) {
+        labs = await _labService.getNearbyLaboratories(_userLat!, _userLng!);
+      } else {
+        labs = await _labService.getAllLaboratories();
+      }
       if (mounted) {
         setState(() {
           _labs = labs;
@@ -1185,8 +1191,9 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
         setState(() {
           _userLat = pos.coords?.latitude?.toDouble();
           _userLng = pos.coords?.longitude?.toDouble();
-          if (_userLat != null) _sortByDistance();
         });
+        // Re-fetch with location so backend filters by 20km radius
+        if (_userLat != null) _fetchPharmacies();
       }
     } catch (_) {
       // Location unavailable — show all pharmacies without sorting
@@ -1230,7 +1237,12 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
 
   Future<void> _fetchPharmacies() async {
     try {
-      final pharmacies = await _pharmacyService.getAllPharmacies();
+      final List<dynamic> pharmacies;
+      if (_userLat != null && _userLng != null) {
+        pharmacies = await _pharmacyService.getNearbyPharmacies(_userLat!, _userLng!);
+      } else {
+        pharmacies = await _pharmacyService.getAllPharmacies();
+      }
       if (mounted) {
         setState(() {
           _pharmacies = pharmacies;
