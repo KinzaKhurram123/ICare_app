@@ -11,7 +11,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js' as js;
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
   const PatientPrescriptions({super.key});
@@ -794,19 +794,31 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
 
   Future<void> _getUserLocation() async {
     try {
-      final pos = await html.window.navigator.geolocation
-          .getCurrentPosition()
-          .timeout(const Duration(seconds: 10));
-      if (mounted) {
+      final completer = Completer<List<double>?>();
+      js.context['navigator']['geolocation'].callMethod('getCurrentPosition', [
+        js.allowInterop((pos) {
+          final coords = pos['coords'];
+          completer.complete([
+            (coords['latitude'] as num).toDouble(),
+            (coords['longitude'] as num).toDouble(),
+          ]);
+        }),
+        js.allowInterop((err) => completer.complete(null)),
+      ]);
+      final pos = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => null,
+      );
+      if (pos != null && mounted) {
         setState(() {
-          _userLat = pos.coords?.latitude?.toDouble();
-          _userLng = pos.coords?.longitude?.toDouble();
+          _userLat = pos[0];
+          _userLng = pos[1];
+          _sortByDistance();
         });
-        // Re-fetch with location so backend filters by 20km radius
-        if (_userLat != null) _fetchLabs();
+        _fetchLabs();
       }
     } catch (_) {
-      // Location unavailable — show all results without sorting
+      // Location unavailable
     }
   }
 
@@ -848,12 +860,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   Future<void> _fetchLabs() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final List<dynamic> labs;
-      if (_userLat != null && _userLng != null) {
-        labs = await _labService.getNearbyLaboratories(_userLat!, _userLng!);
-      } else {
-        labs = await _labService.getAllLaboratories();
-      }
+      final labs = await _labService.getAllLaboratories();
       if (mounted) {
         setState(() {
           _labs = labs;
@@ -1184,19 +1191,31 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
 
   Future<void> _getUserLocation() async {
     try {
-      final pos = await html.window.navigator.geolocation
-          .getCurrentPosition()
-          .timeout(const Duration(seconds: 10));
-      if (mounted) {
+      final completer = Completer<List<double>?>();
+      js.context['navigator']['geolocation'].callMethod('getCurrentPosition', [
+        js.allowInterop((pos) {
+          final coords = pos['coords'];
+          completer.complete([
+            (coords['latitude'] as num).toDouble(),
+            (coords['longitude'] as num).toDouble(),
+          ]);
+        }),
+        js.allowInterop((err) => completer.complete(null)),
+      ]);
+      final pos = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => null,
+      );
+      if (pos != null && mounted) {
         setState(() {
-          _userLat = pos.coords?.latitude?.toDouble();
-          _userLng = pos.coords?.longitude?.toDouble();
+          _userLat = pos[0];
+          _userLng = pos[1];
+          _sortByDistance();
         });
-        // Re-fetch with location so backend filters by 20km radius
-        if (_userLat != null) _fetchPharmacies();
+        _fetchPharmacies();
       }
     } catch (_) {
-      // Location unavailable — show all pharmacies without sorting
+      // Location unavailable
     }
   }
 
@@ -1239,7 +1258,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
     try {
       final List<dynamic> pharmacies;
       if (_userLat != null && _userLng != null) {
-        pharmacies = await _pharmacyService.getNearbyPharmacies(_userLat!, _userLng!);
+        pharmacies = await _pharmacyService.getAllPharmacies();
       } else {
         pharmacies = await _pharmacyService.getAllPharmacies();
       }

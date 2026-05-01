@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/screens/patient_addresses_screen.dart';
 import 'package:icare/screens/profile_edit.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -39,6 +40,11 @@ class PatientProfile extends ConsumerWidget {
                   context,
                   MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
                 );
+              } else if (value == 'addresses') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PatientAddressesScreen()),
+                );
               } else if (value == 'logout') {
                 ref.read(authProvider.notifier).setUserLogout();
                 Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
@@ -52,6 +58,16 @@ class PatientProfile extends ConsumerWidget {
                     Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryColor),
                     SizedBox(width: 12),
                     Text('Edit Profile', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'addresses',
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 20, color: AppColors.primaryColor),
+                    SizedBox(width: 12),
+                    Text('Your Addresses', style: TextStyle(fontSize: 14)),
                   ],
                 ),
               ),
