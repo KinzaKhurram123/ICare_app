@@ -17,7 +17,8 @@ import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:icare/services/laboratory_service.dart';
 
 class LabsListScreen extends StatefulWidget {
-  const LabsListScreen({super.key});
+  final List<dynamic>? recommendedTests;
+  const LabsListScreen({super.key, this.recommendedTests});
 
   @override
   State<LabsListScreen> createState() => _LabsListScreenState();
@@ -107,7 +108,16 @@ class _LabsListScreenState extends State<LabsListScreen> {
     setState(() {
       _filteredLabs = _labs.where((lab) {
         final address = lab.address?.toLowerCase() ?? "";
-        return address.contains(query.toLowerCase());
+        final title = lab.title?.toLowerCase() ?? "";
+        final q = query.toLowerCase();
+        // Also check raw data for city/area fields not in the Lab model
+        final rawIdx = _labs.indexOf(lab);
+        final raw = rawIdx >= 0 && rawIdx < _rawLabsData.length
+            ? _rawLabsData[rawIdx]
+            : <String, dynamic>{};
+        final city = (raw['city'] ?? '').toString().toLowerCase();
+        final area = (raw['area'] ?? '').toString().toLowerCase();
+        return address.contains(q) || title.contains(q) || city.contains(q) || area.contains(q);
       }).toList();
     });
   }
@@ -157,22 +167,20 @@ class _LabsListScreenState extends State<LabsListScreen> {
       _userLat = result[0];
       _userLng = result[1];
 
-      // Sort labs by distance using lat/lng from raw data
-      final indexed = List<int>.generate(_labs.length, (i) => i);
-      indexed.sort((a, b) {
-        final rawA = a < _rawLabsData.length ? _rawLabsData[a] : {};
-        final rawB = b < _rawLabsData.length ? _rawLabsData[b] : {};
-        final latA = (rawA['lat'] as num?)?.toDouble() ?? 31.5204;
-        final lngA = (rawA['lng'] as num?)?.toDouble() ?? 74.3587;
-        final latB = (rawB['lat'] as num?)?.toDouble() ?? 31.5204;
-        final lngB = (rawB['lng'] as num?)?.toDouble() ?? 74.3587;
-        final distA = _haversineDistance(_userLat!, _userLng!, latA, lngA);
-        final distB = _haversineDistance(_userLat!, _userLng!, latB, lngB);
-        return distA.compareTo(distB);
+      // Build a paired list so Lab objects stay aligned with their raw coords
+      final paired = List.generate(_labs.length, (i) {
+        final raw = i < _rawLabsData.length ? _rawLabsData[i] : <String, dynamic>{};
+        final lat = (raw['lat'] as num?)?.toDouble();
+        final lng = (raw['lng'] as num?)?.toDouble();
+        final dist = (lat != null && lng != null)
+            ? _haversineDistance(_userLat!, _userLng!, lat, lng)
+            : double.infinity; // push labs with no coords to the end
+        return _LabWithDist(lab: _labs[i], dist: dist);
       });
+      paired.sort((a, b) => a.dist.compareTo(b.dist));
 
       setState(() {
-        _filteredLabs = indexed.map((i) => _labs[i]).toList();
+        _filteredLabs = paired.map((e) => e.lab).toList();
         _detectingLocation = false;
         _locationStatus = 'Showing nearest laboratories';
       });
@@ -191,6 +199,8 @@ class _LabsListScreenState extends State<LabsListScreen> {
       _searchController.clear();
       _locationController.clear();
       _locationStatus = null;
+      _userLat = null;
+      _userLng = null;
     });
 
     if (mode == 'all') {
@@ -337,7 +347,7 @@ class _LabsListScreenState extends State<LabsListScreen> {
                     Expanded(
                       child: _filteredLabs.isEmpty
                           ? _buildEmptyState()
-                          : LabsList(labs: _filteredLabs, tab: 'book'),
+                          : LabsList(labs: _filteredLabs, tab: 'book', recommendedTests: widget.recommendedTests),
                     ),
                   ],
                 ),
@@ -394,6 +404,13 @@ class _LabsListScreenState extends State<LabsListScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (_viewMode == 'search_location') ...[
+            const SizedBox(height: 8),
+            Text(
+              "Try a different area or city name",
+              style: TextStyle(color: Colors.grey[400], fontSize: 13),
+            ),
+          ],
         ],
       ),
     );
@@ -403,7 +420,8 @@ class _LabsListScreenState extends State<LabsListScreen> {
 class LabsList extends StatelessWidget {
   final List<Lab> labs;
   final String tab;
-  const LabsList({super.key, required this.labs, this.tab = 'book'});
+  final List<dynamic>? recommendedTests;
+  const LabsList({super.key, required this.labs, this.tab = 'book', this.recommendedTests});
 
   @override
   Widget build(BuildContext context) {
@@ -440,4 +458,12 @@ class LabsList extends StatelessWidget {
       },
     );
   }
+}
+
+/// Helper to keep a Lab paired with its computed distance so the sort
+/// never goes out of sync with the raw data index.
+class _LabWithDist {
+  final Lab lab;
+  final double dist;
+  const _LabWithDist({required this.lab, required this.dist});
 }

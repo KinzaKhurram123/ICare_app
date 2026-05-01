@@ -146,12 +146,16 @@ class _PharmaciesScreenState extends State<PharmaciesScreen> {
 
       final sorted = List<dynamic>.from(_pharmacies);
       sorted.sort((a, b) {
-        final latA = (a['lat'] as num?)?.toDouble() ?? 31.5204;
-        final lngA = (a['lng'] as num?)?.toDouble() ?? 74.3587;
-        final latB = (b['lat'] as num?)?.toDouble() ?? 31.5204;
-        final lngB = (b['lng'] as num?)?.toDouble() ?? 74.3587;
-        final distA = _haversineDistance(_userLat!, _userLng!, latA, lngA);
-        final distB = _haversineDistance(_userLat!, _userLng!, latB, lngB);
+        final latA = (a['lat'] as num?)?.toDouble();
+        final lngA = (a['lng'] as num?)?.toDouble();
+        final latB = (b['lat'] as num?)?.toDouble();
+        final lngB = (b['lng'] as num?)?.toDouble();
+        final distA = (latA != null && lngA != null)
+            ? _haversineDistance(_userLat!, _userLng!, latA, lngA)
+            : double.infinity;
+        final distB = (latB != null && lngB != null)
+            ? _haversineDistance(_userLat!, _userLng!, latB, lngB)
+            : double.infinity;
         return distA.compareTo(distB);
       });
 
