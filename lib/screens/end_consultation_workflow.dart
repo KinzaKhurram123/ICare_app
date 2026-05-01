@@ -212,7 +212,10 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: () {
+                      Navigator.pop(ctx); // close dialog
+                      if (mounted) context.go('/dashboard');
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
@@ -226,11 +229,6 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
             ),
           ),
         );
-
-        // Use go_router to navigate to /dashboard — fixes white screen on web
-        if (mounted) {
-          context.go('/dashboard');
-        }
       }
     } catch (e) {
       if (mounted) {
