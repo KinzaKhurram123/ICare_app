@@ -96,12 +96,22 @@ class _VideoCallWebState extends State<VideoCall> {
     _joinCall();
     _startSessionTimer();
     _startChatPolling();
-    // Only poll status on PATIENT side (patientId is null when patient is viewing)
-    // Doctor side has patientId set — doctor doesn't need status polling
-    final isPatientSide = widget.patientId == null || widget.patientId!.isEmpty;
-    if (isPatientSide &&
-        widget.appointmentId != null &&
-        widget.appointmentId!.isNotEmpty) {
+    // Only poll status on PATIENT side — doctor ends consultation themselves
+    // Check role from SharedPref to determine if this is doctor or patient
+    _maybeStartStatusPolling();
+  }
+
+  Future<void> _maybeStartStatusPolling() async {
+    if (widget.appointmentId == null || widget.appointmentId!.isEmpty) return;
+    try {
+      final user = await SharedPref().getUserData();
+      final role = user?.role?.toLowerCase() ?? '';
+      // Only patients need to poll — doctors end the call themselves
+      if (role != 'doctor') {
+        _startStatusPolling();
+      }
+    } catch (_) {
+      // If we can't determine role, start polling (safe default for patient)
       _startStatusPolling();
     }
   }
