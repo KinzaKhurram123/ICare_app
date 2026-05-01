@@ -10,8 +10,8 @@ import 'package:icare/screens/pharmacy_details.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:js_interop';
-import 'package:web/web.dart' as web;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class PatientPrescriptions extends ConsumerStatefulWidget {
   const PatientPrescriptions({super.key});
@@ -795,13 +795,16 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   Future<void> _getUserLocation() async {
     try {
       final completer = _LocationCompleter();
-      web.window.navigator.geolocation.getCurrentPosition(
-        ((web.GeolocationPosition pos) {
-          completer.complete(pos.coords.latitude.toDouble(), pos.coords.longitude.toDouble());
-        }).toJS,
-        ((web.GeolocationPositionError err) {
+      html.window.navigator.geolocation.getCurrentPosition(
+        (html.Geoposition pos) {
+          completer.complete(
+            pos.coords!.latitude!.toDouble(),
+            pos.coords!.longitude!.toDouble(),
+          );
+        },
+        (html.PositionError err) {
           completer.fail();
-        }).toJS,
+        },
       );
       final pos = await completer.future.timeout(
         const Duration(seconds: 10),
@@ -811,14 +814,11 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         setState(() {
           _userLat = pos[0];
           _userLng = pos[1];
-          _locationLoading = false;
           _sortByDistance();
         });
-      } else {
-        if (mounted) setState(() => _locationLoading = false);
       }
     } catch (_) {
-      if (mounted) setState(() => _locationLoading = false);
+      // Location unavailable — show all labs without sorting
     }
   }
 
@@ -1192,13 +1192,16 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
   Future<void> _getUserLocation() async {
     try {
       final completer = _LocationCompleter();
-      web.window.navigator.geolocation.getCurrentPosition(
-        ((web.GeolocationPosition pos) {
-          completer.complete(pos.coords.latitude.toDouble(), pos.coords.longitude.toDouble());
-        }).toJS,
-        ((web.GeolocationPositionError err) {
+      html.window.navigator.geolocation.getCurrentPosition(
+        (html.Geoposition pos) {
+          completer.complete(
+            pos.coords!.latitude!.toDouble(),
+            pos.coords!.longitude!.toDouble(),
+          );
+        },
+        (html.PositionError err) {
           completer.fail();
-        }).toJS,
+        },
       );
       final pos = await completer.future.timeout(
         const Duration(seconds: 10),
@@ -1211,7 +1214,9 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
           _sortByDistance();
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // Location unavailable — show all pharmacies without sorting
+    }
   }
 
   double _haversineDistance(double lat1, double lng1, double lat2, double lng2) {
