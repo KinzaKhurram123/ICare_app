@@ -41,6 +41,7 @@ router.get('/', authMiddleware, async (req, res) => {
         operating_hours: p.operating_hours, delivery_available: p.delivery_available,
         delivery_fee: p.delivery_fee, address: p.address, city: p.city,
         latitude: p.latitude ?? null, longitude: p.longitude ?? null,
+        lat: p.latitude ?? null, lng: p.longitude ?? null,
       };
     });
     res.json({ success: true, pharmacies });
@@ -68,6 +69,7 @@ router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
         operating_hours: p.operating_hours, delivery_available: p.delivery_available,
         delivery_fee: p.delivery_fee, address: p.address, city: p.city,
         latitude: p.latitude ?? null, longitude: p.longitude ?? null,
+        lat: p.latitude ?? null, lng: p.longitude ?? null,
       };
     });
     res.json({ success: true, pharmacies });

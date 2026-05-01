@@ -39,6 +39,7 @@ async function getAllLabs() {
       accreditation: p.accreditation, services: p.services,
       operating_hours: p.operating_hours, address: p.address, city: p.city,
       latitude: p.latitude ?? null, longitude: p.longitude ?? null,
+      lat: p.latitude ?? null, lng: p.longitude ?? null,
       drap_compliance: p.drap_compliance, createdAt: u.createdAt,
     };
   });

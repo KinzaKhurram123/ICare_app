@@ -835,10 +835,10 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   void _sortByDistance() {
     if (_userLat == null || _userLng == null) return;
     _labs.sort((a, b) {
-      final aLat = (a['latitude'] ?? a['lat']) as double?;
-      final aLng = (a['longitude'] ?? a['lng']) as double?;
-      final bLat = (b['latitude'] ?? b['lat']) as double?;
-      final bLng = (b['longitude'] ?? b['lng']) as double?;
+      final aLat = ((a['latitude'] ?? a['lat']) as num?)?.toDouble();
+      final aLng = ((a['longitude'] ?? a['lng']) as num?)?.toDouble();
+      final bLat = ((b['latitude'] ?? b['lat']) as num?)?.toDouble();
+      final bLng = ((b['longitude'] ?? b['lng']) as num?)?.toDouble();
       if (aLat == null || aLng == null) return 1;
       if (bLat == null || bLng == null) return -1;
       final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
@@ -849,8 +849,8 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
 
   String? _getDistance(dynamic lab) {
     if (_userLat == null || _userLng == null) return null;
-    final lat = (lab['latitude'] ?? lab['lat']) as double?;
-    final lng = (lab['longitude'] ?? lab['lng']) as double?;
+    final lat = ((lab['latitude'] ?? lab['lat']) as num?)?.toDouble();
+    final lng = ((lab['longitude'] ?? lab['lng']) as num?)?.toDouble();
     if (lat == null || lng == null) return null;
     final dist = _haversineDistance(_userLat!, _userLng!, lat, lng);
     if (dist < 1) return '${(dist * 1000).toStringAsFixed(0)} m';
@@ -1232,10 +1232,10 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
   void _sortByDistance() {
     if (_userLat == null || _userLng == null) return;
     _pharmacies.sort((a, b) {
-      final aLat = (a['latitude'] ?? a['lat']) as double?;
-      final aLng = (a['longitude'] ?? a['lng']) as double?;
-      final bLat = (b['latitude'] ?? b['lat']) as double?;
-      final bLng = (b['longitude'] ?? b['lng']) as double?;
+      final aLat = ((a['latitude'] ?? a['lat']) as num?)?.toDouble();
+      final aLng = ((a['longitude'] ?? a['lng']) as num?)?.toDouble();
+      final bLat = ((b['latitude'] ?? b['lat']) as num?)?.toDouble();
+      final bLng = ((b['longitude'] ?? b['lng']) as num?)?.toDouble();
       if (aLat == null || aLng == null) return 1;
       if (bLat == null || bLng == null) return -1;
       final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
@@ -1246,8 +1246,8 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
 
   String? _getDistance(dynamic pharmacy) {
     if (_userLat == null || _userLng == null) return null;
-    final lat = (pharmacy['latitude'] ?? pharmacy['lat']) as double?;
-    final lng = (pharmacy['longitude'] ?? pharmacy['lng']) as double?;
+    final lat = ((pharmacy['latitude'] ?? pharmacy['lat']) as num?)?.toDouble();
+    final lng = ((pharmacy['longitude'] ?? pharmacy['lng']) as num?)?.toDouble();
     if (lat == null || lng == null) return null;
     final dist = _haversineDistance(_userLat!, _userLng!, lat, lng);
     if (dist < 1) return '${(dist * 1000).toStringAsFixed(0)} m';

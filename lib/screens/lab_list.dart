@@ -170,8 +170,8 @@ class _LabsListScreenState extends State<LabsListScreen> {
       // Build a paired list so Lab objects stay aligned with their raw coords
       final paired = List.generate(_labs.length, (i) {
         final raw = i < _rawLabsData.length ? _rawLabsData[i] : <String, dynamic>{};
-        final lat = (raw['lat'] as num?)?.toDouble();
-        final lng = (raw['lng'] as num?)?.toDouble();
+        final lat = (raw['latitude'] ?? raw['lat'] as num?)?.toDouble();
+        final lng = (raw['longitude'] ?? raw['lng'] as num?)?.toDouble();
         final dist = (lat != null && lng != null)
             ? _haversineDistance(_userLat!, _userLng!, lat, lng)
             : double.infinity; // push labs with no coords to the end
