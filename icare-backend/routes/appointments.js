@@ -14,6 +14,14 @@ function toId(id) {
 async function getAppointments(userId, userRole) {
   await connectMongoDB();
   const uid = toId(userId);
+
+  // Auto-fix stale in_progress sessions older than 2 hours → revert to confirmed
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  await Appointment.updateMany(
+    { status: 'in_progress', updatedAt: { $lt: twoHoursAgo } },
+    { $set: { status: 'confirmed' } }
+  ).catch(() => {});
+
   let appointments;
 
   // Case-insensitive role check — some accounts have 'Doctor', some have 'doctor'

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/consultation_workflow.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -71,6 +72,11 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
 
   List<AppointmentDetail> get _filteredAppointments {
     if (_selectedFilter == 'all') return _appointments;
+    if (_selectedFilter == 'in_progress') {
+      return _appointments
+          .where((a) => a.status.toLowerCase() == 'in_progress' || a.status.toLowerCase() == 'in-progress')
+          .toList();
+    }
     return _appointments
         .where((a) => a.status.toLowerCase() == _selectedFilter)
         .toList();
@@ -86,9 +92,32 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         return const Color(0xFFEF4444);
       case 'completed':
         return const Color(0xFF3B82F6);
+      case 'in_progress':
+      case 'in-progress':
+        return const Color(0xFF8B5CF6);
       default:
         return const Color(0xFF64748B);
     }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'in_progress':
+      case 'in-progress':
+        return 'IN PROGRESS';
+      default:
+        return status.toUpperCase();
+    }
+  }
+
+  /// Extract channel name from appointment (for video call rejoin)
+  String _getChannelName(AppointmentDetail appointment) {
+    final notes = appointment.reason ?? '';
+    final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+    if (match != null) return match.group(1)!;
+    return appointment.channelName?.isNotEmpty == true
+        ? appointment.channelName!
+        : appointment.id;
   }
 
   @override
@@ -158,6 +187,12 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     'Confirmed',
                     'confirmed',
                     _appointments.where((a) => a.status == 'confirmed').length,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    'In Progress',
+                    'in_progress',
+                    _appointments.where((a) => a.status.toLowerCase() == 'in_progress' || a.status.toLowerCase() == 'in-progress').length,
                   ),
                   const SizedBox(width: 8),
                   _buildFilterChip(
@@ -374,7 +409,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      appointment.status.toUpperCase(),
+                    _getStatusLabel(appointment.status),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -634,7 +669,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                         ),
                       ],
                     ),
-                  ] else if (appointment.status.toLowerCase() == 'in_progress') ...[
+                  ] else if (appointment.status.toLowerCase() == 'in_progress' || appointment.status.toLowerCase() == 'in-progress') ...[
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -645,11 +680,11 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.video_call_rounded, color: Color(0xFF8B5CF6), size: 20),
+                          const Icon(Icons.video_call_rounded, color: Color(0xFF8B5CF6), size: 22),
                           const SizedBox(width: 10),
                           const Expanded(
                             child: Text(
-                              'Consultation in Progress',
+                              'Active Session',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -657,12 +692,16 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                               ),
                             ),
                           ),
-                          ElevatedButton(
+                          // Rejoin video call
+                          ElevatedButton.icon(
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (ctx) => ConsultationWorkflowScreen(
-                                    appointment: appointment,
+                                  builder: (_) => VideoCall(
+                                    channelName: _getChannelName(appointment),
+                                    isDoctor: true,
+                                    remoteUserName: appointment.patient?.name ?? 'Patient',
+                                    appointmentId: appointment.id,
                                   ),
                                 ),
                               ).then((_) => _loadAppointments());
@@ -670,12 +709,30 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF8B5CF6),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            child: const Text('Rejoin', style: TextStyle(fontWeight: FontWeight.w700)),
+                            icon: const Icon(Icons.video_call_rounded, size: 18),
+                            label: const Text('Rejoin', style: TextStyle(fontWeight: FontWeight.w700)),
                           ),
                         ],
+                      ),
+                    ),
+                    // Also allow ending the session
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => _updateStatus(appointment.id, 'completed'),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF64748B)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text(
+                          'Mark as Completed',
+                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
                   ],
