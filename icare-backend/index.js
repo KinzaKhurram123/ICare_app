@@ -27,6 +27,7 @@ const courseQuestionsRoutes = require('./routes/course-questions');
 const callChatRoutes = require('./routes/call-chat');
 const clinicalRoutes = require('./routes/clinical');
 const adminRoutes = require('./routes/admin');
+const seedLocationsRoute = require('./routes/seed-locations');
 
 const app = express();
 
@@ -115,6 +116,7 @@ app.use('/api/chat', callChatRoutes); // alias
 app.use('/api/users', usersRoutes);
 app.use('/api/clinical', clinicalRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/seed-locations', seedLocationsRoute);
 
 // ─── ICD CODES — standalone inline router (no auth required, local data) ─────
 const ICD_DATA = [
