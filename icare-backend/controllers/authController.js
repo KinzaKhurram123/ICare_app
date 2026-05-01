@@ -28,6 +28,9 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const rolesRequiringApproval = ['doctor', 'lab', 'pharmacy', 'instructor'];
+    const isApproved = !rolesRequiringApproval.includes(role);
+
     const user = await User.create({
       username,
       name: username,
@@ -35,7 +38,7 @@ const register = async (req, res) => {
       phone,
       password: hashedPassword,
       role,
-      is_approved: true,
+      is_approved: isApproved,
       is_active: true,
     });
 
@@ -98,6 +101,12 @@ const login = async (req, res) => {
     const isActive = user.is_active !== false && user.isActive !== false;
     if (!isActive) {
       return res.status(403).json({ success: false, message: 'Your account has been deactivated' });
+    }
+
+    // Check approval for professional roles
+    const rolesRequiringApproval = ['doctor', 'lab', 'pharmacy', 'instructor'];
+    if (rolesRequiringApproval.includes(user.role?.toLowerCase()) && user.is_approved === false) {
+      return res.status(403).json({ success: false, message: 'Your account is pending admin approval. Please wait for verification.' });
     }
 
     // Verify password

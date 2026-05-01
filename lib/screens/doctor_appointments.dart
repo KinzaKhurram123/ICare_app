@@ -699,7 +699,6 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 MaterialPageRoute(
                                   builder: (_) => VideoCall(
                                     channelName: _getChannelName(appointment),
-                                    isDoctor: true,
                                     remoteUserName: appointment.patient?.name ?? 'Patient',
                                     appointmentId: appointment.id,
                                   ),

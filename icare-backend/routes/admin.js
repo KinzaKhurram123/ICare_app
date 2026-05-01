@@ -66,10 +66,10 @@ router.get('/pending-users', authMiddleware, adminOnly, async (req, res) => {
       createdAt: u.createdAt,
     }));
 
-    res.json({ success: true, users: result, count: result.length });
+    res.json({ success: true, users: result, count: result.length, pendingUsers: result });
   } catch (err) {
     console.error('pending-users error:', err);
-    res.json({ success: true, users: [], count: 0 });
+    res.json({ success: true, users: [], count: 0, pendingUsers: [] });
   }
 });
 
@@ -151,6 +151,24 @@ router.put('/approve/:userId', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// Flutter uses POST /admin/approve-user/:id
+router.post('/approve-user/:userId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const user = await User.findByIdAndUpdate(
+      toId(req.params.userId),
+      { $set: { is_approved: true, is_active: true } },
+      { new: true }
+    ).select('-password').lean();
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, message: 'User approved', user: { _id: user._id.toString(), email: user.email, role: user.role } });
+  } catch (err) {
+    console.error('approve-user error:', err);
+    res.status(500).json({ success: false, message: 'Failed to approve user' });
+  }
+});
+
 // ─── REJECT / DEACTIVATE USER ─────────────────────────────────────────────────
 router.put('/reject/:userId', authMiddleware, adminOnly, async (req, res) => {
   try {
@@ -165,6 +183,24 @@ router.put('/reject/:userId', authMiddleware, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'User rejected/deactivated' });
   } catch (err) {
     console.error('reject user error:', err);
+    res.status(500).json({ success: false, message: 'Failed to reject user' });
+  }
+});
+
+// Flutter uses POST /admin/reject-user/:id
+router.post('/reject-user/:userId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const user = await User.findByIdAndUpdate(
+      toId(req.params.userId),
+      { $set: { is_approved: false, is_active: false } },
+      { new: true }
+    ).select('-password').lean();
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, message: 'User rejected' });
+  } catch (err) {
+    console.error('reject-user error:', err);
     res.status(500).json({ success: false, message: 'Failed to reject user' });
   }
 });
