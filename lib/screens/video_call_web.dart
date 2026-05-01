@@ -111,7 +111,7 @@ class _VideoCallWebState extends State<VideoCall> {
         _startStatusPolling();
       }
     } catch (_) {
-      // If we can't determine role, start polling (safe default for patient)
+      // If we can't determine role, default to patient behavior (safe)
       _startStatusPolling();
     }
   }

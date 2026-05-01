@@ -5,16 +5,60 @@
   "installCommand": "echo 'Dependencies handled in build script'",
   "headers": [
     {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
+    },
+    {
+      "source": "/flutter.js",
+      "destination": "/flutter.js"
+    },
+    {
+      "source": "/flutter_service_worker.js",
+      "destination": "/flutter_service_worker.js"
+    },
+    {
+      "source": "/main.dart.js",
+      "destination": "/main.dart.js"
+    },
+    {
+      "source": "/icons/(.*)",
+      "destination": "/icons/$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/(.*\\.js)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.json)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.png)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*\\.wasm)",
+      "destination": "/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

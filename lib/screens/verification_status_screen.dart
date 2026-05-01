@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/screens/account_activated_screen.dart';
 
@@ -27,18 +28,25 @@ class _VerificationStatusScreenState extends State<VerificationStatusScreen> {
     setState(() => _isRefreshing = true);
 
     try {
-      // TODO: Replace with real API call to check verification status
-      // final response = await AuthService().getVerificationStatus();
-      // _currentStep = response['step'];
-      await Future.delayed(const Duration(seconds: 2));
+      // Check approval status from backend
+      final api = ApiService();
+      final response = await api.get('/auth/profile');
+      if (response.statusCode == 200) {
+        final user = response.data;
+        final isApproved = user['isApproved'] == true || user['is_approved'] == true;
+        if (isApproved && mounted) {
+          setState(() => _currentStep = 2);
+        }
+      }
+    } catch (_) {
+      // Silently ignore — just show snackbar below
     } finally {
-      setState(() => _isRefreshing = false);
+      if (mounted) setState(() => _isRefreshing = false);
     }
 
     if (!mounted) return;
 
     if (_currentStep >= 2) {
-      // Account is activated — navigate to AccountActivatedScreen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => AccountActivatedScreen(
