@@ -195,6 +195,36 @@ router.get('/my-records', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/medical-records/all  (admin — returns all records)
+router.get('/all', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const records = await MedicalRecord.find({})
+      .populate('doctor', 'name email username')
+      .populate('patient', 'name email username')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const normalized = records.map(r => ({
+      ...r,
+      _id: r._id.toString(),
+      prescription: {
+        ...(r.prescription || {}),
+        medicines: r.prescription?.medicines || [],
+        labTests: r.prescription?.labTests || [],
+      },
+      labTests: r.labTests || [],
+      doctor: r.doctor ? { ...r.doctor, _id: r.doctor._id?.toString() } : null,
+      patient: r.patient ? { ...r.patient, _id: r.patient._id?.toString() } : null,
+    }));
+
+    res.json({ success: true, records: normalized, count: normalized.length });
+  } catch (err) {
+    console.error('Get all records error:', err);
+    res.json({ success: true, records: [], count: 0 });
+  }
+});
+
 // GET /api/medical-records/:id
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
