@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/lab_test_template_screen.dart';
 import 'package:icare/screens/soap_notes_redesign.dart';
-import 'package:icare/screens/tabs.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/clinical_service.dart';
 import 'package:icare/services/medical_record_service.dart';
@@ -221,11 +221,14 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  // Use global navigator to avoid go_router context crash
-                  appNavigatorKey.currentState?.pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const TabsScreen()),
-                    (route) => false,
-                  );
+                  // Use GoRouter.go() so the router handles auth state correctly.
+                  // microtask ensures the dialog is fully popped before navigating.
+                  Future.microtask(() {
+                    final navCtx = appNavigatorKey.currentContext;
+                    if (navCtx != null) {
+                      GoRouter.of(navCtx).go('/dashboard');
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
