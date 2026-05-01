@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:icare/models/consultation.dart';
 import 'package:icare/services/healthcare_workflow_service.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/services/pharmacy_service.dart';
+import 'package:icare/utils/app_keys.dart';
 import 'package:icare/utils/theme.dart';
 
 /// Doctor Consultation Screen
@@ -1442,15 +1444,16 @@ class _DoctorConsultationScreenState
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pop(context);
+              Navigator.pop(ctx); // close dialog
+              // Navigate to dashboard — clears entire stack so no white screen
+              appNavigatorKey.currentContext?.go('/dashboard');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF10B981),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Done'),
+            child: const Text('Go to Dashboard'),
           ),
         ],
       ),
