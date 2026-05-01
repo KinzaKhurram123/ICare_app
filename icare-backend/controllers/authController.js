@@ -82,6 +82,20 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     await connectMongoDB();
+
+    // Ensure admin exists on every login attempt (serverless-safe)
+    const adminExists = await User.findOne({ email: 'admin@icare.com' }).lean();
+    if (!adminExists) {
+      const hashed = await bcrypt.hash('adminPassword123', 10);
+      await User.create({
+        username: 'Admin', name: 'Admin',
+        email: 'admin@icare.com', password: hashed,
+        role: 'admin', is_approved: true, is_active: true,
+      }).catch(() => {}); // ignore duplicate key errors
+    } else if (adminExists.role !== 'admin') {
+      await User.findByIdAndUpdate(adminExists._id, { $set: { role: 'admin', is_active: true, is_approved: true } }).catch(() => {});
+    }
+
     const { email, password } = req.body;
 
     if (!email || !password) {

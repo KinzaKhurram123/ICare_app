@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/auth_left_panel.dart';
@@ -22,8 +23,10 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
   final _contactPersonCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  bool _obscurePassword = true;
 
   // ── Step 2: Partner Type ─────────────────────────────────────────────────
   String? _selectedRole;
@@ -160,18 +163,58 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
     }
 
     setState(() => _submitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _submitting = false);
 
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => VerificationStatusScreen(
-            role: _selectedRole!,
-            applicantName: _nameCtrl.text,
-          ),
-        ),
-      );
+    try {
+      // Map display role to backend role
+      final roleMap = {
+        'Doctor': 'doctor',
+        'Pharmacy': 'pharmacy',
+        'Laboratory': 'lab',
+      };
+      final backendRole = roleMap[_selectedRole] ?? _selectedRole!.toLowerCase();
+
+      final api = ApiService();
+      final response = await api.post('/auth/register', {
+        'username': _nameCtrl.text.trim(),
+        'name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim().toLowerCase(),
+        'password': _passwordCtrl.text,
+        'phone': _phoneCtrl.text.trim(),
+        'role': backendRole,
+        'city': _cityCtrl.text.trim(),
+        'address': _addressCtrl.text.trim(),
+      });
+
+      if (response.statusCode == 201 || response.data['success'] == true) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => VerificationStatusScreen(
+                role: _selectedRole!,
+                applicantName: _nameCtrl.text,
+              ),
+            ),
+          );
+        }
+      } else {
+        final msg = response.data['message'] ?? 'Registration failed. Please try again.';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        final errMsg = e.toString().contains('already exists')
+            ? 'An account with this email already exists.'
+            : 'Registration failed. Please check your connection and try again.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errMsg), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -350,6 +393,28 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           _inputField(_emailCtrl, 'Email Address', Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               validator: (v) => v == null || v.isEmpty ? 'Email is required' : null),
+          const SizedBox(height: 14),
+          // Password field
+          TextFormField(
+            controller: _passwordCtrl,
+            obscureText: _obscurePassword,
+            decoration: InputDecoration(
+              labelText: 'Create Password',
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Password is required';
+              if (v.length < 6) return 'Password must be at least 6 characters';
+              return null;
+            },
+          ),
           const SizedBox(height: 14),
           _inputField(_cityCtrl, 'City', Icons.location_city_outlined,
               validator: (v) => v == null || v.isEmpty ? 'City is required' : null),
