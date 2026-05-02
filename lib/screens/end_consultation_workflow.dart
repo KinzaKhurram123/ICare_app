@@ -221,13 +221,22 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  // Use GoRouter.go() so the router handles auth state correctly.
-                  // microtask ensures the dialog is fully popped before navigating.
+                  // Navigate to dashboard — pop all routes and go to /dashboard
                   Future.microtask(() {
-                    final navCtx = appNavigatorKey.currentContext;
-                    if (navCtx != null) {
-                      GoRouter.of(navCtx).go('/dashboard');
-                    }
+                    try {
+                      // Try appNavigatorKey first
+                      final navCtx = appNavigatorKey.currentContext;
+                      if (navCtx != null && navCtx.mounted) {
+                        GoRouter.of(navCtx).go('/dashboard');
+                        return;
+                      }
+                    } catch (_) {}
+                    // Fallback: use the widget's own context
+                    try {
+                      if (context.mounted) {
+                        GoRouter.of(context).go('/dashboard');
+                      }
+                    } catch (_) {}
                   });
                 },
                 style: ElevatedButton.styleFrom(
