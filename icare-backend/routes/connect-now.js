@@ -51,9 +51,11 @@ router.get('/pending', authMiddleware, async (req, res) => {
       success: true,
       hasPending: true,
       request: {
+        _id: request._id.toString(),
         id: request._id.toString(),
         patientName: request.patientName,
         channelName: request.channelName,
+        createdAt: request.createdAt,
         waitingTime: Math.floor((Date.now() - request.createdAt) / 1000),
       },
     });

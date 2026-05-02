@@ -41,23 +41,61 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   List<AppointmentDetail> _appointments = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
-  bool _availableForInstantConsultation = true; // default ON — doctor receives requests when online
-  bool _isInConsultation = false; // true when doctor is in active video call
+  bool _availableForInstantConsultation = true;
+  bool _isInConsultation = false;
+  Timer? _connectNowPollTimer; // polls for incoming patient requests
 
   @override
   void initState() {
     super.initState();
     _loadData();
     _loadInstantConsultToggle();
-    // Mark doctor as online when dashboard is active
     _doctorService.setOnlineStatus(true);
+    _startConnectNowPolling();
   }
 
   @override
   void dispose() {
-    // Mark doctor as offline when leaving dashboard
+    _connectNowPollTimer?.cancel();
     _doctorService.setOnlineStatus(false);
     super.dispose();
+  }
+
+  /// Poll every 1.5 seconds for pending instant consultation requests
+  void _startConnectNowPolling() {
+    _connectNowPollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
+      if (!mounted || !_availableForInstantConsultation || _isInConsultation) return;
+      try {
+        final result = await ConnectNowService().checkPending();
+        if (!mounted) return;
+        if (result['hasPending'] == true) {
+          _connectNowPollTimer?.cancel();
+          final req = result['request'] as Map<String, dynamic>? ?? {};
+          // Accept both _id and id from backend
+          final requestId = (req['_id'] ?? req['id'])?.toString() ?? '';
+          final patientName = req['patientName']?.toString() ?? 'Patient';
+          final channelName = req['channelName']?.toString() ?? '';
+          final createdAt = DateTime.tryParse(req['createdAt']?.toString() ?? '');
+          final expiresAt = createdAt != null
+              ? createdAt.add(const Duration(minutes: 3))
+              : DateTime.now().add(const Duration(minutes: 3));
+
+          if (requestId.isNotEmpty && channelName.isNotEmpty) {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => DoctorConnectNowScreen(
+                  requestId: requestId,
+                  patientName: patientName,
+                  channelName: channelName,
+                  expiresAt: expiresAt,
+                ),
+              ),
+            );
+            if (mounted) _startConnectNowPolling();
+          }
+        }
+      } catch (_) {}
+    });
   }
 
   Future<void> _loadInstantConsultToggle() async {
@@ -320,8 +358,14 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('doctor_instant_consult_available', value);
     } catch (_) {}
-    // Notify backend so it routes requests correctly
     ConnectNowService().setInstantAvailability(value);
+    // Start or stop polling based on toggle
+    if (value) {
+      _connectNowPollTimer?.cancel();
+      _startConnectNowPolling();
+    } else {
+      _connectNowPollTimer?.cancel();
+    }
   }
 
   Widget _buildWelcomeHeader(String userName) {
