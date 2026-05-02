@@ -36,6 +36,7 @@ class _FillLabFormState extends State<FillLabForm> {
 
   bool _homeSample = false;
   bool _isLoading = false;
+  String _selectedGender = 'Male';
 
   @override
   void initState() {
@@ -84,11 +85,24 @@ class _FillLabFormState extends State<FillLabForm> {
       // Backend expects: testType (required), testDate (optional), notes (optional)
       final tests = widget.selectedTests ?? ["Complete Blood Count (CBC)"];
       final bookingData = {
-        'testType': tests.join(', '),  // Backend expects single string
-        'test_type': tests.join(', '), // Alias for compatibility
+        'testType': tests.join(', '),
+        'test_type': tests.join(', '),
         'testDate': _dateController.text,
         'date': _dateController.text,
-        'notes': 'Patient: ${_patientNameController.text}, Age: ${_ageController.text}, Phone: ${_phoneController.text}, Location: ${_locationController.text}, Time: ${_timeController.text}, Home Sample: $_homeSample',
+        // Send patient details as separate fields
+        'patientName': _patientNameController.text.trim(),
+        'patient_name': _patientNameController.text.trim(),
+        'patientAge': _ageController.text.trim(),
+        'patient_age': _ageController.text.trim(),
+        'patientGender': _selectedGender,
+        'patient_gender': _selectedGender,
+        'patientPhone': _phoneController.text.trim(),
+        'patient_phone': _phoneController.text.trim(),
+        'patientAddress': _locationController.text.trim(),
+        'patient_address': _locationController.text.trim(),
+        'collectionType': _homeSample ? 'home' : 'in-lab',
+        'collection_type': _homeSample ? 'home' : 'in-lab',
+        'notes': 'Requester: ${_nameController.text.trim()}, Time: ${_timeController.text}',
       };
 
       debugPrint('🔍 LAB BOOKING DEBUG - Booking data: $bookingData');
@@ -304,17 +318,96 @@ class _FillLabFormState extends State<FillLabForm> {
             ),
             keyboardType: TextInputType.phone,
           ),
-          InkWell(
-            onTap: () => setState(() => _homeSample = !_homeSample),
-            child: Row(
+          SizedBox(height: ScallingConfig.scale(15)),
+          // Gender selector
+          SizedBox(
+            width: Utils.windowWidth(context) * 0.9,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(width: Utils.windowWidth(context) * 0.05),
-                Checkbox(
-                  value: _homeSample,
-                  onChanged: (v) => setState(() => _homeSample = v ?? false),
-                  activeColor: AppColors.primaryColor,
+                const CustomText(text: "Gender", fontSize: 13, fontFamily: "Gilroy-Bold"),
+                const SizedBox(height: 8),
+                Row(
+                  children: ['Male', 'Female', 'Other'].map((g) => Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedGender = g),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _selectedGender == g ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          g,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _selectedGender == g ? Colors.white : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )).toList(),
                 ),
-                const CustomText(text: "Home Sample Available", fontSize: 13),
+              ],
+            ),
+          ),
+          SizedBox(height: ScallingConfig.scale(15)),
+          // Collection Type
+          SizedBox(
+            width: Utils.windowWidth(context) * 0.9,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CustomText(text: "Sample Collection", fontSize: 13, fontFamily: "Gilroy-Bold"),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _homeSample = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: !_homeSample ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.business_rounded, size: 16, color: !_homeSample ? Colors.white : const Color(0xFF64748B)),
+                              const SizedBox(width: 6),
+                              Text('In-Lab', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: !_homeSample ? Colors.white : const Color(0xFF64748B))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _homeSample = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _homeSample ? const Color(0xFF0EA5E9) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.home_rounded, size: 16, color: _homeSample ? Colors.white : const Color(0xFF64748B)),
+                              const SizedBox(width: 6),
+                              Text('Home Sample', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _homeSample ? Colors.white : const Color(0xFF64748B))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

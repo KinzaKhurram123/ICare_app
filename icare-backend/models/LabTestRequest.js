@@ -11,7 +11,12 @@ const labTestRequestSchema = new mongoose.Schema({
   collection_type: { type: String, default: 'in-lab' },
   turnaround_time: { type: String, default: null },
   source: { type: String, default: 'online' },
+  // Patient details — saved separately for lab reference
   patient_name_override: { type: String, default: null },
+  patient_age: { type: String, default: null },
+  patient_gender: { type: String, default: null },
+  patient_phone: { type: String, default: null },
+  patient_address: { type: String, default: null },
   status: {
     type: String,
     enum: [
@@ -32,6 +37,6 @@ const labTestRequestSchema = new mongoose.Schema({
   report_notes: String,
   medical_record_id: String,
   doctor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-}, { timestamps: true });
+}, { timestamps: true, strict: false });
 
 module.exports = mongoose.models.LabTestRequest || mongoose.model('LabTestRequest', labTestRequestSchema);

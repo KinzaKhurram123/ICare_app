@@ -880,6 +880,11 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     final statusColor = _getStatusColor(status);
     final date = DateTime.tryParse(booking['date'] ?? booking['test_date'] ?? booking['createdAt'] ?? '') ?? DateTime.now();
     final patientName = booking['patient_name'] ?? booking['patient']?['name'] ?? 'Patient';
+    final patientAge = booking['patient_age']?.toString() ?? '';
+    final patientGender = booking['patient_gender']?.toString() ?? '';
+    final patientPhone = booking['patient_phone']?.toString() ?? booking['patient_email']?.toString() ?? '';
+    final patientAddress = booking['patient_address']?.toString() ?? '';
+    final bookingNumber = booking['_id']?.toString().substring(0, 8).toUpperCase() ?? '';
     final testName = booking['test_type'] ?? booking['testName'] ?? 'Test';
     final isDoctorOrdered = booking['medicalRecord'] != null;
     final doctorName = booking['doctor']?['name'];
@@ -1052,6 +1057,40 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                   ),
                 ),
               ],
+            ),
+            // ── Patient Details ────────────────────────────────────────────
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Patient Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF475569))),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 6,
+                    children: [
+                      _detailChip(Icons.person_rounded, 'Name', patientName),
+                      if (bookingNumber.isNotEmpty)
+                        _detailChip(Icons.tag_rounded, 'MR#', bookingNumber),
+                      if (patientAge.isNotEmpty)
+                        _detailChip(Icons.cake_rounded, 'Age', patientAge),
+                      if (patientGender.isNotEmpty)
+                        _detailChip(Icons.wc_rounded, 'Gender', patientGender),
+                      if (patientPhone.isNotEmpty)
+                        _detailChip(Icons.phone_rounded, 'Phone', patientPhone),
+                      if (patientAddress.isNotEmpty)
+                        _detailChip(Icons.location_on_rounded, 'Address', patientAddress),
+                    ],
+                  ),
+                ],
+              ),
             ),
             // Diagnosis notes
             if (diagnosisNotes != null && diagnosisNotes.isNotEmpty) ...[
@@ -1267,6 +1306,20 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     if (testType.isEmpty) return 0;
     final count = testType.split(',').where((t) => t.trim().isNotEmpty).length;
     return count * 3000;
+  }
+
+  Widget _detailChip(IconData icon, String label, String value) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: const Color(0xFF64748B)),
+        const SizedBox(width: 4),
+        Text(
+          '$label: $value',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
   }
 
   Color _getStatusColor(String status) {

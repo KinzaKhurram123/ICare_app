@@ -406,9 +406,12 @@ router.get('/:labId/bookings', authMiddleware, async (req, res) => {
       _id: b._id.toString(),
       // Normalize status to underscore for Flutter consistency
       status: b.status?.replace(/-/g, '_') ?? b.status,
-      patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name,
+      patient_name: pMap[b.patient_id.toString()]?.username || pMap[b.patient_id.toString()]?.name || b.patient_name_override,
       patient_email: pMap[b.patient_id.toString()]?.email,
-      patient_phone: pMap[b.patient_id.toString()]?.phone,
+      patient_phone: b.patient_phone || pMap[b.patient_id.toString()]?.phone,
+      patient_age: b.patient_age || null,
+      patient_gender: b.patient_gender || null,
+      patient_address: b.patient_address || null,
       // Include urgency fields
       urgency: b.urgency || 'Normal',
       is_urgent: b.is_urgent || b.urgency === 'Urgent' || false,
@@ -441,7 +444,8 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
     const testCount = finalTest.split(',').filter(t => t.trim()).length;
     const price = testCount * 3000;
 
-    const { urgency, is_urgent, collectionType, collection_type, turnaroundTime, source, patientName, contact, address } = req.body;
+    const { urgency, is_urgent, collectionType, collection_type, turnaroundTime, source, patientName, patient_name, contact, address,
+      patientAge, patient_age, patientGender, patient_gender, patientPhone, patient_phone, patientAddress, patient_address } = req.body;
 
     const booking = await LabTestRequest.create({
       patient_id: patientId,
@@ -455,7 +459,11 @@ router.post('/:labId/bookings', authMiddleware, async (req, res) => {
       collection_type: collectionType || collection_type || 'in-lab',
       turnaround_time: turnaroundTime || null,
       source: source || 'online',
-      patient_name_override: patientName || null,
+      patient_name_override: patientName || patient_name || null,
+      patient_age: patientAge || patient_age || null,
+      patient_gender: patientGender || patient_gender || null,
+      patient_phone: patientPhone || patient_phone || contact || null,
+      patient_address: patientAddress || patient_address || address || null,
     });
 
     console.log('✅ LAB BOOKING - Created booking:', booking._id.toString());
