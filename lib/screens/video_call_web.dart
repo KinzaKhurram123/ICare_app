@@ -124,58 +124,19 @@ class _VideoCallWebState extends State<VideoCall> {
       if (!mounted || widget.appointmentId == null) return;
       try {
         final api = ApiService();
-        // Use direct appointment endpoint instead of listing all
+        // Use direct appointment endpoint
         final response = await api.get(
           '/appointments/${widget.appointmentId}',
         );
-        final appt = response.data['appointment'] ?? response.data['data'];
+        final appt = response.data['appointment'];
         final status = appt?['status']?.toString() ?? '';
         if ((status == 'completed' || status == 'ended') && mounted) {
           _statusPollTimer?.cancel();
           try { await _agoraLeave().toDart; } catch (_) {}
-          if (mounted) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                title: const Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded,
-                        color: Colors.green, size: 28),
-                    SizedBox(width: 8),
-                    Text('Consultation Ended',
-                        style: TextStyle(fontWeight: FontWeight.w800)),
-                  ],
-                ),
-                content: const Text(
-                    'The doctor has ended the consultation.'),
-                actions: [
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      try {
-                        context.go('/dashboard');
-                      } catch (_) {
-                        Navigator.of(context).popUntil((r) => r.isFirst);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Go to Dashboard'),
-                  ),
-                ],
-              ),
-            );
-          }
+          if (mounted) _showConsultationEndedDialog();
         }
       } catch (_) {
-        // Fallback: try listing all appointments
+        // Fallback: list all appointments and find matching one
         try {
           final api = ApiService();
           final response = await api.get('/appointments/getAppointments');
@@ -189,51 +150,49 @@ class _VideoCallWebState extends State<VideoCall> {
               mounted) {
             _statusPollTimer?.cancel();
             try { await _agoraLeave().toDart; } catch (_) {}
-            if (mounted) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  title: const Row(
-                    children: [
-                      Icon(Icons.check_circle_rounded,
-                          color: Colors.green, size: 28),
-                      SizedBox(width: 8),
-                      Text('Consultation Ended',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
-                    ],
-                  ),
-                  content: const Text('The doctor has ended the consultation.'),
-                  actions: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        try {
-                          context.go('/dashboard');
-                        } catch (_) {
-                          Navigator.of(context).popUntil((r) => r.isFirst);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Go to Dashboard'),
-                    ),
-                  ],
-                ),
-              );
-            }
+            if (mounted) _showConsultationEndedDialog();
           }
         } catch (_) {
           // Non-critical — silently ignore
         }
       }
     });
+  }
+
+  void _showConsultationEndedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+            SizedBox(width: 8),
+            Text('Consultation Ended', style: TextStyle(fontWeight: FontWeight.w800)),
+          ],
+        ),
+        content: const Text('The doctor has ended the consultation.'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              try {
+                context.go('/dashboard');
+              } catch (_) {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Go to Dashboard'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startSessionTimer() {

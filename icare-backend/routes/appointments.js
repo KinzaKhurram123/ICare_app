@@ -181,6 +181,37 @@ router.put('/update_status', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /appointments/:id — fetch single appointment by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const apptId = toId(req.params.id);
+    if (!apptId) return res.status(400).json({ success: false, message: 'Invalid appointment ID' });
+
+    const appt = await Appointment.findOne({
+      _id: apptId,
+      $or: [{ patient_id: userId }, { doctor_id: userId }],
+    }).lean();
+
+    if (!appt) return res.status(404).json({ success: false, message: 'Appointment not found' });
+
+    res.json({
+      success: true,
+      appointment: {
+        ...appt,
+        id: appt._id.toString(),
+        _id: appt._id.toString(),
+        patient_id: appt.patient_id?.toString(),
+        doctor_id: appt.doctor_id?.toString(),
+      },
+    });
+  } catch (error) {
+    console.error('Get appointment by ID error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch appointment' });
+  }
+});
+
 // PUT /appointments/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
