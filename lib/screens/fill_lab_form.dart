@@ -597,23 +597,93 @@ class _FillLabFormState extends State<FillLabForm> {
                         Icons.phone_outlined,
                         _phoneController,
                       ),
-                      const SizedBox(height: 40),
-                      InkWell(
-                        onTap: () => setState(() => _homeSample = !_homeSample),
-                        child: Row(
-                          children: [
-                            Checkbox(
-                              value: _homeSample,
-                              onChanged: (v) =>
-                                  setState(() => _homeSample = v ?? false),
-                              activeColor: AppColors.primaryColor,
+                      const SizedBox(height: 32),
+
+                      // ── Gender ────────────────────────────────────────────
+                      const CustomText(text: "Gender", fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: ['Male', 'Female', 'Other'].map((g) => Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedGender = g),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: _selectedGender == g ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _selectedGender == g ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Text(
+                                g,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedGender == g ? Colors.white : const Color(0xFF64748B),
+                                ),
+                              ),
                             ),
-                            const CustomText(
-                              text: "Home Sample Available",
-                              fontSize: 15,
+                          ),
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // ── Sample Collection ─────────────────────────────────
+                      const CustomText(text: "Sample Collection", fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _homeSample = false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: !_homeSample ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: !_homeSample ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.business_rounded, size: 18, color: !_homeSample ? Colors.white : const Color(0xFF64748B)),
+                                    const SizedBox(width: 8),
+                                    Text('In-Lab', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: !_homeSample ? Colors.white : const Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _homeSample = true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: _homeSample ? const Color(0xFF0EA5E9) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _homeSample ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.home_rounded, size: 18, color: _homeSample ? Colors.white : const Color(0xFF64748B)),
+                                    const SizedBox(width: 8),
+                                    Text('Home Sample', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _homeSample ? Colors.white : const Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 60),
 
