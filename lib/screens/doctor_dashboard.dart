@@ -43,8 +43,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   bool _isLoading = true;
   bool _availableForInstantConsultation = true;
   bool _isInConsultation = false;
-  Timer? _connectNowPollTimer;
-  bool _connectNowScreenOpen = false; // guard — prevents double push
 
   @override
   void initState() {
@@ -52,52 +50,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     _loadData();
     _loadInstantConsultToggle();
     _doctorService.setOnlineStatus(true);
-    _startConnectNowPolling();
+    // Note: DoctorConnectNowListener in tabs.dart handles all polling globally
   }
 
   @override
   void dispose() {
-    _connectNowPollTimer?.cancel();
     _doctorService.setOnlineStatus(false);
     super.dispose();
-  }
-
-  void _startConnectNowPolling() {
-    _connectNowPollTimer?.cancel();
-    _connectNowPollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
-      if (!mounted || !_availableForInstantConsultation || _isInConsultation || _connectNowScreenOpen) return;
-      try {
-        final result = await ConnectNowService().checkPending();
-        if (!mounted || _connectNowScreenOpen) return;
-        if (result['hasPending'] == true) {
-          _connectNowPollTimer?.cancel();
-          final req = result['request'] as Map<String, dynamic>? ?? {};
-          final requestId = (req['_id'] ?? req['id'])?.toString() ?? '';
-          final patientName = req['patientName']?.toString() ?? 'Patient';
-          final channelName = req['channelName']?.toString() ?? '';
-          final createdAt = DateTime.tryParse(req['createdAt']?.toString() ?? '');
-          final expiresAt = createdAt != null
-              ? createdAt.add(const Duration(minutes: 3))
-              : DateTime.now().add(const Duration(minutes: 3));
-
-          if (requestId.isNotEmpty && channelName.isNotEmpty) {
-            _connectNowScreenOpen = true; // lock — no more pushes
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => DoctorConnectNowScreen(
-                  requestId: requestId,
-                  patientName: patientName,
-                  channelName: channelName,
-                  expiresAt: expiresAt,
-                ),
-              ),
-            );
-            _connectNowScreenOpen = false; // unlock after returning
-            if (mounted) _startConnectNowPolling();
-          }
-        }
-      } catch (_) {}
-    });
   }
 
   Future<void> _loadInstantConsultToggle() async {
@@ -361,13 +320,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       await prefs.setBool('doctor_instant_consult_available', value);
     } catch (_) {}
     ConnectNowService().setInstantAvailability(value);
-    // Start or stop polling based on toggle
-    if (value) {
-      _connectNowPollTimer?.cancel();
-      _startConnectNowPolling();
-    } else {
-      _connectNowPollTimer?.cancel();
-    }
+    // DoctorConnectNowListener reads this pref — no need to manage polling here
   }
 
   Widget _buildWelcomeHeader(String userName) {

@@ -64,8 +64,8 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
   }
 
   void _startPolling() {
-    // Poll every 2 seconds so doctor gets request faster
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _checkPending());
+    // Poll every 1.5 seconds so doctor gets request faster
+    _timer = Timer.periodic(const Duration(milliseconds: 1500), (_) => _checkPending());
     // Also fire once immediately on start
     Future.delayed(const Duration(milliseconds: 500), _checkPending);
   }
