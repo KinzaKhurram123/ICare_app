@@ -895,22 +895,38 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. New banner image as background — edge to edge
-              Image.asset(
-                'assets/newban.png',
-                fit: BoxFit.cover,
-                alignment: const Alignment(1.0, -0.85),
-                filterQuality: FilterQuality.high,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+          // 1. Background — mobile: gradient only, desktop: banner image
+          if (!isMobile)
+            Image.asset(
+              'assets/newban.png',
+              fit: BoxFit.cover,
+              alignment: const Alignment(1.0, -0.85),
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0026A0), Color(0xFF0036BC), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
               ),
+            ),
+          // Mobile: pure gradient background
+          if (isMobile)
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0026A0),
+                    Color(0xFF0036BC),
+                    Color(0xFF1565C0),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           // 2. Text + buttons — left side
           Padding(
             padding: EdgeInsets.only(
