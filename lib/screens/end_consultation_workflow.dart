@@ -862,7 +862,7 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     ],
                   ],
 
-                  if (_noPrescription && _noPrescriptionReason.isEmpty) ...[
+                  if (_noPrescription && !_prescriptionCompleted && _noPrescriptionReason.isEmpty) ...[
                     const SizedBox(height: 16),
                     const Text(
                       'Please provide a reason:',
@@ -883,16 +883,48 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
                       ),
-                      onChanged: (value) => setState(() => _noPrescriptionReason = value),
+                      onChanged: (value) {
+                        // Only update the reason string — do NOT call setState
+                        // so the field doesn't disappear while typing
+                        _noPrescriptionReason = value;
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _noPrescription = false;
-                        _noPrescriptionReason = '';
-                      }),
-                      child: const Text('Cancel'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_noPrescriptionReason.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please enter a reason first')),
+                                );
+                                return;
+                              }
+                              setState(() {}); // now refresh to show completed state
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _noPrescription = false;
+                            _noPrescriptionReason = '';
+                          }),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
                     ),
                   ],
                   if (_prescriptionCompleted) ...[
@@ -985,7 +1017,7 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       ),
                     ),
                   ],
-                  if (_noLabTests && _noLabTestsReason.isEmpty) ...[
+                  if (_noLabTests && !_labTestsCompleted && _noLabTestsReason.isEmpty) ...[
                     const SizedBox(height: 16),
                     const Text(
                       'Please provide a reason:',
@@ -1006,16 +1038,47 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
                       ),
-                      onChanged: (value) => setState(() => _noLabTestsReason = value),
+                      onChanged: (value) {
+                        // Only update string — no setState so field stays visible
+                        _noLabTestsReason = value;
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _noLabTests = false;
-                        _noLabTestsReason = '';
-                      }),
-                      child: const Text('Cancel'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_noLabTestsReason.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please enter a reason first')),
+                                );
+                                return;
+                              }
+                              setState(() {}); // refresh to show completed state
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _noLabTests = false;
+                            _noLabTestsReason = '';
+                          }),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
                     ),
                   ],
                   if (_labTestsCompleted && _selectedLabTemplate != null) ...[
