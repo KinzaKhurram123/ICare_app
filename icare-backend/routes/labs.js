@@ -547,4 +547,40 @@ router.put('/requests/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── RATE BOOKING ─────────────────────────────────────────────────────────────
+router.post('/bookings/:bookingId/rate', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { rating, comment } = req.body;
+    const booking = await LabTestRequest.findByIdAndUpdate(
+      toId(req.params.bookingId),
+      { $set: { rating: Number(rating) || 0, ratingComment: comment || '', ratedAt: new Date() } },
+      { new: true }
+    );
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    res.json({ success: true, message: 'Rating submitted', booking: { ...booking.toObject(), _id: booking._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to submit rating' });
+  }
+});
+
+// ─── UPLOAD REPORT ────────────────────────────────────────────────────────────
+router.post('/bookings/:bookingId/upload-report', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { reportUrl, reportNotes } = req.body;
+    const booking = await LabTestRequest.findByIdAndUpdate(
+      toId(req.params.bookingId),
+      { $set: { report_url: reportUrl, report_notes: reportNotes || '', status: 'reporting_done' } },
+      { new: true }
+    );
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    res.json({ success: true, message: 'Report uploaded', reportUrl, booking: { ...booking.toObject(), _id: booking._id.toString() } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to upload report' });
+  }
+});
+
 module.exports = router;

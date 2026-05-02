@@ -411,4 +411,60 @@ router.post('/addendum/:type/:appointmentId', authMiddleware, async (req, res) =
   }
 });
 
+// ─── HEALTH JOURNEY ───────────────────────────────────────────────────────────
+const HealthJourneySchema = new mongoose.Schema({
+  patient_id: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+  entries: [{ type: mongoose.Schema.Types.Mixed }],
+  updated_at: { type: Date, default: Date.now },
+}, { collection: 'health_journeys', strict: false });
+const HealthJourney = mongoose.models.HealthJourney || mongoose.model('HealthJourney', HealthJourneySchema);
+
+router.get('/health-journey', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const journey = await HealthJourney.findOne({ patient_id: userId }).lean() || { entries: [] };
+    res.json({ success: true, journey, entries: journey.entries || [] });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: true, journey: { entries: [] }, entries: [] });
+  }
+});
+
+// ─── LIFESTYLE LOGS ───────────────────────────────────────────────────────────
+const LifestyleLogSchema = new mongoose.Schema({
+  patient_id: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+  logs: [{ type: mongoose.Schema.Types.Mixed }],
+  updated_at: { type: Date, default: Date.now },
+}, { collection: 'lifestyle_logs', strict: false });
+const LifestyleLog = mongoose.models.LifestyleLog || mongoose.model('LifestyleLog', LifestyleLogSchema);
+
+router.post('/lifestyle-logs', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const log = await LifestyleLog.findOneAndUpdate(
+      { patient_id: userId },
+      { $push: { logs: { ...req.body, createdAt: new Date() } }, $set: { updated_at: new Date() } },
+      { new: true, upsert: true }
+    );
+    res.json({ success: true, message: 'Log saved', log });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to save log' });
+  }
+});
+
+router.get('/lifestyle-summary', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const userId = toId(req.user.id);
+    const log = await LifestyleLog.findOne({ patient_id: userId }).lean() || { logs: [] };
+    res.json({ success: true, summary: log, logs: log.logs || [] });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: true, summary: { logs: [] }, logs: [] });
+  }
+});
+
 module.exports = router;

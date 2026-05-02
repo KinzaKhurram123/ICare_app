@@ -646,4 +646,22 @@ router.delete('/products/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── ORDER RATING ─────────────────────────────────────────────────────────────
+router.post('/orders/:id/rating', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { rating, comment } = req.body;
+    const order = await PharmacyOrder.findByIdAndUpdate(
+      toId(req.params.id),
+      { $set: { rating: Number(rating) || 0, ratingComment: comment || '', ratedAt: new Date() } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, message: 'Rating submitted', order: { ...order.toObject(), _id: order._id.toString() } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to submit rating' });
+  }
+});
+
 module.exports = router;

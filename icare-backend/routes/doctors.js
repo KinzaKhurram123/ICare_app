@@ -281,4 +281,31 @@ router.get('/patients/:patientId/history', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── PATIENT HISTORY (for doctor viewing patient records) ────────────────────
+router.get('/patients/:patientId/history', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const patientId = toId(req.params.patientId);
+    if (!patientId) return res.status(400).json({ success: false, message: 'Invalid patient ID' });
+
+    // Get completed appointments for this patient
+    const appointments = await Appointment.find({
+      patient_id: patientId,
+      status: { $in: ['completed', 'confirmed'] },
+    }).sort({ createdAt: -1 }).lean();
+
+    res.json({
+      success: true,
+      history: appointments.map(a => ({
+        ...a,
+        _id: a._id.toString(),
+        id: a._id.toString(),
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch patient history' });
+  }
+});
+
 module.exports = router;
