@@ -104,11 +104,11 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         status: currentFilter == 'all' ? null : currentFilter,
       );
 
-      // Sort by date — oldest first (date-wise priority)
+      // Sort by date — newest first (latest orders on top)
       bookings.sort((a, b) {
         final dateA = DateTime.tryParse(a['date'] ?? a['createdAt'] ?? '') ?? DateTime.now();
         final dateB = DateTime.tryParse(b['date'] ?? b['createdAt'] ?? '') ?? DateTime.now();
-        return dateA.compareTo(dateB);
+        return dateB.compareTo(dateA);
       });
       setState(() {
         _bookings = bookings;
@@ -1217,7 +1217,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
-                if (status.toLowerCase() == 'confirmed')
+                if (status.toLowerCase() == 'confirmed' ||
+                    status.toLowerCase() == 'accepted')
                   TextButton.icon(
                     onPressed: () => _updateStatus(booking['_id'], 'sample_collected'),
                     icon: const Icon(Icons.science_outlined, size: 18),
@@ -1329,6 +1330,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
       case 'pending':
         return Colors.orange;
       case 'confirmed':
+      case 'accepted':
         return Colors.green;
       case 'sample_collected':
         return Colors.blue;
@@ -1348,7 +1350,8 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   String _statusLabel(String status) {
     switch (status.toLowerCase().replaceAll('-', '_')) {
       case 'pending': return 'PENDING';
-      case 'confirmed': return 'ACCEPTED';
+      case 'confirmed':
+      case 'accepted': return 'ACCEPTED';
       case 'sample_collected': return 'SAMPLE COLLECTED';
       case 'awaiting_reports': return 'AWAITING REPORTS';
       case 'reporting_done': return 'REPORTING DONE';
