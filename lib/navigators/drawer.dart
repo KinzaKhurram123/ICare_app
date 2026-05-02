@@ -736,7 +736,48 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                 ),
               ),
 
-              // Logout button removed - use dropdown on profile icon instead
+              // Logout button at bottom of drawer
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Divider(color: Color(0xFFF1F5F9), height: 1),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop(); // close drawer
+                    ref.read(authProvider.notifier).setUserLogout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.15)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.logout_rounded, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red,
+                            fontFamily: 'Gilroy-Bold',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
