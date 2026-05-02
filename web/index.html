@@ -59,21 +59,85 @@
 
         _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
 
+        // ── Helper: play remote video with retry until div is in DOM ──────
+        async function playRemoteVideo(videoTrack, retries) {
+          retries = retries || 0;
+          var remoteDiv = document.getElementById('agora-remote');
+          if (remoteDiv) {
+            try {
+              videoTrack.play('agora-remote');
+              console.log('✅ Remote video playing');
+            } catch(e) {
+              console.warn('Remote video play error:', e.message);
+              // Retry once after short delay
+              if (retries < 3) {
+                setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 500);
+              }
+            }
+          } else {
+            // Div not ready yet — retry up to 10 times (5 seconds total)
+            if (retries < 10) {
+              console.warn('agora-remote div not found, retry ' + retries);
+              setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 500);
+            } else {
+              console.error('agora-remote div never appeared after retries');
+            }
+          }
+        }
+
         _agoraClient.on('user-published', async (user, mediaType) => {
           await _agoraClient.subscribe(user, mediaType);
           if (mediaType === 'video') {
-            var remoteDiv = document.getElementById('agora-remote');
-            if (remoteDiv) user.videoTrack.play('agora-remote');
+            playRemoteVideo(user.videoTrack, 0);
           }
-          if (mediaType === 'audio') user.audioTrack.play();
+          if (mediaType === 'audio') {
+            try { user.audioTrack.play(); } catch(e) { console.warn('Audio play error:', e); }
+          }
         });
 
-        _agoraClient.on('user-unpublished', (user) => {
-          var remoteDiv = document.getElementById('agora-remote');
-          if (remoteDiv) remoteDiv.innerHTML = '';
+        _agoraClient.on('user-unpublished', (user, mediaType) => {
+          if (mediaType === 'video') {
+            var remoteDiv = document.getElementById('agora-remote');
+            if (remoteDiv) remoteDiv.innerHTML = '';
+          }
+        });
+
+        // ── Handle users who joined BEFORE us ─────────────────────────────
+        _agoraClient.on('user-joined', async (user) => {
+          // If remote user is already publishing, subscribe immediately
+          if (user.hasVideo) {
+            try {
+              await _agoraClient.subscribe(user, 'video');
+              playRemoteVideo(user.videoTrack, 0);
+            } catch(e) { console.warn('user-joined video subscribe error:', e); }
+          }
+          if (user.hasAudio) {
+            try {
+              await _agoraClient.subscribe(user, 'audio');
+              user.audioTrack.play();
+            } catch(e) { console.warn('user-joined audio subscribe error:', e); }
+          }
         });
 
         await _agoraClient.join(appId, channel, token, uid || null);
+
+        // ── Subscribe to any users already in channel ──────────────────────
+        var remoteUsers = _agoraClient.remoteUsers;
+        for (var i = 0; i < remoteUsers.length; i++) {
+          var remoteUser = remoteUsers[i];
+          if (remoteUser.hasVideo) {
+            try {
+              await _agoraClient.subscribe(remoteUser, 'video');
+              playRemoteVideo(remoteUser.videoTrack, 0);
+            } catch(e) { console.warn('Pre-existing user video error:', e); }
+          }
+          if (remoteUser.hasAudio) {
+            try {
+              await _agoraClient.subscribe(remoteUser, 'audio');
+              remoteUser.audioTrack.play();
+            } catch(e) { console.warn('Pre-existing user audio error:', e); }
+          }
+        }
 
         // Try mic + camera; if mic fails, try camera only; if both fail, join audio-only
         try {
