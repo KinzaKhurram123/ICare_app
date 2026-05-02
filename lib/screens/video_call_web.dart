@@ -156,7 +156,7 @@ class _VideoCallWebState extends State<VideoCall> {
                     onPressed: () {
                       Navigator.pop(ctx);
                       try {
-                        GoRouter.of(context).go('/dashboard');
+                        context.go('/dashboard');
                       } catch (_) {
                         Navigator.of(context).popUntil((r) => r.isFirst);
                       }
@@ -211,7 +211,7 @@ class _VideoCallWebState extends State<VideoCall> {
                       onPressed: () {
                         Navigator.pop(ctx);
                         try {
-                          GoRouter.of(context).go('/dashboard');
+                          context.go('/dashboard');
                         } catch (_) {
                           Navigator.of(context).popUntil((r) => r.isFirst);
                         }
