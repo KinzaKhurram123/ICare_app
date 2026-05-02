@@ -425,7 +425,11 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CustomText(
-                        text: widget.pharmacy['user']?['name'] ?? 'Pharmacy',
+                        text: widget.pharmacy['pharmacy_name']?.toString()
+                            ?? widget.pharmacy['pharmacyName']?.toString()
+                            ?? widget.pharmacy['user']?['name']?.toString()
+                            ?? widget.pharmacy['name']?.toString()
+                            ?? 'Pharmacy',
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
