@@ -780,16 +780,27 @@ class _FindLabsSheet extends StatefulWidget {
 class _FindLabsSheetState extends State<_FindLabsSheet> {
   final LaboratoryService _labService = LaboratoryService();
   List<dynamic> _labs = [];
+  List<dynamic> _filteredLabs = [];
   bool _isLoading = true;
   String? _error;
   double? _userLat;
   double? _userLng;
+
+  // 'nearest' or 'search'
+  String _mode = 'nearest';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchLabs();
     _getUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _getUserLocation() async {
@@ -841,9 +852,25 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
       final bLng = ((b['longitude'] ?? b['lng']) as num?)?.toDouble();
       if (aLat == null || aLng == null) return 1;
       if (bLat == null || bLng == null) return -1;
-      final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
-      final bDist = _haversineDistance(_userLat!, _userLng!, bLat, bLng);
-      return aDist.compareTo(bDist);
+      return _haversineDistance(_userLat!, _userLng!, aLat, aLng)
+          .compareTo(_haversineDistance(_userLat!, _userLng!, bLat, bLng));
+    });
+    _filteredLabs = List.from(_labs);
+  }
+
+  void _filterByLocation(String query) {
+    if (query.isEmpty) {
+      setState(() => _filteredLabs = List.from(_labs));
+      return;
+    }
+    final q = query.toLowerCase();
+    setState(() {
+      _filteredLabs = _labs.where((l) {
+        final name = (l['lab_name'] ?? l['labName'] ?? l['name'] ?? '').toString().toLowerCase();
+        final address = (l['address'] ?? '').toString().toLowerCase();
+        final city = (l['city'] ?? '').toString().toLowerCase();
+        return name.contains(q) || address.contains(q) || city.contains(q);
+      }).toList();
     });
   }
 
@@ -864,6 +891,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
       if (mounted) {
         setState(() {
           _labs = labs;
+          _filteredLabs = List.from(labs);
           _isLoading = false;
           if (_userLat != null) _sortByDistance();
         });
@@ -932,41 +960,80 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Location banner
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _userLat != null
-                          ? const Color(0xFFECFDF5)
-                          : const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _userLat != null
-                            ? const Color(0xFF10B981).withOpacity(0.4)
-                            : const Color(0xFFF59E0B).withOpacity(0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
-                          size: 16,
-                          color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+
+                  // ── Mode toggle: Nearest | Search by Location ──────────
+                  Row(
+                    children: [
+                      _modeBtn('nearest', Icons.near_me_rounded, 'Nearest', const Color(0xFF8B5CF6)),
+                      const SizedBox(width: 10),
+                      _modeBtn('search', Icons.location_searching_rounded, 'Search by Location', const Color(0xFF8B5CF6)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Nearest banner
+                  if (_mode == 'nearest')
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _userLat != null ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _userLat != null
+                              ? const Color(0xFF10B981).withOpacity(0.4)
+                              : const Color(0xFFF59E0B).withOpacity(0.4),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _userLat != null
-                              ? 'Sorted by nearest to your location'
-                              : 'Allow location to see nearest labs first',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
+                            size: 16,
                             color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _userLat != null
+                                  ? 'Sorted by nearest to your location'
+                                  : 'Allow location to see nearest labs first',
+                              style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                                color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+
+                  // Search field
+                  if (_mode == 'search')
+                    TextField(
+                      controller: _searchCtrl,
+                      onChanged: _filterByLocation,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Enter area, city or address...',
+                        prefixIcon: const Icon(Icons.location_on_rounded, color: Color(0xFF8B5CF6), size: 20),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+
                   const SizedBox(height: 16),
                   // Ordered tests chips
                   const Text('Ordered Tests:',
@@ -1024,18 +1091,68 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                             ],
                           ),
                         )
-                      : _labs.isEmpty
-                          ? const Center(
-                              child: Text('No labs found',
-                                  style: TextStyle(color: Color(0xFF64748B))))
+                      : _filteredLabs.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.science_outlined, size: 48, color: Colors.grey[300]),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _mode == 'search' ? 'No labs found in this area' : 'No labs found',
+                                    style: const TextStyle(color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            )
                           : ListView.builder(
                               controller: scrollCtrl,
                               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                              itemCount: _labs.length,
-                              itemBuilder: (ctx, i) => _labTile(_labs[i]),
+                              itemCount: _filteredLabs.length,
+                              itemBuilder: (ctx, i) => _labTile(_filteredLabs[i]),
                             ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _modeBtn(String mode, IconData icon, String label, Color color) {
+    final isSelected = _mode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _mode = mode;
+            _searchCtrl.clear();
+            if (mode == 'nearest') {
+              _filteredLabs = List.from(_labs);
+              if (_userLat != null) _sortByDistance();
+            } else {
+              _filteredLabs = List.from(_labs);
+            }
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? color : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 15, color: isSelected ? Colors.white : const Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  )),
+            ],
+          ),
         ),
       ),
     );
@@ -1178,15 +1295,26 @@ class _FindPharmaciesSheet extends StatefulWidget {
 class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
   final PharmacyService _pharmacyService = PharmacyService();
   List<dynamic> _pharmacies = [];
+  List<dynamic> _filteredPharmacies = [];
   bool _isLoading = true;
   double? _userLat;
   double? _userLng;
+
+  // 'nearest' or 'search'
+  String _mode = 'nearest';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchPharmacies();
     _getUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _getUserLocation() async {
@@ -1214,9 +1342,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
         });
         _fetchPharmacies();
       }
-    } catch (_) {
-      // Location unavailable
-    }
+    } catch (_) {}
   }
 
   double _haversineDistance(double lat1, double lng1, double lat2, double lng2) {
@@ -1238,9 +1364,25 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
       final bLng = ((b['longitude'] ?? b['lng']) as num?)?.toDouble();
       if (aLat == null || aLng == null) return 1;
       if (bLat == null || bLng == null) return -1;
-      final aDist = _haversineDistance(_userLat!, _userLng!, aLat, aLng);
-      final bDist = _haversineDistance(_userLat!, _userLng!, bLat, bLng);
-      return aDist.compareTo(bDist);
+      return _haversineDistance(_userLat!, _userLng!, aLat, aLng)
+          .compareTo(_haversineDistance(_userLat!, _userLng!, bLat, bLng));
+    });
+    _filteredPharmacies = List.from(_pharmacies);
+  }
+
+  void _filterByLocation(String query) {
+    if (query.isEmpty) {
+      setState(() => _filteredPharmacies = List.from(_pharmacies));
+      return;
+    }
+    final q = query.toLowerCase();
+    setState(() {
+      _filteredPharmacies = _pharmacies.where((p) {
+        final name = (p['pharmacy_name'] ?? p['pharmacyName'] ?? p['name'] ?? '').toString().toLowerCase();
+        final address = (p['address'] ?? '').toString().toLowerCase();
+        final city = (p['city'] ?? '').toString().toLowerCase();
+        return name.contains(q) || address.contains(q) || city.contains(q);
+      }).toList();
     });
   }
 
@@ -1256,15 +1398,11 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
 
   Future<void> _fetchPharmacies() async {
     try {
-      final List<dynamic> pharmacies;
-      if (_userLat != null && _userLng != null) {
-        pharmacies = await _pharmacyService.getAllPharmacies();
-      } else {
-        pharmacies = await _pharmacyService.getAllPharmacies();
-      }
+      final pharmacies = await _pharmacyService.getAllPharmacies();
       if (mounted) {
         setState(() {
           _pharmacies = pharmacies;
+          _filteredPharmacies = List.from(pharmacies);
           _isLoading = false;
           if (_userLat != null) _sortByDistance();
         });
@@ -1289,8 +1427,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
           children: [
             Container(
               margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2)),
@@ -1300,6 +1437,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title
                   Row(
                     children: [
                       Container(
@@ -1317,80 +1455,108 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Find Pharmacies',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A))),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
                             Text('Select a pharmacy for your medicines',
-                                style: TextStyle(
-                                    fontSize: 13, color: Color(0xFF64748B))),
+                                style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                           ],
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 14),
+
+                  // ── Mode toggle: Nearest | Search by Location ──────────
+                  Row(
+                    children: [
+                      _modeBtn('nearest', Icons.near_me_rounded, 'Nearest', const Color(0xFF3B82F6)),
+                      const SizedBox(width: 10),
+                      _modeBtn('search', Icons.location_searching_rounded, 'Search by Location', const Color(0xFF3B82F6)),
+                    ],
+                  ),
                   const SizedBox(height: 12),
-                  // Location banner
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _userLat != null
-                          ? const Color(0xFFECFDF5)
-                          : const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _userLat != null
-                            ? const Color(0xFF10B981).withOpacity(0.4)
-                            : const Color(0xFFF59E0B).withOpacity(0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
-                          size: 16,
-                          color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+
+                  // ── Nearest: location status banner ───────────────────
+                  if (_mode == 'nearest')
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _userLat != null ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _userLat != null
+                              ? const Color(0xFF10B981).withOpacity(0.4)
+                              : const Color(0xFFF59E0B).withOpacity(0.4),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _userLat != null
-                              ? 'Sorted by nearest to your location'
-                              : 'Allow location to see nearest pharmacies first',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _userLat != null ? Icons.my_location_rounded : Icons.location_searching_rounded,
+                            size: 16,
                             color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _userLat != null
+                                  ? 'Sorted by nearest to your location'
+                                  : 'Allow location to see nearest pharmacies first',
+                              style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                                color: _userLat != null ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+
+                  // ── Search by Location: text field ────────────────────
+                  if (_mode == 'search')
+                    TextField(
+                      controller: _searchCtrl,
+                      onChanged: _filterByLocation,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Enter area, city or address...',
+                        prefixIcon: const Icon(Icons.location_on_rounded, color: Color(0xFF3B82F6), size: 20),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+                  // Prescribed medicines chips
                   const Text('Prescribed Medicines:',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF64748B))),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
                   const SizedBox(height: 8),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 6, runSpacing: 6,
                     children: widget.medicines.map((m) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFFBFDBFE)),
                       ),
                       child: Text(m['name'] ?? '',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF1D4ED8),
-                              fontWeight: FontWeight.w600)),
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
                     )).toList(),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   const Divider(),
                 ],
               ),
@@ -1398,19 +1564,68 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _pharmacies.isEmpty
-                      ? const Center(
-                          child: Text('No pharmacies found',
-                              style: TextStyle(color: Color(0xFF64748B))))
+                  : _filteredPharmacies.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.local_pharmacy_outlined, size: 48, color: Colors.grey[300]),
+                              const SizedBox(height: 12),
+                              Text(
+                                _mode == 'search' ? 'No pharmacies found in this area' : 'No pharmacies found',
+                                style: const TextStyle(color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        )
                       : ListView.builder(
                           controller: scrollCtrl,
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          itemCount: _pharmacies.length,
-                          itemBuilder: (ctx, i) =>
-                              _pharmacyTile(_pharmacies[i]),
+                          itemCount: _filteredPharmacies.length,
+                          itemBuilder: (ctx, i) => _pharmacyTile(_filteredPharmacies[i]),
                         ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _modeBtn(String mode, IconData icon, String label, Color color) {
+    final isSelected = _mode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _mode = mode;
+            _searchCtrl.clear();
+            if (mode == 'nearest') {
+              _filteredPharmacies = List.from(_pharmacies);
+              if (_userLat != null) _sortByDistance();
+            } else {
+              _filteredPharmacies = List.from(_pharmacies);
+            }
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? color : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 15, color: isSelected ? Colors.white : const Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  )),
+            ],
+          ),
         ),
       ),
     );
