@@ -2,6 +2,8 @@
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:ui_web' as ui;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -177,11 +179,8 @@ class _VideoCallWebState extends State<VideoCall> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              try {
-                context.go('/dashboard');
-              } catch (_) {
-                Navigator.of(context).popUntil((r) => r.isFirst);
-              }
+              // Use browser navigation — guaranteed on Flutter Web
+              html.window.location.href = '/dashboard';
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
