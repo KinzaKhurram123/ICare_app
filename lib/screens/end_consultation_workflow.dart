@@ -752,7 +752,7 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                 });
                               },
                               icon: const Icon(Icons.add_rounded, size: 18),
-                              label: const Text('Add Medicine'),
+                              label: Text(_prescriptionMedicines.isEmpty ? 'Add Medicine' : 'Add More Medicines'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
