@@ -43,7 +43,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   bool _isLoading = true;
   bool _availableForInstantConsultation = true;
   bool _isInConsultation = false;
-  Timer? _connectNowPollTimer; // polls for incoming patient requests
+  Timer? _connectNowPollTimer;
+  bool _connectNowScreenOpen = false; // guard — prevents double push
 
   @override
   void initState() {
@@ -61,17 +62,16 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     super.dispose();
   }
 
-  /// Poll every 1.5 seconds for pending instant consultation requests
   void _startConnectNowPolling() {
+    _connectNowPollTimer?.cancel();
     _connectNowPollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
-      if (!mounted || !_availableForInstantConsultation || _isInConsultation) return;
+      if (!mounted || !_availableForInstantConsultation || _isInConsultation || _connectNowScreenOpen) return;
       try {
         final result = await ConnectNowService().checkPending();
-        if (!mounted) return;
+        if (!mounted || _connectNowScreenOpen) return;
         if (result['hasPending'] == true) {
           _connectNowPollTimer?.cancel();
           final req = result['request'] as Map<String, dynamic>? ?? {};
-          // Accept both _id and id from backend
           final requestId = (req['_id'] ?? req['id'])?.toString() ?? '';
           final patientName = req['patientName']?.toString() ?? 'Patient';
           final channelName = req['channelName']?.toString() ?? '';
@@ -81,6 +81,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               : DateTime.now().add(const Duration(minutes: 3));
 
           if (requestId.isNotEmpty && channelName.isNotEmpty) {
+            _connectNowScreenOpen = true; // lock — no more pushes
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => DoctorConnectNowScreen(
@@ -91,6 +92,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 ),
               ),
             );
+            _connectNowScreenOpen = false; // unlock after returning
             if (mounted) _startConnectNowPolling();
           }
         }
