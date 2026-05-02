@@ -286,31 +286,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ] else ...[
-                // Mobile: Original simple slider
+                // Mobile: Responsive full-width banner with PageView
                 SizedBox(
                   width: Utils.windowWidth(context),
-                  height: Utils.windowHeight(context) * 0.25,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        SizedBox(
-                          width: Utils.windowWidth(context) * 0.8,
-                          height: Utils.windowHeight(context) * 0.15,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(ImagePaths.newBanner),
+                  height: Utils.windowWidth(context) * 0.55,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) =>
+                        setState(() => _currentSlide = index),
+                    itemCount: 2,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            ImagePaths.newBanner,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
                           ),
                         ),
-                        SizedBox(
-                          width: Utils.windowWidth(context) * 0.8,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(ImagePaths.newBanner),
-                          ),
-                        ),
-                      ],
+                      );
+                    },
+                  ),
+                ),
+                // Dot indicators
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    2,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      height: 6,
+                      width: _currentSlide == index ? 20 : 6,
+                      decoration: BoxDecoration(
+                        color: _currentSlide == index
+                            ? AppColors.primaryColor
+                            : AppColors.primaryColor.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
