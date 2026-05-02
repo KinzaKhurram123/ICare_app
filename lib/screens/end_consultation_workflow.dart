@@ -6,7 +6,6 @@ import 'package:icare/screens/soap_notes_redesign.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/clinical_service.dart';
 import 'package:icare/services/medical_record_service.dart';
-import 'package:icare/utils/app_keys.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/icd_code_selector.dart';
@@ -221,23 +220,7 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  // Navigate to dashboard — pop all routes and go to /dashboard
-                  Future.microtask(() {
-                    try {
-                      // Try appNavigatorKey first
-                      final navCtx = appNavigatorKey.currentContext;
-                      if (navCtx != null && navCtx.mounted) {
-                        GoRouter.of(navCtx).go('/dashboard');
-                        return;
-                      }
-                    } catch (_) {}
-                    // Fallback: use the widget's own context
-                    try {
-                      if (context.mounted) {
-                        GoRouter.of(context).go('/dashboard');
-                      }
-                    } catch (_) {}
-                  });
+                  context.go('/dashboard');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
