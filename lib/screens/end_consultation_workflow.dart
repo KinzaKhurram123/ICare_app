@@ -31,6 +31,51 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
   List<Map<String, dynamic>> _selectedICDCodes = [];
   final TextEditingController _diagnosisNotesController = TextEditingController();
 
+  // Common medicines list for autocomplete
+  static const List<String> _commonMedicines = [
+    'Paracetamol 500mg', 'Paracetamol 1000mg',
+    'Amoxicillin 250mg', 'Amoxicillin 500mg',
+    'Ibuprofen 200mg', 'Ibuprofen 400mg', 'Ibuprofen 600mg',
+    'Aspirin 75mg', 'Aspirin 300mg',
+    'Metformin 500mg', 'Metformin 850mg', 'Metformin 1000mg',
+    'Atorvastatin 10mg', 'Atorvastatin 20mg', 'Atorvastatin 40mg',
+    'Omeprazole 20mg', 'Omeprazole 40mg',
+    'Pantoprazole 20mg', 'Pantoprazole 40mg',
+    'Ciprofloxacin 250mg', 'Ciprofloxacin 500mg',
+    'Azithromycin 250mg', 'Azithromycin 500mg',
+    'Doxycycline 100mg',
+    'Metronidazole 200mg', 'Metronidazole 400mg',
+    'Cetirizine 10mg', 'Loratadine 10mg',
+    'Salbutamol 2mg', 'Salbutamol 4mg',
+    'Prednisolone 5mg', 'Prednisolone 10mg',
+    'Diclofenac 50mg', 'Diclofenac 75mg',
+    'Tramadol 50mg', 'Tramadol 100mg',
+    'Codeine 30mg',
+    'Lisinopril 5mg', 'Lisinopril 10mg',
+    'Amlodipine 5mg', 'Amlodipine 10mg',
+    'Losartan 25mg', 'Losartan 50mg',
+    'Bisoprolol 2.5mg', 'Bisoprolol 5mg',
+    'Furosemide 20mg', 'Furosemide 40mg',
+    'Spironolactone 25mg', 'Spironolactone 50mg',
+    'Warfarin 1mg', 'Warfarin 5mg',
+    'Clopidogrel 75mg',
+    'Insulin Regular', 'Insulin NPH', 'Insulin Glargine',
+    'Levothyroxine 25mcg', 'Levothyroxine 50mcg', 'Levothyroxine 100mcg',
+    'Sertraline 50mg', 'Sertraline 100mg',
+    'Fluoxetine 20mg', 'Fluoxetine 40mg',
+    'Diazepam 2mg', 'Diazepam 5mg',
+    'Vitamin C 500mg', 'Vitamin D3 1000IU', 'Vitamin B Complex',
+    'Zinc 20mg', 'Iron 65mg', 'Folic Acid 5mg',
+    'Calcium 500mg', 'Calcium + Vitamin D3',
+    'ORS Sachet', 'Oral Rehydration Salts',
+    'Antacid Syrup', 'Gaviscon',
+    'Cough Syrup', 'Dextromethorphan',
+    'Nasal Drops', 'Xylometazoline',
+    'Eye Drops Chloramphenicol', 'Artificial Tears',
+    'Hydrocortisone Cream 1%', 'Betamethasone Cream',
+    'Clotrimazole Cream', 'Fluconazole 150mg',
+  ];
+
   // Prescription state
   bool _prescriptionCompleted = false;
   bool _noPrescription = false;
@@ -509,6 +554,16 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       onPressed: _selectedICDCodes.isEmpty
                           ? null
                           : () {
+                              // Diagnosis Notes mandatory
+                              if (_diagnosisNotesController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter Diagnosis Notes'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
                               setState(() => _diagnosisCompleted = true);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -616,22 +671,83 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          TextField(
-                            controller: _medNameController,
-                            decoration: InputDecoration(
-                              labelText: 'Medicine Name *',
-                              hintText: 'e.g. Paracetamol 500mg',
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                              ),
-                            ),
+                          // Medicine Name with autocomplete
+                          Autocomplete<String>(
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text.isEmpty) {
+                                return _commonMedicines;
+                              }
+                              final query = textEditingValue.text.toLowerCase();
+                              return _commonMedicines.where(
+                                (m) => m.toLowerCase().contains(query),
+                              );
+                            },
+                            onSelected: (String selection) {
+                              _medNameController.text = selection;
+                            },
+                            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                              // Sync with _medNameController
+                              controller.text = _medNameController.text;
+                              controller.addListener(() {
+                                _medNameController.text = controller.text;
+                              });
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  labelText: 'Medicine Name *',
+                                  hintText: 'Type to search medicines...',
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  prefixIcon: const Icon(Icons.medication_rounded, color: Color(0xFF3B82F6), size: 20),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                                  ),
+                                ),
+                              );
+                            },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(maxHeight: 220, maxWidth: 500),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (ctx, i) {
+                                        final option = options.elementAt(i);
+                                        return InkWell(
+                                          onTap: () => onSelected(option),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.medication_outlined, size: 16, color: Color(0xFF3B82F6)),
+                                                const SizedBox(width: 10),
+                                                Text(option, style: const TextStyle(fontSize: 14)),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 12),
                           // Dosage: Day / Noon / Night
