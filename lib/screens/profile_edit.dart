@@ -29,6 +29,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   bool isLoading = false;
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  String? _selectedGender; // 'Male', 'Female', 'Other'
 
   Future<void> _pickImage() async {
     // On web, camera is not supported — go straight to gallery
@@ -96,6 +97,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (user != null) {
       nameController.text = user.name;
       phoneController.text = user.phoneNumber;
+      ageController.text = user.age ?? '';
+      // Normalize gender to match our options
+      final g = user.gender?.trim() ?? '';
+      if (g.toLowerCase() == 'male') {
+        _selectedGender = 'Male';
+      } else if (g.toLowerCase() == 'female') {
+        _selectedGender = 'Female';
+      } else if (g.isNotEmpty) {
+        _selectedGender = 'Other';
+      }
     }
   }
 
@@ -122,6 +133,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         phoneNumber: phoneController.text.trim(),
         cnic: cnicController.text.trim().isEmpty ? null : cnicController.text.trim(),
         age: ageController.text.trim().isEmpty ? null : ageController.text.trim(),
+        gender: _selectedGender,
         height: heightController.text.trim().isEmpty ? null : heightController.text.trim(),
         weight: weightController.text.trim().isEmpty ? null : weightController.text.trim(),
         address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
@@ -391,6 +403,75 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF0F172A),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Gender selector
+                          const Text(
+                            'Gender',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: ['Male', 'Female', 'Other'].map((g) {
+                              final isSelected = _selectedGender == g;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _selectedGender = g),
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppColors.primaryColor
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.primaryColor
+                                            : const Color(0xFFE2E8F0),
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          g == 'Male'
+                                              ? Icons.male_rounded
+                                              : g == 'Female'
+                                                  ? Icons.female_rounded
+                                                  : Icons.transgender_rounded,
+                                          size: 16,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : const Color(0xFF64748B),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          g,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
                           const SizedBox(height: 16),
                           Row(

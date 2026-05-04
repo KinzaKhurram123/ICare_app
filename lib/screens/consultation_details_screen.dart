@@ -411,11 +411,85 @@ class _ConsultationDetailsScreenState
                           children: [
                             _label('Gender'),
                             const SizedBox(height: 8),
-                            _textField(
-                              controller: _genderController,
-                              hint: _forMyself ? 'Not set in profile' : 'Male / Female',
-                              readOnly: _forMyself,
-                            ),
+                            if (_forMyself)
+                              // Read-only display for Myself
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _genderController.text.toLowerCase() == 'female'
+                                          ? Icons.female_rounded
+                                          : _genderController.text.toLowerCase() == 'male'
+                                              ? Icons.male_rounded
+                                              : Icons.wc_rounded,
+                                      size: 16,
+                                      color: const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _genderController.text.isNotEmpty
+                                          ? _genderController.text
+                                          : 'Not set in profile',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: _genderController.text.isNotEmpty
+                                            ? const Color(0xFF0F172A)
+                                            : const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              // Editable chips for Someone Else
+                              Row(
+                                children: ['Male', 'Female', 'Other']
+                                    .map((g) {
+                                  final isSelected =
+                                      _genderController.text == g;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: GestureDetector(
+                                      onTap: () => setState(
+                                          () => _genderController.text = g),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.primaryColor
+                                              : const Color(0xFFF1F5F9),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.primaryColor
+                                                : const Color(0xFFE2E8F0),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          g,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
                           ],
                         ),
                       ),
