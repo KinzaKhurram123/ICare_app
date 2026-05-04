@@ -65,9 +65,12 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
       }
 
       final currentFilter = _selectedFilter;
+      final backendStatus = (currentFilter == 'all' || currentFilter == 'urgent')
+          ? null
+          : currentFilter;
       final bookings = await _labService.getBookings(
         _labId!,
-        status: currentFilter == 'all' ? null : currentFilter,
+        status: backendStatus,
       );
 
       if (mounted) {
@@ -98,10 +101,15 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
         if (_labId == null) throw Exception('Laboratory ID not found');
       }
 
-      final currentFilter = _selectedFilter; // snapshot before any async gap
+      final currentFilter = _selectedFilter;
+      // urgent is a flag not a status — fetch all and filter client-side
+      // pending should also include 'accepted' walk-in orders
+      final backendStatus = (currentFilter == 'all' || currentFilter == 'urgent')
+          ? null
+          : currentFilter;
       final bookings = await _labService.getBookings(
         _labId!,
-        status: currentFilter == 'all' ? null : currentFilter,
+        status: backendStatus,
       );
 
       // Sort by date — newest first (latest orders on top)
@@ -850,14 +858,24 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
   }
 
   Widget _buildBookingsList() {
-    // Filter bookings by urgency if urgent filter is selected
-    final filteredBookings = _selectedFilter == 'urgent'
-        ? _bookings.where((b) => 
-            b['urgency'] == 'Urgent' || 
-            b['is_urgent'] == true ||
-            b['isUrgent'] == true ||
-            b['priority'] == 'urgent').toList()
-        : _bookings;
+    // Client-side filtering
+    List<dynamic> filteredBookings;
+    if (_selectedFilter == 'urgent') {
+      // Urgent = is_urgent flag OR urgency == 'Urgent'
+      filteredBookings = _bookings.where((b) =>
+          b['urgency'] == 'Urgent' ||
+          b['is_urgent'] == true ||
+          b['isUrgent'] == true ||
+          b['priority'] == 'urgent').toList();
+    } else if (_selectedFilter == 'pending') {
+      // Pending includes 'pending' and 'accepted' (walk-in orders start as accepted)
+      filteredBookings = _bookings.where((b) {
+        final s = (b['status'] ?? '').toString().toLowerCase();
+        return s == 'pending' || s == 'accepted';
+      }).toList();
+    } else {
+      filteredBookings = _bookings;
+    }
 
     return FadeTransition(
       opacity: _fadeAnimation,
