@@ -186,7 +186,33 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
   String _effectiveStatus(AppointmentDetail appointment) {
     final raw = appointment.status.toLowerCase();
     // These statuses must never be overridden by time logic
-    if (raw == 'cancelled' || raw == 'completed' || raw == 'in_progress') return raw;
+    if (raw == 'cancelled' || raw == 'completed') return raw;
+
+    // If in_progress but appointment was more than 3 hours ago → treat as completed
+    // This handles the case where browser was closed without ending the consultation
+    if (raw == 'in_progress') {
+      try {
+        final timeStr = appointment.timeSlot;
+        final parts = timeStr.split(' ');
+        final timeParts = parts[0].split(':');
+        int hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        final isPm = parts.length > 1 && parts[1].toUpperCase() == 'PM';
+        if (isPm && hour != 12) hour += 12;
+        if (!isPm && hour == 12) hour = 0;
+        final apptDateTime = DateTime(
+          appointment.date.year, appointment.date.month, appointment.date.day,
+          hour, minute,
+        );
+        // If appointment started more than 3 hours ago, it's stale — show as completed
+        if (DateTime.now().difference(apptDateTime).inHours >= 3) {
+          return 'completed';
+        }
+      } catch (_) {
+        // If parsing fails, keep in_progress
+      }
+      return raw;
+    }
 
     // Parse appointment date + time slot to get exact datetime
     try {

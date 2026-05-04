@@ -700,7 +700,7 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                   _buildExtraNavItem(
                     context,
                     Icons.monitor_heart_outlined,
-                    'Lifestyle Tracker',
+                    'Health Tracker',
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(

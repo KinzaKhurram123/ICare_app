@@ -103,6 +103,25 @@ class _VideoCallWebState extends State<VideoCall> {
     // Only poll status on PATIENT side — doctor ends consultation themselves
     // Check role from SharedPref to determine if this is doctor or patient
     _maybeStartStatusPolling();
+    // Register beforeunload handler so closing the browser marks appointment completed
+    _registerBeforeUnload();
+  }
+
+  void _registerBeforeUnload() {
+    if (widget.appointmentId == null || widget.appointmentId!.isEmpty) return;
+    // When the browser tab/window is closed, mark appointment as completed
+    // so it doesn't stay stuck as "in_progress"
+    html.window.onBeforeUnload.listen((_) {
+      if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
+        // Fire-and-forget: mark as completed so rejoin button disappears
+        try {
+          ApiService().put('/appointments/update_status', {
+            'appointmentId': widget.appointmentId!,
+            'status': 'completed',
+          });
+        } catch (_) {}
+      }
+    });
   }
 
   Future<void> _maybeStartStatusPolling() async {
@@ -454,13 +473,43 @@ class _VideoCallWebState extends State<VideoCall> {
     final isDoctor = currentUser?.role?.toLowerCase() == 'doctor';
 
     if (!isDoctor) {
-      // Patient cannot end consultation - only leave video
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only the doctor can end the consultation'),
-          backgroundColor: Colors.orange,
+      // Patient can also end consultation — show confirmation dialog
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('End Consultation?',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          content: const Text(
+              'Are you sure you want to end this consultation? The doctor will be notified.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('End Consultation'),
+            ),
+          ],
         ),
       );
+      if (confirm != true) return;
+      // Mark appointment as completed so doctor side also closes
+      try {
+        await AppointmentService().updateAppointmentStatus(
+          appointmentId: widget.appointmentId!,
+          status: 'completed',
+        );
+      } catch (_) {}
+      try { await _agoraLeave().toDart; } catch (_) {}
+      if (mounted) html.window.location.href = '/dashboard';
       return;
     }
 

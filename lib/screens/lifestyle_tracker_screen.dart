@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/back_button.dart';
 
 class LifestyleTrackerScreen extends StatefulWidget {
@@ -50,12 +51,25 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   // Points
   int _pointsToday = 45;
 
+  // User name (loaded from SharedPref)
+  String _userName = '';
+
   double get _dailyGoalProgress => 0.62;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final user = await SharedPref().getUserData();
+    if (mounted) {
+      setState(() {
+        _userName = user?.name ?? '';
+      });
+    }
   }
 
   @override
@@ -217,6 +231,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                _buildAllTab(),
                 _buildVitalsTab(),
                 _buildLifestyleTab(),
                 _buildMedicationTab(),
@@ -248,9 +263,9 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Hello, Sarah 👋',
-            style: TextStyle(
+          Text(
+            'Hello, ${_userName.isNotEmpty ? _userName : 'there'} 👋',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
               color: Color(0xFF0F172A),
@@ -337,6 +352,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   // ── Tab bar ─────────────────────────────────────────────────────────────
   Widget _buildTabBar() {
     const tabs = [
+      _TabMeta('All', Icons.grid_view_rounded),
       _TabMeta('Vitals', Icons.favorite_outline_rounded),
       _TabMeta('Lifestyle', Icons.directions_walk_rounded),
       _TabMeta('Medication', Icons.medication_outlined),
@@ -370,6 +386,195 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
                   ),
                 ))
             .toList(),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // Tab 0 — ALL (overview of everything)
+  // ════════════════════════════════════════════════════════════════════════
+  Widget _buildAllTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle('Overview', 'All your health data at a glance'),
+          const SizedBox(height: 12),
+
+          // ── Vitals summary ──────────────────────────────────────────
+          _overviewSection(
+            title: 'Vitals',
+            icon: Icons.favorite_outline_rounded,
+            iconColor: const Color(0xFFEF4444),
+            onViewAll: () => _tabController.animateTo(1),
+            child: Column(
+              children: [
+                _buildQuickTiles(),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _miniTile('💓', '$_heartRate bpm', 'Heart Rate',
+                          const Color(0xFFFFFBEB)),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _miniTile('🫁', '$_spO2%', 'SpO2',
+                          const Color(0xFFECFDF5)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Lifestyle summary ───────────────────────────────────────
+          _overviewSection(
+            title: 'Lifestyle',
+            icon: Icons.directions_walk_rounded,
+            iconColor: const Color(0xFFF59E0B),
+            onViewAll: () => _tabController.animateTo(2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _miniTile('💧', '$_waterGlasses/8', 'Water',
+                      const Color(0xFFEFF6FF)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _miniTile('🚶', '$_steps', 'Steps',
+                      const Color(0xFFFFFBEB)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _miniTile('😴', '${_sleepHours.toStringAsFixed(1)}h',
+                      'Sleep', const Color(0xFFF5F3FF)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Medication summary ──────────────────────────────────────
+          _overviewSection(
+            title: 'Medication',
+            icon: Icons.medication_outlined,
+            iconColor: const Color(0xFF10B981),
+            onViewAll: () => _tabController.animateTo(3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _miniTile(
+                    _medicationTaken ? '✅' : '⏰',
+                    _medicationTaken ? 'Taken' : 'Pending',
+                    'Today\'s Dose',
+                    _medicationTaken
+                        ? const Color(0xFFECFDF5)
+                        : const Color(0xFFFFFBEB),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _miniTile(
+                    _missedDose ? '❌' : '✅',
+                    _missedDose ? 'Missed' : 'On Track',
+                    'Adherence',
+                    _missedDose
+                        ? const Color(0xFFFEF2F2)
+                        : const Color(0xFFECFDF5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Mood summary ────────────────────────────────────────────
+          _overviewSection(
+            title: 'Mood & Wellness',
+            icon: Icons.sentiment_satisfied_alt_outlined,
+            iconColor: const Color(0xFF8B5CF6),
+            onViewAll: () => _tabController.animateTo(5),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _miniTile(
+                      _selectedMood, 'Today', 'Mood', const Color(0xFFF5F3FF)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _miniTile('😰', 'Level $_stressLevel/5', 'Stress',
+                      const Color(0xFFFEF2F2)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _miniTile(
+                      '🔥', '$_calories kcal', 'Calories', const Color(0xFFFFFBEB)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _overviewSection({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onViewAll,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onViewAll,
+                child: Text(
+                  'View All →',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
