@@ -1104,92 +1104,588 @@ class _VideoCallWebState extends State<VideoCall> {
       ];
     }
 
-    final visitItems = <String>[];
-    final prescriptionItems = <String>[];
-    final labItems = <String>[];
-    int visitCount = 0;
+    // Separate medical records (have prescription/diagnosis) from plain appointment records
+    final medicalRecords = _historyRecords
+        .where((r) => r['type'] != 'appointment')
+        .toList();
+    final appointmentRecords = _historyRecords
+        .where((r) => r['type'] == 'appointment')
+        .toList();
 
-    for (final rec in _historyRecords) {
-      final rawDate = rec['date'] ?? rec['createdAt'];
-      final dateStr = rawDate != null
-          ? (DateTime.tryParse(rawDate.toString())?.toLocal().toString().substring(0, 10) ?? 'Unknown date')
-          : 'Unknown date';
-      final complaint = rec['chiefComplaint']?.toString() ?? '';
-      final diagnosis = rec['diagnosis']?.toString() ?? '';
-      final timeSlot = rec['timeSlot']?.toString() ?? '';
-      final doctorName = (rec['doctor'] is Map)
-          ? (rec['doctor']['name']?.toString() ?? 'Doctor')
-          : (rec['doctor']?.toString() ?? 'Doctor');
-
-      // Visit entry
-      final hasVisitInfo = complaint.isNotEmpty || diagnosis.isNotEmpty || rec['type'] == 'appointment';
-      if (hasVisitInfo) {
-        visitCount++;
-        if (visitItems.isNotEmpty) visitItems.add(''); // separator
-        visitItems.add('📅 $dateStr${timeSlot.isNotEmpty ? '  $timeSlot' : ''}');
-        visitItems.add('Dr. $doctorName');
-        if (complaint.isNotEmpty) visitItems.add('Complaint: $complaint');
-        if (diagnosis.isNotEmpty) visitItems.add('Diagnosis: $diagnosis');
-      }
-
-      // Prescriptions from medical records
-      final prescriptions = rec['prescriptions'];
-      if (prescriptions is List && prescriptions.isNotEmpty) {
-        for (final p in prescriptions) {
-          if (p is Map) {
-            final med = p['medication']?.toString() ?? p['name']?.toString() ?? '';
-            final dosage = p['dosage']?.toString() ?? '';
-            final freq = p['frequency']?.toString() ?? '';
-            if (med.isNotEmpty) {
-              prescriptionItems.add(
-                  '$med${dosage.isNotEmpty ? ' — $dosage' : ''}${freq.isNotEmpty ? ' ($freq)' : ''}');
-            }
-          } else if (p is String && p.isNotEmpty) {
-            prescriptionItems.add(p);
-          }
-        }
-      }
-
-      // Lab reports from medical records
-      final labReports = rec['labReports'] ?? rec['labResults'];
-      if (labReports is List && labReports.isNotEmpty) {
-        for (final l in labReports) {
-          if (l is Map) {
-            final test = l['test']?.toString() ?? l['name']?.toString() ?? '';
-            final result = l['result']?.toString() ?? '';
-            if (test.isNotEmpty) {
-              labItems.add('$test${result.isNotEmpty ? ': $result' : ''}');
-            }
-          } else if (l is String && l.isNotEmpty) {
-            labItems.add(l);
-          }
-        }
-      }
+    // Build clickable visit cards from medical records
+    final visitWidgets = <Widget>[];
+    for (final rec in medicalRecords) {
+      visitWidgets.add(_buildVisitCard(rec));
+      visitWidgets.add(const SizedBox(height: 8));
     }
 
-    while (visitItems.isNotEmpty && visitItems.last.isEmpty) visitItems.removeLast();
+    // Add plain appointment records (no medical record yet)
+    for (final rec in appointmentRecords) {
+      final rawDate = rec['date'] ?? rec['createdAt'];
+      final dateStr = rawDate != null
+          ? _formatDate(rawDate.toString())
+          : 'Unknown date';
+      final complaint = rec['chiefComplaint']?.toString() ?? '';
+      final doctorName = (rec['doctor'] is Map)
+          ? (rec['doctor']['name']?.toString() ?? 'Doctor')
+          : 'Doctor';
+      visitWidgets.add(_buildSimpleVisitTile(dateStr, doctorName, complaint));
+      visitWidgets.add(const SizedBox(height: 8));
+    }
 
-    final visitLabel = visitCount > 0 ? 'Previous Visits ($visitCount)' : 'Previous Visits';
+    final totalVisits = medicalRecords.length + appointmentRecords.length;
+    final visitLabel = totalVisits > 0
+        ? 'Previous Visits ($totalVisits)'
+        : 'Previous Visits';
 
     return [
-      _historySection(
-          visitLabel,
-          Icons.calendar_today_rounded,
-          const Color(0xFF10B981),
-          visitItems.isEmpty ? ['No previous consultations recorded'] : visitItems),
-      const SizedBox(height: 16),
-      _historySection(
-          'Prescriptions',
-          Icons.medication_rounded,
-          const Color(0xFFF59E0B),
-          prescriptionItems.isEmpty ? ['No prescriptions on file'] : prescriptionItems),
-      const SizedBox(height: 16),
-      _historySection(
-          'Lab Reports',
-          Icons.biotech_rounded,
-          const Color(0xFF8B5CF6),
-          labItems.isEmpty ? ['No lab reports available'] : labItems),
+      // Section header
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_rounded,
+                color: Color(0xFF10B981), size: 14),
+            const SizedBox(width: 6),
+            Text(visitLabel,
+                style: const TextStyle(
+                    color: Color(0xFF10B981),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
+          ],
+        ),
+      ),
+      if (visitWidgets.isEmpty)
+        _historySection('Previous Visits', Icons.calendar_today_rounded,
+            const Color(0xFF10B981), ['No previous consultations recorded'])
+      else
+        ...visitWidgets,
     ];
+  }
+
+  String _formatDate(String raw) {
+    final dt = DateTime.tryParse(raw)?.toLocal();
+    if (dt == null) return raw;
+    final months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}  '
+        '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}';
+  }
+
+  // ── Clickable card for a full medical record ────────────────────────────
+  Widget _buildVisitCard(Map<String, dynamic> rec) {
+    final rawDate = rec['date'] ?? rec['createdAt'];
+    final dateStr = rawDate != null ? _formatDate(rawDate.toString()) : 'Unknown date';
+    final diagnosis = rec['diagnosis']?.toString() ?? '';
+    final notes = rec['notes']?.toString() ?? '';
+    final doctorName = (rec['doctor'] is Map)
+        ? (rec['doctor']['name']?.toString() ?? 'Doctor')
+        : (rec['doctor']?.toString() ?? 'Doctor');
+
+    // Medicines
+    final prescription = rec['prescription'];
+    final medicines = prescription is Map
+        ? ((prescription['medicines'] as List?) ?? [])
+        : <dynamic>[];
+
+    // Lab tests — can be in prescription.labTests or top-level labTests
+    final labTestsInPrescription = prescription is Map
+        ? ((prescription['labTests'] as List?) ?? [])
+        : <dynamic>[];
+    final labTestsTopLevel = (rec['labTests'] as List?) ?? [];
+    final labTests = labTestsInPrescription.isNotEmpty
+        ? labTestsInPrescription
+        : labTestsTopLevel;
+
+    // Assigned courses
+    final courses = (rec['assignedCourses'] as List?) ?? [];
+
+    return GestureDetector(
+      onTap: () => _showVisitDetail(rec, dateStr, diagnosis, notes,
+          doctorName, medicines, labTests, courses),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date + tap hint
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded,
+                    color: Color(0xFF10B981), size: 13),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(dateStr,
+                      style: const TextStyle(
+                          color: Color(0xFF10B981),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
+                ),
+                const Icon(Icons.open_in_new_rounded,
+                    color: Color(0xFF64748B), size: 13),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // Doctor
+            Text('Dr. $doctorName',
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: 12)),
+            // Diagnosis
+            if (diagnosis.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                diagnosis.length > 60
+                    ? '${diagnosis.substring(0, 60)}…'
+                    : diagnosis,
+                style: const TextStyle(
+                    color: Colors.white54, fontSize: 11),
+              ),
+            ],
+            const SizedBox(height: 8),
+            // Summary chips
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                if (medicines.isNotEmpty)
+                  _historyChip(
+                      '💊 ${medicines.length} med${medicines.length > 1 ? 's' : ''}',
+                      const Color(0xFF3B82F6)),
+                if (labTests.isNotEmpty)
+                  _historyChip(
+                      '🧪 ${labTests.length} test${labTests.length > 1 ? 's' : ''}',
+                      const Color(0xFF8B5CF6)),
+                if (courses.isNotEmpty)
+                  _historyChip(
+                      '📚 ${courses.length} course${courses.length > 1 ? 's' : ''}',
+                      const Color(0xFF10B981)),
+                if (notes.isNotEmpty)
+                  _historyChip('📝 Notes', const Color(0xFFF59E0B)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _historyChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  // ── Simple tile for appointment-only records (no medical record yet) ────
+  Widget _buildSimpleVisitTile(
+      String dateStr, String doctorName, String complaint) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_rounded,
+                  color: Color(0xFF64748B), size: 13),
+              const SizedBox(width: 6),
+              Text(dateStr,
+                  style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('Dr. $doctorName',
+              style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          if (complaint.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              complaint.length > 60
+                  ? '${complaint.substring(0, 60)}…'
+                  : complaint,
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Full visit detail dialog ────────────────────────────────────────────
+  void _showVisitDetail(
+    Map<String, dynamic> rec,
+    String dateStr,
+    String diagnosis,
+    String notes,
+    String doctorName,
+    List<dynamic> medicines,
+    List<dynamic> labTests,
+    List<dynamic> courses,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1E3A5F), Color(0xFF0F172A)],
+                  ),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.history_rounded,
+                        color: Color(0xFF10B981), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Visit Details',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16)),
+                          Text(dateStr,
+                              style: const TextStyle(
+                                  color: Colors.white54, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded,
+                          color: Colors.white54, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Doctor
+                      _detailRow(Icons.person_rounded,
+                          const Color(0xFF3B82F6), 'Doctor', 'Dr. $doctorName'),
+                      const SizedBox(height: 12),
+
+                      // Diagnosis
+                      if (diagnosis.isNotEmpty) ...[
+                        _detailSection(
+                          Icons.local_hospital_rounded,
+                          const Color(0xFFEF4444),
+                          'Diagnosis',
+                          diagnosis,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Clinical Notes
+                      if (notes.isNotEmpty) ...[
+                        _detailSection(
+                          Icons.notes_rounded,
+                          const Color(0xFF8B5CF6),
+                          'Clinical Notes',
+                          notes,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Medicines
+                      if (medicines.isNotEmpty) ...[
+                        _detailLabel(Icons.medication_rounded,
+                            const Color(0xFF3B82F6), 'Prescribed Medicines'),
+                        const SizedBox(height: 6),
+                        ...medicines.map((m) {
+                          final name = m is Map
+                              ? (m['name'] ?? 'Medicine').toString()
+                              : m.toString();
+                          final dosage = m is Map
+                              ? (m['dosage'] ?? '').toString()
+                              : '';
+                          final freq = m is Map
+                              ? (m['frequency'] ?? '').toString()
+                              : '';
+                          final duration = m is Map
+                              ? (m['duration'] ?? '').toString()
+                              : '';
+                          final instructions = m is Map
+                              ? (m['instructions'] ?? '').toString()
+                              : '';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: const Color(0xFF3B82F6)
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.medication_rounded,
+                                        color: Color(0xFF3B82F6), size: 14),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(name,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13)),
+                                    ),
+                                  ],
+                                ),
+                                if (dosage.isNotEmpty ||
+                                    freq.isNotEmpty ||
+                                    duration.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      if (dosage.isNotEmpty)
+                                        _miniChip(dosage,
+                                            const Color(0xFF3B82F6)),
+                                      if (freq.isNotEmpty)
+                                        _miniChip(freq,
+                                            const Color(0xFF10B981)),
+                                      if (duration.isNotEmpty)
+                                        _miniChip(duration,
+                                            const Color(0xFFF59E0B)),
+                                    ],
+                                  ),
+                                ],
+                                if (instructions.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text('📝 $instructions',
+                                      style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 11)),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Lab Tests
+                      if (labTests.isNotEmpty) ...[
+                        _detailLabel(Icons.biotech_rounded,
+                            const Color(0xFF8B5CF6), 'Lab Tests Ordered'),
+                        const SizedBox(height: 6),
+                        ...labTests.map((t) {
+                          final name = t is Map
+                              ? (t['name'] ?? t['testName'] ?? 'Lab Test')
+                                  .toString()
+                              : t.toString();
+                          final urgency = t is Map
+                              ? (t['urgency'] ?? 'Routine').toString()
+                              : 'Routine';
+                          final urgencyColor =
+                              urgency.toLowerCase() == 'stat'
+                                  ? const Color(0xFFEF4444)
+                                  : urgency.toLowerCase() == 'urgent'
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFF8B5CF6);
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: const Color(0xFF8B5CF6)
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.biotech_rounded,
+                                    color: Color(0xFF8B5CF6), size: 14),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(name,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                                _miniChip(urgency, urgencyColor),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Assigned Courses
+                      if (courses.isNotEmpty) ...[
+                        _detailLabel(Icons.school_rounded,
+                            const Color(0xFF10B981), 'Assigned Courses'),
+                        const SizedBox(height: 6),
+                        ...courses.map((c) {
+                          final name = c is Map
+                              ? (c['title'] ?? c['name'] ?? 'Course')
+                                  .toString()
+                              : c.toString();
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: const Color(0xFF10B981)
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.play_circle_rounded,
+                                    color: Color(0xFF10B981), size: 14),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(name,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+
+                      // Empty state
+                      if (diagnosis.isEmpty &&
+                          notes.isEmpty &&
+                          medicines.isEmpty &&
+                          labTests.isEmpty &&
+                          courses.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text('No details recorded for this visit',
+                                style: TextStyle(
+                                    color: Colors.white38, fontSize: 13)),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(
+      IconData icon, Color color, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 14),
+        const SizedBox(width: 6),
+        Text('$label: ',
+            style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+        Expanded(
+          child: Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailSection(
+      IconData icon, Color color, String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _detailLabel(icon, color, title),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Text(content,
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 12, height: 1.5)),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailLabel(IconData icon, Color color, String title) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 14),
+        const SizedBox(width: 6),
+        Text(title,
+            style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 13)),
+      ],
+    );
+  }
+
+  Widget _miniChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
   }
 
   Widget _historySection(
