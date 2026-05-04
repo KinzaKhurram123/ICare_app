@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     enum: ['patient', 'doctor', 'lab', 'pharmacy', 'admin', 'instructor', 'student'],
     default: 'patient',
   },
+  mrNumber: { type: String, unique: true, sparse: true }, // Medical Record Number (auto-generated for patients)
   is_approved: { type: Boolean, default: true },
   is_active: { type: Boolean, default: true },
   // Virtual hospital compat fields

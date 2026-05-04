@@ -451,6 +451,105 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
 
           const SizedBox(height: 28),
 
+          // ── Patient MR Number card ─────────────────────────────────────
+          if (role == 'Patient')
+            Consumer(
+              builder: (context, ref, _) {
+                final user = ref.watch(authProvider).user;
+                final mrNumber = user?.mrNumber;
+                final userName = user?.name ?? 'Patient';
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryColor.withValues(alpha: 0.08),
+                        AppColors.primaryColor.withValues(alpha: 0.04),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: AppColors.primaryColor.withValues(alpha: 0.15)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor:
+                            AppColors.primaryColor.withValues(alpha: 0.12),
+                        child: Text(
+                          userName.isNotEmpty
+                              ? userName[0].toUpperCase()
+                              : 'P',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: AppColors.primaryColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            if (mrNumber != null && mrNumber.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryColor
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.badge_rounded,
+                                        size: 11,
+                                        color: AppColors.primaryColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      mrNumber,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primaryColor,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              const Text(
+                                'Patient',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
           // ── Profile card (hidden for Patient, Doctor, Pharmacy, Laboratory, Student, Instructor) ───────────────
           if (role != 'Patient' && role != 'Doctor' && role != 'Pharmacy' && role != 'Laboratory' && role != 'Student' && role != 'Instructor')
           GestureDetector(

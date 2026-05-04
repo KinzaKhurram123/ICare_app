@@ -6,6 +6,26 @@ const DoctorProfile = require('../models/DoctorProfile');
 const LabProfile = require('../models/LabProfile');
 const PharmacyProfile = require('../models/PharmacyProfile');
 
+// ─── MR NUMBER GENERATOR ──────────────────────────────────────────────────────
+// Format: MR-XXXXXX (6 uppercase alphanumeric chars, e.g. MR-A3F9K2)
+const generateMrNumber = async () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
+  let attempts = 0;
+  while (attempts < 20) {
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const mrNumber = `MR-${code}`;
+    // Ensure uniqueness
+    const exists = await User.findOne({ mrNumber }).lean();
+    if (!exists) return mrNumber;
+    attempts++;
+  }
+  // Fallback: use timestamp-based suffix
+  return `MR-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+};
+
 // ─── REGISTER ─────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
@@ -31,6 +51,12 @@ const register = async (req, res) => {
     const rolesRequiringApproval = ['doctor', 'lab', 'pharmacy', 'instructor'];
     const isApproved = !rolesRequiringApproval.includes(role);
 
+    // Auto-generate MR number for patients and students
+    let mrNumber;
+    if (role === 'patient' || role === 'student') {
+      mrNumber = await generateMrNumber();
+    }
+
     const user = await User.create({
       username,
       name: username,
@@ -40,6 +66,7 @@ const register = async (req, res) => {
       role,
       is_approved: isApproved,
       is_active: true,
+      ...(mrNumber && { mrNumber }),
     });
 
     // Create role-specific profile
@@ -69,6 +96,7 @@ const register = async (req, res) => {
           phone: user.phone,
           role: user.role,
           isApproved: user.is_approved,
+          mrNumber: user.mrNumber || null,
         },
       },
     });
@@ -129,6 +157,15 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    // Auto-assign MR number to existing patients/students who don't have one yet
+    if ((user.role === 'patient' || user.role === 'student') && !user.mrNumber) {
+      try {
+        const newMr = await generateMrNumber();
+        await User.findByIdAndUpdate(user._id, { mrNumber: newMr });
+        user.mrNumber = newMr;
+      } catch (_) {}
+    }
+
     const token = jwt.sign(
       { id: user._id.toString(), email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -148,6 +185,7 @@ const login = async (req, res) => {
           role: user.role,
           isApproved: user.is_approved !== false && user.isApproved !== false,
           profilePicture: user.profilePicture || null,
+          mrNumber: user.mrNumber || null,
         },
       },
     });
@@ -174,6 +212,7 @@ const getUserProfile = async (req, res) => {
         phone: user.phone,
         role: user.role,
         isApproved: user.is_approved !== false,
+        mrNumber: user.mrNumber || null,
       },
     });
   } catch (error) {

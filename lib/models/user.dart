@@ -8,6 +8,7 @@ class User {
   final DateTime? createdAt;
   final String? gender;
   final String? age;
+  final String? mrNumber; // Auto-generated Medical Record Number (patients only)
 
   User({
     required this.id,
@@ -19,6 +20,7 @@ class User {
     this.createdAt,
     this.gender,
     this.age,
+    this.mrNumber,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class User {
           : null,
       gender: json['gender']?.toString(),
       age: json['age']?.toString(),
+      mrNumber: json['mrNumber']?.toString(),
     );
   }
 
@@ -48,6 +51,7 @@ class User {
       'createdAt': createdAt?.toIso8601String(),
       if (gender != null) 'gender': gender,
       if (age != null) 'age': age,
+      if (mrNumber != null) 'mrNumber': mrNumber,
     };
   }
 
@@ -61,6 +65,7 @@ class User {
     DateTime? createdAt,
     String? gender,
     String? age,
+    String? mrNumber,
   }) {
     return User(
       id: id ?? this.id,
@@ -72,6 +77,7 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       gender: gender ?? this.gender,
       age: age ?? this.age,
+      mrNumber: mrNumber ?? this.mrNumber,
     );
   }
 }

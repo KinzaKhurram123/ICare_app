@@ -80,6 +80,7 @@ class _PatientDashboardState_OLD extends State<PatientDashboard> {
   @override
   Widget build(BuildContext context) {
     final userName = ref.watch(authProvider).user?.name ?? 'Patient';
+    final mrNumber = ref.watch(authProvider).user?.mrNumber;
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
@@ -94,7 +95,7 @@ class _PatientDashboardState_OLD extends State<PatientDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildWelcomeHeader(userName),
+                    _buildWelcomeHeader(userName, mrNumber),
                     const SizedBox(height: 24),
                     _buildQuickStats(isDesktop),
                     const SizedBox(height: 24),
@@ -128,7 +129,7 @@ class _PatientDashboardState_OLD extends State<PatientDashboard> {
     );
   }
 
-  Widget _buildWelcomeHeader(String userName) {
+  Widget _buildWelcomeHeader(String userName, String? mrNumber) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -170,6 +171,37 @@ class _PatientDashboardState_OLD extends State<PatientDashboard> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // MR Number badge
+                if (mrNumber != null && mrNumber.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.badge_rounded,
+                            color: Colors.white70, size: 13),
+                        const SizedBox(width: 5),
+                        Text(
+                          mrNumber,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text(
                   DateFormat('EEEE, MMMM dd, yyyy').format(DateTime.now()),
                   style: TextStyle(
