@@ -16,12 +16,60 @@ class HealthJourneyScreen extends StatefulWidget {
 class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
   final MedicalRecordService _service = MedicalRecordService();
   List<MedicalRecord> _records = [];
+  List<MedicalRecord> _filtered = [];
   bool _isLoading = true;
+  bool _newestFirst = true; // sort order toggle
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadRecords();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+        _applyFilter();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _applyFilter() {
+    List<MedicalRecord> result = List.from(_records);
+
+    // Apply search
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((r) {
+        final diagnosis = (r.diagnosis ?? '').toLowerCase();
+        final doctor = r.doctor.name.toLowerCase();
+        final date = DateFormat('MMM dd yyyy').format(r.createdAt).toLowerCase();
+        final symptoms = r.symptoms.join(' ').toLowerCase();
+        final meds = r.prescription?.medicines
+                .map((m) => m.name.toLowerCase())
+                .join(' ') ??
+            '';
+        final labs = r.labTests.join(' ').toLowerCase();
+        return diagnosis.contains(_searchQuery) ||
+            doctor.contains(_searchQuery) ||
+            date.contains(_searchQuery) ||
+            symptoms.contains(_searchQuery) ||
+            meds.contains(_searchQuery) ||
+            labs.contains(_searchQuery);
+      }).toList();
+    }
+
+    // Apply sort
+    result.sort((a, b) => _newestFirst
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
+
+    _filtered = result;
   }
 
   Future<void> _loadRecords() async {
@@ -36,10 +84,11 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
             parsed.add(MedicalRecord.fromJson(item));
           } catch (_) {}
         }
-        // Sort chronologically oldest → newest
+        // Sort chronologically oldest → newest (default will be overridden by _applyFilter)
         parsed.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         setState(() {
           _records = parsed;
+          _applyFilter();
           _isLoading = false;
         });
       } else {
@@ -66,6 +115,50 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
           ),
         ),
         actions: [
+          // Sort toggle button
+          Tooltip(
+            message: _newestFirst ? 'Showing: Newest First' : 'Showing: Oldest First',
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _newestFirst = !_newestFirst;
+                  _applyFilter();
+                });
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: AppColors.primaryColor.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _newestFirst
+                          ? Icons.arrow_downward_rounded
+                          : Icons.arrow_upward_rounded,
+                      size: 14,
+                      color: AppColors.primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _newestFirst ? 'Newest' : 'Oldest',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A)),
             onPressed: _loadRecords,
@@ -76,7 +169,108 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _records.isEmpty
               ? _buildEmptyState()
-              : _buildTimeline(),
+              : Column(
+                  children: [
+                    // ── Search Bar ──────────────────────────────────────
+                    Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Search by diagnosis, doctor, medicine, symptom…',
+                          hintStyle: const TextStyle(
+                              fontSize: 13, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.search_rounded,
+                              color: Color(0xFF94A3B8), size: 20),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.close_rounded,
+                                      color: Color(0xFF94A3B8), size: 18),
+                                  onPressed: () => _searchController.clear(),
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: AppColors.primaryColor
+                                    .withValues(alpha: 0.5),
+                                width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // ── Result count / sort info ────────────────────────
+                    Padding(
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                      child: Row(
+                        children: [
+                          Text(
+                            _searchQuery.isNotEmpty
+                                ? '${_filtered.length} result${_filtered.length == 1 ? '' : 's'} for "$_searchQuery"'
+                                : '${_filtered.length} consultation${_filtered.length == 1 ? '' : 's'}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _searchQuery.isNotEmpty && _filtered.isEmpty
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _newestFirst
+                                ? '↓ Newest first'
+                                : '↑ Oldest first',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // ── Timeline / empty search state ───────────────────
+                    Expanded(
+                      child: _filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off_rounded,
+                                      size: 56,
+                                      color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No results for\n"$_searchQuery"',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : _buildTimeline(),
+                    ),
+                  ],
+                ),
     );
   }
 
@@ -174,10 +368,10 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
       onRefresh: _loadRecords,
       child: ListView.builder(
         padding: const EdgeInsets.all(20),
-        itemCount: _records.length,
+        itemCount: _filtered.length,
         itemBuilder: (context, index) {
-          final record = _records[index];
-          final isLast = index == _records.length - 1;
+          final record = _filtered[index];
+          final isLast = index == _filtered.length - 1;
           return _buildTimelineEntry(record, isLast);
         },
       ),
