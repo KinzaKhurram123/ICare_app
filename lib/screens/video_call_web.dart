@@ -632,6 +632,17 @@ class _VideoCallWebState extends State<VideoCall> {
         final resizedBytes = await _resizeImageBytes(bytes, maxWidth: 800);
         final b64 = base64Encode(resizedBytes);
         msgText = 'img:data:image/jpeg;base64,$b64';
+      } else if (bytes != null) {
+        // Document — store as base64 data URL so receiver can download it
+        final ext = file.name.split('.').last.toLowerCase();
+        final mime = ext == 'pdf' ? 'application/pdf'
+            : ext == 'doc' || ext == 'docx'
+                ? 'application/msword'
+                : ext == 'xls' || ext == 'xlsx'
+                    ? 'application/vnd.ms-excel'
+                    : 'application/octet-stream';
+        final b64 = base64Encode(bytes);
+        msgText = 'doc:${file.name}:data:$mime;base64,$b64';
       } else {
         msgText = '📎 ${file.name}';
       }
@@ -896,31 +907,232 @@ class _VideoCallWebState extends State<VideoCall> {
 
   // ── Chat Panel ──────────────────────────────────────────────────────────
   Widget _buildMessageContent(String text, bool isMe) {
-    // Image message — render as inline image
+    // Image message — render as inline image with tap to view full
     if (text.startsWith('img:')) {
       final dataUrl = text.substring(4); // remove 'img:' prefix
       try {
-        // Extract base64 part from data URL
         final base64Part = dataUrl.split(',').last;
         final bytes = base64Decode(base64Part);
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.memory(
-            bytes,
-            width: 200,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Text(
-              '🖼️ Image',
-              style: TextStyle(color: Colors.white, fontSize: 13),
-            ),
+        return GestureDetector(
+          onTap: () => _showImageFullscreen(dataUrl),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  bytes,
+                  width: 200,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true, // prevents flicker/jerk on rebuild
+                  errorBuilder: (_, __, ___) => const Text(
+                    '🖼️ Image',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ),
+              // Tap hint overlay
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.open_in_full_rounded,
+                      color: Colors.white, size: 12),
+                ),
+              ),
+            ],
           ),
         );
       } catch (_) {
-        return const Text('🖼️ Image', style: TextStyle(color: Colors.white, fontSize: 13));
+        return const Text('🖼️ Image',
+            style: TextStyle(color: Colors.white, fontSize: 13));
       }
     }
+
+    // Document / file attachment — tap to download
+    if (text.startsWith('📎 ') || text.startsWith('doc:')) {
+      String fileName;
+      String? dataUrl;
+
+      if (text.startsWith('doc:')) {
+        // Format: doc:filename.pdf:data:mime;base64,...
+        final parts = text.substring(4).split(':data:');
+        fileName = parts[0];
+        dataUrl = parts.length > 1 ? 'data:${parts[1]}' : null;
+      } else {
+        fileName = text.substring(3);
+      }
+
+      final ext = fileName.split('.').last.toLowerCase();
+      final isPdf = ext == 'pdf';
+      final isDoc = ext == 'doc' || ext == 'docx';
+      final isExcel = ext == 'xls' || ext == 'xlsx';
+
+      final iconData = isPdf
+          ? Icons.picture_as_pdf_rounded
+          : isDoc
+              ? Icons.description_rounded
+              : isExcel
+                  ? Icons.table_chart_rounded
+                  : Icons.insert_drive_file_rounded;
+      final iconColor = isPdf
+          ? const Color(0xFFEF4444)
+          : isDoc
+              ? const Color(0xFF3B82F6)
+              : isExcel
+                  ? const Color(0xFF10B981)
+                  : Colors.white70;
+
+      return GestureDetector(
+        onTap: () {
+          if (dataUrl != null) {
+            _downloadDocFromDataUrl(dataUrl, fileName);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(iconData, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  fileName,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.download_rounded,
+                  color: Colors.white54, size: 14),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Regular text message
-    return Text(text, style: const TextStyle(color: Colors.white, fontSize: 13));
+    return Text(text,
+        style: const TextStyle(color: Colors.white, fontSize: 13));
+  }
+
+  /// Open image in fullscreen dialog
+  void _showImageFullscreen(String dataUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            // Image
+            Center(
+              child: InteractiveViewer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Builder(
+                    builder: (_) {
+                      try {
+                        final b64 = dataUrl.split(',').last;
+                        return Image.memory(
+                          base64Decode(b64),
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        );
+                      } catch (_) {
+                        return const Icon(Icons.broken_image_rounded,
+                            color: Colors.white54, size: 64);
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close_rounded,
+                      color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+            // Download button
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _downloadImageFromDataUrl(dataUrl);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.download_rounded,
+                          color: Colors.white, size: 16),
+                      SizedBox(width: 6),
+                      Text('Download',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Download a named file from base64 data URL
+  void _downloadDocFromDataUrl(String dataUrl, String fileName) {
+    try {
+      final anchor = html.AnchorElement(href: dataUrl)
+        ..setAttribute('download', fileName)
+        ..click();
+    } catch (_) {}
+  }
+
+  /// Download image from base64 data URL
+  void _downloadImageFromDataUrl(String dataUrl) {
+    try {
+      final anchor = html.AnchorElement(href: dataUrl)
+        ..setAttribute('download', 'image_${DateTime.now().millisecondsSinceEpoch}.jpg')
+        ..click();
+    } catch (_) {}
   }
 
   Widget _buildChatPanel() {
@@ -966,7 +1178,11 @@ class _VideoCallWebState extends State<VideoCall> {
                     final msg = _chatMessages[i];
                     final isMe = msg['sender'] == _mySenderName;
                     final displaySender = isMe ? 'You' : (msg['sender'] ?? '');
-                    return Align(
+                    // Use a stable key so existing messages don't rebuild/jerk
+                    final msgKey = ValueKey('msg_${i}_${msg['sender']}_${(msg['text'] ?? '').hashCode}');
+                    return KeyedSubtree(
+                      key: msgKey,
+                      child: Align(
                       alignment: isMe
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
@@ -1005,6 +1221,7 @@ class _VideoCallWebState extends State<VideoCall> {
                           ],
                         ),
                       ),
+                    ),
                     );
                   },
                 ),
