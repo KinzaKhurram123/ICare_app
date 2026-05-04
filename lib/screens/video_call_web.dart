@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:typed_data';
 import 'dart:ui_web' as ui;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
@@ -627,14 +628,10 @@ class _VideoCallWebState extends State<VideoCall> {
 
       String msgText;
       if (isImage && bytes != null) {
-        // Convert to base64 data URL so it renders as image in chat
-        final ext = name.split('.').last;
-        final mime = ext == 'jpg' || ext == 'jpeg' ? 'image/jpeg'
-            : ext == 'png' ? 'image/png'
-            : ext == 'gif' ? 'image/gif'
-            : 'image/webp';
-        final b64 = base64Encode(bytes);
-        msgText = 'img:data:$mime;base64,$b64';
+        // Resize image using canvas to keep it under 500KB before base64 encoding
+        final resizedBytes = await _resizeImageBytes(bytes, maxWidth: 800);
+        final b64 = base64Encode(resizedBytes);
+        msgText = 'img:data:image/jpeg;base64,$b64';
       } else {
         msgText = '📎 ${file.name}';
       }
@@ -654,6 +651,50 @@ class _VideoCallWebState extends State<VideoCall> {
         } catch (_) {}
       }).catchError((_) {});
     } catch (_) {}
+  }
+
+  /// Resize image bytes using HTML canvas (Flutter Web only)
+  /// Scales down to maxWidth while maintaining aspect ratio, outputs JPEG at 0.75 quality
+  Future<Uint8List> _resizeImageBytes(Uint8List bytes, {int maxWidth = 800}) async {
+    try {
+      // Create a blob URL from the bytes
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+
+      // Load into an HTML image element
+      final img = html.ImageElement();
+      img.src = url;
+      await img.onLoad.first;
+
+      // Calculate new dimensions
+      int w = img.naturalWidth ?? maxWidth;
+      int h = img.naturalHeight ?? maxWidth;
+      if (w > maxWidth) {
+        h = (h * maxWidth / w).round();
+        w = maxWidth;
+      }
+
+      // Draw onto canvas and export as JPEG
+      final canvas = html.CanvasElement(width: w, height: h);
+      final ctx = canvas.context2D;
+      ctx.drawImageScaled(img, 0, 0, w, h);
+
+      html.Url.revokeObjectUrl(url);
+
+      // Get JPEG blob at 0.75 quality
+      final completer = Completer<Uint8List>();
+      canvas.toBlob('image/jpeg', 0.75).then((resizedBlob) async {
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(resizedBlob!);
+        await reader.onLoad.first;
+        final result = reader.result as List<int>;
+        completer.complete(Uint8List.fromList(result));
+      });
+      return await completer.future;
+    } catch (_) {
+      // If resize fails, return original bytes
+      return bytes;
+    }
   }
 
   @override
