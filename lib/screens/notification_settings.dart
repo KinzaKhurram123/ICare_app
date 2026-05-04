@@ -15,22 +15,50 @@ class NotificationSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.read(authProvider).userRole ?? '';
+    final isPatient = role == 'Patient';
     final isStudent = role == 'Student';
-    final List<Map<String, dynamic>> _settingsList = isStudent
-        ? [
-            {"id": "1", "title": "New Course Updates", "onPress": () {}},
-            {"id": "2", "title": "Assignment Reminders", "onPress": () {}},
-            {"id": "3", "title": "Certificate Earned", "onPress": () {}},
-            {"id": "4", "title": "Admin Announcements", "onPress": () {}},
-          ]
-        : [
-            {"id": "2", "title": "Booking Updates", "onPress": () {}},
-            {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
-            {"id": "4", "title": "Patient Messages", "onPress": () {}},
-            {"id": "5", "title": "Admin Announcements", "onPress": () {}},
-          ];
+    final isPharmacy = role == 'Pharmacy';
+    final isLaboratory = role == 'Laboratory';
+
+    List<Map<String, dynamic>> settingsList;
+
+    if (isPatient) {
+      settingsList = [
+        {"id": "1", "title": "Booking Updates", "onPress": () {}},
+        {"id": "2", "title": "Doctor Messages", "onPress": () {}},
+        {"id": "3", "title": "Promotions", "onPress": () {}},
+        {"id": "4", "title": "Notification Sound", "onPress": () {}, "isToggle": true, "value": true},
+        {"id": "5", "title": "Send prescription to email automatically", "onPress": () {}, "isToggle": true, "value": false},
+      ];
+    } else if (isStudent) {
+      settingsList = [
+        {"id": "1", "title": "New Course Updates", "onPress": () {}},
+        {"id": "2", "title": "Assignment Reminders", "onPress": () {}},
+        {"id": "3", "title": "Certificate Earned", "onPress": () {}},
+        {"id": "4", "title": "Admin Announcements", "onPress": () {}},
+      ];
+    } else if (isPharmacy) {
+      settingsList = [
+        {"id": "1", "title": "New Orders", "onPress": () {}},
+        {"id": "2", "title": "Order Status Updates", "onPress": () {}},
+        {"id": "3", "title": "Low Stock Alerts", "onPress": () {}},
+        {"id": "4", "title": "Customer Support Messages", "onPress": () {}},
+      ];
+    } else if (isLaboratory) {
+      settingsList = [
+        {"id": "1", "title": "New Test Requests", "onPress": () {}},
+        {"id": "2", "title": "Result Ready Alerts", "onPress": () {}},
+        {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
+      ];
+    } else {
+      settingsList = [
+        {"id": "1", "title": "New Appointment Bookings", "onPress": () {}},
+        {"id": "2", "title": "Patient Messages", "onPress": () {}},
+        {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
+      ];
+    }
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebNotificationSettingsScreen(isStudent: isStudent);
+      return _WebNotificationSettingsScreen(isStudent: isStudent, isPatient: isPatient, isPharmacy: isPharmacy, isLaboratory: isLaboratory);
     }
 
     return Scaffold(
@@ -38,7 +66,7 @@ class NotificationSettings extends ConsumerWidget {
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
-          text: "Notifications Settings",
+          text: "Notification Settings",
           fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
           color: AppColors.primary500,
@@ -59,48 +87,58 @@ class NotificationSettings extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
-                children: _settingsList.map((item) {
+                children: settingsList.map((item) {
+                  final bool isToggle = item['isToggle'] ?? false;
                   return GestureDetector(
-                    onTap: item["onPress"],
+                    onTap: isToggle ? null : item["onPress"],
                     child: Column(
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            // vertical: 12.0,
                             horizontal: 18.0,
                             vertical: 10,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              CustomText(
-                                text: item["title"],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.primary500,
-                                fontFamily: "Gilroy-SemiBold",
+                              Expanded(
+                                child: CustomText(
+                                  text: item["title"],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppColors.primary500,
+                                  fontFamily: "Gilroy-SemiBold",
+                                ),
                               ),
-                              FlutterSwitch(
-                                width: 50.0,
-                                height: 20.0,
-
-                                toggleSize: 15.0,
-                                value: true,
-                                borderRadius: 30.0,
-                                padding: 2.0,
-                                toggleColor: Color.fromRGBO(225, 225, 225, 1),
-                                activeColor: AppColors.themeBlack,
-                                inactiveColor: AppColors.darkGreyColor,
-                                onToggle: (val) {
-                                  // setState(() {
-                                  // status2 = val;
-                                  // });
-                                },
-                              ),
+                              isToggle 
+                                ? FlutterSwitch(
+                                    width: 50.0,
+                                    height: 20.0,
+                                    toggleSize: 15.0,
+                                    value: item['value'] ?? false,
+                                    borderRadius: 30.0,
+                                    padding: 2.0,
+                                    toggleColor: Color.fromRGBO(225, 225, 225, 1),
+                                    activeColor: AppColors.themeBlack,
+                                    inactiveColor: AppColors.darkGreyColor,
+                                    onToggle: (val) {
+                                      // setState(() {
+                                      // status2 = val;
+                                      // });
+                                    },
+                                  )
+                                : IconButton(
+                                    onPressed: item["onPress"],
+                                    icon: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: AppColors.primaryColor,
+                                      size: 16,
+                                    ),
+                                  ),
                             ],
                           ),
                         ),
-                        if (item['id'] != "5")
+                        if (item['id'] != settingsList.last['id'])
                           const Divider(
                             color: AppColors.darkGreyColor,
                             thickness: 0.2,
@@ -112,11 +150,12 @@ class NotificationSettings extends ConsumerWidget {
               ),
             ),
             SizedBox(height: Utils.windowHeight(context) * 0.5),
-            CustomButton(
-              borderRadius: 30,
-              onPressed: () {},
-              label: "Delete Account",
-            ),
+            if (!isPatient)
+              CustomButton(
+                borderRadius: 30,
+                onPressed: () {},
+                label: "Delete Account",
+              ),
           ],
         ),
       ),
@@ -130,7 +169,15 @@ class NotificationSettings extends ConsumerWidget {
 
 class _WebNotificationSettingsScreen extends StatefulWidget {
   final bool isStudent;
-  const _WebNotificationSettingsScreen({this.isStudent = false});
+  final bool isPatient;
+  final bool isPharmacy;
+  final bool isLaboratory;
+  const _WebNotificationSettingsScreen({
+    this.isStudent = false,
+    this.isPatient = false,
+    this.isPharmacy = false,
+    this.isLaboratory = false,
+  });
 
   @override
   State<_WebNotificationSettingsScreen> createState() =>
@@ -144,56 +191,137 @@ class _WebNotificationSettingsScreenState
   @override
   void initState() {
     super.initState();
-    settingsState = widget.isStudent
-        ? {
-            "New Course Updates": true,
-            "Assignment Reminders": true,
-            "Certificate Earned": true,
-            "Admin Announcements": false,
-          }
-        : {
-            "Booking Updates": true,
-            "Customer Support Messages": true,
-            "Patient Messages": false,
-            "Admin Announcements": true,
-          };
+    if (widget.isStudent) {
+      settingsState = {
+        "New Course Updates": true,
+        "Assignment Reminders": true,
+        "Certificate Earned": true,
+        "Admin Announcements": false,
+      };
+    } else if (widget.isPatient) {
+      settingsState = {
+        "Booking Updates": true,
+        "Doctor Messages": true,
+        "Promotions": false,
+        "Notification Sound": true,
+        "Send prescription to email automatically": false,
+      };
+    } else if (widget.isPharmacy) {
+      settingsState = {
+        "New Orders": true,
+        "Order Status Updates": true,
+        "Low Stock Alerts": true,
+        "Customer Support Messages": false,
+      };
+    } else if (widget.isLaboratory) {
+      settingsState = {
+        "New Test Requests": true,
+        "Result Ready Alerts": true,
+        "Customer Support Messages": false,
+      };
+    } else {
+      settingsState = {
+        "New Appointment Bookings": true,
+        "Patient Messages": true,
+        "Customer Support Messages": false,
+      };
+    }
   }
 
-  Map<String, String> get settingDescriptions => widget.isStudent
-      ? {
-          "New Course Updates":
-              "Get notified when instructors publish new lessons or update course materials.",
-          "Assignment Reminders":
-              "Receive reminders before quiz deadlines and assignment due dates.",
-          "Certificate Earned":
-              "Be the first to know when you earn a new completion certificate.",
-          "Admin Announcements":
-              "Important platform updates and broadcast messages from administrators.",
-        }
-      : {
-          "Booking Updates":
-              "Get notified when new appointments are booked, rescheduled, or canceled.",
-          "Customer Support Messages":
-              "Receive instant alerts when the support team responds to your queries.",
-          "Patient Messages":
-              "Stay updated when your patients send you direct messages.",
-          "Admin Announcements":
-              "Important system updates and broadcast messages from administrators.",
-        };
+  Map<String, String> get settingDescriptions {
+    if (widget.isStudent) {
+      return {
+        "New Course Updates":
+            "Get notified when instructors publish new lessons or update course materials.",
+        "Assignment Reminders":
+            "Receive reminders before quiz deadlines and assignment due dates.",
+        "Certificate Earned":
+            "Be the first to know when you earn a new completion certificate.",
+        "Admin Announcements":
+            "Important platform updates and broadcast messages from administrators.",
+      };
+    } else if (widget.isPatient) {
+      return {
+        "Booking Updates":
+            "Get notified when your appointments are confirmed, rescheduled, or canceled.",
+        "Doctor Messages":
+            "Receive alerts when your doctor sends you a message or update.",
+        "Promotions":
+            "Stay informed about health campaigns, offers, and platform updates.",
+        "Notification Sound":
+            "Play a sound when you receive a new notification.",
+        "Send prescription to email automatically":
+            "Automatically email your prescription after every completed consultation.",
+      };
+    } else if (widget.isPharmacy) {
+      return {
+        "New Orders":
+            "Get notified instantly when a new prescription order is placed.",
+        "Order Status Updates":
+            "Receive alerts when an order is updated, completed, or cancelled.",
+        "Low Stock Alerts":
+            "Be warned when a medicine's stock falls below the minimum threshold.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
+      };
+    } else if (widget.isLaboratory) {
+      return {
+        "New Test Requests":
+            "Get notified when a new diagnostic test is requested for your lab.",
+        "Result Ready Alerts":
+            "Receive alerts when a result entry is completed and ready for review.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
+      };
+    } else {
+      return {
+        "New Appointment Bookings":
+            "Get notified when a patient books a new appointment with you.",
+        "Patient Messages":
+            "Receive alerts when a patient sends you a message or follow-up.",
+        "Customer Support Messages":
+            "Receive instant alerts when the support team responds to your queries.",
+      };
+    }
+  }
 
-  Map<String, IconData> get settingIcons => widget.isStudent
-      ? {
-          "New Course Updates": Icons.library_books_rounded,
-          "Assignment Reminders": Icons.assignment_late_rounded,
-          "Certificate Earned": Icons.workspace_premium_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
-        }
-      : {
-          "Booking Updates": Icons.event_available_rounded,
-          "Customer Support Messages": Icons.support_agent_rounded,
-          "Patient Messages": Icons.chat_bubble_outline_rounded,
-          "Admin Announcements": Icons.campaign_rounded,
-        };
+  Map<String, IconData> get settingIcons {
+    if (widget.isStudent) {
+      return {
+        "New Course Updates": Icons.library_books_rounded,
+        "Assignment Reminders": Icons.assignment_late_rounded,
+        "Certificate Earned": Icons.workspace_premium_rounded,
+        "Admin Announcements": Icons.campaign_rounded,
+      };
+    } else if (widget.isPatient) {
+      return {
+        "Booking Updates": Icons.event_available_rounded,
+        "Doctor Messages": Icons.chat_bubble_outline_rounded,
+        "Promotions": Icons.campaign_rounded,
+        "Notification Sound": Icons.volume_up_rounded,
+        "Send prescription to email automatically": Icons.email_outlined,
+      };
+    } else if (widget.isPharmacy) {
+      return {
+        "New Orders": Icons.shopping_bag_rounded,
+        "Order Status Updates": Icons.sync_rounded,
+        "Low Stock Alerts": Icons.warning_amber_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+      };
+    } else if (widget.isLaboratory) {
+      return {
+        "New Test Requests": Icons.biotech_rounded,
+        "Result Ready Alerts": Icons.assignment_turned_in_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+      };
+    } else {
+      return {
+        "New Appointment Bookings": Icons.event_available_rounded,
+        "Patient Messages": Icons.chat_bubble_outline_rounded,
+        "Customer Support Messages": Icons.support_agent_rounded,
+      };
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +334,7 @@ class _WebNotificationSettingsScreenState
         automaticallyImplyLeading: false,
         leading: CustomBackButton(),
         title: CustomText(
-          text: "Notification Preferences",
+          text: "Notification Settings",
           fontFamily: "Gilroy-Bold",
           fontSize: 20,
           color: AppColors.primaryColor,

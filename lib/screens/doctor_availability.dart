@@ -13,25 +13,46 @@ class DoctorAvailability extends StatefulWidget {
 
 class _DoctorAvailabilityState extends State<DoctorAvailability> {
   final DoctorService _doctorService = DoctorService();
-  List<String> _availableDays = [];
+
+  static const List<String> _days = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+  ];
+  static const List<String> _dayAbbr = [
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+  ];
+
+  int _selectedDayIndex = 0;
+  Map<String, List<Map<String, String>>> _weeklySlots = {};
   final List<DateTime> _unavailableDates = [];
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
   bool _isLoading = true;
   bool _isSaving = false;
   int _bufferTime = 15;
-  bool _emergencySlots = false;
 
-  // Requirement 33.2: Variable Consultation Durations
-  int _followUpDuration = 15;
-  int _newPatientDuration = 45;
-  int _emergencyDuration = 20;
+  bool _is24x7 = false;
 
   @override
   void initState() {
     super.initState();
+    _initDefaultSlots();
     _loadAvailability();
   }
+
+  void _initDefaultSlots() {
+    _weeklySlots = {
+      for (final day in _days) day: <Map<String, String>>[]
+    };
+    // Default Mon-Fri available with one slot each
+    for (final day in _days.take(5)) {
+      _weeklySlots[day] = [
+        {'name': 'Slot 1', 'start': '09:00', 'end': '10:00'}
+      ];
+    }
+  }
+
+  List<String> get _availableDays =>
+      _days.where((d) => (_weeklySlots[d]?.isNotEmpty ?? false)).toList();
 
   Future<void> _loadAvailability() async {
     setState(() => _isLoading = true);
@@ -43,17 +64,23 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
         final availability = result['availability'];
 
         setState(() {
-          _availableDays = List<String>.from(
+          final loadedDays = List<String>.from(
             availability['availableDays'] ??
                 ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
           );
 
+          // Re-init slots based on loaded available days
+          _weeklySlots = {for (final day in _days) day: <Map<String, String>>[]};
+          for (final day in loadedDays) {
+            _weeklySlots[day] = [
+              {'name': 'Slot 1', 'start': '09:00', 'end': '10:00'}
+            ];
+          }
+
           final startStr = availability['availableTime']?['start'] ?? '09:00';
           final endStr = availability['availableTime']?['end'] ?? '17:00';
-
           final startParts = startStr.split(':');
           final endParts = endStr.split(':');
-
           _startTime = TimeOfDay(
             hour: int.parse(startParts[0]),
             minute: int.parse(startParts[1]),
@@ -71,53 +98,14 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
           }
 
           _bufferTime = availability['bufferTime'] ?? 15;
-          _emergencySlots = availability['emergencySlots'] ?? false;
-
-          // Load variable durations
-          _followUpDuration = availability['followUpDuration'] ?? 15;
-          _newPatientDuration = availability['newPatientDuration'] ?? 45;
-          _emergencyDuration = availability['emergencyDuration'] ?? 20;
-
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _availableDays = [
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-          ];
-          _startTime = const TimeOfDay(hour: 9, minute: 0);
-          _endTime = const TimeOfDay(hour: 17, minute: 0);
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() {
-        _availableDays = [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-        ];
-        _startTime = const TimeOfDay(hour: 9, minute: 0);
-        _endTime = const TimeOfDay(hour: 17, minute: 0);
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
-  }
-
-  void _toggleDay(String day) {
-    setState(() {
-      if (_availableDays.contains(day)) {
-        _availableDays.remove(day);
-      } else {
-        _availableDays.add(day);
-      }
-    });
   }
 
   void _addUnavailableDate() async {
@@ -127,18 +115,11 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-
-    if (date != null) {
-      setState(() {
-        _unavailableDates.add(date);
-      });
-    }
+    if (date != null) setState(() => _unavailableDates.add(date));
   }
 
   void _removeUnavailableDate(DateTime date) {
-    setState(() {
-      _unavailableDates.remove(date);
-    });
+    setState(() => _unavailableDates.remove(date));
   }
 
   Future<void> _selectTime(bool isStart) async {
@@ -146,16 +127,74 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
       context: context,
       initialTime: isStart ? _startTime : _endTime,
     );
-
     if (time != null) {
       setState(() {
-        if (isStart) {
-          _startTime = time;
-        } else {
-          _endTime = time;
-        }
+        if (isStart) _startTime = time;
+        else _endTime = time;
       });
     }
+  }
+
+  Future<void> _pickSlotTime(String day, int slotIndex, bool isStart) async {
+    final slot = _weeklySlots[day]![slotIndex];
+    final parts = (isStart ? slot['start'] : slot['end'])!.split(':');
+    final initial = TimeOfDay(
+      hour: int.parse(parts[0]),
+      minute: int.parse(parts[1]),
+    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked != null && mounted) {
+      setState(() {
+        final key = isStart ? 'start' : 'end';
+        _weeklySlots[day]![slotIndex][key] =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  void _addSlot(String day) {
+    final slots = _weeklySlots[day]!;
+    if (slots.length >= 3) return;
+    setState(() {
+      slots.add({
+        'name': 'Slot ${slots.length + 1}',
+        'start': '09:00',
+        'end': '10:00',
+      });
+    });
+  }
+
+  void _removeSlot(String day, int index) {
+    setState(() {
+      _weeklySlots[day]!.removeAt(index);
+      // Renumber
+      for (int i = 0; i < _weeklySlots[day]!.length; i++) {
+        _weeklySlots[day]![i]['name'] = 'Slot ${i + 1}';
+      }
+    });
+  }
+
+  void _enable24x7() {
+    setState(() {
+      _is24x7 = true;
+      _startTime = const TimeOfDay(hour: 0, minute: 0);
+      _endTime = const TimeOfDay(hour: 23, minute: 59);
+      // All 7 days with full-day slot
+      for (final day in _days) {
+        _weeklySlots[day] = [
+          {'name': 'Slot 1', 'start': '00:00', 'end': '23:59'}
+        ];
+      }
+    });
+  }
+
+  void _disable24x7() {
+    setState(() {
+      _is24x7 = false;
+      _startTime = const TimeOfDay(hour: 9, minute: 0);
+      _endTime = const TimeOfDay(hour: 17, minute: 0);
+      _initDefaultSlots();
+    });
   }
 
   void _saveAvailability() async {
@@ -164,20 +203,12 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
     final result = await _doctorService.updateAvailability(
       availableDays: _availableDays,
       availableTime: {
-        'start':
-            '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-        'end':
-            '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
+        'start': '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+        'end': '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
       },
-      unavailableDates: _unavailableDates
-          .map((d) => d.toIso8601String())
-          .toList(),
+      unavailableDates: _unavailableDates.map((d) => d.toIso8601String()).toList(),
       bufferTime: _bufferTime,
-      emergencySlots: _emergencySlots,
-      // Pass durations
-      followUpDuration: _followUpDuration,
-      newPatientDuration: _newPatientDuration,
-      emergencyDuration: _emergencyDuration,
+      emergencySlots: false,
     );
 
     setState(() => _isSaving = false);
@@ -188,9 +219,7 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Failed to update availability'),
-        ),
+        SnackBar(content: Text(result['message'] ?? 'Failed to update availability')),
       );
     }
   }
@@ -227,13 +256,17 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _build24x7Toggle(),
+                      const SizedBox(height: 24),
                       _buildWorkingHours(),
                       const SizedBox(height: 24),
-                      _buildAvailableDays(),
+                      _buildWeeklySchedule(),
                       const SizedBox(height: 24),
                       _buildPreferences(),
                       const SizedBox(height: 24),
                       _buildUnavailableDates(),
+                      const SizedBox(height: 24),
+                      _buildEmergencyAppointmentSection(),
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
@@ -260,6 +293,88 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _build24x7Toggle() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _is24x7
+              ? [const Color(0xFF0036BC), const Color(0xFF3B82F6)]
+              : [Colors.white, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _is24x7 ? const Color(0xFF0036BC) : const Color(0xFFE2E8F0),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (_is24x7 ? const Color(0xFF0036BC) : Colors.black)
+                .withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _is24x7
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : const Color(0xFF0036BC).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.all_inclusive_rounded,
+              color: _is24x7 ? Colors.white : const Color(0xFF0036BC),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '24/7 Available',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: _is24x7 ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _is24x7
+                      ? 'You are available all day, every day'
+                      : 'Enable to be available round the clock',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _is24x7
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _is24x7,
+            onChanged: (val) => val ? _enable24x7() : _disable24x7(),
+            activeColor: Colors.white,
+            activeTrackColor: Colors.white.withValues(alpha: 0.3),
+            inactiveThumbColor: const Color(0xFF0036BC),
+            inactiveTrackColor: const Color(0xFF0036BC).withValues(alpha: 0.15),
+          ),
+        ],
+      ),
     );
   }
 
@@ -386,16 +501,9 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
     );
   }
 
-  Widget _buildAvailableDays() {
-    const allDays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
+  Widget _buildWeeklySchedule() {
+    final currentDay = _days[_selectedDayIndex];
+    final slots = _weeklySlots[currentDay] ?? [];
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -422,14 +530,14 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.calendar_today_rounded,
+                  Icons.date_range_rounded,
                   color: Color(0xFF10B981),
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               const Text(
-                'Available Days',
+                'Weekly Schedule',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -439,45 +547,239 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
             ],
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: allDays.map((day) {
-              final isSelected = _availableDays.contains(day);
-              return InkWell(
-                onTap: () => _toggleDay(day),
+
+          // Day tabs
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(_days.length, (i) {
+                final isSelected = i == _selectedDayIndex;
+                final hasSlots = (_weeklySlots[_days[i]]?.isNotEmpty ?? false);
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedDayIndex = i),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : hasSlots
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFE2E8F0),
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          _dayAbbr[i],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        if (hasSlots && !isSelected)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Slots for selected day
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                currentDay,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: slots.length < 3 ? () => _addSlot(currentDay) : null,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(slots.length >= 3 ? 'Max 3 slots' : 'Add Slot'),
+                style: TextButton.styleFrom(
+                  foregroundColor: slots.length < 3
+                      ? AppColors.primaryColor
+                      : const Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          if (slots.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                border: Border.all(
+                    color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+              ),
+              child: const Center(
+                child: Text(
+                  'No slots — tap "Add Slot" to set availability for this day',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF94A3B8),
                   ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFE2E8F0),
-                      width: 2,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else
+            ...slots.asMap().entries.map((entry) {
+              final i = entry.key;
+              final slot = entry.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        slot['name'] ?? 'Slot ${i + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    day.substring(0, 3),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF64748B),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  _pickSlotTime(currentDay, i, true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.access_time_rounded,
+                                        size: 14,
+                                        color: Color(0xFF64748B)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      slot['start'] ?? '09:00',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6),
+                            child: Text('–',
+                                style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  _pickSlotTime(currentDay, i, false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.access_time_rounded,
+                                        size: 14,
+                                        color: Color(0xFF64748B)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      slot['end'] ?? '10:00',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _removeSlot(currentDay, i),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFFEF4444).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.close_rounded,
+                            color: Color(0xFFEF4444), size: 16),
+                      ),
+                    ),
+                  ],
                 ),
               );
-            }).toList(),
-          ),
+            }),
         ],
       ),
     );
@@ -545,106 +847,15 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
               DropdownButton<int>(
                 value: _bufferTime,
                 items: [0, 5, 10, 15, 20, 30]
-                    .map(
-                      (m) => DropdownMenuItem(value: m, child: Text('$m mins')),
-                    )
+                    .map((m) =>
+                        DropdownMenuItem(value: m, child: Text('$m mins')))
                     .toList(),
                 onChanged: (val) => setState(() => _bufferTime = val ?? 15),
               ),
             ],
           ),
-          const Divider(height: 32),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'Emergency Slots',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: const Text(
-              'Allow bookings outside regular hours for emergencies',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-            value: _emergencySlots,
-            activeColor: AppColors.primaryColor,
-            onChanged: (val) => setState(() => _emergencySlots = val),
-          ),
-          const Divider(height: 32),
-          const Text(
-            'Consultation Durations (Req 33.2)',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildDurationRow(
-            'New Patient',
-            _newPatientDuration,
-            (v) => setState(() => _newPatientDuration = v!),
-          ),
-          const SizedBox(height: 12),
-          _buildDurationRow(
-            'Follow-up',
-            _followUpDuration,
-            (v) => setState(() => _followUpDuration = v!),
-          ),
-          const SizedBox(height: 12),
-          _buildDurationRow(
-            'Emergency',
-            _emergencyDuration,
-            (v) => setState(() => _emergencyDuration = v!),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDurationRow(
-    String label,
-    int value,
-    ValueChanged<int?> onChanged,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF475569),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: value,
-              items: [10, 15, 20, 30, 45, 60]
-                  .map(
-                    (m) => DropdownMenuItem(
-                      value: m,
-                      child: Text(
-                        '$m mins',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -717,10 +928,8 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
               runSpacing: 8,
               children: _unavailableDates.map((date) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(8),
@@ -753,6 +962,81 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                 );
               }).toList(),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmergencyAppointmentSection() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFEF3C7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.emergency_rounded,
+              color: Color(0xFFF59E0B),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Emergency Appointment',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Allow emergency bookings outside regular hours.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Coming Soon',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFD97706),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

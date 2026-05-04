@@ -86,16 +86,16 @@ class _AppState extends ConsumerState<App> {
       final token = await SharedPref().getToken();
 
       if (token != null && token.isNotEmpty) {
-        ref.read(authProvider.notifier).setUserToken(token);
+        await ref.read(authProvider.notifier).setUserToken(token);
 
         final userRole = await SharedPref().getUserRole();
         if (userRole != null) {
-          ref.read(authProvider.notifier).setUserRole(userRole);
+          await ref.read(authProvider.notifier).setUserRole(userRole);
         }
 
         final userDataMap = await SharedPref().getUserData();
         if (userDataMap != null) {
-          ref.read(authProvider.notifier).setUser(userDataMap);
+          await ref.read(authProvider.notifier).setUser(userDataMap);
         }
 
         if (mounted) {

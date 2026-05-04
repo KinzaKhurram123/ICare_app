@@ -510,7 +510,7 @@ class _WebCoursesListState extends State<_WebCoursesList> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(18),
                   ),
-                  child: _buildCourseListImage(course["image"], 180),
+                  child: _buildCourseListImage(course["image"] ?? course["thumbnail"], 180),
                 ),
                 Expanded(
                   child: Padding(
@@ -546,7 +546,12 @@ class _WebCoursesListState extends State<_WebCoursesList> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              "${course["rating"] ?? 4.5}",
+                              () {
+                                final r = course["rating"];
+                                if (r is Map) return "${r["average"] ?? 0}";
+                                final num v = (r is num) ? r : 0;
+                                return v > 0 ? "$v" : "New";
+                              }(),
                               style: const TextStyle(
                                 color: Color(0xFF475569),
                                 fontSize: 13,
@@ -557,7 +562,7 @@ class _WebCoursesListState extends State<_WebCoursesList> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          course["name"] ?? 'Untitled',
+                          course["title"] ?? course["name"] ?? 'Untitled',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -570,7 +575,7 @@ class _WebCoursesListState extends State<_WebCoursesList> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          course["desc"] ?? 'No description',
+                          course["desc"] ?? course["description"] ?? 'No description',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF64748B),

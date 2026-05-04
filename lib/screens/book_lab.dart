@@ -14,8 +14,9 @@ import 'package:intl/intl.dart';
 
 class BookLabScreen extends StatefulWidget {
   final String? labId;
+  final String? labProfileId;
   final String? labTitle;
-  const BookLabScreen({super.key, this.labId, this.labTitle});
+  const BookLabScreen({super.key, this.labId, this.labProfileId, this.labTitle});
 
   @override
   State<BookLabScreen> createState() => _BookLabScreenState();
@@ -458,6 +459,7 @@ class _BookLabScreenState extends State<BookLabScreen> {
         builder: (ctx) => SelectTest(
           bookingData: {
             'labId': widget.labId,
+            'labProfileId': widget.labProfileId,
             'labTitle': widget.labTitle ?? 'Laboratory Service',
             'date': _selectedDate,
             'time': _selectedTime,

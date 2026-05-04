@@ -119,7 +119,7 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
         elevation: 0,
         leading: const CustomBackButton(),
         title: const Text(
-          'Analytics & Reports',
+          'Revenue & Analytics',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -142,18 +142,194 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
                     children: [
                       _buildPeriodSelector(),
                       const SizedBox(height: 24),
+                      _buildRevenueAnalytics(stats),
+                      const SizedBox(height: 24),
                       _buildOverviewCards(stats, isDesktop),
                       const SizedBox(height: 24),
                       _buildPerformanceMetrics(stats),
                       const SizedBox(height: 24),
                       _buildAppointmentBreakdown(stats),
-                      const SizedBox(height: 24),
-                      _buildHealthProgramAnalytics(stats),
                     ],
                   ),
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildRevenueAnalytics(Map<String, dynamic> stats) {
+    const double commissionRate = 0.25;
+    final num totalRevenue = stats['revenue'] ?? 0;
+    final num platformFees = (totalRevenue * commissionRate);
+    final num netRevenue = totalRevenue - platformFees;
+    
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1);
+    final lastMonthEarnings = _appointments
+        .where((a) => a.status == 'completed' && 
+                      a.date.year == lastMonth.year && 
+                      a.date.month == lastMonth.month)
+        .length * 500;
+    final lastMonthNet = lastMonthEarnings * 0.75;
+
+    String fmt(num v) => 'PKR ${v.toStringAsFixed(0)}';
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.payments_rounded,
+                  color: Color(0xFF10B981),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Revenue & Analytics',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Platform commission: 25%  ·  Your earnings: 75%',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF94A3B8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildRevenueCard(
+                  'Last Month Earnings',
+                  fmt(lastMonthNet),
+                  Icons.calendar_today_rounded,
+                  const Color(0xFF8B5CF6),
+                  'Previous month net',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildRevenueCard(
+                  'Total Net Earnings',
+                  fmt(netRevenue),
+                  Icons.savings_rounded,
+                  const Color(0xFF10B981),
+                  'Cumulative to date (75%)',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildRevenueCard(
+                  'Total Revenue',
+                  fmt(totalRevenue),
+                  Icons.account_balance_wallet_rounded,
+                  const Color(0xFF3B82F6),
+                  'All consultations billed',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildRevenueCard(
+                  'Platform Fees',
+                  fmt(platformFees),
+                  Icons.corporate_fare_rounded,
+                  const Color(0xFFEF4444),
+                  '25% iCare commission',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRevenueCard(
+    String label,
+    String amount,
+    IconData icon,
+    Color color,
+    String subtitle,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            amount,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF94A3B8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -1,16 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="iCare Virtual Hospital">
+  <meta name="description" content="iCare - Your Virtual Healthcare Platform">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="iCare">
+  <meta http-equiv="Content-Security-Policy" content="img-src 'self' data: https: http: blob:;">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
-  <title>iCare Virtual Hospital</title>
+  <title>iCare</title>
   <link rel="manifest" href="manifest.json">
   <style>
     body { margin: 0; background: #ffffff; }
@@ -20,7 +21,7 @@
       align-items: center; justify-content: center;
       background: #ffffff; z-index: 9999;
     }
-    #loading img { width: 120px; height: 120px; object-fit: contain; }
+    #loading img { width: 160px; height: 160px; object-fit: contain; }
     #loading .spinner {
       margin-top: 24px; width: 36px; height: 36px;
       border: 3px solid #e2e8f0;
@@ -33,14 +34,169 @@
 </head>
 <body>
   <div id="loading">
-    <img src="icons/Icon-192.png" alt="iCare">
+    <img src="icare_logo.png" alt="iCare" style="width:160px;height:160px;object-fit:contain;">
     <div class="spinner"></div>
   </div>
+  <!-- Agora Web SDK -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
   <script>
     window.addEventListener('flutter-first-frame', function() {
       var loading = document.getElementById('loading');
       if (loading) loading.style.display = 'none';
     });
+
+    // ── Agora Web helpers called from Flutter via JS interop ──────────────
+    var _agoraClient = null;
+    var _localAudioTrack = null;
+    var _localVideoTrack = null;
+
+    window.agoraJoin = async function(appId, channel, token, uid) {
+      try {
+        // Clean up any stale previous session so mic/cam aren't "in use"
+        if (_localAudioTrack) { try { _localAudioTrack.stop(); _localAudioTrack.close(); } catch(_){} _localAudioTrack = null; }
+        if (_localVideoTrack) { try { _localVideoTrack.stop(); _localVideoTrack.close(); } catch(_){} _localVideoTrack = null; }
+        if (_agoraClient) { try { await _agoraClient.leave(); } catch(_){} _agoraClient = null; }
+
+        _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+        // ── Helper: play remote video with retry until div is in DOM ──────
+        async function playRemoteVideo(videoTrack, retries) {
+          retries = retries || 0;
+          var remoteDiv = document.getElementById('agora-remote');
+          if (remoteDiv) {
+            try {
+              // Clear any previous video before playing new one
+              videoTrack.play('agora-remote');
+              console.log('✅ Remote video playing (attempt ' + retries + ')');
+            } catch(e) {
+              console.warn('Remote video play error:', e.message);
+              if (retries < 5) {
+                setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 300);
+              }
+            }
+          } else {
+            // Div not ready yet — retry up to 20 times (6 seconds total)
+            if (retries < 20) {
+              console.warn('agora-remote div not found, retry ' + retries);
+              setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 300);
+            } else {
+              console.error('agora-remote div never appeared after retries');
+            }
+          }
+        }
+
+        _agoraClient.on('user-published', async (user, mediaType) => {
+          await _agoraClient.subscribe(user, mediaType);
+          if (mediaType === 'video') {
+            playRemoteVideo(user.videoTrack, 0);
+          }
+          if (mediaType === 'audio') {
+            try { user.audioTrack.play(); } catch(e) { console.warn('Audio play error:', e); }
+          }
+        });
+
+        _agoraClient.on('user-unpublished', (user, mediaType) => {
+          if (mediaType === 'video') {
+            var remoteDiv = document.getElementById('agora-remote');
+            if (remoteDiv) remoteDiv.innerHTML = '';
+          }
+        });
+
+        // ── Handle users who joined BEFORE us ─────────────────────────────
+        _agoraClient.on('user-joined', async (user) => {
+          // If remote user is already publishing, subscribe immediately
+          if (user.hasVideo) {
+            try {
+              await _agoraClient.subscribe(user, 'video');
+              playRemoteVideo(user.videoTrack, 0);
+            } catch(e) { console.warn('user-joined video subscribe error:', e); }
+          }
+          if (user.hasAudio) {
+            try {
+              await _agoraClient.subscribe(user, 'audio');
+              user.audioTrack.play();
+            } catch(e) { console.warn('user-joined audio subscribe error:', e); }
+          }
+        });
+
+        await _agoraClient.join(appId, channel, token, uid || null);
+
+        // ── Subscribe to any users already in channel ──────────────────────
+        var remoteUsers = _agoraClient.remoteUsers;
+        for (var i = 0; i < remoteUsers.length; i++) {
+          var remoteUser = remoteUsers[i];
+          if (remoteUser.hasVideo) {
+            try {
+              await _agoraClient.subscribe(remoteUser, 'video');
+              playRemoteVideo(remoteUser.videoTrack, 0);
+            } catch(e) { console.warn('Pre-existing user video error:', e); }
+          }
+          if (remoteUser.hasAudio) {
+            try {
+              await _agoraClient.subscribe(remoteUser, 'audio');
+              remoteUser.audioTrack.play();
+            } catch(e) { console.warn('Pre-existing user audio error:', e); }
+          }
+        }
+
+        // Try mic + camera; if mic fails, try camera only; if both fail, join audio-only
+        try {
+          _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        } catch(micErr) {
+          console.warn('Mic not available:', micErr.message, '— joining without mic');
+          _localAudioTrack = null;
+        }
+
+        try {
+          _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        } catch(camErr) {
+          console.warn('Camera not available:', camErr.message, '— joining without camera');
+          _localVideoTrack = null;
+        }
+
+        var tracks = [];
+        if (_localAudioTrack) tracks.push(_localAudioTrack);
+        if (_localVideoTrack) tracks.push(_localVideoTrack);
+        if (tracks.length > 0) await _agoraClient.publish(tracks);
+        if (_localVideoTrack) _localVideoTrack.play('agora-local');
+
+        return 'ok';
+      } catch(e) {
+        console.warn('agoraJoin non-fatal error:', e.message || String(e));
+        // Never block the user — return ok so Flutter shows the call screen
+        return 'ok';
+      }
+    };
+
+    window.agoraLeave = async function() {
+      try {
+        if (_localAudioTrack) { _localAudioTrack.stop(); _localAudioTrack.close(); }
+        if (_localVideoTrack) { _localVideoTrack.stop(); _localVideoTrack.close(); }
+        if (_agoraClient) await _agoraClient.leave();
+        _agoraClient = null; _localAudioTrack = null; _localVideoTrack = null;
+      } catch(e) { console.error('agoraLeave error:', e); }
+    };
+
+    window.agoraMuteMic = function(mute) {
+      if (_localAudioTrack) {
+        try {
+          // setMuted keeps track published — no republication, no video freeze
+          _localAudioTrack.setMuted(mute);
+        } catch(e) {
+          try { _localAudioTrack.setEnabled(!mute); } catch(_) {}
+        }
+      }
+    };
+
+    window.agoraMuteCam = function(mute) {
+      if (_localVideoTrack) {
+        try {
+          _localVideoTrack.setMuted(mute);
+        } catch(e) {
+          try { _localVideoTrack.setEnabled(!mute); } catch(_) {}
+        }
+      }
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

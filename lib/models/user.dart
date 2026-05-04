@@ -6,6 +6,9 @@ class User {
   final String role;
   final String? profilePicture;
   final DateTime? createdAt;
+  final String? gender;
+  final String? age;
+  final String? mrNumber; // Auto-generated Medical Record Number (patients only)
 
   User({
     required this.id,
@@ -15,19 +18,25 @@ class User {
     required this.role,
     this.profilePicture,
     this.createdAt,
+    this.gender,
+    this.age,
+    this.mrNumber,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phoneNumber: json['phoneNumber'] ?? '',
-      role: json['role'] ?? '',
-      profilePicture: json['profilePicture'],
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      name: (json['name'] ?? json['username'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      phoneNumber: (json['phoneNumber'] ?? json['phone'] ?? '').toString(),
+      role: (json['role'] ?? '').toString(),
+      profilePicture: json['profilePicture']?.toString(),
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? DateTime.tryParse(json['createdAt'].toString())
           : null,
+      gender: json['gender']?.toString(),
+      age: json['age']?.toString(),
+      mrNumber: json['mrNumber']?.toString(),
     );
   }
 
@@ -40,6 +49,9 @@ class User {
       'role': role,
       'profilePicture': profilePicture,
       'createdAt': createdAt?.toIso8601String(),
+      if (gender != null) 'gender': gender,
+      if (age != null) 'age': age,
+      if (mrNumber != null) 'mrNumber': mrNumber,
     };
   }
 
@@ -51,6 +63,9 @@ class User {
     String? role,
     String? profilePicture,
     DateTime? createdAt,
+    String? gender,
+    String? age,
+    String? mrNumber,
   }) {
     return User(
       id: id ?? this.id,
@@ -60,6 +75,9 @@ class User {
       role: role ?? this.role,
       profilePicture: profilePicture ?? this.profilePicture,
       createdAt: createdAt ?? this.createdAt,
+      gender: gender ?? this.gender,
+      age: age ?? this.age,
+      mrNumber: mrNumber ?? this.mrNumber,
     );
   }
 }

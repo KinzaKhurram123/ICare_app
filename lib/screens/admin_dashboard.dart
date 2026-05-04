@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/api_service.dart';
+import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_button.dart';
+import 'package:intl/intl.dart';
 
 class AdminDashboard extends ConsumerStatefulWidget {
   final String initialTab;
@@ -17,7 +19,16 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
   bool _isLoading = true;
   List<dynamic> _users = [];
   String _currentTab =
-      'Pending'; // 'Pending', 'Student', 'Pharmacy', 'Laboratory', 'Instructor'
+      'Pending'; // 'Pending', 'Student', 'Pharmacy', 'Laboratory', 'Instructor', 'PatientRecords'
+
+  // Patient Records state
+  final MedicalRecordService _medicalRecordService = MedicalRecordService();
+  List<dynamic> _allPatientRecords = [];
+  List<dynamic> _filteredPatientRecords = [];
+  bool _isLoadingRecords = false;
+  String _recordSearchQuery = '';
+  String? _selectedDoctorFilter;
+  List<String> _doctorNames = [];
 
   @override
   void initState() {
@@ -26,13 +37,37 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     _fetchUsers();
   }
 
+  @override
+  void didUpdateWidget(AdminDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      _currentTab = widget.initialTab;
+      _fetchUsers();
+    }
+  }
+
   Future<void> _fetchUsers() async {
     setState(() => _isLoading = true);
 
     try {
-      final endpoint = _currentTab == 'Pending'
-          ? '/admin/pending-users'
-          : '/admin/approved-users?role=$_currentTab';
+      final String endpoint;
+      if (_currentTab == 'Pending') {
+        endpoint = '/admin/pending-users';
+      } else if (_currentTab == 'PatientRecords') {
+        await _fetchPatientRecords();
+        return;
+      } else {
+        // Map tab name to backend role
+        final roleMap = {
+          'Doctor': 'doctor',
+          'Student': 'student',
+          'Pharmacy': 'pharmacy',
+          'Laboratory': 'lab',
+          'Instructor': 'instructor',
+        };
+        final role = roleMap[_currentTab] ?? _currentTab.toLowerCase();
+        endpoint = '/admin/approved-users?role=$role';
+      }
 
       final response = await _apiService.get(endpoint);
 
@@ -55,7 +90,52 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       _currentTab = tab;
       _users = [];
     });
-    _fetchUsers();
+    if (tab == 'PatientRecords') {
+      _fetchPatientRecords();
+    } else {
+      _fetchUsers();
+    }
+  }
+
+  Future<void> _fetchPatientRecords() async {
+    setState(() => _isLoadingRecords = true);
+    try {
+      final response = await _apiService.get('/medical-records/all');
+      if (response.statusCode == 200) {
+        final records = response.data['records'] as List? ?? [];
+        final doctors = records
+            .map((r) => r['doctor']?['name']?.toString() ?? '')
+            .where((n) => n.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+        setState(() {
+          _allPatientRecords = records;
+          _filteredPatientRecords = records;
+          _doctorNames = doctors;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching patient records: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingRecords = false);
+    }
+  }
+
+  void _filterPatientRecords() {
+    setState(() {
+      _filteredPatientRecords = _allPatientRecords.where((r) {
+        final patientName = r['patient']?['name']?.toString().toLowerCase() ?? '';
+        final patientPhone = r['patient']?['phoneNumber']?.toString() ?? '';
+        final doctorName = r['doctor']?['name']?.toString() ?? '';
+        final matchesSearch = _recordSearchQuery.isEmpty ||
+            patientName.contains(_recordSearchQuery.toLowerCase()) ||
+            patientPhone.contains(_recordSearchQuery);
+        final matchesDoctor = _selectedDoctorFilter == null ||
+            doctorName == _selectedDoctorFilter;
+        return matchesSearch && matchesDoctor;
+      }).toList();
+    });
   }
 
   Future<void> _approveUser(String userId) async {
@@ -123,16 +203,18 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             child: Row(
               children: [
                 _buildTabItem('Pending', Icons.pending_actions_rounded),
+                _buildTabItem('Doctor', Icons.medical_services_rounded),
                 _buildTabItem('Student', Icons.school_rounded),
                 _buildTabItem('Pharmacy', Icons.local_pharmacy_rounded),
                 _buildTabItem('Laboratory', Icons.science_rounded),
                 _buildTabItem('Instructor', Icons.person_add_rounded),
+                _buildTabItem('PatientRecords', Icons.folder_shared_rounded),
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: _currentTab != 'Pending'
+      floatingActionButton: _currentTab != 'Pending' && _currentTab != 'PatientRecords'
           ? FloatingActionButton.extended(
               onPressed: () => _showAddUserDialog(),
               backgroundColor: AppColors.primaryColor,
@@ -146,7 +228,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
               ),
             )
           : null,
-      body: _isLoading
+      body: _currentTab == 'PatientRecords'
+          ? _buildPatientRecordsTab()
+          : _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _users.isEmpty
           ? Center(
@@ -485,8 +569,153 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     );
   }
 
+  Widget _buildPatientRecordsTab() {
+    return Column(
+      children: [
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Search bar
+              TextField(
+                onChanged: (v) {
+                  _recordSearchQuery = v;
+                  _filterPatientRecords();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search by patient name or phone number',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Doctor filter dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedDoctorFilter,
+                decoration: InputDecoration(
+                  labelText: 'Filter by Doctor',
+                  prefixIcon: const Icon(Icons.person_search_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('All Doctors')),
+                  ..._doctorNames.map((name) => DropdownMenuItem(value: name, child: Text('Dr. $name'))),
+                ],
+                onChanged: (val) {
+                  _selectedDoctorFilter = val;
+                  _filterPatientRecords();
+                },
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Text(
+                '${_filteredPatientRecords.length} records found',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoadingRecords
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredPatientRecords.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.folder_open_rounded, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text('No patient records found', style: TextStyle(fontSize: 16, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _filteredPatientRecords.length,
+                  itemBuilder: (ctx, i) {
+                    final r = _filteredPatientRecords[i];
+                    final patientName = r['patient']?['name'] ?? 'Unknown';
+                    final patientPhone = r['patient']?['phoneNumber'] ?? '';
+                    final doctorName = r['doctor']?['name'] ?? 'Unknown';
+                    final diagnosis = r['diagnosis'] ?? 'No diagnosis';
+                    final date = r['createdAt'] != null
+                        ? DateFormat('MMM dd, yyyy').format(DateTime.parse(r['createdAt']))
+                        : '';
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                patientName.isNotEmpty ? patientName[0].toUpperCase() : '?',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(patientName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                                if (patientPhone.isNotEmpty)
+                                  Text(patientPhone, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                const SizedBox(height: 4),
+                                Text(diagnosis, style: const TextStyle(fontSize: 13, color: Color(0xFF475569)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person_rounded, size: 12, color: Color(0xFF94A3B8)),
+                                    const SizedBox(width: 4),
+                                    Text('Dr. $doctorName', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                                    const SizedBox(width: 12),
+                                    const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
+                                    const SizedBox(width: 4),
+                                    Text(date, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTabItem(String title, IconData icon) {
     bool isActive = _currentTab == title;
+    final displayTitle = title == 'PatientRecords' ? 'Patient Records' : title;
     return GestureDetector(
       onTap: () => _onTabChanged(title),
       child: Container(
@@ -498,14 +727,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isActive ? AppColors.primaryColor : Colors.white,
-            ),
+            Icon(icon, size: 16, color: isActive ? AppColors.primaryColor : Colors.white),
             const SizedBox(width: 8),
             Text(
-              title,
+              displayTitle,
               style: TextStyle(
                 color: isActive ? AppColors.primaryColor : Colors.white,
                 fontWeight: FontWeight.bold,

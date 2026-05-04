@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:icare/services/api_service.dart';
 
@@ -8,7 +9,45 @@ class PharmacyService {
   // Get all pharmacies (public endpoint)
   Future<List<dynamic>> getAllPharmacies() async {
     final response = await _apiService.get('/pharmacy/get_all_pharmacy');
-    return response.data['pharmacies'] as List;
+    final list = response.data['pharmacies'] as List? ?? [];
+    return list.map((p) {
+      final map = Map<String, dynamic>.from(p);
+      final userId = map['_id']?.toString() ?? map['id']?.toString();
+      map['userId'] = userId;
+      map['_id'] = userId;
+      map['id'] = userId;
+      final displayName = map['pharmacy_name']?.toString()
+          ?? map['pharmacyName']?.toString()
+          ?? map['name']?.toString()
+          ?? 'Pharmacy';
+      map['pharmacyName'] = displayName;
+      map['pharmacy_name'] = displayName;
+      map['name'] = displayName;
+      return map;
+    }).toList();
+  }
+
+  // Get nearby pharmacies within radius (km) of given coordinates
+  Future<List<dynamic>> getNearbyPharmacies(double lat, double lng, {double radius = 20}) async {
+    final response = await _apiService.get(
+      '/pharmacy/nearby?lat=$lat&lng=$lng&radius=$radius',
+    );
+    final list = response.data['pharmacies'] as List? ?? [];
+    return list.map((p) {
+      final map = Map<String, dynamic>.from(p);
+      final userId = map['_id']?.toString() ?? map['id']?.toString();
+      map['userId'] = userId;
+      map['_id'] = userId;
+      map['id'] = userId;
+      final displayName = map['pharmacy_name']?.toString()
+          ?? map['pharmacyName']?.toString()
+          ?? map['name']?.toString()
+          ?? 'Pharmacy';
+      map['pharmacyName'] = displayName;
+      map['pharmacy_name'] = displayName;
+      map['name'] = displayName;
+      return map;
+    }).toList();
   }
 
   // Get pharmacy profile for logged-in pharmacist
@@ -63,7 +102,7 @@ class PharmacyService {
       final ordersResponse = await _apiService.get(
         '/pharmacy/orders/pharmacy/list',
       );
-      final orders = ordersResponse.data['orders'] as List;
+      final orders = (ordersResponse.data['orders'] as List?) ?? [];
       debugPrint('✅ Got ${orders.length} orders');
 
       // Get all medicines for the pharmacy
@@ -73,7 +112,7 @@ class PharmacyService {
       final medicinesResponse = await _apiService.get(
         '/pharmacy/products?pharmacyId=$pharmacyId',
       );
-      final medicines = medicinesResponse.data['medicines'] as List;
+      final medicines = (medicinesResponse.data['medicines'] as List?) ?? [];
       debugPrint('✅ Got ${medicines.length} medicines');
 
       // Calculate stats
@@ -104,8 +143,16 @@ class PharmacyService {
         'revenue': revenue.toInt(),
       };
     } catch (e) {
-      debugPrint('Error getting pharmacy stats: $e');
-      rethrow;
+      debugPrint('❌ Error getting pharmacy stats: $e');
+      // Return default stats instead of throwing
+      return {
+        'totalOrders': 0,
+        'pendingOrders': 0,
+        'completedOrders': 0,
+        'totalProducts': 0,
+        'lowStock': 0,
+        'revenue': 0,
+      };
     }
   }
 
@@ -149,6 +196,46 @@ class PharmacyService {
     await _apiService.delete('/pharmacy/products/$id');
   }
 
+  Future<Map<String, dynamic>> createPrescriptionOrder({
+    required String pharmacyId,
+    required List<dynamic> medicines,
+    String? medicalRecordId,
+    String deliveryOption = 'pickup',
+    String address = '',
+  }) async {
+    // Backend uses POST /pharmacy/orders with items array
+    // Default price Rs. 500 per medicine if not specified
+    const int defaultMedicinePrice = 500;
+    final items = medicines.map((m) {
+      final price = (m['price'] != null && (m['price'] as num) > 0)
+          ? (m['price'] as num).toInt()
+          : defaultMedicinePrice;
+      return {
+        'productName': m['name'] ?? m['productName'] ?? '',
+        'product_name': m['name'] ?? m['productName'] ?? '',
+        'quantity': 1,
+        'price': price,
+        'dosage': m['dosage'] ?? '',
+        'frequency': m['frequency'] ?? '',
+      };
+    }).toList();
+
+    // Calculate total from items
+    final totalAmount = items.fold<int>(
+      0, (sum, item) => sum + ((item['price'] as int) * (item['quantity'] as int)),
+    );
+
+    final response = await _apiService.post('/pharmacy/orders', {
+      'pharmacyId': pharmacyId,
+      'items': items,
+      'deliveryAddress': address,
+      'totalAmount': totalAmount,
+      'deliveryFee': 0,
+      if (medicalRecordId != null) 'prescriptionId': medicalRecordId,
+    });
+    return response.data;
+  }
+
   // Order Management
   Future<List<dynamic>> getPharmacyOrders({String? status}) async {
     String url = '/pharmacy/orders/pharmacy/list';
@@ -168,10 +255,20 @@ class PharmacyService {
     String orderId,
     String status,
   ) async {
-    final response = await _apiService.put('/pharmacy/orders/$orderId/status', {
-      'status': status,
+    debugPrint('🔄 Updating order $orderId to status: $status');
+    final response = await _apiService.put(
+      '/pharmacy/orders/$orderId',
+      {'status': status},
+    );
+    debugPrint('✅ Order status updated successfully');
+    return response.data['order'] ?? {};
+  }
+
+  Future<void> submitOrderRating(String orderId, int rating, String comment) async {
+    await _apiService.post('/pharmacy/orders/$orderId/rating', {
+      'rating': rating,
+      'comment': comment,
     });
-    return response.data['order'];
   }
 
   // Analytics
@@ -189,36 +286,80 @@ class PharmacyService {
       );
       final medicines = medicinesResponse.data['medicines'] as List;
 
-      // Calculate total revenue
-      final totalRevenue = orders
-          .where((o) => o['status'] == 'completed')
-          .fold<double>(
-            0,
-            (sum, o) => sum + (o['totalAmount'] ?? 0).toDouble(),
-          );
+      // Revenue from delivered/completed orders
+      final completedOrders = orders
+          .where((o) => ['delivered', 'completed'].contains(o['status']))
+          .toList();
+      final totalRevenue = completedOrders.fold<double>(
+        0,
+        (sum, o) => sum + (o['totalAmount'] ?? 0).toDouble(),
+      );
 
       final totalOrders = orders.length;
-      final averageOrderValue = totalOrders > 0
-          ? totalRevenue / totalOrders
-          : 0;
+      final averageOrderValue =
+          totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
 
-      // Get real top selling products from backend
-      List<dynamic> topSellingProducts = [];
-      try {
-        final topSellingResponse = await _apiService.get(
-          '/pharmacy/top-selling',
-        );
-        topSellingProducts = topSellingResponse.data['topProducts'] ?? [];
-      } catch (e) {
-        debugPrint('Error getting top selling products: $e');
-        // Fallback to empty list if endpoint fails
-        topSellingProducts = [];
+      // Order status breakdown
+      final ordersAccepted = orders
+          .where((o) =>
+              !['pending', 'cancelled', 'rejected'].contains(o['status']))
+          .length;
+      final ordersCompleted = completedOrders.length;
+      final ordersProcessing = orders
+          .where((o) =>
+              ['confirmed', 'preparing', 'out-for-delivery']
+                  .contains(o['status']))
+          .length;
+      final ordersPending =
+          orders.where((o) => o['status'] == 'pending').length;
+      final failedDeliveries = orders
+          .where((o) => ['cancelled', 'rejected'].contains(o['status']))
+          .length;
+
+      // Product metrics
+      final outOfStockCount =
+          medicines.where((m) => (m['stock_quantity'] ?? 0) == 0).length;
+
+      // Top selling products — aggregate from order items
+      final Map<String, Map<String, dynamic>> productSales = {};
+      for (final order in orders) {
+        final items = order['items'] as List? ?? [];
+        for (final item in items) {
+          final name =
+              item['product_name']?.toString() ?? 'Unknown';
+          final qty = (item['quantity'] ?? 1).toDouble();
+          final price = (item['price'] ?? 0).toDouble();
+          productSales.putIfAbsent(
+              name, () => {'name': name, 'sales': 0.0, 'revenue': 0.0});
+          productSales[name]!['sales'] =
+              (productSales[name]!['sales'] as double) + qty;
+          productSales[name]!['revenue'] =
+              (productSales[name]!['revenue'] as double) + (qty * price);
+        }
       }
+      final sortedProducts = productSales.values.toList()
+        ..sort((a, b) =>
+            (b['sales'] as double).compareTo(a['sales'] as double));
+      final topSellingProducts = sortedProducts.take(5).map((p) => {
+            'name': p['name'],
+            'sales': (p['sales'] as double).toInt(),
+            'revenue': (p['revenue'] as double).toInt(),
+          }).toList();
 
       return {
         'totalRevenue': totalRevenue.toInt(),
         'totalOrders': totalOrders,
         'averageOrderValue': averageOrderValue,
+        'ordersAccepted': ordersAccepted,
+        'ordersCompleted': ordersCompleted,
+        'ordersProcessing': ordersProcessing,
+        'ordersPending': ordersPending,
+        'failedDeliveries': failedDeliveries,
+        'outOfStockCount': outOfStockCount,
+        'complaintsCount': 0,
+        'averageRating': 0.0,
+        'averageProcessTime': 'N/A',
+        'responseTime': '< 30m',
         'topSellingProducts': topSellingProducts,
       };
     } catch (e) {

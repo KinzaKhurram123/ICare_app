@@ -57,7 +57,8 @@ class InstructorService {
   Future<Map<String, dynamic>> getMyProfile() async {
     final response = await _apiService.get('/instructors/me');
     final instructor = response.data['instructor'];
-    _cachedInstructorId = instructor['_id'];
+    // Cache the user_id (not profile _id) — courses/precautions are keyed by user_id
+    _cachedInstructorId = instructor['user_id'] as String? ?? instructor['_id'];
     return instructor;
   }
 
@@ -87,24 +88,31 @@ class InstructorService {
       return _cachedInstructorId!;
     }
     final profile = await getMyProfile();
-    return profile['_id'];
+    // user_id is the User._id — this is what instructor_id in Course refers to
+    return profile['user_id'] as String? ?? profile['_id'] as String;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
   // COURSES MANAGEMENT
   // ═══════════════════════════════════════════════════════════════════════
 
-  // Get my courses
+  // Get my courses — tries token-based endpoint first, falls back to query param
   Future<List<dynamic>> getMyCourses() async {
     try {
-      final instructorId = await _getInstructorId();
-      final response = await _apiService.get(
-        '/instructors/courses?instructorId=$instructorId',
-      );
+      // Try new token-based endpoint first
+      final response = await _apiService.get('/instructors/my-courses');
       return response.data['courses'] as List;
     } catch (e) {
-      debugPrint('Error getting my courses: $e');
-      rethrow;
+      debugPrint('my-courses failed, trying fallback: $e');
+      try {
+        // Fallback: use courses endpoint without instructorId filter
+        // Backend will return all courses; we filter by token on backend
+        final response = await _apiService.get('/instructors/courses');
+        return response.data['courses'] as List;
+      } catch (e2) {
+        debugPrint('Error getting my courses: $e2');
+        rethrow;
+      }
     }
   }
 
@@ -236,7 +244,7 @@ class InstructorService {
       return response.data['stats'] ?? {};
     } catch (e) {
       debugPrint('Error getting stats: $e');
-      rethrow;
+      return {};
     }
   }
 
@@ -248,6 +256,44 @@ class InstructorService {
     } catch (e) {
       debugPrint('Error getting assigned learners: $e');
       rethrow;
+    }
+  }
+
+  // Store video URL (URL-based — no file upload on Vercel serverless)
+  Future<Map<String, dynamic>> uploadVideo({
+    String? filePath,
+    List<int>? bytes,
+    required String fileName,
+    String? videoUrl,
+  }) async {
+    try {
+      // If a direct URL is provided, just return it
+      if (videoUrl != null && videoUrl.isNotEmpty) {
+        return {'success': true, 'videoUrl': videoUrl};
+      }
+      // Fallback: return empty (file upload not supported on Vercel)
+      return {'success': false, 'message': 'Please provide a video URL (YouTube, Vimeo, or direct link)'};
+    } catch (e) {
+      debugPrint('❌ uploadVideo error: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // Store thumbnail URL
+  Future<Map<String, dynamic>> uploadThumbnail({
+    String? filePath,
+    List<int>? bytes,
+    required String fileName,
+    String? thumbnailUrl,
+  }) async {
+    try {
+      if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+        return {'success': true, 'thumbnailUrl': thumbnailUrl};
+      }
+      return {'success': false, 'message': 'Please provide a thumbnail URL'};
+    } catch (e) {
+      debugPrint('❌ uploadThumbnail error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 }

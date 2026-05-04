@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/user.dart' as app_user;
@@ -5,6 +7,7 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/services/user_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/custom_text_input.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -17,8 +20,75 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController cnicController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
   final UserService _userService = UserService();
   bool isLoading = false;
+  Uint8List? _imageBytes;
+  final ImagePicker _picker = ImagePicker();
+  String? _selectedGender; // 'Male', 'Female', 'Other'
+
+  Future<void> _pickImage() async {
+    // On web, camera is not supported — go straight to gallery
+    if (kIsWeb) {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 600,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() => _imageBytes = bytes);
+      }
+      return;
+    }
+
+    // Mobile: offer gallery or camera
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final picked = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 80,
+                  maxWidth: 600,
+                );
+                if (picked != null) {
+                  final bytes = await picked.readAsBytes();
+                  setState(() => _imageBytes = bytes);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () async {
+                Navigator.pop(context);
+                final picked = await _picker.pickImage(
+                  source: ImageSource.camera,
+                  imageQuality: 80,
+                  maxWidth: 600,
+                );
+                if (picked != null) {
+                  final bytes = await picked.readAsBytes();
+                  setState(() => _imageBytes = bytes);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -27,6 +97,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (user != null) {
       nameController.text = user.name;
       phoneController.text = user.phoneNumber;
+      ageController.text = user.age ?? '';
+      // Normalize gender to match our options
+      final g = user.gender?.trim() ?? '';
+      if (g.toLowerCase() == 'male') {
+        _selectedGender = 'Male';
+      } else if (g.toLowerCase() == 'female') {
+        _selectedGender = 'Female';
+      } else if (g.isNotEmpty) {
+        _selectedGender = 'Other';
+      }
     }
   }
 
@@ -34,6 +114,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
+    cnicController.dispose();
+    ageController.dispose();
+    heightController.dispose();
+    weightController.dispose();
+    addressController.dispose();
     super.dispose();
   }
 
@@ -46,6 +131,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final result = await _userService.updateProfile(
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
+        cnic: cnicController.text.trim().isEmpty ? null : cnicController.text.trim(),
+        age: ageController.text.trim().isEmpty ? null : ageController.text.trim(),
+        gender: _selectedGender,
+        height: heightController.text.trim().isEmpty ? null : heightController.text.trim(),
+        weight: weightController.text.trim().isEmpty ? null : weightController.text.trim(),
+        address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+        profileImage: _imageBytes,
       );
 
       if (result['success']) {
@@ -87,6 +179,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final role = ref.read(authProvider).userRole ?? '';
+    final isPatient = role == 'Patient';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFD),
@@ -113,51 +207,91 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
-                // Profile Picture
-                Stack(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primaryColor.withOpacity(0.1),
-                        border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2),
-                          width: 3,
+                // Profile Picture with upload
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          border: Border.all(
+                            color: AppColors.primaryColor.withOpacity(0.2),
+                            width: 3,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: _imageBytes != null
+                              ? Image.memory(
+                                  _imageBytes!,
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                )
+                              : user?.profilePicture != null && user!.profilePicture!.isNotEmpty
+                              ? Image.network(
+                                  user.profilePicture!,
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        user.name.substring(0, 1).toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Text(
+                                    user?.name.substring(0, 1).toUpperCase() ?? 'U',
+                                    style: TextStyle(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
                             color: AppColors.primaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap to upload photo',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 24),
 
                 // Form
                 Container(
@@ -247,36 +381,161 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             color: Color(0xFF64748B),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        // Role Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                        if (isPatient) ...[
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'CNIC Number (e.g. 42101-1234567-1)',
+                            leadingIcon: const Icon(
+                              Icons.credit_card_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: cnicController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Health Details',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
-                          child: Row(
+                          const SizedBox(height: 16),
+                          // Gender selector
+                          const Text(
+                            'Gender',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: ['Male', 'Female', 'Other'].map((g) {
+                              final isSelected = _selectedGender == g;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _selectedGender = g),
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppColors.primaryColor
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.primaryColor
+                                            : const Color(0xFFE2E8F0),
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          g == 'Male'
+                                              ? Icons.male_rounded
+                                              : g == 'Female'
+                                                  ? Icons.female_rounded
+                                                  : Icons.transgender_rounded,
+                                          size: 16,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : const Color(0xFF64748B),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          g,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
                             children: [
-                              Icon(
-                                Icons.badge_outlined,
-                                color: AppColors.primaryColor,
-                                size: 20,
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Age',
+                                  leadingIcon: const Icon(
+                                    Icons.cake_outlined,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: ageController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                ),
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Role: ${user?.role ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryColor,
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Height (cm)',
+                                  leadingIcon: const Icon(
+                                    Icons.height_rounded,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: heightController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomInputField(
+                                  hintText: 'Weight (kg)',
+                                  leadingIcon: const Icon(
+                                    Icons.monitor_weight_outlined,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  controller: weightController,
+                                  bgColor: const Color(0xFFF8FAFC),
+                                  borderRadius: 14,
+                                  borderColor: const Color(0xFFE2E8F0),
+                                  borderWidth: 1.5,
                                 ),
                               ),
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'Address',
+                            leadingIcon: const Icon(
+                              Icons.location_on_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: addressController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
+                          ),
+                        ],
                         const SizedBox(height: 32),
                         // Update Button
                         SizedBox(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/notifications.dart';
+import 'package:icare/screens/patient_prescriptions.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -14,50 +15,9 @@ class PrescriptionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isWeb = MediaQuery.of(context).size.width > 900;
 
-    // ── MOBILE: original layout ─────────────────────────────────────────────
+    // ── MOBILE: redirect to PatientPrescriptions (digital prescriptions) ────
     if (!isWeb) {
-      return Scaffold(
-        appBar: AppBar(
-          title: CustomText(
-            text: "Prescriptions",
-            fontFamily: "Gilroy-Bold",
-            fontSize: 16.78,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary500,
-          ),
-          automaticallyImplyLeading: false,
-          leading: CustomBackButton(),
-          actions: [
-            Padding(
-              padding: EdgeInsets.only(right: ScallingConfig.scale(10)),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => NotificationScreen()),
-                  );
-                },
-                child: CircleAvatar(
-                  backgroundColor: AppColors.white,
-                  child: SvgWrapper(assetPath: ImagePaths.notification),
-                ),
-              ),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            SizedBox(height: ScallingConfig.scale(20)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(ImagePaths.prescription1),
-                SizedBox(width: ScallingConfig.scale(10)),
-                Image.asset(ImagePaths.prescription2),
-              ],
-            ),
-          ],
-        ),
-      );
+      return const PatientPrescriptions();
     }
 
     // ── WEB: redesigned layout ──────────────────────────────────────────────

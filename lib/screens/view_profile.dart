@@ -301,26 +301,28 @@ class _WebViewProfile extends StatelessWidget {
                     fontFamily: "Gilroy-Bold",
                   ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Text(
-                    role.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: AppColors.primaryColor,
+                if (role != 'Patient') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Text(
+                      role.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
                   ),
-                ),
+                ],
                 const Spacer(),
                 SizedBox(
                   width: double.infinity,

@@ -20,6 +20,7 @@ List<Widget> _doctorTabs(
       image: ImagePaths.home,
       title: "Home",
     ),
+    SizedBox(width: 20),
     CustomTabButton(
       onPressed: () {
         onSelect(1);
@@ -29,27 +30,6 @@ List<Widget> _doctorTabs(
           : AppColors.grayColor,
       image: ImagePaths.bookings,
       title: "Bookings",
-    ),
-    SizedBox(width: 20),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(2);
-      },
-      iconColor: currentIndex == 2
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.chat,
-      title: "Chat",
-    ),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(3);
-      },
-      iconColor: currentIndex == 3
-          ? AppColors.primaryColor
-          : AppColors.grayColor,
-      image: ImagePaths.profile2,
-      title: "Profile",
     ),
   ];
 }
@@ -73,8 +53,8 @@ List<Widget> _patientTabs(
         onSelect(1);
       },
       iconColor: currentIndex == 1 ? AppColors.primaryColor : AppColors.grayColor,
-      image: ImagePaths.bookings,
-      title: "Bookings",
+      image: ImagePaths.track,
+      title: "Programs",
     ),
     SizedBox(width: 20),
     CustomTabButton(
@@ -82,22 +62,6 @@ List<Widget> _patientTabs(
         onSelect(2);
       },
       iconColor: currentIndex == 2 ? AppColors.primaryColor : AppColors.grayColor,
-      image: ImagePaths.chat,
-      title: "Chat",
-    ),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(4); // 4 is the new index for Programs for Patient
-      },
-      iconColor: currentIndex == 4 ? AppColors.primaryColor : AppColors.grayColor,
-      image: ImagePaths.track,
-      title: "Programs",
-    ),
-    CustomTabButton(
-      onPressed: () {
-        onSelect(3);
-      },
-      iconColor: currentIndex == 3 ? AppColors.primaryColor : AppColors.grayColor,
       image: ImagePaths.profile2,
       title: "Profile",
     ),

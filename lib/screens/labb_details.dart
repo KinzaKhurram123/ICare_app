@@ -11,15 +11,23 @@ import 'package:icare/widgets/svg_wrapper.dart';
 import 'package:icare/widgets/custom_check_box.dart';
 
 class LabDetails extends StatefulWidget {
-  const LabDetails({super.key, this.labData});
+  const LabDetails({super.key, this.labData, this.prescribedTests});
   final Map<String, dynamic>? labData;
+  final List<String>? prescribedTests; // pre-select from prescription
 
   @override
   State<LabDetails> createState() => _LabDetailsState();
 }
 
 class _LabDetailsState extends State<LabDetails> {
-  final List<String> _selectedTests = [];
+  late List<String> _selectedTests;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select prescribed tests if coming from prescription flow
+    _selectedTests = List<String>.from(widget.prescribedTests ?? []);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,17 +54,32 @@ class _LabDetailsState extends State<LabDetails> {
               : "Our laboratory combines advanced diagnostic technology with the expertise of highly qualified professionals, ensuring every test is conducted with precision, accuracy, and reliability to support better healthcare outcomes.");
     final String image = (labData?['image'] is String)
         ? (labData?['image'] as String)
-        : ImagePaths.lab3;
+        : '';
 
     // Get dynamic tests if available, otherwise use defaults
-    final List<String> availableTests = (labData?['tests'] is List)
-        ? (labData?['tests'] as List).cast<String>()
+    // Backend may return tests as Strings OR as Maps {name, price, ...}
+    final List<String> labTests = (labData?['tests'] is List)
+        ? (labData!['tests'] as List).map((t) {
+            if (t is String) return t;
+            if (t is Map) return (t['name'] ?? t['testName'] ?? t['test_name'] ?? '').toString();
+            return t.toString();
+          }).where((s) => s.isNotEmpty).toList()
         : [
             "Complete Blood Count (CBC)",
             "Blood Sugar (Fasting / Random)",
             "Liver Function Test (LFT)",
             "Kidney Profile (KFT)",
           ];
+
+    // Merge prescribed tests with lab's available tests
+    // Prescribed tests always appear first, then lab's other tests
+    final List<String> prescribedList = widget.prescribedTests ?? [];
+    final Set<String> allTestsSet = <String>{};
+    // Add prescribed tests first (they must appear)
+    allTestsSet.addAll(prescribedList);
+    // Then add lab's own tests
+    allTestsSet.addAll(labTests);
+    final List<String> availableTests = allTestsSet.toList();
 
     return Scaffold(
       appBar: isDesktop
@@ -104,21 +127,42 @@ class _LabDetailsState extends State<LabDetails> {
             ClipRRect(
               clipBehavior: Clip.hardEdge,
               borderRadius: BorderRadius.circular(20),
-              child: image.startsWith('assets')
-                  ? Image.asset(
-                      image,
-                      fit: BoxFit.cover,
+              child: image.isEmpty
+                  ? Container(
                       width: Utils.windowWidth(context) * 0.9,
                       height: Utils.windowWidth(context) * 0.5,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+                        ),
+                      ),
+                      child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
                     )
-                  : Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: Utils.windowWidth(context) * 0.9,
-                      height: Utils.windowWidth(context) * 0.5,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset(ImagePaths.lab3, fit: BoxFit.cover),
-                    ),
+                  : image.startsWith('assets')
+                      ? Image.asset(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
+                        )
+                      : Image.network(
+                          image,
+                          fit: BoxFit.cover,
+                          width: Utils.windowWidth(context) * 0.9,
+                          height: Utils.windowWidth(context) * 0.5,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: Utils.windowWidth(context) * 0.9,
+                            height: Utils.windowWidth(context) * 0.5,
+                            color: const Color(0xFF1D4ED8),
+                            child: const Icon(Icons.science_rounded, color: Colors.white, size: 60),
+                          ),
+                        ),
             ),
             SizedBox(height: ScallingConfig.scale(20)),
             CustomText(
@@ -328,12 +372,23 @@ class _LabDetailsState extends State<LabDetails> {
                               height: 450,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(32),
-                                image: DecorationImage(
-                                  image: image.startsWith('assets')
-                                      ? AssetImage(image) as ImageProvider
-                                      : NetworkImage(image),
-                                  fit: BoxFit.cover,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF1D4ED8),
+                                    Color(0xFF0EA5E9),
+                                  ],
                                 ),
+                                image: image.isNotEmpty
+                                    ? DecorationImage(
+                                        image: image.startsWith('assets')
+                                            ? AssetImage(image) as ImageProvider
+                                            : NetworkImage(image),
+                                        fit: BoxFit.cover,
+                                        onError: (_, __) {},
+                                      )
+                                    : null,
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
@@ -344,6 +399,53 @@ class _LabDetailsState extends State<LabDetails> {
                               ),
                               child: Stack(
                                 children: [
+                                  // Show lab icon/content when no image
+                                  if (image.isEmpty)
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(24),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.science_rounded,
+                                              color: Colors.white,
+                                              size: 80,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: const Text(
+                                              'Certified Diagnostic Laboratory',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   Positioned(
                                     top: 20,
                                     right: 20,
@@ -610,11 +712,13 @@ class _LabDetailsState extends State<LabDetails> {
 
   Widget _buildWebCheckbox(String label) {
     final bool isSelected = _selectedTests.contains(label);
+    final bool isPrescribed = (widget.prescribedTests ?? []).contains(label);
     return InkWell(
       onTap: () {
         setState(() {
           if (isSelected) {
-            _selectedTests.remove(label);
+            // Don't allow deselecting prescribed tests
+            if (!isPrescribed) _selectedTests.remove(label);
           } else {
             _selectedTests.add(label);
           }
@@ -629,9 +733,12 @@ class _LabDetailsState extends State<LabDetails> {
               : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryColor
-                : const Color(0xFFF1F5F9),
+            color: isPrescribed
+                ? const Color(0xFF8B5CF6)
+                : isSelected
+                    ? AppColors.primaryColor
+                    : const Color(0xFFF1F5F9),
+            width: isPrescribed || isSelected ? 2 : 1,
           ),
         ),
         child: Row(
@@ -655,10 +762,35 @@ class _LabDetailsState extends State<LabDetails> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CustomText(
-                text: label,
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  if (isPrescribed) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                      ),
+                      child: const Text(
+                        'Prescribed',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8B5CF6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const CustomText(

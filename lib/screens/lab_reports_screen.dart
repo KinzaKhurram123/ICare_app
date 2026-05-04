@@ -23,6 +23,9 @@ class _LabReportsScreenState extends State<LabReportsScreen>
   bool _isLoading = true;
   List<dynamic> _completedBookings = [];
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _searchFilter = 'patient'; // patient, mr_number, doctor, contact
 
   @override
   void initState() {
@@ -69,15 +72,39 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     }
   }
 
+  List<dynamic> _filterBookings(List<dynamic> bookings) {
+    if (_searchQuery.isEmpty) return bookings;
+
+    return bookings.where((booking) {
+      final query = _searchQuery.toLowerCase();
+      switch (_searchFilter) {
+        case 'patient':
+          final patientName = (booking['patient']?['name'] ?? booking['patientName'] ?? '').toString().toLowerCase();
+          return patientName.contains(query);
+        case 'mr_number':
+          final mrNumber = (booking['patient']?['mrNumber'] ?? booking['mrNumber'] ?? '').toString().toLowerCase();
+          return mrNumber.contains(query);
+        case 'doctor':
+          final doctorName = (booking['referredBy'] ?? booking['referred_by'] ?? '').toString().toLowerCase();
+          return doctorName.contains(query);
+        case 'contact':
+          final contact = (booking['patient']?['contact'] ?? booking['contact'] ?? '').toString().toLowerCase();
+          return contact.contains(query);
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 700;
-    final completed = _completedBookings
+    final completed = _filterBookings(_completedBookings
         .where((b) => b['status'] == 'completed')
-        .toList();
-    final pending = _completedBookings
+        .toList());
+    final pending = _filterBookings(_completedBookings
         .where((b) => b['status'] != 'completed' && b['status'] != 'cancelled')
-        .toList();
+        .toList());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -87,7 +114,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         leading: const CustomBackButton(),
         automaticallyImplyLeading: false,
         title: const Text(
-          'Lab Reports',
+          'Records',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -135,27 +162,114 @@ class _LabReportsScreenState extends State<LabReportsScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
-          : Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 900 : double.infinity,
-                ),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildReportList(
-                      completed,
-                      showResults: true,
-                      isDesktop: isDesktop,
+          : Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 900 : double.infinity,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (value) {
+                                setState(() => _searchQuery = value);
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Search records...',
+                                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear_rounded, size: 20),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => _searchQuery = '');
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: primaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: DropdownButton<String>(
+                              value: _searchFilter,
+                              underline: const SizedBox(),
+                              icon: const Icon(Icons.arrow_drop_down_rounded, color: primaryColor),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'patient', child: Text('Patient Name')),
+                                DropdownMenuItem(value: 'mr_number', child: Text('MR Number')),
+                                DropdownMenuItem(value: 'doctor', child: Text('Doctor Name')),
+                                DropdownMenuItem(value: 'contact', child: Text('Contact Number')),
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _searchFilter = value);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _buildReportList(
-                      pending,
-                      showResults: false,
-                      isDesktop: isDesktop,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 900 : double.infinity,
+                      ),
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildReportList(
+                            completed,
+                            showResults: true,
+                            isDesktop: isDesktop,
+                          ),
+                          _buildReportList(
+                            pending,
+                            showResults: false,
+                            isDesktop: isDesktop,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }

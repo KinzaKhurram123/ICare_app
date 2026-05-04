@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -222,21 +223,18 @@ class _SelectUserTypeState extends ConsumerState<SelectUserType> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 100,
-                            height: 100,
-                            padding: const EdgeInsets.all(16),
+                            width: 110,
+                            height: 110,
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1.5,
-                              ),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 32, spreadRadius: 0, offset: Offset(0, 8)),
+                                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, spreadRadius: 0, offset: Offset(0, 2)),
+                              ],
                             ),
-                            child: Image.asset(
-                              ImagePaths.logo,
-                              fit: BoxFit.contain,
-                            ),
+                            child: Image.asset('assets/Asset 1.png', fit: BoxFit.contain, filterQuality: FilterQuality.high),
                           ),
                           const SizedBox(height: 32),
                           const Text(

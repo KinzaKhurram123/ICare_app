@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html show window;
 import '../services/pharmacy_service.dart';
 import 'pharmacist_dashboard.dart';
 import 'tabs.dart';
@@ -26,6 +31,18 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
   final _openHoursToController = TextEditingController();
 
   bool _deliveryAvailable = false;
+  bool _drapCompliance = false;
+  double? _latitude;
+  double? _longitude;
+  bool _gettingLocation = false;
+
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+    if (picked != null) setState(() => _profileImage = File(picked.path));
+  }
 
   @override
   void initState() {
@@ -49,14 +66,21 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
     try {
       final profile = await _pharmacyService.getPharmacyProfile();
       setState(() {
-        _ownerNameController.text = profile['ownerName'] ?? '';
+        // Filter out default role names stored by backend during registration
+        const defaultRoles = {'patient', 'doctor', 'pharmacy', 'admin', 'lab', 'pharmacist'};
+        String rawName = profile['pharmacyName']?.toString()
+            ?? profile['ownerName']?.toString()
+            ?? '';
+        _ownerNameController.text = defaultRoles.contains(rawName.toLowerCase().trim()) ? '' : rawName;
         _cnicController.text = profile['cnic'] ?? '';
-        _licenseNumberController.text = profile['licenseNumber'] ?? '';
+        _licenseNumberController.text = profile['licenseNumber'] ?? profile['drugSaleLicense'] ?? '';
         _addressController.text = profile['address'] ?? '';
         _cityController.text = profile['city'] ?? '';
         _openHoursFromController.text = profile['openHours']?['from'] ?? '';
         _openHoursToController.text = profile['openHours']?['to'] ?? '';
         _deliveryAvailable = profile['deliveryAvailable'] ?? false;
+        _latitude = (profile['latitude'] as num?)?.toDouble();
+        _longitude = (profile['longitude'] as num?)?.toDouble();
         _isLoading = false;
       });
     } catch (e) {
@@ -65,6 +89,36 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: const Text('Unable to load data. Please try again.')));
+      }
+    }
+  }
+
+  Future<void> _getGpsLocation() async {
+    if (!kIsWeb) return;
+    setState(() => _gettingLocation = true);
+    try {
+      final pos = await html.window.navigator.geolocation
+          .getCurrentPosition()
+          .timeout(const Duration(seconds: 15));
+      if (mounted) {
+        setState(() {
+          _latitude = pos.coords?.latitude?.toDouble();
+          _longitude = pos.coords?.longitude?.toDouble();
+          _gettingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location captured successfully!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _gettingLocation = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get location. Please allow location access.')),
+        );
       }
     }
   }
@@ -86,6 +140,8 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
           'to': _openHoursToController.text,
         },
         'deliveryAvailable': _deliveryAvailable,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
       });
 
       if (mounted) {
@@ -129,11 +185,53 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Profile Photo Upload
+                    Center(
+                      child: GestureDetector(
+                        onTap: _pickProfileImage,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00897B).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF00897B).withOpacity(0.3), width: 3),
+                              ),
+                              child: ClipOval(
+                                child: _profileImage != null
+                                    ? Image.file(_profileImage!, fit: BoxFit.cover)
+                                    : const Icon(Icons.local_pharmacy_rounded, size: 44, color: Color(0xFF00897B)),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00897B),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Center(
+                      child: Text('Tap to upload pharmacy logo', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ),
+                    const SizedBox(height: 24),
                     _buildSection('Basic Information', Icons.info_outline, [
                       _buildTextField(
                         controller: _ownerNameController,
-                        label: 'Owner Name',
-                        icon: Icons.person,
+                        label: 'Pharmacy Name',
+                        icon: Icons.local_pharmacy,
                         validator: (v) =>
                             v?.isEmpty ?? true ? 'Required' : null,
                       ),
@@ -146,7 +244,7 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                       const SizedBox(height: 16),
                       _buildTextField(
                         controller: _licenseNumberController,
-                        label: 'License Number',
+                        label: 'Drug Sale License',
                         icon: Icons.verified_user,
                       ),
                     ]),
@@ -163,6 +261,38 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                         controller: _cityController,
                         label: 'City',
                         icon: Icons.location_city,
+                      ),
+                      const SizedBox(height: 16),
+                      // GPS Location Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _gettingLocation ? null : _getGpsLocation,
+                          icon: _gettingLocation
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Icon(
+                                  _latitude != null ? Icons.my_location : Icons.location_searching,
+                                  color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                                ),
+                          label: Text(
+                            _latitude != null
+                                ? '✓ Location saved (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})'
+                                : 'Use My Current Location',
+                            style: TextStyle(
+                              color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: _latitude != null ? const Color(0xFF10B981) : const Color(0xFF00897B),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
                       ),
                     ]),
                     const SizedBox(height: 24),
@@ -197,6 +327,26 @@ class _PharmacyProfileSetupState extends State<PharmacyProfileSetup> {
                           setState(() => _deliveryAvailable = value);
                         },
                         activeColor: const Color(0xFF00897B),
+                      ),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildSection('Compliance', Icons.verified_user_outlined, [
+                      CheckboxListTile(
+                        title: const Text(
+                          'DRAP Compliance Agreement',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        subtitle: const Text(
+                          'I confirm this pharmacy operates in accordance with DRAP (Drug Regulatory Authority of Pakistan) regulations and drug sale policies.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: _drapCompliance,
+                        onChanged: (value) {
+                          setState(() => _drapCompliance = value ?? false);
+                        },
+                        activeColor: const Color(0xFF00897B),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
                       ),
                     ]),
                     const SizedBox(height: 32),

@@ -37,10 +37,14 @@ class AppColors {
 
 class AppTheme {
   static final mainTheme = ThemeData(
+    useMaterial3: false,
     fontFamily: "Gilroy",
     scaffoldBackgroundColor: AppColors.bgColor,
-    textTheme: TextTheme(
-      // titleLarge:
+    textTheme: const TextTheme(),
+
+    drawerTheme: const DrawerThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
     ),
 
     appBarTheme: AppBarTheme(

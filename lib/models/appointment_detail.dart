@@ -8,6 +8,7 @@ class AppointmentDetail {
   final String timeSlot;
   final String? reason;
   final String status;
+  final String? channelName; // for video consultations (connect_now)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class AppointmentDetail {
     required this.timeSlot,
     this.reason,
     required this.status,
+    this.channelName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -30,6 +32,15 @@ class AppointmentDetail {
     try {
       if (json['doctor'] != null && json['doctor'] is Map) {
         doctor = User.fromJson(json['doctor'] as Map<String, dynamic>);
+      } else if (json['doctor_name'] != null || json['doctor_email'] != null) {
+        // Flat format from backend
+        doctor = User(
+          id: json['doctor_id']?.toString() ?? '',
+          name: json['doctor_name']?.toString() ?? 'Doctor',
+          email: json['doctor_email']?.toString() ?? '',
+          phoneNumber: json['doctor_phone']?.toString() ?? '',
+          role: 'doctor',
+        );
       }
     } catch (e) {
       print('⚠️ Error parsing doctor: $e');
@@ -38,25 +49,41 @@ class AppointmentDetail {
     try {
       if (json['patient'] != null && json['patient'] is Map) {
         patient = User.fromJson(json['patient'] as Map<String, dynamic>);
+      } else if (json['patient_name'] != null || json['patient_email'] != null) {
+        // Flat format from backend
+        patient = User(
+          id: json['patient_id']?.toString() ?? '',
+          name: json['patient_name']?.toString() ?? 'Patient',
+          email: json['patient_email']?.toString() ?? '',
+          phoneNumber: json['patient_phone']?.toString() ?? '',
+          role: 'patient',
+        );
       }
     } catch (e) {
       print('⚠️ Error parsing patient: $e');
     }
 
+    // Backend returns appointment_date / appointment_time; some paths use date / timeSlot
+    final rawDate = json['date'] ?? json['appointment_date'];
+    final parsedDate = rawDate != null
+        ? DateTime.tryParse(rawDate.toString()) ?? DateTime.now()
+        : DateTime.now();
+
     return AppointmentDetail(
-      id: json['_id'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       doctor: doctor,
       patient: patient,
-      date: DateTime.parse(json['date']),
-      timeSlot: json['timeSlot'] ?? '',
-      reason: json['reason'],
-      status: json['status'] ?? 'pending',
-      createdAt: DateTime.parse(
-        json['createdAt'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        json['updatedAt'] ?? DateTime.now().toIso8601String(),
-      ),
+      date: parsedDate,
+      timeSlot: json['timeSlot']?.toString() ?? json['appointment_time']?.toString() ?? '',
+      reason: json['reason']?.toString() ?? json['notes']?.toString(),
+      status: json['status']?.toString() ?? 'pending',
+      channelName: json['channel_name']?.toString(),
+      createdAt: DateTime.tryParse(
+        json['createdAt']?.toString() ?? '',
+      ) ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(
+        json['updatedAt']?.toString() ?? '',
+      ) ?? DateTime.now(),
     );
   }
 

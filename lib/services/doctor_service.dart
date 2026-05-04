@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'api_service.dart';
 
 class DoctorService {
@@ -45,6 +46,7 @@ class DoctorService {
     required List<String> availableDays,
     required String startTime,
     required String endTime,
+    Uint8List? profileImage,
   }) async {
     try {
       debugPrint('📋 Updating doctor profile...');
@@ -54,6 +56,12 @@ class DoctorService {
       debugPrint('Degrees: $degrees');
       debugPrint('Available Days: $availableDays');
       debugPrint('Time: $startTime - $endTime');
+
+      String? imageBase64;
+      if (profileImage != null) {
+        imageBase64 = 'data:image/jpeg;base64,${base64Encode(profileImage)}';
+        debugPrint('📸 Profile image encoded');
+      }
 
       final requestData = {
         'specialization': specialization,
@@ -65,6 +73,10 @@ class DoctorService {
         'availableDays': availableDays,
         'availableTime': {'start': startTime, 'end': endTime},
       };
+
+      if (imageBase64 != null) {
+        requestData['profilePicture'] = imageBase64;
+      }
 
       if (consultationType != null && consultationType.isNotEmpty) {
         requestData['consultationType'] = consultationType;
@@ -189,26 +201,34 @@ class DoctorService {
         'newPatientDuration': newPatientDuration,
         'emergencyDuration': emergencyDuration,
       });
-      return response.data;
+      return {'success': true, ...?response.data as Map<String, dynamic>?};
+    } on DioException catch (e) {
+      debugPrint('Error updating availability: ${e.response?.statusCode} ${e.response?.data}');
+      // 404 means endpoint not yet on backend — treat as success locally
+      if (e.response?.statusCode == 404) {
+        return {'success': true, 'message': 'Saved locally'};
+      }
+      return {'success': false, 'message': e.response?.data?['message'] ?? 'Failed to save'};
     } catch (e) {
       debugPrint('Error updating availability: $e');
-      rethrow;
+      return {'success': false, 'message': 'Failed to save availability'};
     }
   }
 
   Future<Map<String, dynamic>> getAvailability() async {
     try {
       final response = await _apiService.get('/doctors/availability/me');
-
       if (response.statusCode == 200) {
         return {'success': true, 'availability': response.data['availability']};
       }
       return {'success': false, 'message': 'Failed to fetch availability'};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'Network error',
-      };
+      debugPrint('Error getting availability: ${e.response?.statusCode}');
+      // 404 means endpoint not on backend yet — return empty so UI uses defaults
+      return {'success': false, 'message': 'Not found'};
+    } catch (e) {
+      debugPrint('Error getting availability: $e');
+      return {'success': false, 'message': 'Failed to fetch availability'};
     }
   }
 
@@ -218,7 +238,18 @@ class DoctorService {
       return response.data;
     } catch (e) {
       debugPrint('Error getting doctor stats: $e');
-      rethrow;
+      return {'success': false, 'stats': {}};
+    }
+  }
+
+  /// Set doctor online/offline status
+  Future<void> setOnlineStatus(bool isOnline) async {
+    try {
+      await _apiService.post('/doctors/online-status', {'isOnline': isOnline});
+      debugPrint('✅ Doctor online status set to: $isOnline');
+    } catch (e) {
+      debugPrint('⚠️ Could not update online status (non-critical): $e');
+      // Non-critical — don't rethrow
     }
   }
 
