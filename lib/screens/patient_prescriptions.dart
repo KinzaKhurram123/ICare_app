@@ -234,6 +234,18 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── MY PRESCRIPTION TILE (full details) ──────────────
+                _clickableTile(
+                  icon: Icons.assignment_rounded,
+                  color: const Color(0xFF0EA5E9),
+                  bgColor: const Color(0xFFE0F2FE),
+                  title: 'My Prescription',
+                  subtitle: 'Patient info, SOAP notes & full details',
+                  arrowColor: const Color(0xFF0EA5E9),
+                  onTap: () => _showPrescriptionDetail(context, record, medicines, labTests, recordNumber),
+                ),
+                const SizedBox(height: 12),
+
                 // ── MEDICINES TILE (clickable) ────────────────────────
                 if (medicines.isNotEmpty) ...[
                   _clickableTile(
@@ -278,19 +290,459 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                     },
                   ),
                 ],
-
-                // Show empty state if no medicines AND no lab tests
-                if (medicines.isEmpty &&
-                    labTests.isEmpty &&
-                    record['prescription']?['referral'] == null)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('No details available',
-                        style: TextStyle(color: Color(0xFF94A3B8))),
-                  ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ── MY PRESCRIPTION FULL DETAIL SHEET ──────────────────────────────────
+  void _showPrescriptionDetail(
+    BuildContext context,
+    dynamic record,
+    List<dynamic> medicines,
+    List<dynamic> labTests,
+    String recordNumber,
+  ) {
+    final patientData = record['patient'];
+    final doctorData = record['doctor'];
+    final date = DateTime.parse(record['createdAt']);
+
+    // Patient info
+    final patientName = patientData is Map
+        ? (patientData['name'] ?? patientData['username'] ?? 'Patient').toString()
+        : 'Patient';
+    final patientEmail = patientData is Map
+        ? (patientData['email'] ?? '').toString()
+        : '';
+    final patientGender = patientData is Map
+        ? (patientData['gender'] ?? '').toString()
+        : '';
+    final patientAge = patientData is Map
+        ? (patientData['age'] ?? '').toString()
+        : '';
+
+    // Doctor info
+    final doctorName = doctorData is Map
+        ? (doctorData['name'] ?? doctorData['username'] ?? 'Doctor').toString()
+        : 'Doctor';
+
+    // Determine if "For Myself" — if patient has a valid MR number (has _id)
+    final patientId = patientData is Map
+        ? (patientData['_id'] ?? patientData['id'] ?? '').toString()
+        : '';
+    final hasMrNumber = patientId.isNotEmpty && patientId.length >= 6;
+    final mrNumber = hasMrNumber
+        ? 'MR-${patientId.substring(patientId.length - 6).toUpperCase()}'
+        : null;
+
+    // Diagnosis / SOAP notes
+    final diagnosis = (record['diagnosis'] ?? 'General Consultation').toString();
+    final notes = (record['notes'] ?? '').toString();
+    final followUpDate = record['followUpDate'] != null
+        ? DateTime.tryParse(record['followUpDate'].toString())
+        : null;
+    final followUpDays = record['followUpDays'];
+    final followUpMonths = record['followUpMonths'];
+
+    // Assigned courses
+    final assignedCourses = (record['assignedCourses'] as List?) ?? [];
+
+    // Vital signs
+    final vitals = record['vitalSigns'] as Map?;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.92,
+        minChildSize: 0.5,
+        maxChildSize: 0.97,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              // Header
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.assignment_rounded,
+                          color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('My Prescription',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white)),
+                          Text(DateFormat('MMMM dd, yyyy').format(date),
+                              style: const TextStyle(
+                                  fontSize: 13, color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    if (mrNumber != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(mrNumber,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5)),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Scrollable content
+              Expanded(
+                child: ListView(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  children: [
+                    // ── PATIENT INFO CARD ─────────────────────────────
+                    _prescriptionSection(
+                      icon: Icons.person_rounded,
+                      color: const Color(0xFF0EA5E9),
+                      title: 'Patient Information',
+                      child: Column(
+                        children: [
+                          _infoRow('Name', patientName),
+                          if (patientGender.isNotEmpty)
+                            _infoRow('Gender', patientGender),
+                          if (patientAge.isNotEmpty)
+                            _infoRow('Age', '$patientAge years'),
+                          if (patientEmail.isNotEmpty)
+                            _infoRow('Email', patientEmail),
+                          if (mrNumber != null)
+                            _infoRow('MR Number', mrNumber,
+                                highlight: true)
+                          else
+                            _infoRow('Appointment For', 'Someone Else',
+                                highlight: false),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── DOCTOR INFO ───────────────────────────────────
+                    _prescriptionSection(
+                      icon: Icons.medical_services_rounded,
+                      color: const Color(0xFF10B981),
+                      title: 'Consulting Doctor',
+                      child: _infoRow('Doctor', 'Dr. $doctorName'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── DIAGNOSIS ─────────────────────────────────────
+                    _prescriptionSection(
+                      icon: Icons.local_hospital_rounded,
+                      color: const Color(0xFFEF4444),
+                      title: 'Diagnosis',
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: const Color(0xFFEF4444)
+                                  .withValues(alpha: 0.2)),
+                        ),
+                        child: Text(diagnosis,
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A))),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── SOAP NOTES / CLINICAL NOTES ───────────────────
+                    if (notes.isNotEmpty) ...[
+                      _prescriptionSection(
+                        icon: Icons.notes_rounded,
+                        color: const Color(0xFF8B5CF6),
+                        title: 'Clinical Notes',
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F3FF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: const Color(0xFF8B5CF6)
+                                    .withValues(alpha: 0.2)),
+                          ),
+                          child: Text(notes,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF374151),
+                                  height: 1.5)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── VITAL SIGNS ───────────────────────────────────
+                    if (vitals != null && vitals.isNotEmpty) ...[
+                      _prescriptionSection(
+                        icon: Icons.monitor_heart_rounded,
+                        color: const Color(0xFFF59E0B),
+                        title: 'Vital Signs',
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if ((vitals['bloodPressure'] ?? '').toString().isNotEmpty)
+                              _vitalChip('BP', vitals['bloodPressure'].toString()),
+                            if (vitals['temperature'] != null)
+                              _vitalChip('Temp', '${vitals['temperature']}°C'),
+                            if (vitals['heartRate'] != null)
+                              _vitalChip('Heart Rate', '${vitals['heartRate']} bpm'),
+                            if (vitals['weight'] != null)
+                              _vitalChip('Weight', '${vitals['weight']} kg'),
+                            if (vitals['height'] != null)
+                              _vitalChip('Height', '${vitals['height']} cm'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── MEDICINES ─────────────────────────────────────
+                    if (medicines.isNotEmpty) ...[
+                      _prescriptionSection(
+                        icon: Icons.medication_rounded,
+                        color: const Color(0xFF3B82F6),
+                        title: 'Prescribed Medicines',
+                        child: Column(
+                          children: medicines
+                              .map((m) => _buildMedicineItem(m))
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── LAB TESTS ─────────────────────────────────────
+                    if (labTests.isNotEmpty) ...[
+                      _prescriptionSection(
+                        icon: Icons.biotech_rounded,
+                        color: const Color(0xFF8B5CF6),
+                        title: 'Ordered Lab Tests',
+                        child: Column(
+                          children: labTests
+                              .map((t) => _buildLabTestItem(t))
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── ASSIGNED COURSES ──────────────────────────────
+                    if (assignedCourses.isNotEmpty) ...[
+                      _prescriptionSection(
+                        icon: Icons.school_rounded,
+                        color: const Color(0xFF10B981),
+                        title: 'Assigned Courses',
+                        child: Column(
+                          children: assignedCourses.map((course) {
+                            final courseName = course is Map
+                                ? (course['title'] ?? course['name'] ?? 'Course').toString()
+                                : course.toString();
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.play_circle_rounded,
+                                      color: Color(0xFF10B981), size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(courseName,
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0F172A))),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // ── FOLLOW UP ─────────────────────────────────────
+                    if (followUpDate != null ||
+                        (followUpDays != null && followUpDays != 0) ||
+                        (followUpMonths != null && followUpMonths != 0)) ...[
+                      _prescriptionSection(
+                        icon: Icons.event_repeat_rounded,
+                        color: const Color(0xFF0EA5E9),
+                        title: 'Follow Up',
+                        child: _infoRow(
+                          'Next Visit',
+                          followUpDate != null
+                              ? DateFormat('MMMM dd, yyyy').format(followUpDate)
+                              : followUpDays != null && followUpDays != 0
+                                  ? 'In $followUpDays days'
+                                  : 'In $followUpMonths months',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _prescriptionSection({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: highlight
+                        ? const Color(0xFF0EA5E9)
+                        : const Color(0xFF0F172A))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _vitalChip(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A))),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11, color: Color(0xFF64748B))),
         ],
       ),
     );
