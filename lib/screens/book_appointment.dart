@@ -40,17 +40,20 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   bool _certifyChecked = false; // "I certify all details are correct"
 
   // Morning slots 9:00 AM - 11:45 AM (15 min intervals)
-  final List<String> _morningSlots = [
+  List<String> _morningSlots = [
     '09:00 AM', '09:15 AM', '09:30 AM', '09:45 AM',
     '10:00 AM', '10:15 AM', '10:30 AM', '10:45 AM',
     '11:00 AM', '11:15 AM', '11:30 AM', '11:45 AM',
   ];
 
   // Afternoon slots 12:00 PM - 01:45 PM
-  final List<String> _afternoonSlots = [
+  List<String> _afternoonSlots = [
     '12:00 PM', '12:15 PM', '12:30 PM', '12:45 PM',
     '01:00 PM', '01:15 PM', '01:30 PM', '01:45 PM',
   ];
+
+  // Evening slots — generated from doctor's working hours
+  List<String> _eveningSlots = [];
 
   // Dummy reviews
   final List<Map<String, String>> _reviews = [
@@ -65,8 +68,71 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     // Generate next 8 days starting from today (no past dates)
     final today = DateTime.now();
     _dateRange = List.generate(8, (i) => today.add(Duration(days: i)));
+    // Generate slots from doctor's working hours
+    _generateSlotsFromDoctorHours();
     // Auto-fill user details for "Myself"
     WidgetsBinding.instance.addPostFrameCallback((_) => _fillMyselfDetails());
+  }
+
+  /// Parse time string like "9:00 AM", "09:00 AM", "9:00", "21:00" → TimeOfDay
+  TimeOfDay? _parseTime(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final s = raw.trim().toUpperCase();
+      // Format: "9:00 AM" / "09:00 PM"
+      final amPmMatch = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)$').firstMatch(s);
+      if (amPmMatch != null) {
+        int h = int.parse(amPmMatch.group(1)!);
+        final m = int.parse(amPmMatch.group(2)!);
+        final isPm = amPmMatch.group(3) == 'PM';
+        if (isPm && h != 12) h += 12;
+        if (!isPm && h == 12) h = 0;
+        return TimeOfDay(hour: h, minute: m);
+      }
+      // Format: "21:00" / "09:00"
+      final h24Match = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(s);
+      if (h24Match != null) {
+        return TimeOfDay(
+          hour: int.parse(h24Match.group(1)!),
+          minute: int.parse(h24Match.group(2)!),
+        );
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  void _generateSlotsFromDoctorHours() {
+    final avail = widget.doctor.availableTime;
+    final startTime = _parseTime(avail?.start) ?? const TimeOfDay(hour: 9, minute: 0);
+    final endTime = _parseTime(avail?.end) ?? const TimeOfDay(hour: 22, minute: 0);
+
+    final allSlots = <String>[];
+    int h = startTime.hour;
+    int m = startTime.minute;
+
+    while (h < endTime.hour || (h == endTime.hour && m < endTime.minute)) {
+      final period = h < 12 ? 'AM' : 'PM';
+      final displayH = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+      allSlots.add('${displayH.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period');
+      m += 15;
+      if (m >= 60) { m -= 60; h++; }
+    }
+
+    // Split into morning (before 12), afternoon (12-17), evening (17+)
+    _morningSlots = allSlots.where((s) {
+      final t = _parseTime(s);
+      return t != null && t.hour < 12;
+    }).toList();
+
+    _afternoonSlots = allSlots.where((s) {
+      final t = _parseTime(s);
+      return t != null && t.hour >= 12 && t.hour < 17;
+    }).toList();
+
+    _eveningSlots = allSlots.where((s) {
+      final t = _parseTime(s);
+      return t != null && t.hour >= 17;
+    }).toList();
   }
 
   @override
@@ -561,6 +627,13 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
 
           // Afternoon Slots
           _buildSlotSection('Afternoon Slots', Icons.wb_twilight_outlined, _afternoonSlots),
+          const SizedBox(height: 8),
+
+          // Evening Slots
+          if (_eveningSlots.isNotEmpty) ...[
+            _buildSlotSection('Evening Slots', Icons.nights_stay_outlined, _eveningSlots),
+            const SizedBox(height: 8),
+          ],
 
           const SizedBox(height: 24),
 
