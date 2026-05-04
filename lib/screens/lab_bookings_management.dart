@@ -126,21 +126,7 @@ class _LabBookingsManagementState extends State<LabBookingsManagement>
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        final errorMessage = ErrorHandler.getFriendlyMessage(e);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            action: ErrorHandler.isRetryable(e)
-                ? SnackBarAction(
-                    label: ErrorHandler.getActionText(e),
-                    textColor: Colors.white,
-                    onPressed: _loadBookings,
-                  )
-                : null,
-          ),
-        );
+        ErrorHandler.showSnackBar(context, e, onRetry: _loadBookings);
       }
     }
   }

@@ -761,7 +761,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       return '($perDay) × $duration = $total tablets';
     }
     return 'Total: $total tablets';
-  }  }
+  }
 
   Widget _buildSearchBar() {
     return CustomInputField(
