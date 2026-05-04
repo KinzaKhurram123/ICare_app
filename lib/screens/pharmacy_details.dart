@@ -501,17 +501,13 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _buildPrescribedMedicinesBanner() {
     final meds = widget.prescribedMedicines!;
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF1D4ED8).withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D4ED8).withOpacity(0.25),
+            color: const Color(0xFF1D4ED8).withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -520,85 +516,252 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.description_rounded, color: Colors.white, size: 20),
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Doctor\'s Prescription',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
-                    Text('Medicines prescribed by your doctor',
-                        style: TextStyle(fontSize: 12, color: Colors.white70)),
-                  ],
-                ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-            ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.description_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Doctor's Prescription",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+                      Text('Prescribed medicines with dosage details',
+                          style: TextStyle(fontSize: 12, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${meds.length} Medicine${meds.length > 1 ? 's' : ''}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: meds.map((m) {
-              final name = m is Map
-                  ? (m['name'] ?? m['medicineName'] ?? '').toString()
-                  : m.toString();
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
-                ),
-                child: Text(name,
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-              );
-            }).toList(),
+
+          // Medicine cards — lab jaisa
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: meds.map((m) {
+                final name = m is Map
+                    ? (m['name'] ?? m['medicineName'] ?? '').toString()
+                    : m.toString();
+                final dosage = m is Map ? (m['dosage'] ?? '').toString() : '';
+                final frequency = m is Map ? (m['frequency'] ?? '').toString() : '';
+                final duration = m is Map ? (m['duration'] ?? '').toString() : '';
+                final day = m is Map ? (m['day'] ?? '').toString() : '';
+                final noon = m is Map ? (m['noon'] ?? '').toString() : '';
+                final night = m is Map ? (m['night'] ?? '').toString() : '';
+                final instructions = m is Map ? (m['instructions'] ?? '').toString() : '';
+
+                // Calculate quantity: day + noon + night × duration days
+                int totalQty = 0;
+                try {
+                  final d = int.tryParse(day) ?? 0;
+                  final n = int.tryParse(noon) ?? 0;
+                  final ni = int.tryParse(night) ?? 0;
+                  final perDay = d + n + ni;
+                  // Extract number from duration string e.g. "5 days" → 5
+                  final durationMatch = RegExp(r'\d+').firstMatch(duration);
+                  final durationDays = durationMatch != null ? int.tryParse(durationMatch.group(0)!) ?? 0 : 0;
+                  if (perDay > 0 && durationDays > 0) {
+                    totalQty = perDay * durationDays;
+                  }
+                } catch (_) {}
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Medicine name
+                      Row(
+                        children: [
+                          const Icon(Icons.medication_rounded, color: Color(0xFF1D4ED8), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ),
+                          if (totalQty > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1D4ED8),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Qty: $totalQty',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Dosage chips
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          if (day.isNotEmpty && day != '0')
+                            _doseChip('☀️ Day: $day', const Color(0xFFF59E0B)),
+                          if (noon.isNotEmpty && noon != '0')
+                            _doseChip('🌤️ Noon: $noon', const Color(0xFFEF4444)),
+                          if (night.isNotEmpty && night != '0')
+                            _doseChip('🌙 Night: $night', const Color(0xFF6366F1)),
+                          if (dosage.isNotEmpty && day.isEmpty)
+                            _doseChip('💊 $dosage', const Color(0xFF0EA5E9)),
+                          if (frequency.isNotEmpty && day.isEmpty)
+                            _doseChip('🔄 $frequency', const Color(0xFF10B981)),
+                          if (duration.isNotEmpty)
+                            _doseChip('📅 $duration', const Color(0xFF64748B)),
+                        ],
+                      ),
+                      // Calculation summary
+                      if (totalQty > 0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: Text(
+                            _buildQuantityText(day, noon, night, duration, totalQty),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1D4ED8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (instructions.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          '📝 $instructions',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isPlacingOrder ? null : _placePrescriptionOrder,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1D4ED8),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              icon: _isPlacingOrder
-                  ? const SizedBox(
-                      width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1D4ED8)))
-                  : const Icon(Icons.send_rounded, size: 18),
-              label: Text(
-                _isPlacingOrder ? 'Placing Order...' : 'Order All Prescribed Medicines',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+
+          // Order button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isPlacingOrder ? null : _placePrescriptionOrder,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1D4ED8),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                icon: _isPlacingOrder
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.send_rounded, size: 18),
+                label: Text(
+                  _isPlacingOrder ? 'Placing Order...' : 'Order All Prescribed Medicines',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Center(
-            child: Text(
-              'Or browse & add individual medicines below',
-              style: TextStyle(fontSize: 11, color: Colors.white70),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Center(
+              child: Text(
+                'Or browse & add individual medicines below',
+                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _doseChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  String _buildQuantityText(String day, String noon, String night, String duration, int total) {
+    final parts = <String>[];
+    if (day.isNotEmpty && day != '0') parts.add('Day: $day');
+    if (noon.isNotEmpty && noon != '0') parts.add('Noon: $noon');
+    if (night.isNotEmpty && night != '0') parts.add('Night: $night');
+    final perDay = parts.isNotEmpty ? parts.join(' + ') : '';
+    if (perDay.isNotEmpty && duration.isNotEmpty) {
+      return '($perDay) × $duration = $total tablets';
+    }
+    return 'Total: $total tablets';
+  }  }
 
   Widget _buildSearchBar() {
     return CustomInputField(
