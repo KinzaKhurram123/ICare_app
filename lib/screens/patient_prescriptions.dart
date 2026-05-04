@@ -7,6 +7,7 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/labb_details.dart';
 import 'package:icare/screens/pharmacy_details.dart';
+import 'package:icare/screens/pharmacy_prescription_screen.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -1646,7 +1647,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => PharmacyDetailsScreen(
+            builder: (_) => PharmacyPrescriptionScreen(
               pharmacy: Map<String, dynamic>.from(pharmacy is Map ? pharmacy : {}),
               prescribedMedicines: widget.medicines,
             ),
