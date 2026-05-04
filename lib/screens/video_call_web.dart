@@ -1,5 +1,6 @@
 // Web video call — Agora Web SDK via dart:js_interop
 import 'dart:async';
+import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:ui_web' as ui;
 // ignore: avoid_web_libraries_in_flutter
@@ -567,14 +568,33 @@ class _VideoCallWebState extends State<VideoCall> {
       final result = await FilePicker.platform.pickFiles(withData: true);
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      final fileMsg = '📎 ${file.name}';
-      // Show locally immediately
-      if (mounted) setState(() => _chatMessages.add({'sender': _mySenderName, 'text': fileMsg}));
-      // Also send to backend so other party sees it
+      final bytes = file.bytes;
+      final name = file.name.toLowerCase();
+
+      // Check if it's an image
+      final isImage = name.endsWith('.png') || name.endsWith('.jpg') ||
+          name.endsWith('.jpeg') || name.endsWith('.gif') ||
+          name.endsWith('.webp') || name.endsWith('.bmp');
+
+      String msgText;
+      if (isImage && bytes != null) {
+        // Convert to base64 data URL so it renders as image in chat
+        final ext = name.split('.').last;
+        final mime = ext == 'jpg' || ext == 'jpeg' ? 'image/jpeg'
+            : ext == 'png' ? 'image/png'
+            : ext == 'gif' ? 'image/gif'
+            : 'image/webp';
+        final b64 = base64Encode(bytes);
+        msgText = 'img:data:$mime;base64,$b64';
+      } else {
+        msgText = '📎 ${file.name}';
+      }
+
+      if (mounted) setState(() => _chatMessages.add({'sender': _mySenderName, 'text': msgText}));
       ApiService().post('/call-chat/send', {
         'channelName': widget.channelName,
         'sender': _mySenderName,
-        'text': fileMsg,
+        'text': msgText,
       }).then((res) {
         try {
           final createdAt = res.data['message']?['createdAt']?.toString();
@@ -785,6 +805,34 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   // ── Chat Panel ──────────────────────────────────────────────────────────
+  Widget _buildMessageContent(String text, bool isMe) {
+    // Image message — render as inline image
+    if (text.startsWith('img:')) {
+      final dataUrl = text.substring(4); // remove 'img:' prefix
+      try {
+        // Extract base64 part from data URL
+        final base64Part = dataUrl.split(',').last;
+        final bytes = base64Decode(base64Part);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            bytes,
+            width: 200,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Text(
+              '🖼️ Image',
+              style: TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        );
+      } catch (_) {
+        return const Text('🖼️ Image', style: TextStyle(color: Colors.white, fontSize: 13));
+      }
+    }
+    // Regular text message
+    return Text(text, style: const TextStyle(color: Colors.white, fontSize: 13));
+  }
+
   Widget _buildChatPanel() {
     return Column(
       children: [
@@ -863,11 +911,7 @@ class _VideoCallWebState extends State<VideoCall> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              msg['text'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 13),
-                            ),
+                            _buildMessageContent(msg['text'] ?? '', isMe),
                           ],
                         ),
                       ),
