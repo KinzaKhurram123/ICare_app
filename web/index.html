@@ -65,20 +65,20 @@
           var remoteDiv = document.getElementById('agora-remote');
           if (remoteDiv) {
             try {
+              // Clear any previous video before playing new one
               videoTrack.play('agora-remote');
-              console.log('✅ Remote video playing');
+              console.log('✅ Remote video playing (attempt ' + retries + ')');
             } catch(e) {
               console.warn('Remote video play error:', e.message);
-              // Retry once after short delay
-              if (retries < 3) {
-                setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 500);
+              if (retries < 5) {
+                setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 300);
               }
             }
           } else {
-            // Div not ready yet — retry up to 10 times (5 seconds total)
-            if (retries < 10) {
+            // Div not ready yet — retry up to 20 times (6 seconds total)
+            if (retries < 20) {
               console.warn('agora-remote div not found, retry ' + retries);
-              setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 500);
+              setTimeout(function() { playRemoteVideo(videoTrack, retries + 1); }, 300);
             } else {
               console.error('agora-remote div never appeared after retries');
             }

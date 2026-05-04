@@ -77,7 +77,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
   }
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) async {
       if (_requestId == null || !mounted) return;
       try {
         final status = await _service.getStatus(_requestId!);
@@ -109,7 +109,11 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     _pollTimer?.cancel();
     final userData = await SharedPref().getUserData();
     final patientName = userData?.name ?? 'Patient';
-    appNavigatorKey.currentState?.pushReplacement(
+
+    if (!mounted) return;
+
+    // Use Navigator.of(context) directly — more reliable than appNavigatorKey
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => VideoCall(
           channelName: channelName,
