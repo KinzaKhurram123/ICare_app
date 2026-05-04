@@ -25,12 +25,68 @@ class PatientPrescriptions extends ConsumerStatefulWidget {
 class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   final MedicalRecordService _medicalRecordService = MedicalRecordService();
   List<dynamic> _prescriptions = [];
+  List<dynamic> _filtered = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadPrescriptions();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+        _applyFilter();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _applyFilter() {
+    if (_searchQuery.isEmpty) {
+      _filtered = List.from(_prescriptions);
+      return;
+    }
+    _filtered = _prescriptions.where((r) {
+      final diagnosis = (r['diagnosis'] ?? '').toString().toLowerCase();
+      final doctorName = (r['doctor']?['name'] ?? '').toString().toLowerCase();
+      final date = r['createdAt'] != null
+          ? DateFormat('MMM dd, yyyy')
+              .format(DateTime.parse(r['createdAt'].toString()))
+              .toLowerCase()
+          : '';
+      final rawId = (r['_id'] ?? r['id'] ?? '').toString();
+      final mrNumber = rawId.length >= 6
+          ? 'mr-${rawId.substring(rawId.length - 6).toLowerCase()}'
+          : '';
+      // Also search medicine names
+      final meds = (r['prescription']?['medicines'] as List?) ?? [];
+      final medNames = meds
+          .map((m) => (m is Map ? m['name'] : m).toString().toLowerCase())
+          .join(' ');
+      // Also search lab test names
+      final labs = (r['prescription']?['labTests'] as List?) ??
+          (r['labTests'] as List?) ??
+          [];
+      final labNames = labs
+          .map((t) => (t is Map ? (t['name'] ?? t['testName']) : t)
+              .toString()
+              .toLowerCase())
+          .join(' ');
+
+      return diagnosis.contains(_searchQuery) ||
+          doctorName.contains(_searchQuery) ||
+          date.contains(_searchQuery) ||
+          mrNumber.contains(_searchQuery) ||
+          medNames.contains(_searchQuery) ||
+          labNames.contains(_searchQuery);
+    }).toList();
   }
 
   Future<void> _loadPrescriptions() async {
@@ -65,6 +121,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
 
         setState(() {
           _prescriptions = prescriptions;
+          _filtered = List.from(prescriptions);
           _isLoading = false;
         });
       } else {
@@ -97,29 +154,122 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _prescriptions.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.medication_outlined,
-                          size: 64, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      const Text('No prescriptions yet',
-                          style: TextStyle(
-                              fontSize: 15, color: Color(0xFF64748B))),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadPrescriptions,
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(isDesktop ? 40 : 20),
-                    itemCount: _prescriptions.length,
-                    itemBuilder: (context, index) =>
-                        _buildPrescriptionCard(_prescriptions[index]),
+          : Column(
+              children: [
+                // ── Search Bar ──────────────────────────────────────────
+                Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.fromLTRB(
+                      isDesktop ? 40 : 16, 12, isDesktop ? 40 : 16, 12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText:
+                          'Search by diagnosis, doctor, medicine, lab test…',
+                      hintStyle: const TextStyle(
+                          fontSize: 13, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          color: Color(0xFF94A3B8), size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded,
+                                  color: Color(0xFF94A3B8), size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: const Color(0xFF0EA5E9).withValues(alpha: 0.5),
+                            width: 1.5),
+                      ),
+                    ),
                   ),
                 ),
+                // ── Result count ────────────────────────────────────────
+                if (_searchQuery.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        isDesktop ? 40 : 16, 8, isDesktop ? 40 : 16, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _filtered.isEmpty
+                            ? 'No results for "$_searchQuery"'
+                            : '${_filtered.length} result${_filtered.length == 1 ? '' : 's'} for "$_searchQuery"',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _filtered.isEmpty
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                // ── List ────────────────────────────────────────────────
+                Expanded(
+                  child: _filtered.isEmpty && _searchQuery.isNotEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off_rounded,
+                                  size: 56,
+                                  color: Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No prescriptions match\n"$_searchQuery"',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _prescriptions.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.medication_outlined,
+                                      size: 64,
+                                      color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  const Text('No prescriptions yet',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          color: Color(0xFF64748B))),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _loadPrescriptions,
+                              child: ListView.builder(
+                                padding: EdgeInsets.all(isDesktop ? 40 : 20),
+                                itemCount: _filtered.length,
+                                itemBuilder: (context, index) =>
+                                    _buildPrescriptionCard(_filtered[index]),
+                              ),
+                            ),
+                ),
+              ],
+            ),
     );
   }
 
