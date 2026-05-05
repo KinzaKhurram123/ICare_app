@@ -5,7 +5,7 @@ const UserHealthSettings = require('../models/UserHealthSettings');
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getSettings = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const settings = await UserHealthSettings.getOrCreate(userId);
 
     res.json({
@@ -27,7 +27,7 @@ exports.getSettings = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateSettings = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const updates = req.body;
 
     const settings = await UserHealthSettings.findOneAndUpdate(
@@ -56,7 +56,7 @@ exports.updateSettings = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.toggleHealthMode = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { enabled, conditions } = req.body;
 
     const settings = await UserHealthSettings.findOneAndUpdate(
@@ -90,7 +90,7 @@ exports.toggleHealthMode = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateTrackerToggles = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { trackedVitals } = req.body;
 
     if (!trackedVitals || typeof trackedVitals !== 'object') {
@@ -126,7 +126,7 @@ exports.updateTrackerToggles = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateDailyGoals = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { dailyGoals } = req.body;
 
     if (!dailyGoals || typeof dailyGoals !== 'object') {
@@ -162,7 +162,7 @@ exports.updateDailyGoals = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateUnitPreferences = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { unitPreferences } = req.body;
 
     if (!unitPreferences || typeof unitPreferences !== 'object') {
@@ -198,7 +198,7 @@ exports.updateUnitPreferences = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateReminders = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { reminders } = req.body;
 
     if (!reminders || typeof reminders !== 'object') {
@@ -234,7 +234,7 @@ exports.updateReminders = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateConsultationPreferences = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { consultationPreferences } = req.body;
 
     const settings = await UserHealthSettings.findOneAndUpdate(
@@ -263,7 +263,7 @@ exports.updateConsultationPreferences = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updatePharmacyPreferences = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { pharmacyPreferences } = req.body;
 
     const settings = await UserHealthSettings.findOneAndUpdate(
@@ -292,7 +292,7 @@ exports.updatePharmacyPreferences = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateLabPreferences = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { labPreferences } = req.body;
 
     const settings = await UserHealthSettings.findOneAndUpdate(
@@ -315,3 +315,4 @@ exports.updateLabPreferences = async (req, res) => {
     });
   }
 };
+

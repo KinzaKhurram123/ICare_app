@@ -5,7 +5,7 @@ const UserHealthProfile = require('../models/UserHealthProfile');
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const profile = await UserHealthProfile.getOrCreate(userId);
 
     res.json({
@@ -28,7 +28,7 @@ exports.getProfile = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const updates = req.body;
 
     const profile = await UserHealthProfile.findOneAndUpdate(
@@ -57,7 +57,7 @@ exports.updateProfile = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.addMedicalCondition = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { name, diagnosedDate, notes } = req.body;
 
     if (!name) {
@@ -102,7 +102,7 @@ exports.addMedicalCondition = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateMedicalCondition = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { conditionId } = req.params;
     const updates = req.body;
 
@@ -145,7 +145,7 @@ exports.updateMedicalCondition = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.deleteMedicalCondition = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { conditionId } = req.params;
 
     const profile = await UserHealthProfile.findOneAndUpdate(
@@ -181,7 +181,7 @@ exports.deleteMedicalCondition = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.addAllergy = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { allergen, type, severity, reaction, notes } = req.body;
 
     if (!allergen) {
@@ -221,7 +221,7 @@ exports.addAllergy = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.deleteAllergy = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { allergyId } = req.params;
 
     const profile = await UserHealthProfile.findOneAndUpdate(
@@ -257,7 +257,7 @@ exports.deleteAllergy = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.addMedication = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { name, dosage, frequency, startDate, endDate, prescribedBy, purpose } = req.body;
 
     if (!name) {
@@ -306,7 +306,7 @@ exports.addMedication = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.deleteMedication = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { medicationId } = req.params;
 
     const profile = await UserHealthProfile.findOneAndUpdate(
@@ -342,7 +342,7 @@ exports.deleteMedication = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.addEmergencyContact = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { name, phone, relation, isPrimary } = req.body;
 
     if (!name || !phone || !relation) {
@@ -395,7 +395,7 @@ exports.addEmergencyContact = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.deleteEmergencyContact = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { contactId } = req.params;
 
     const profile = await UserHealthProfile.findOneAndUpdate(
@@ -425,3 +425,4 @@ exports.deleteEmergencyContact = async (req, res) => {
     });
   }
 };
+

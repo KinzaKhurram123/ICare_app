@@ -7,7 +7,7 @@ const UserHealthSettings = require('../models/UserHealthSettings');
 exports.addEntry = async (req, res) => {
   try {
     const { vitalType, value, unit, notes, timestamp } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // Validate required fields
     if (!vitalType || !value || !unit) {
@@ -52,7 +52,7 @@ exports.addEntry = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getEntries = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { vitalType, startDate, endDate, limit = 100 } = req.query;
 
     // Build query
@@ -93,7 +93,7 @@ exports.getEntries = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getLatestEntries = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const latestEntries = await HealthTrackerEntry.getLatestEntries(userId);
 
@@ -116,7 +116,7 @@ exports.getLatestEntries = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getEntriesByType = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { vitalType } = req.params;
     const { days = 30 } = req.query;
 
@@ -150,7 +150,7 @@ exports.getEntriesByType = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getSummary = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { vitalType, days = 7 } = req.query;
 
     if (!vitalType) {
@@ -187,7 +187,7 @@ exports.getSummary = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.updateEntry = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { id } = req.params;
     const { value, notes, timestamp } = req.body;
 
@@ -230,7 +230,7 @@ exports.updateEntry = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.deleteEntry = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { id } = req.params;
 
     const entry = await HealthTrackerEntry.findOneAndDelete({ _id: id, userId });
@@ -261,7 +261,7 @@ exports.deleteEntry = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 exports.getDashboard = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // Get user settings to determine which vitals to show
     const settings = await UserHealthSettings.getOrCreate(userId);
@@ -318,3 +318,4 @@ exports.getDashboard = async (req, res) => {
     });
   }
 };
+
