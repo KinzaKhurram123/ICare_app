@@ -51,12 +51,16 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
   String _cyclePhase = 'Ovulation';
 
   // Points
-  int _pointsToday = 45;
+  int _pointsToday = 0;
 
   // User name (loaded from SharedPref)
   String _userName = '';
 
-  double get _dailyGoalProgress => 0.62;
+  // How many vitals have been logged today (for daily goal)
+  int _loggedToday = 0;
+  static const int _totalVitals = 8; // BP, Sugar, Weight, HR, SpO2, Water, Steps, Sleep
+
+  double get _dailyGoalProgress => (_loggedToday / _totalVitals).clamp(0.0, 1.0);
 
   @override
   void initState() {
@@ -70,6 +74,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
     final result = await _healthTrackerService.getLatestEntries();
     if (result['success'] == true && mounted) {
       final entries = result['entries'] as List? ?? [];
+      int logged = 0;
       setState(() {
         for (final e in entries) {
           final type = e['vitalType'] as String? ?? '';
@@ -80,31 +85,42 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               if (parts.length == 2) {
                 _systolic = int.tryParse(parts[0]) ?? _systolic;
                 _diastolic = int.tryParse(parts[1]) ?? _diastolic;
+                logged++;
               }
               break;
             case 'Blood Glucose':
               _bloodSugar = double.tryParse(val) ?? _bloodSugar;
+              logged++;
               break;
             case 'Weight':
               _weight = double.tryParse(val) ?? _weight;
+              logged++;
               break;
             case 'Heart Rate':
               _heartRate = int.tryParse(val) ?? _heartRate;
+              logged++;
               break;
             case 'Oxygen Level':
               _spO2 = int.tryParse(val) ?? _spO2;
+              logged++;
               break;
             case 'Water Intake':
               _waterGlasses = int.tryParse(val) ?? _waterGlasses;
+              logged++;
               break;
             case 'Steps':
               _steps = int.tryParse(val) ?? _steps;
+              logged++;
               break;
             case 'Sleep':
               _sleepHours = double.tryParse(val) ?? _sleepHours;
+              logged++;
               break;
           }
         }
+        _loggedToday = logged;
+        // 5 points per logged vital
+        _pointsToday = logged * 5;
       });
     }
   }
@@ -115,6 +131,8 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
       value: value,
       unit: unit,
     );
+    // Reload to reflect updated values and progress
+    await _loadLatestVitals();
   }
 
   Future<void> _loadUserName() async {
@@ -157,7 +175,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
           final val = double.tryParse(controller.text);
           if (val != null) {
             onSave(val);
-            setState(() => _pointsToday += earnPoints);
+            // Points will be recalculated from backend after _saveVital
           }
           Navigator.pop(ctx);
         },
@@ -183,7 +201,6 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
             setState(() {
               _systolic = sys;
               _diastolic = dia;
-              _pointsToday += 5;
             });
             _saveVital('Blood Pressure', '$sys/$dia', 'mmHg');
           }
