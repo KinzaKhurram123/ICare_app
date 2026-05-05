@@ -113,7 +113,9 @@ healthTrackerEntrySchema.methods.determineStatus = function () {
         return 'Normal';
 
       case 'Medication Adherence':
-        return this.value === 'Taken' ? 'Taken' : 'Missed';
+        if (isNaN(val)) return 'Normal';
+        if (val >= 80) return 'Taken';
+        return 'Missed';
 
       default:
         return 'Normal';
