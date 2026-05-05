@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { authMiddleware: protect } = require('../middleware/auth');
 
 // Import controllers
 const healthTrackerController = require('../controllers/healthTrackerController');
