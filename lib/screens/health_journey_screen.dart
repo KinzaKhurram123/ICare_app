@@ -5,6 +5,7 @@ import 'package:icare/models/health_tracker_entry.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 class HealthJourneyScreen extends StatefulWidget {
   const HealthJourneyScreen({super.key});
@@ -279,107 +280,184 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
     final Color color = config['color'] ?? Colors.grey;
     final bool hasData = latestEntry != null;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => _showAddVitalDialog(
+        vitalKey: vitalKey,
+        vitalType: config['name'] ?? vitalKey,
+        unit: config['unit'] ?? '',
+        currentValue: hasData ? latestEntry.value : '',
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(config['icon'], color: color, size: 20),
-              ),
-              if (hasData)
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
-                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                        : const Color(0xFFEF4444).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    latestEntry.status,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
+                  child: Icon(config['icon'], color: color, size: 20),
+                ),
+                if (hasData)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
                       color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                          ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                          : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      latestEntry.status,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
+                      ),
+                    ),
+                  )
+                else
+                  const Icon(Icons.add_circle_outline_rounded,
+                      color: Color(0xFF94A3B8), size: 18),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              config['name'] ?? '',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  hasData ? latestEntry.value : '--',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: hasData ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    config['unit'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            config['name'] ?? '',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w600,
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
+            const SizedBox(height: 8),
+            if (summary != null && summary.count > 0)
               Text(
-                hasData ? latestEntry.value : '--',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF0F172A),
+                '7-day avg: ${summary.average?.toStringAsFixed(1) ?? '--'}',
+                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+              )
+            else
+              Text(
+                hasData
+                    ? DateFormat('MMM dd, HH:mm').format(latestEntry.timestamp)
+                    : 'Tap to add reading',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: hasData ? const Color(0xFF94A3B8) : color,
+                  fontWeight: hasData ? FontWeight.normal : FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  config['unit'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (summary != null && summary.count > 0)
-            Text(
-              '7-day avg: ${summary.average?.toStringAsFixed(1) ?? '--'}',
-              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-            )
-          else
-            Text(
-              hasData
-                  ? DateFormat('MMM dd, HH:mm').format(latestEntry.timestamp)
-                  : 'No data yet',
-              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-            ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void _showAddVitalDialog({
+    required String vitalKey,
+    required String vitalType,
+    required String unit,
+    required String currentValue,
+  }) {
+    final bool isBP = vitalType == 'Blood Pressure';
+
+    if (isBP) {
+      // BP needs two fields
+      final parts = currentValue.split('/');
+      final sysCtrl = TextEditingController(text: parts.isNotEmpty ? parts[0] : '');
+      final diaCtrl = TextEditingController(text: parts.length > 1 ? parts[1] : '');
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _JourneyBPSheet(
+          sysCtrl: sysCtrl,
+          diaCtrl: diaCtrl,
+          onSave: () async {
+            final sys = sysCtrl.text.trim();
+            final dia = diaCtrl.text.trim();
+            if (sys.isNotEmpty && dia.isNotEmpty) {
+              await _trackerService.addEntry(
+                vitalType: 'Blood Pressure',
+                value: '$sys/$dia',
+                unit: 'mmHg',
+              );
+              Navigator.pop(ctx);
+              _loadDashboard();
+            }
+          },
+        ),
+      );
+    } else {
+      final ctrl = TextEditingController(text: currentValue);
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _JourneyVitalSheet(
+          title: vitalType,
+          unit: unit,
+          controller: ctrl,
+          onSave: () async {
+            final val = ctrl.text.trim();
+            if (val.isNotEmpty) {
+              await _trackerService.addEntry(
+                vitalType: vitalType,
+                value: val,
+                unit: unit,
+              );
+              Navigator.pop(ctx);
+              _loadDashboard();
+            }
+          },
+        ),
+      );
+    }
   }
 
   Widget _buildEmptyState() {
@@ -422,6 +500,188 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
               textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Bottom sheet for single-value vitals ────────────────────────────────
+class _JourneyVitalSheet extends StatelessWidget {
+  final String title;
+  final String unit;
+  final TextEditingController controller;
+  final VoidCallback onSave;
+
+  const _JourneyVitalSheet({
+    required this.title,
+    required this.unit,
+    required this.controller,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('Log $title',
+              style: const TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 4),
+          Text('Enter your $title reading',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(height: 20),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+            autofocus: true,
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+            decoration: InputDecoration(
+              suffixText: unit,
+              suffixStyle: const TextStyle(fontSize: 16, color: Color(0xFF94A3B8)),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: onSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: const Text('Save',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Bottom sheet for Blood Pressure (two fields) ────────────────────────
+class _JourneyBPSheet extends StatelessWidget {
+  final TextEditingController sysCtrl;
+  final TextEditingController diaCtrl;
+  final VoidCallback onSave;
+
+  const _JourneyBPSheet({
+    required this.sysCtrl,
+    required this.diaCtrl,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Log Blood Pressure',
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 4),
+          const Text('Enter systolic and diastolic readings',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: _bpField(sysCtrl, 'Systolic', context)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Text('/', style: TextStyle(fontSize: 32, color: Color(0xFFCBD5E1))),
+              ),
+              Expanded(child: _bpField(diaCtrl, 'Diastolic', context)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: onSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: const Text('Save',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bpField(TextEditingController ctrl, String label, BuildContext context) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      textAlign: TextAlign.center,
+      autofocus: label == 'Systolic',
+      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+      decoration: InputDecoration(
+        labelText: label,
+        suffixText: 'mmHg',
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
         ),
       ),
     );

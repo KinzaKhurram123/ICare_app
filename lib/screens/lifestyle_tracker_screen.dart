@@ -969,8 +969,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'How many glasses of water have you had?',
               unit: 'glasses',
               currentValue: _waterGlasses.toDouble(),
-              onSave: (v) =>
-                  setState(() => _waterGlasses = v.toInt().clamp(0, 20)),
+              onSave: (v) {
+                setState(() => _waterGlasses = v.toInt().clamp(0, 20));
+                _saveVital('Water Intake', v.toInt().clamp(0, 20).toString(), 'glasses');
+              },
             ),
             child: _waterCard(),
           ),
@@ -990,7 +992,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your step count for today',
               unit: 'steps',
               currentValue: _steps.toDouble(),
-              onSave: (v) => setState(() => _steps = v.toInt()),
+              onSave: (v) {
+                setState(() => _steps = v.toInt());
+                _saveVital('Steps', v.toInt().toString(), 'steps');
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -1009,8 +1014,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'How many hours did you sleep last night?',
               unit: 'hours',
               currentValue: _sleepHours,
-              onSave: (v) =>
-                  setState(() => _sleepHours = v.clamp(0, 24)),
+              onSave: (v) {
+                setState(() => _sleepHours = v.clamp(0, 24));
+                _saveVital('Sleep', v.clamp(0, 24).toStringAsFixed(1), 'hours');
+              },
             ),
           ),
           const SizedBox(height: 12),
