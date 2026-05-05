@@ -12,7 +12,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/profile',
+        '/health/profile',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -26,7 +26,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/profile',
+        '/health/profile',
         data: updates,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -45,7 +45,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/api/health/profile/conditions',
+        '/health/profile/conditions',
         data: {
           'name': name,
           if (diagnosedDate != null) 'diagnosedDate': diagnosedDate.toIso8601String(),
@@ -67,7 +67,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/profile/conditions/$conditionId',
+        '/health/profile/conditions/$conditionId',
         data: updates,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -82,7 +82,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.delete(
-        '/api/health/profile/conditions/$conditionId',
+        '/health/profile/conditions/$conditionId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -102,7 +102,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/api/health/profile/allergies',
+        '/health/profile/allergies',
         data: {
           'allergen': allergen,
           if (type != null) 'type': type,
@@ -123,7 +123,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.delete(
-        '/api/health/profile/allergies/$allergyId',
+        '/health/profile/allergies/$allergyId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -145,7 +145,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/api/health/profile/medications',
+        '/health/profile/medications',
         data: {
           'name': name,
           if (dosage != null) 'dosage': dosage,
@@ -168,7 +168,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.delete(
-        '/api/health/profile/medications/$medicationId',
+        '/health/profile/medications/$medicationId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -187,7 +187,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/api/health/profile/emergency-contacts',
+        '/health/profile/emergency-contacts',
         data: {
           'name': name,
           'phone': phone,
@@ -207,7 +207,7 @@ class HealthProfileService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.delete(
-        '/api/health/profile/emergency-contacts/$contactId',
+        '/health/profile/emergency-contacts/$contactId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;

@@ -18,7 +18,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/api/health/tracker/entries',
+        '/health/tracker/entries',
         data: {
           'vitalType': vitalType,
           'value': value,
@@ -51,7 +51,7 @@ class HealthTrackerService {
       };
 
       final response = await _dio.get(
-        '/api/health/tracker/entries',
+        '/health/tracker/entries',
         queryParameters: queryParams,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -66,7 +66,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/tracker/entries/latest',
+        '/health/tracker/entries/latest',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -80,7 +80,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/tracker/entries/$vitalType',
+        '/health/tracker/entries/$vitalType',
         queryParameters: {'days': days},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -95,7 +95,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/tracker/summary',
+        '/health/tracker/summary',
         queryParameters: {
           'vitalType': vitalType,
           'days': days,
@@ -118,7 +118,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/tracker/entries/$id',
+        '/health/tracker/entries/$id',
         data: {
           if (value != null) 'value': value,
           if (notes != null) 'notes': notes,
@@ -137,7 +137,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.delete(
-        '/api/health/tracker/entries/$id',
+        '/health/tracker/entries/$id',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -151,7 +151,7 @@ class HealthTrackerService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/tracker/dashboard',
+        '/health/tracker/dashboard',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;

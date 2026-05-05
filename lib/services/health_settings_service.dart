@@ -12,7 +12,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/api/health/settings',
+        '/health/settings',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
@@ -26,7 +26,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings',
+        '/health/settings',
         data: updates,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -44,7 +44,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/health-mode',
+        '/health/settings/health-mode',
         data: {
           'enabled': enabled,
           if (conditions != null) 'conditions': conditions,
@@ -62,7 +62,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/tracker-toggles',
+        '/health/settings/tracker-toggles',
         data: {'trackedVitals': trackedVitals},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -77,7 +77,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/daily-goals',
+        '/health/settings/daily-goals',
         data: {'dailyGoals': dailyGoals},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -92,7 +92,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/unit-preferences',
+        '/health/settings/unit-preferences',
         data: {'unitPreferences': unitPreferences},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -107,7 +107,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/reminders',
+        '/health/settings/reminders',
         data: {'reminders': reminders},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -122,7 +122,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/consultation-preferences',
+        '/health/settings/consultation-preferences',
         data: {'consultationPreferences': preferences},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -137,7 +137,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/pharmacy-preferences',
+        '/health/settings/pharmacy-preferences',
         data: {'pharmacyPreferences': preferences},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -152,7 +152,7 @@ class HealthSettingsService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.put(
-        '/api/health/settings/lab-preferences',
+        '/health/settings/lab-preferences',
         data: {'labPreferences': preferences},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
