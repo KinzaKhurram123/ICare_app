@@ -488,12 +488,32 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
                   children: [
                     Expanded(
                       child: _miniTile('💓', '$_heartRate bpm', 'Heart Rate',
-                          const Color(0xFFFFFBEB)),
+                          const Color(0xFFFFFBEB),
+                          onTap: () => _showNumericDialog(
+                            title: 'Heart Rate',
+                            subtitle: 'Enter your resting heart rate in BPM',
+                            unit: 'BPM',
+                            currentValue: _heartRate.toDouble(),
+                            onSave: (v) {
+                              setState(() => _heartRate = v.toInt());
+                              _saveVital('Heart Rate', v.toInt().toString(), 'bpm');
+                            },
+                          )),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: _miniTile('🫁', '$_spO2%', 'SpO2',
-                          const Color(0xFFECFDF5)),
+                          const Color(0xFFECFDF5),
+                          onTap: () => _showNumericDialog(
+                            title: 'SpO2 Level',
+                            subtitle: 'Enter your blood oxygen saturation (%)',
+                            unit: '%',
+                            currentValue: _spO2.toDouble(),
+                            onSave: (v) {
+                              setState(() => _spO2 = v.toInt().clamp(0, 100));
+                              _saveVital('Oxygen Level', v.toInt().clamp(0, 100).toString(), '%');
+                            },
+                          )),
                     ),
                   ],
                 ),
@@ -512,17 +532,47 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               children: [
                 Expanded(
                   child: _miniTile('💧', '$_waterGlasses/8', 'Water',
-                      const Color(0xFFEFF6FF)),
+                      const Color(0xFFEFF6FF),
+                      onTap: () => _showNumericDialog(
+                        title: 'Water Intake',
+                        subtitle: 'How many glasses of water have you had?',
+                        unit: 'glasses',
+                        currentValue: _waterGlasses.toDouble(),
+                        onSave: (v) {
+                          setState(() => _waterGlasses = v.toInt().clamp(0, 20));
+                          _saveVital('Water Intake', v.toInt().clamp(0, 20).toString(), 'glasses');
+                        },
+                      )),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _miniTile('🚶', '$_steps', 'Steps',
-                      const Color(0xFFFFFBEB)),
+                      const Color(0xFFFFFBEB),
+                      onTap: () => _showNumericDialog(
+                        title: 'Steps',
+                        subtitle: 'Enter your step count for today',
+                        unit: 'steps',
+                        currentValue: _steps.toDouble(),
+                        onSave: (v) {
+                          setState(() => _steps = v.toInt());
+                          _saveVital('Steps', v.toInt().toString(), 'steps');
+                        },
+                      )),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _miniTile('😴', '${_sleepHours.toStringAsFixed(1)}h',
-                      'Sleep', const Color(0xFFF5F3FF)),
+                      'Sleep', const Color(0xFFF5F3FF),
+                      onTap: () => _showNumericDialog(
+                        title: 'Sleep',
+                        subtitle: 'How many hours did you sleep last night?',
+                        unit: 'hours',
+                        currentValue: _sleepHours,
+                        onSave: (v) {
+                          setState(() => _sleepHours = v.clamp(0, 24));
+                          _saveVital('Sleep', v.clamp(0, 24).toStringAsFixed(1), 'hours');
+                        },
+                      )),
                 ),
               ],
             ),
