@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/services/health_tracker_service.dart';
 
 class LifestyleTrackerScreen extends StatefulWidget {
   const LifestyleTrackerScreen({super.key});
@@ -14,6 +15,7 @@ class LifestyleTrackerScreen extends StatefulWidget {
 class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final HealthTrackerService _healthTrackerService = HealthTrackerService();
 
   // ── Placeholder state data ──────────────────────────────────────────────
   // Vitals
@@ -61,6 +63,58 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
     _loadUserName();
+    _loadLatestVitals();
+  }
+
+  Future<void> _loadLatestVitals() async {
+    final result = await _healthTrackerService.getLatestEntries();
+    if (result['success'] == true && mounted) {
+      final entries = result['entries'] as List? ?? [];
+      setState(() {
+        for (final e in entries) {
+          final type = e['vitalType'] as String? ?? '';
+          final val = e['value'] as String? ?? '';
+          switch (type) {
+            case 'Blood Pressure':
+              final parts = val.split('/');
+              if (parts.length == 2) {
+                _systolic = int.tryParse(parts[0]) ?? _systolic;
+                _diastolic = int.tryParse(parts[1]) ?? _diastolic;
+              }
+              break;
+            case 'Blood Glucose':
+              _bloodSugar = double.tryParse(val) ?? _bloodSugar;
+              break;
+            case 'Weight':
+              _weight = double.tryParse(val) ?? _weight;
+              break;
+            case 'Heart Rate':
+              _heartRate = int.tryParse(val) ?? _heartRate;
+              break;
+            case 'Oxygen Level':
+              _spO2 = int.tryParse(val) ?? _spO2;
+              break;
+            case 'Water Intake':
+              _waterGlasses = int.tryParse(val) ?? _waterGlasses;
+              break;
+            case 'Steps':
+              _steps = int.tryParse(val) ?? _steps;
+              break;
+            case 'Sleep':
+              _sleepHours = double.tryParse(val) ?? _sleepHours;
+              break;
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _saveVital(String vitalType, String value, String unit) async {
+    await _healthTrackerService.addEntry(
+      vitalType: vitalType,
+      value: value,
+      unit: unit,
+    );
   }
 
   Future<void> _loadUserName() async {
@@ -131,6 +185,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               _diastolic = dia;
               _pointsToday += 5;
             });
+            _saveVital('Blood Pressure', '$sys/$dia', 'mmHg');
           }
           Navigator.pop(ctx);
         },
@@ -628,7 +683,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your fasting blood sugar reading',
               unit: 'mg/dL',
               currentValue: _bloodSugar,
-              onSave: (v) => setState(() => _bloodSugar = v),
+              onSave: (v) {
+                setState(() => _bloodSugar = v);
+                _saveVital('Blood Glucose', v.toStringAsFixed(0), 'mg/dL');
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -646,7 +704,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your current body weight',
               unit: 'kg',
               currentValue: _weight,
-              onSave: (v) => setState(() => _weight = v),
+              onSave: (v) {
+                setState(() => _weight = v);
+                _saveVital('Weight', v.toStringAsFixed(1), 'kg');
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -670,7 +731,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your resting heart rate in BPM',
               unit: 'BPM',
               currentValue: _heartRate.toDouble(),
-              onSave: (v) => setState(() => _heartRate = v.toInt()),
+              onSave: (v) {
+                setState(() => _heartRate = v.toInt());
+                _saveVital('Heart Rate', v.toInt().toString(), 'bpm');
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -688,7 +752,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your blood oxygen saturation (%)',
               unit: '%',
               currentValue: _spO2.toDouble(),
-              onSave: (v) => setState(() => _spO2 = v.toInt().clamp(0, 100)),
+              onSave: (v) {
+                setState(() => _spO2 = v.toInt().clamp(0, 100));
+                _saveVital('Oxygen Level', v.toInt().clamp(0, 100).toString(), '%');
+              },
             ),
           ),
           const SizedBox(height: 80),
@@ -721,7 +788,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your fasting blood sugar reading',
               unit: 'mg/dL',
               currentValue: _bloodSugar,
-              onSave: (v) => setState(() => _bloodSugar = v),
+              onSave: (v) {
+                setState(() => _bloodSugar = v);
+                _saveVital('Blood Glucose', v.toStringAsFixed(0), 'mg/dL');
+              },
             ),
           ),
         ),
@@ -737,7 +807,10 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
               subtitle: 'Enter your current body weight',
               unit: 'kg',
               currentValue: _weight,
-              onSave: (v) => setState(() => _weight = v),
+              onSave: (v) {
+                setState(() => _weight = v);
+                _saveVital('Weight', v.toStringAsFixed(1), 'kg');
+              },
             ),
           ),
         ),

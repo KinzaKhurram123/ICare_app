@@ -222,10 +222,14 @@ class _HealthTrackerState extends State<HealthTracker> {
                           itemBuilder: (context, index) {
                             final typeInfo = _vitalTypes[index];
                             // Find most recent reading for this type
-                            final lastReading = _latestEntries.firstWhere(
-                              (entry) => entry.vitalType == typeInfo['type'],
-                              orElse: () => null as HealthTrackerEntry,
-                            );
+                            HealthTrackerEntry? lastReading;
+                            try {
+                              lastReading = _latestEntries.firstWhere(
+                                (entry) => entry.vitalType == typeInfo['type'],
+                              );
+                            } catch (_) {
+                              lastReading = null;
+                            }
                             return _buildVitalCard(typeInfo, lastReading);
                           },
                         ),
@@ -628,6 +632,10 @@ class _AddVitalDialogState extends State<_AddVitalDialog> {
   final _notesController = TextEditingController();
   DateTime? _selectedDateTime;
 
+  // Vitals that need text input (not pure numbers)
+  bool get _isTextInput =>
+      widget.vitalType == 'Blood Pressure'; // e.g. 120/80
+
   @override
   void dispose() {
     _valueController.dispose();
@@ -696,10 +704,14 @@ class _AddVitalDialogState extends State<_AddVitalDialog> {
               const SizedBox(height: 20),
               TextField(
                 controller: _valueController,
-                keyboardType: TextInputType.number,
+                keyboardType: _isTextInput
+                    ? TextInputType.text
+                    : const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'Value',
-                  hintText: 'Enter reading',
+                  hintText: widget.vitalType == 'Blood Pressure'
+                      ? 'e.g. 120/80'
+                      : 'Enter reading',
                   suffixText: widget.unit,
                   border: const OutlineInputBorder(),
                 ),
