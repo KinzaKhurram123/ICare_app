@@ -77,7 +77,7 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
         'unit': 'glasses',
       },
       'medication': {
-        'name': 'Medication',
+        'name': 'Medication Adherence',
         'icon': Icons.medication_rounded,
         'color': const Color(0xFFF43F5E),
         'unit': '%',

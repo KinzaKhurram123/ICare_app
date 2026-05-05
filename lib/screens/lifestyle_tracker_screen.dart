@@ -1388,7 +1388,13 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
           Switch(
             value: med.taken,
             activeColor: AppColors.primaryColor,
-            onChanged: (v) => setState(() => med.taken = v),
+            onChanged: (v) {
+              setState(() => med.taken = v);
+              // Calculate adherence % and save to backend
+              // Count taken after this change
+              final takenCount = v ? 1 : 0; // simplified: 100% if taken, 0% if not
+              _saveVital('Medication Adherence', v ? '100' : '0', '%');
+            },
           ),
         ],
       ),
