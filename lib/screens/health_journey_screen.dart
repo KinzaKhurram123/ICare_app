@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:icare/models/medical_record.dart';
-import 'package:icare/services/medical_record_service.dart';
-import 'package:icare/screens/medical_record_detail.dart';
-import 'package:icare/utils/theme.dart';
+import 'package:icare/services/health_tracker_service.dart';
+import 'package:icare/services/health_settings_service.dart';
+import 'package:icare/models/health_tracker_entry.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/utils/theme.dart';
 import 'package:intl/intl.dart';
 
 class HealthJourneyScreen extends StatefulWidget {
@@ -14,93 +14,111 @@ class HealthJourneyScreen extends StatefulWidget {
 }
 
 class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
-  final MedicalRecordService _service = MedicalRecordService();
-  List<MedicalRecord> _records = [];
-  List<MedicalRecord> _filtered = [];
+  final HealthTrackerService _trackerService = HealthTrackerService();
+  final HealthSettingsService _settingsService = HealthSettingsService();
+
   bool _isLoading = true;
-  bool _newestFirst = true; // sort order toggle
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  bool _healthModeEnabled = false;
+  List<String> _selectedConditions = [];
+  List<Map<String, dynamic>> _vitalData = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRecords();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim().toLowerCase();
-        _applyFilter();
-      });
-    });
+    _loadDashboard();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _applyFilter() {
-    List<MedicalRecord> result = List.from(_records);
-
-    // Apply search
-    if (_searchQuery.isNotEmpty) {
-      result = result.where((r) {
-        final diagnosis = (r.diagnosis ?? '').toLowerCase();
-        final doctor = r.doctor.name.toLowerCase();
-        final date = DateFormat('MMM dd yyyy').format(r.createdAt).toLowerCase();
-        final symptoms = r.symptoms.join(' ').toLowerCase();
-        final meds = r.prescription?.medicines
-                .map((m) => m.name.toLowerCase())
-                .join(' ') ??
-            '';
-        final labs = r.labTests.join(' ').toLowerCase();
-        return diagnosis.contains(_searchQuery) ||
-            doctor.contains(_searchQuery) ||
-            date.contains(_searchQuery) ||
-            symptoms.contains(_searchQuery) ||
-            meds.contains(_searchQuery) ||
-            labs.contains(_searchQuery);
-      }).toList();
-    }
-
-    // Apply sort
-    result.sort((a, b) => _newestFirst
-        ? b.createdAt.compareTo(a.createdAt)
-        : a.createdAt.compareTo(b.createdAt));
-
-    _filtered = result;
-  }
-
-  Future<void> _loadRecords() async {
+  Future<void> _loadDashboard() async {
     setState(() => _isLoading = true);
+
     try {
-      final result = await _service.getMyRecords();
+      final result = await _trackerService.getDashboard();
+
       if (result['success'] && mounted) {
-        final list = result['records'] as List<dynamic>;
-        final parsed = <MedicalRecord>[];
-        for (final item in list) {
-          try {
-            parsed.add(MedicalRecord.fromJson(item));
-          } catch (_) {}
-        }
-        // Sort chronologically oldest → newest (default will be overridden by _applyFilter)
-        parsed.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         setState(() {
-          _records = parsed;
-          _applyFilter();
+          _healthModeEnabled = result['healthModeEnabled'] ?? false;
+          _selectedConditions = List<String>.from(result['selectedConditions'] ?? []);
+          _vitalData = List<Map<String, dynamic>>.from(result['vitals'] ?? []);
           _isLoading = false;
         });
       } else {
         if (mounted) setState(() => _isLoading = false);
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Map<String, dynamic> _getVitalConfig(String vitalKey) {
+    final configs = {
+      'bloodPressure': {
+        'name': 'Blood Pressure',
+        'icon': Icons.favorite_rounded,
+        'color': const Color(0xFFEF4444),
+        'unit': 'mmHg',
+      },
+      'bloodSugar': {
+        'name': 'Blood Glucose',
+        'icon': Icons.water_drop_rounded,
+        'color': const Color(0xFF8B5CF6),
+        'unit': 'mg/dL',
+      },
+      'weight': {
+        'name': 'Weight',
+        'icon': Icons.monitor_weight_rounded,
+        'color': const Color(0xFF3B82F6),
+        'unit': 'kg',
+      },
+      'water': {
+        'name': 'Water Intake',
+        'icon': Icons.local_drink_rounded,
+        'color': const Color(0xFF14B8A6),
+        'unit': 'glasses',
+      },
+      'medication': {
+        'name': 'Medication',
+        'icon': Icons.medication_rounded,
+        'color': const Color(0xFFF43F5E),
+        'unit': '%',
+      },
+      'steps': {
+        'name': 'Steps',
+        'icon': Icons.directions_walk_rounded,
+        'color': const Color(0xFF06B6D4),
+        'unit': 'steps',
+      },
+      'sleep': {
+        'name': 'Sleep',
+        'icon': Icons.bedtime_rounded,
+        'color': const Color(0xFF6366F1),
+        'unit': 'hours',
+      },
+      'heartRate': {
+        'name': 'Heart Rate',
+        'icon': Icons.monitor_heart_rounded,
+        'color': const Color(0xFFEC4899),
+        'unit': 'bpm',
+      },
+      'temperature': {
+        'name': 'Temperature',
+        'icon': Icons.thermostat_rounded,
+        'color': const Color(0xFFF59E0B),
+        'unit': '°C',
+      },
+      'oxygenLevel': {
+        'name': 'Oxygen Level',
+        'icon': Icons.air_rounded,
+        'color': const Color(0xFF10B981),
+        'unit': '%',
+      },
+    };
+    return configs[vitalKey] ?? {};
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = MediaQuery.of(context).size.width > 900;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -110,174 +128,264 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
         title: const Text(
           'My Health Journey',
           style: TextStyle(
-            color: Color(0xFF0F172A),
+            fontSize: 18,
+            fontFamily: 'Gilroy-Bold',
             fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
           ),
         ),
         actions: [
-          // Sort toggle button
-          Tooltip(
-            message: _newestFirst ? 'Showing: Newest First' : 'Showing: Oldest First',
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _newestFirst = !_newestFirst;
-                  _applyFilter();
-                });
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: AppColors.primaryColor.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _newestFirst
-                          ? Icons.arrow_downward_rounded
-                          : Icons.arrow_upward_rounded,
-                      size: 14,
-                      color: AppColors.primaryColor,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _newestFirst ? 'Newest' : 'Oldest',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F172A)),
-            onPressed: _loadRecords,
+            onPressed: _loadDashboard,
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _records.isEmpty
-              ? _buildEmptyState()
-              : Column(
-                  children: [
-                    // ── Search Bar ──────────────────────────────────────
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText:
-                              'Search by diagnosis, doctor, medicine, symptom…',
-                          hintStyle: const TextStyle(
-                              fontSize: 13, color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.search_rounded,
-                              color: Color(0xFF94A3B8), size: 20),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close_rounded,
-                                      color: Color(0xFF94A3B8), size: 18),
-                                  onPressed: () => _searchController.clear(),
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: const Color(0xFFF1F5F9),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                                color: AppColors.primaryColor
-                                    .withValues(alpha: 0.5),
-                                width: 1.5),
-                          ),
-                        ),
-                      ),
+          : RefreshIndicator(
+              onRefresh: _loadDashboard,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(isDesktop ? 40 : 20),
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: isDesktop ? 1200 : double.infinity,
                     ),
-                    // ── Result count / sort info ────────────────────────
-                    Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                      child: Row(
-                        children: [
-                          Text(
-                            _searchQuery.isNotEmpty
-                                ? '${_filtered.length} result${_filtered.length == 1 ? '' : 's'} for "$_searchQuery"'
-                                : '${_filtered.length} consultation${_filtered.length == 1 ? '' : 's'}',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHealthModeCard(),
+                        const SizedBox(height: 24),
+                        if (_vitalData.isEmpty)
+                          _buildEmptyState()
+                        else ...[
+                          const Text(
+                            'Your Health Vitals',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: _searchQuery.isNotEmpty && _filtered.isEmpty
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            _newestFirst
-                                ? '↓ Newest first'
-                                : '↑ Oldest first',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF94A3B8),
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(height: 16),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: isDesktop ? 3 : 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 1.1,
                             ),
+                            itemCount: _vitalData.length,
+                            itemBuilder: (context, index) {
+                              final vitalInfo = _vitalData[index];
+                              return _buildVitalCard(vitalInfo);
+                            },
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    // ── Timeline / empty search state ───────────────────
-                    Expanded(
-                      child: _filtered.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.search_off_rounded,
-                                      size: 56,
-                                      color: Colors.grey.shade300),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No results for\n"$_searchQuery"',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        color: Color(0xFF64748B)),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : _buildTimeline(),
-                    ),
-                  ],
+                  ),
                 ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildHealthModeCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _healthModeEnabled
+              ? [const Color(0xFF10B981), const Color(0xFF059669)]
+              : [const Color(0xFF64748B), const Color(0xFF475569)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: (_healthModeEnabled ? const Color(0xFF10B981) : const Color(0xFF64748B))
+                .withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              _healthModeEnabled ? Icons.health_and_safety_rounded : Icons.dashboard_rounded,
+              size: 40,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _healthModeEnabled ? 'Health Mode Active' : 'Health Mode Inactive',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _healthModeEnabled
+                      ? _selectedConditions.join(', ')
+                      : 'Showing all vitals',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _healthModeEnabled
+                      ? 'Tracking vitals for your conditions'
+                      : 'Enable Health Mode in Settings',
+                  style: const TextStyle(fontSize: 13, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVitalCard(Map<String, dynamic> vitalInfo) {
+    final vitalKey = vitalInfo['vitalKey'];
+    final config = _getVitalConfig(vitalKey);
+    final latestEntry = vitalInfo['latestEntry'] != null
+        ? HealthTrackerEntry.fromJson(vitalInfo['latestEntry'])
+        : null;
+    final summary = vitalInfo['summary'] != null
+        ? VitalSummary.fromJson(vitalInfo['summary'])
+        : null;
+
+    final Color color = config['color'] ?? Colors.grey;
+    final bool hasData = latestEntry != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(config['icon'], color: color, size: 20),
+              ),
+              if (hasData)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
+                        ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                        : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    latestEntry.status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            config['name'] ?? '',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                hasData ? latestEntry.value : '--',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  config['unit'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (summary != null && summary.count > 0)
+            Text(
+              '7-day avg: ${summary.average?.toStringAsFixed(1) ?? '--'}',
+              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            )
+          else
+            Text(
+              hasData
+                  ? DateFormat('MMM dd, HH:mm').format(latestEntry.timestamp)
+                  : 'No data yet',
+              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      child: Container(
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -295,7 +403,7 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Your Health Journey Starts Here',
+              'Start Your Health Journey',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -305,7 +413,7 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'After your first consultation, your doctor\'s prescriptions, diagnoses, and health recommendations will automatically appear here.',
+              'Track your vitals in the Health Tracker to see your health journey here.',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -313,255 +421,8 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'What you\'ll see here:',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildFeatureItem(Icons.medical_services_rounded, 'Diagnoses & doctor notes'),
-                  _buildFeatureItem(Icons.medication_rounded, 'Prescriptions & medicines'),
-                  _buildFeatureItem(Icons.biotech_rounded, 'Lab test recommendations'),
-                  _buildFeatureItem(Icons.health_and_safety_rounded, 'Assigned health programs'),
-                  _buildFeatureItem(Icons.calendar_today_rounded, 'Follow-up appointments'),
-                ],
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: AppColors.primaryColor),
-          const SizedBox(width: 10),
-          Text(
-            text,
-            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeline() {
-    return RefreshIndicator(
-      onRefresh: _loadRecords,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: _filtered.length,
-        itemBuilder: (context, index) {
-          final record = _filtered[index];
-          final isLast = index == _filtered.length - 1;
-          return _buildTimelineEntry(record, isLast);
-        },
-      ),
-    );
-  }
-
-  Widget _buildTimelineEntry(MedicalRecord record, bool isLast) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Timeline line + dot
-          SizedBox(
-            width: 40,
-            child: Column(
-              children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      color: const Color(0xFFE2E8F0),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Card content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => MedicalRecordDetailScreen(record: record),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DateFormat('MMM dd, yyyy').format(record.createdAt),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                          Text(
-                            DateFormat('hh:mm a').format(record.createdAt),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF94A3B8),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (record.diagnosis != null) ...[
-                        Text(
-                          record.diagnosis!,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      Text(
-                        'Dr. ${record.doctor.name}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      if (record.symptoms.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: record.symptoms.take(3).map((s) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                s,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      if (record.prescription != null &&
-                          record.prescription!.medicines.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            const Icon(Icons.medication_rounded, size: 14, color: Color(0xFF10B981)),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${record.prescription!.medicines.length} medicine(s) prescribed',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF10B981),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (record.labTests.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.biotech_rounded, size: 14, color: Color(0xFF8B5CF6)),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${record.labTests.length} lab test(s) recommended',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF8B5CF6),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primaryColor),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'View full details',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

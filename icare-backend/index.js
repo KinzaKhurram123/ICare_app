@@ -29,6 +29,7 @@ const clinicalRoutes = require('./routes/clinical');
 const adminRoutes = require('./routes/admin');
 const seedLocationsRoute = require('./routes/seed-locations');
 const debugLabRoute = require('./routes/debug-lab');
+const healthRoutes = require('./routes/healthRoutes');
 
 const app = express();
 
@@ -119,6 +120,7 @@ app.use('/api/clinical', clinicalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/seed-locations', seedLocationsRoute);
 app.use('/api/debug-lab', debugLabRoute);
+app.use('/api/health', healthRoutes);
 
 // ─── ICD CODES — standalone inline router (no auth required, local data) ─────
 const ICD_DATA = [

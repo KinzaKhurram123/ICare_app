@@ -15,6 +15,7 @@ import 'package:icare/screens/terms_and_conditions.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/services/security_service.dart';
+import 'package:icare/services/health_settings_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
@@ -31,27 +32,103 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SecurityService _securityService = SecurityService();
+  final HealthSettingsService _healthSettingsService = HealthSettingsService();
 
   // Security toggles
   bool _is2FAEnabled = false;
   bool _isBiometricEnabled = true;
 
-  // Tracker toggles (Patient)
+  // Tracker toggles (Patient) - now synced with backend
   final Map<String, bool> _trackerToggles = {
-    'BP': true,
-    'Sugar': true,
-    'Weight': false,
-    'Water': true,
-    'Medication': true,
+    'bloodPressure': true,
+    'bloodSugar': true,
+    'weight': false,
+    'water': true,
+    'medication': true,
+    'steps': false,
+    'sleep': false,
+    'heartRate': true,
+    'temperature': false,
+    'oxygenLevel': false,
   };
 
-  // Health mode toggles (Patient)
-  final Map<String, bool> _healthModes = {
-    'Diabetes Mode': false,
-    'BP Mode': false,
-    'Heart Mode': false,
-    'Weight Mode': false,
-  };
+  // Health mode toggles (Patient) - now synced with backend
+  bool _healthModeEnabled = false;
+  List<String> _selectedConditions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHealthSettings();
+  }
+
+  Future<void> _loadHealthSettings() async {
+    final role = ref.read(authProvider).userRole ?? '';
+    if (role != 'Patient') return;
+
+    try {
+      final result = await _healthSettingsService.getSettings();
+      if (result['success'] && mounted) {
+        final settings = result['settings'];
+        setState(() {
+          _healthModeEnabled = settings['healthModeEnabled'] ?? false;
+          _selectedConditions = List<String>.from(settings['selectedConditions'] ?? []);
+
+          final trackedVitals = settings['trackedVitals'] ?? {};
+          trackedVitals.forEach((key, value) {
+            if (_trackerToggles.containsKey(key)) {
+              _trackerToggles[key] = value;
+            }
+          });
+        });
+      }
+    } catch (e) {
+      // Silently fail - use defaults
+    }
+  }
+
+  Future<void> _updateTrackerToggle(String key, bool value) async {
+    setState(() => _trackerToggles[key] = value);
+
+    try {
+      await _healthSettingsService.updateTrackerToggles(_trackerToggles);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save tracker settings')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleHealthMode(String condition, bool enabled) async {
+    setState(() {
+      if (enabled) {
+        if (!_selectedConditions.contains(condition)) {
+          _selectedConditions.add(condition);
+        }
+        _healthModeEnabled = true;
+      } else {
+        _selectedConditions.remove(condition);
+        if (_selectedConditions.isEmpty) {
+          _healthModeEnabled = false;
+        }
+      }
+    });
+
+    try {
+      await _healthSettingsService.toggleHealthMode(
+        enabled: _healthModeEnabled,
+        conditions: _selectedConditions,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save health mode settings')),
+        );
+      }
+    }
+  }
 
   // ── Security helpers ────────────────────────────────────────────────────
 
@@ -363,11 +440,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         is2FAEnabled: _is2FAEnabled,
         isBiometricEnabled: _isBiometricEnabled,
         trackerToggles: _trackerToggles,
-        healthModes: _healthModes,
+        healthModeEnabled: _healthModeEnabled,
+        selectedConditions: _selectedConditions,
         onToggle2FA: _toggle2FA,
         onToggleBiometrics: _toggleBiometrics,
-        onTrackerToggle: (key, val) => setState(() => _trackerToggles[key] = val),
-        onHealthModeToggle: (key, val) => setState(() => _healthModes[key] = val),
+        onTrackerToggle: _updateTrackerToggle,
+        onHealthModeToggle: _toggleHealthMode,
         onLogout: _handleLogout,
         onComingSoon: _comingSoon,
         onReportIssue: _showReportIssueDialog,
@@ -386,11 +464,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       is2FAEnabled: _is2FAEnabled,
       isBiometricEnabled: _isBiometricEnabled,
       trackerToggles: _trackerToggles,
-      healthModes: _healthModes,
+      healthModeEnabled: _healthModeEnabled,
+      selectedConditions: _selectedConditions,
       onToggle2FA: _toggle2FA,
       onToggleBiometrics: _toggleBiometrics,
-      onTrackerToggle: (key, val) => setState(() => _trackerToggles[key] = val),
-      onHealthModeToggle: (key, val) => setState(() => _healthModes[key] = val),
+      onTrackerToggle: _updateTrackerToggle,
+      onHealthModeToggle: _toggleHealthMode,
       onLogout: _handleLogout,
       onComingSoon: _comingSoon,
       onReportIssue: _showReportIssueDialog,
@@ -1112,11 +1191,12 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
   final bool is2FAEnabled;
   final bool isBiometricEnabled;
   final Map<String, bool> trackerToggles;
-  final Map<String, bool> healthModes;
+  final bool healthModeEnabled;
+  final List<String> selectedConditions;
   final ValueChanged<bool> onToggle2FA;
   final ValueChanged<bool> onToggleBiometrics;
   final void Function(String key, bool val) onTrackerToggle;
-  final void Function(String key, bool val) onHealthModeToggle;
+  final void Function(String condition, bool enabled) onHealthModeToggle;
   final VoidCallback onLogout;
   final void Function(BuildContext, String) onComingSoon;
   final void Function(BuildContext) onReportIssue;
@@ -1133,7 +1213,8 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
     required this.is2FAEnabled,
     required this.isBiometricEnabled,
     required this.trackerToggles,
-    required this.healthModes,
+    required this.healthModeEnabled,
+    required this.selectedConditions,
     required this.onToggle2FA,
     required this.onToggleBiometrics,
     required this.onTrackerToggle,
@@ -1212,7 +1293,8 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
             if (isPatient) ...[
               _mobileSectionHeader('Health Mode'),
               _MobileHealthModeCard(
-                healthModes: healthModes,
+                healthModeEnabled: healthModeEnabled,
+                selectedConditions: selectedConditions,
                 onToggle: onHealthModeToggle,
               ),
             ],
@@ -1408,20 +1490,43 @@ class _MobileTrackerCard extends StatelessWidget {
     required this.onComingSoon,
   });
 
+  static const _trackerLabels = <String, String>{
+    'bloodPressure': 'Blood Pressure',
+    'bloodSugar': 'Blood Sugar',
+    'weight': 'Weight',
+    'water': 'Water',
+    'medication': 'Medication',
+    'steps': 'Steps',
+    'sleep': 'Sleep',
+    'heartRate': 'Heart Rate',
+    'temperature': 'Temperature',
+    'oxygenLevel': 'Oxygen Level',
+  };
+
   static const _trackerIcons = <String, IconData>{
-    'BP': Icons.monitor_heart_outlined,
-    'Sugar': Icons.bloodtype_outlined,
-    'Weight': Icons.scale_outlined,
-    'Water': Icons.water_drop_outlined,
-    'Medication': Icons.medication_outlined,
+    'bloodPressure': Icons.monitor_heart_outlined,
+    'bloodSugar': Icons.bloodtype_outlined,
+    'weight': Icons.scale_outlined,
+    'water': Icons.water_drop_outlined,
+    'medication': Icons.medication_outlined,
+    'steps': Icons.directions_walk_outlined,
+    'sleep': Icons.bedtime_outlined,
+    'heartRate': Icons.favorite_outlined,
+    'temperature': Icons.thermostat_outlined,
+    'oxygenLevel': Icons.air_outlined,
   };
 
   static const _trackerColors = <String, Color>{
-    'BP': Color(0xFFEF4444),
-    'Sugar': Color(0xFFF59E0B),
-    'Weight': Color(0xFF10B981),
-    'Water': Color(0xFF3B82F6),
-    'Medication': Color(0xFF8B5CF6),
+    'bloodPressure': Color(0xFFEF4444),
+    'bloodSugar': Color(0xFFF59E0B),
+    'weight': Color(0xFF10B981),
+    'water': Color(0xFF3B82F6),
+    'medication': Color(0xFF8B5CF6),
+    'steps': Color(0xFF06B6D4),
+    'sleep': Color(0xFF6366F1),
+    'heartRate': Color(0xFFEC4899),
+    'temperature': Color(0xFFF97316),
+    'oxygenLevel': Color(0xFF14B8A6),
   };
 
   @override
@@ -1461,6 +1566,7 @@ class _MobileTrackerCard extends StatelessWidget {
             final isLast = idx == toggleKeys.length - 1;
             final color = _trackerColors[key] ?? AppColors.primaryColor;
             final icon = _trackerIcons[key] ?? Icons.track_changes_outlined;
+            final label = _trackerLabels[key] ?? key;
             return Column(
               children: [
                 Padding(
@@ -1478,7 +1584,7 @@ class _MobileTrackerCard extends StatelessWidget {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Text(
-                          key,
+                          label,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -1583,31 +1689,39 @@ class _MobileTrackerCard extends StatelessWidget {
 // ── Mobile Health Mode card ───────────────────────────────────────────────────
 
 class _MobileHealthModeCard extends StatelessWidget {
-  final Map<String, bool> healthModes;
-  final void Function(String key, bool val) onToggle;
+  final bool healthModeEnabled;
+  final List<String> selectedConditions;
+  final void Function(String condition, bool enabled) onToggle;
 
   const _MobileHealthModeCard({
-    required this.healthModes,
+    required this.healthModeEnabled,
+    required this.selectedConditions,
     required this.onToggle,
   });
 
+  static const _conditions = [
+    'Diabetes',
+    'Hypertension',
+    'Heart Disease',
+    'Weight Management',
+  ];
+
   static const _modeIcons = <String, IconData>{
-    'Diabetes Mode': Icons.bloodtype_outlined,
-    'BP Mode': Icons.monitor_heart_outlined,
-    'Heart Mode': Icons.favorite_outlined,
-    'Weight Mode': Icons.scale_outlined,
+    'Diabetes': Icons.bloodtype_outlined,
+    'Hypertension': Icons.monitor_heart_outlined,
+    'Heart Disease': Icons.favorite_outlined,
+    'Weight Management': Icons.scale_outlined,
   };
 
   static const _modeColors = <String, Color>{
-    'Diabetes Mode': Color(0xFFF59E0B),
-    'BP Mode': Color(0xFFEF4444),
-    'Heart Mode': Color(0xFFEC4899),
-    'Weight Mode': Color(0xFF10B981),
+    'Diabetes': Color(0xFFF59E0B),
+    'Hypertension': Color(0xFFEF4444),
+    'Heart Disease': Color(0xFFEC4899),
+    'Weight Management': Color(0xFF10B981),
   };
 
   @override
   Widget build(BuildContext context) {
-    final keys = healthModes.keys.toList();
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -1645,12 +1759,14 @@ class _MobileHealthModeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...keys.asMap().entries.map((entry) {
+          ..._conditions.asMap().entries.map((entry) {
             final idx = entry.key;
-            final key = entry.value;
-            final isLast = idx == keys.length - 1;
-            final color = _modeColors[key] ?? AppColors.primaryColor;
-            final icon = _modeIcons[key] ?? Icons.toggle_on_outlined;
+            final condition = entry.value;
+            final isLast = idx == _conditions.length - 1;
+            final color = _modeColors[condition] ?? AppColors.primaryColor;
+            final icon = _modeIcons[condition] ?? Icons.toggle_on_outlined;
+            final isSelected = selectedConditions.contains(condition);
+
             return Column(
               children: [
                 Padding(
@@ -1668,7 +1784,7 @@ class _MobileHealthModeCard extends StatelessWidget {
                       const SizedBox(width: 14),
                       Expanded(
                         child: Text(
-                          key,
+                          condition,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -1678,8 +1794,8 @@ class _MobileHealthModeCard extends StatelessWidget {
                         ),
                       ),
                       Switch(
-                        value: healthModes[key] ?? false,
-                        onChanged: (val) => onToggle(key, val),
+                        value: isSelected,
+                        onChanged: (val) => onToggle(condition, val),
                         activeColor: AppColors.primaryColor,
                       ),
                     ],
@@ -1717,11 +1833,12 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
   final bool is2FAEnabled;
   final bool isBiometricEnabled;
   final Map<String, bool> trackerToggles;
-  final Map<String, bool> healthModes;
+  final bool healthModeEnabled;
+  final List<String> selectedConditions;
   final ValueChanged<bool> onToggle2FA;
   final ValueChanged<bool> onToggleBiometrics;
   final void Function(String key, bool val) onTrackerToggle;
-  final void Function(String key, bool val) onHealthModeToggle;
+  final void Function(String condition, bool enabled) onHealthModeToggle;
   final VoidCallback onLogout;
   final void Function(BuildContext, String) onComingSoon;
   final void Function(BuildContext) onReportIssue;
@@ -1738,7 +1855,8 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
     required this.is2FAEnabled,
     required this.isBiometricEnabled,
     required this.trackerToggles,
-    required this.healthModes,
+    required this.healthModeEnabled,
+    required this.selectedConditions,
     required this.onToggle2FA,
     required this.onToggleBiometrics,
     required this.onTrackerToggle,
@@ -1908,7 +2026,8 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
                         if (isPatient) ...[
                           _webSectionLabel('Health Mode'),
                           _WebHealthModeCard(
-                            healthModes: healthModes,
+                            healthModeEnabled: healthModeEnabled,
+                            selectedConditions: selectedConditions,
                             onToggle: onHealthModeToggle,
                           ),
                           const SizedBox(height: 24),
@@ -2103,20 +2222,43 @@ class _WebTrackerCard extends StatelessWidget {
     required this.onComingSoon,
   });
 
+  static const _trackerLabels = <String, String>{
+    'bloodPressure': 'Blood Pressure',
+    'bloodSugar': 'Blood Sugar',
+    'weight': 'Weight',
+    'water': 'Water',
+    'medication': 'Medication',
+    'steps': 'Steps',
+    'sleep': 'Sleep',
+    'heartRate': 'Heart Rate',
+    'temperature': 'Temperature',
+    'oxygenLevel': 'Oxygen Level',
+  };
+
   static const _trackerIcons = <String, IconData>{
-    'BP': Icons.monitor_heart_outlined,
-    'Sugar': Icons.bloodtype_outlined,
-    'Weight': Icons.scale_outlined,
-    'Water': Icons.water_drop_outlined,
-    'Medication': Icons.medication_outlined,
+    'bloodPressure': Icons.monitor_heart_outlined,
+    'bloodSugar': Icons.bloodtype_outlined,
+    'weight': Icons.scale_outlined,
+    'water': Icons.water_drop_outlined,
+    'medication': Icons.medication_outlined,
+    'steps': Icons.directions_walk_outlined,
+    'sleep': Icons.bedtime_outlined,
+    'heartRate': Icons.favorite_outlined,
+    'temperature': Icons.thermostat_outlined,
+    'oxygenLevel': Icons.air_outlined,
   };
 
   static const _trackerColors = <String, Color>{
-    'BP': Color(0xFFEF4444),
-    'Sugar': Color(0xFFF59E0B),
-    'Weight': Color(0xFF10B981),
-    'Water': Color(0xFF3B82F6),
-    'Medication': Color(0xFF8B5CF6),
+    'bloodPressure': Color(0xFFEF4444),
+    'bloodSugar': Color(0xFFF59E0B),
+    'weight': Color(0xFF10B981),
+    'water': Color(0xFF3B82F6),
+    'medication': Color(0xFF8B5CF6),
+    'steps': Color(0xFF06B6D4),
+    'sleep': Color(0xFF6366F1),
+    'heartRate': Color(0xFFEC4899),
+    'temperature': Color(0xFFF97316),
+    'oxygenLevel': Color(0xFF14B8A6),
   };
 
   @override
@@ -2152,6 +2294,7 @@ class _WebTrackerCard extends StatelessWidget {
             final isLast = idx == toggleKeys.length - 1;
             final color = _trackerColors[key] ?? AppColors.primaryColor;
             final icon = _trackerIcons[key] ?? Icons.track_changes_outlined;
+            final label = _trackerLabels[key] ?? key;
             return Column(
               children: [
                 Padding(
@@ -2169,7 +2312,7 @@ class _WebTrackerCard extends StatelessWidget {
                       const SizedBox(width: 20),
                       Expanded(
                         child: Text(
-                          key,
+                          label,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -2301,31 +2444,39 @@ class _WebTrackerCard extends StatelessWidget {
 // ── Web Health Mode card ──────────────────────────────────────────────────────
 
 class _WebHealthModeCard extends StatelessWidget {
-  final Map<String, bool> healthModes;
-  final void Function(String key, bool val) onToggle;
+  final bool healthModeEnabled;
+  final List<String> selectedConditions;
+  final void Function(String condition, bool enabled) onToggle;
 
   const _WebHealthModeCard({
-    required this.healthModes,
+    required this.healthModeEnabled,
+    required this.selectedConditions,
     required this.onToggle,
   });
 
+  static const _conditions = [
+    'Diabetes',
+    'Hypertension',
+    'Heart Disease',
+    'Weight Management',
+  ];
+
   static const _modeIcons = <String, IconData>{
-    'Diabetes Mode': Icons.bloodtype_outlined,
-    'BP Mode': Icons.monitor_heart_outlined,
-    'Heart Mode': Icons.favorite_outlined,
-    'Weight Mode': Icons.scale_outlined,
+    'Diabetes': Icons.bloodtype_outlined,
+    'Hypertension': Icons.monitor_heart_outlined,
+    'Heart Disease': Icons.favorite_outlined,
+    'Weight Management': Icons.scale_outlined,
   };
 
   static const _modeColors = <String, Color>{
-    'Diabetes Mode': Color(0xFFF59E0B),
-    'BP Mode': Color(0xFFEF4444),
-    'Heart Mode': Color(0xFFEC4899),
-    'Weight Mode': Color(0xFF10B981),
+    'Diabetes': Color(0xFFF59E0B),
+    'Hypertension': Color(0xFFEF4444),
+    'Heart Disease': Color(0xFFEC4899),
+    'Weight Management': Color(0xFF10B981),
   };
 
   @override
   Widget build(BuildContext context) {
-    final keys = healthModes.keys.toList();
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -2359,12 +2510,14 @@ class _WebHealthModeCard extends StatelessWidget {
               ],
             ),
           ),
-          ...keys.asMap().entries.map((entry) {
+          ..._conditions.asMap().entries.map((entry) {
             final idx = entry.key;
-            final key = entry.value;
-            final isLast = idx == keys.length - 1;
-            final color = _modeColors[key] ?? AppColors.primaryColor;
-            final icon = _modeIcons[key] ?? Icons.toggle_on_outlined;
+            final condition = entry.value;
+            final isLast = idx == _conditions.length - 1;
+            final color = _modeColors[condition] ?? AppColors.primaryColor;
+            final icon = _modeIcons[condition] ?? Icons.toggle_on_outlined;
+            final isSelected = selectedConditions.contains(condition);
+
             return Column(
               children: [
                 Padding(
@@ -2382,7 +2535,7 @@ class _WebHealthModeCard extends StatelessWidget {
                       const SizedBox(width: 20),
                       Expanded(
                         child: Text(
-                          key,
+                          condition,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -2392,8 +2545,8 @@ class _WebHealthModeCard extends StatelessWidget {
                         ),
                       ),
                       Switch(
-                        value: healthModes[key] ?? false,
-                        onChanged: (val) => onToggle(key, val),
+                        value: isSelected,
+                        onChanged: (val) => onToggle(condition, val),
                         activeColor: AppColors.primaryColor,
                       ),
                     ],

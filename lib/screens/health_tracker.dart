@@ -3,8 +3,8 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/star_click_game.dart';
 import 'package:icare/services/gamification_service.dart';
-import 'package:icare/services/vital_service.dart';
-import 'package:icare/models/vital.dart';
+import 'package:icare/services/health_tracker_service.dart';
+import 'package:icare/models/health_tracker_entry.dart';
 import 'package:intl/intl.dart';
 
 class HealthTracker extends StatefulWidget {
@@ -16,10 +16,10 @@ class HealthTracker extends StatefulWidget {
 
 class _HealthTrackerState extends State<HealthTracker> {
   final GamificationService _gamificationService = GamificationService();
-  final VitalService _vitalService = VitalService();
+  final HealthTrackerService _healthTrackerService = HealthTrackerService();
   int _points = 0;
   List<dynamic> _badges = [];
-  List<Vital> _realVitals = [];
+  List<HealthTrackerEntry> _latestEntries = [];
   bool _isLoading = true;
 
   @override
@@ -34,11 +34,11 @@ class _HealthTrackerState extends State<HealthTracker> {
     // Concurrent data loading
     final results = await Future.wait([
       _gamificationService.getMyStats(),
-      _vitalService.getMyVitals(),
+      _healthTrackerService.getLatestEntries(),
     ]);
 
     final gamificationResult = results[0];
-    final vitalsResult = results[1];
+    final entriesResult = results[1];
 
     if (mounted) {
       setState(() {
@@ -47,9 +47,9 @@ class _HealthTrackerState extends State<HealthTracker> {
           _badges = gamificationResult['badges'] ?? [];
         }
 
-        if (vitalsResult['success'] == true) {
-          _realVitals = (vitalsResult['vitals'] as List)
-              .map((v) => Vital.fromJson(v))
+        if (entriesResult['success'] == true) {
+          _latestEntries = (entriesResult['entries'] as List)
+              .map((e) => HealthTrackerEntry.fromJson(e))
               .toList();
         }
         _isLoading = false;
@@ -95,6 +95,30 @@ class _HealthTrackerState extends State<HealthTracker> {
       'icon': Icons.air_rounded,
       'color': const Color(0xFF10B981),
     },
+    {
+      'type': 'Steps',
+      'unit': 'steps',
+      'icon': Icons.directions_walk_rounded,
+      'color': const Color(0xFF06B6D4),
+    },
+    {
+      'type': 'Sleep',
+      'unit': 'hours',
+      'icon': Icons.bedtime_rounded,
+      'color': const Color(0xFF6366F1),
+    },
+    {
+      'type': 'Water Intake',
+      'unit': 'glasses',
+      'icon': Icons.local_drink_rounded,
+      'color': const Color(0xFF14B8A6),
+    },
+    {
+      'type': 'Medication Adherence',
+      'unit': '%',
+      'icon': Icons.medication_rounded,
+      'color': const Color(0xFFF43F5E),
+    },
   ];
 
   void _addVitalReading(String type, String unit) {
@@ -102,33 +126,39 @@ class _HealthTrackerState extends State<HealthTracker> {
       context: context,
       builder: (context) => _AddVitalDialog(
         vitalType: type,
-        onSave: (value) async {
-          final newVital = Vital(
-            type: type,
+        unit: unit,
+        onSave: (value, notes, timestamp) async {
+          final res = await _healthTrackerService.addEntry(
+            vitalType: type,
             value: value,
             unit: unit,
-            status: _determineStatus(type, value),
+            notes: notes,
+            timestamp: timestamp,
           );
 
-          final res = await _vitalService.addVital(newVital);
           if (res['success']) {
             _loadAllData();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$type reading added successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to add reading: ${res['message']}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           }
         },
       ),
     );
-  }
-
-  String _determineStatus(String type, String value) {
-    // Simple logic for demonstration
-    try {
-      double val = double.parse(value.split('/')[0]); // Handle BP like 120/80
-      if (type == 'Temperature' && val > 37.5) return 'Elevated';
-      if (type == 'Heart Rate' && val > 100) return 'High';
-      return 'Normal';
-    } catch (e) {
-      return 'Normal';
-    }
   }
 
   @override
@@ -192,14 +222,9 @@ class _HealthTrackerState extends State<HealthTracker> {
                           itemBuilder: (context, index) {
                             final typeInfo = _vitalTypes[index];
                             // Find most recent reading for this type
-                            final lastReading = _realVitals.firstWhere(
-                              (v) => v.type == typeInfo['type'],
-                              orElse: () => Vital(
-                                type: '',
-                                value: '--',
-                                unit: typeInfo['unit'],
-                                status: 'No Data',
-                              ),
+                            final lastReading = _latestEntries.firstWhere(
+                              (entry) => entry.vitalType == typeInfo['type'],
+                              orElse: () => null as HealthTrackerEntry,
                             );
                             return _buildVitalCard(typeInfo, lastReading);
                           },
@@ -278,9 +303,9 @@ class _HealthTrackerState extends State<HealthTracker> {
     );
   }
 
-  Widget _buildVitalCard(Map<String, dynamic> typeInfo, Vital lastReading) {
+  Widget _buildVitalCard(Map<String, dynamic> typeInfo, HealthTrackerEntry? lastReading) {
     final Color color = typeInfo['color'];
-    final bool hasData = lastReading.type.isNotEmpty;
+    final bool hasData = lastReading != null;
 
     return InkWell(
       onTap: () => _addVitalReading(typeInfo['type'], typeInfo['unit']),
@@ -320,23 +345,25 @@ class _HealthTrackerState extends State<HealthTracker> {
                   ),
                   decoration: BoxDecoration(
                     color:
-                        (lastReading.status == 'Normal' ||
-                            lastReading.status == 'Healthy' ||
-                            lastReading.status == 'No Data')
+                        (hasData && (lastReading.status == 'Normal' ||
+                            lastReading.status == 'Healthy'))
                         ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                        : !hasData
+                        ? const Color(0xFF94A3B8).withValues(alpha: 0.1)
                         : const Color(0xFFEF4444).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    lastReading.status,
+                    hasData ? lastReading.status : 'No Data',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       color:
-                          (lastReading.status == 'Normal' ||
-                              lastReading.status == 'Healthy' ||
-                              lastReading.status == 'No Data')
+                          (hasData && (lastReading.status == 'Normal' ||
+                              lastReading.status == 'Healthy'))
                           ? const Color(0xFF10B981)
+                          : !hasData
+                          ? const Color(0xFF94A3B8)
                           : const Color(0xFFEF4444),
                     ),
                   ),
@@ -357,7 +384,7 @@ class _HealthTrackerState extends State<HealthTracker> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  lastReading.value,
+                  hasData ? lastReading.value : '--',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -381,7 +408,7 @@ class _HealthTrackerState extends State<HealthTracker> {
             const SizedBox(height: 8),
             Text(
               hasData
-                  ? DateFormat('MMM dd, HH:mm').format(lastReading.createdAt!)
+                  ? DateFormat('MMM dd, HH:mm').format(lastReading.timestamp)
                   : 'Never updated',
               style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
             ),
@@ -583,9 +610,14 @@ class _HealthTrackerState extends State<HealthTracker> {
 
 class _AddVitalDialog extends StatefulWidget {
   final String vitalType;
-  final Function(String) onSave;
+  final String unit;
+  final Function(String value, String? notes, DateTime? timestamp) onSave;
 
-  const _AddVitalDialog({required this.vitalType, required this.onSave});
+  const _AddVitalDialog({
+    required this.vitalType,
+    required this.unit,
+    required this.onSave,
+  });
 
   @override
   State<_AddVitalDialog> createState() => _AddVitalDialogState();
@@ -593,17 +625,52 @@ class _AddVitalDialog extends StatefulWidget {
 
 class _AddVitalDialogState extends State<_AddVitalDialog> {
   final _valueController = TextEditingController();
+  final _notesController = TextEditingController();
+  DateTime? _selectedDateTime;
 
   @override
   void dispose() {
     _valueController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
   void _save() {
     if (_valueController.text.isEmpty) return;
-    widget.onSave(_valueController.text);
+    widget.onSave(
+      _valueController.text,
+      _notesController.text.isEmpty ? null : _notesController.text,
+      _selectedDateTime,
+    );
     Navigator.pop(context);
+  }
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDateTime ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+
+    if (date != null && mounted) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime ?? DateTime.now()),
+      );
+
+      if (time != null && mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -613,50 +680,90 @@ class _AddVitalDialogState extends State<_AddVitalDialog> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add ${widget.vitalType} Reading',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Add ${widget.vitalType} Reading',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _valueController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Value',
-                hintText: 'Enter reading',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _valueController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Value',
+                  hintText: 'Enter reading',
+                  suffixText: widget.unit,
+                  border: const OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Notes (Optional)',
+                  hintText: 'Add any notes',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _pickDateTime,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 20),
+                      const SizedBox(width: 12),
+                      Text(
+                        _selectedDateTime != null
+                            ? DateFormat('MMM dd, yyyy HH:mm').format(_selectedDateTime!)
+                            : 'Select Date & Time (Optional)',
+                        style: TextStyle(
+                          color: _selectedDateTime != null
+                              ? Colors.black87
+                              : Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
                     ),
-                    child: const Text('Save'),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                      ),
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
