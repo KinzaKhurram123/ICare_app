@@ -658,8 +658,6 @@ class _CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<_CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   String _paymentMethod = 'Cash on Delivery';
@@ -667,8 +665,6 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
     _addressCtrl.dispose();
     _cityCtrl.dispose();
     super.dispose();
@@ -931,16 +927,9 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Delivery Details',
+        const Text('Delivery Address',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
         const SizedBox(height: 16),
-        _formField(_nameCtrl, 'Full Name', Icons.person_outline_rounded,
-            validator: (v) => v == null || v.isEmpty ? 'Name is required' : null),
-        const SizedBox(height: 12),
-        _formField(_phoneCtrl, 'Phone Number', Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
-            validator: (v) => v == null || v.isEmpty ? 'Phone is required' : null),
-        const SizedBox(height: 12),
         _formField(_addressCtrl, 'Street Address', Icons.home_outlined,
             validator: (v) => v == null || v.isEmpty ? 'Address is required' : null),
         const SizedBox(height: 12),
