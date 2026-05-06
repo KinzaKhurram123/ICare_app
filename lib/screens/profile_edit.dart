@@ -25,10 +25,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-  final TextEditingController emergencyContactController = TextEditingController();
   final TextEditingController bloodGroupController = TextEditingController();
   final TextEditingController existingConditionsController = TextEditingController();
   final TextEditingController healthGoalsController = TextEditingController();
+
+  // Emergency contacts — minimum 2, can add more
+  final List<Map<String, TextEditingController>> _emergencyContacts = [
+    {'name': TextEditingController(), 'phone': TextEditingController()},
+    {'name': TextEditingController(), 'phone': TextEditingController()},
+  ];
   final UserService _userService = UserService();
   bool isLoading = false;
   Uint8List? _imageBytes;
@@ -123,10 +128,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     heightController.dispose();
     weightController.dispose();
     addressController.dispose();
-    emergencyContactController.dispose();
     bloodGroupController.dispose();
     existingConditionsController.dispose();
     healthGoalsController.dispose();
+    for (final c in _emergencyContacts) {
+      c['name']!.dispose();
+      c['phone']!.dispose();
+    }
     super.dispose();
   }
 
@@ -576,18 +584,105 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             onChanged: (v) => bloodGroupController.text = v ?? '',
                           ),
                           const SizedBox(height: 16),
-                          CustomInputField(
-                            hintText: 'Emergency Contact (Name & Phone)',
-                            leadingIcon: const Icon(
-                              Icons.emergency_outlined,
-                              color: Color(0xFF94A3B8),
-                            ),
-                            controller: emergencyContactController,
-                            bgColor: const Color(0xFFF8FAFC),
-                            borderRadius: 14,
-                            borderColor: const Color(0xFFE2E8F0),
-                            borderWidth: 1.5,
+                          // Emergency Contacts
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Emergency Contacts',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _emergencyContacts.add({
+                                      'name': TextEditingController(),
+                                      'phone': TextEditingController(),
+                                    });
+                                  });
+                                },
+                                icon: const Icon(Icons.add_circle_outline_rounded,
+                                    size: 18, color: AppColors.primaryColor),
+                                label: const Text('Add',
+                                    style: TextStyle(
+                                        color: AppColors.primaryColor,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13)),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                          ...List.generate(_emergencyContacts.length, (i) {
+                            final contact = _emergencyContacts[i];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF7F7),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: const Color(0xFFFFE4E4), width: 1.5),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Emergency Contact ${i + 1}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                        if (i >= 2)
+                                          GestureDetector(
+                                            onTap: () => setState(
+                                                () => _emergencyContacts.removeAt(i)),
+                                            child: const Icon(
+                                                Icons.remove_circle_outline_rounded,
+                                                size: 18,
+                                                color: Color(0xFFEF4444)),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    CustomInputField(
+                                      hintText: 'Contact Name',
+                                      leadingIcon: const Icon(
+                                          Icons.person_outline,
+                                          color: Color(0xFF94A3B8)),
+                                      controller: contact['name']!,
+                                      bgColor: Colors.white,
+                                      borderRadius: 10,
+                                      borderColor: const Color(0xFFE2E8F0),
+                                      borderWidth: 1.5,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    CustomInputField(
+                                      hintText: 'Phone Number',
+                                      leadingIcon: const Icon(
+                                          Icons.phone_outlined,
+                                          color: Color(0xFF94A3B8)),
+                                      controller: contact['phone']!,
+                                      bgColor: Colors.white,
+                                      borderRadius: 10,
+                                      borderColor: const Color(0xFFE2E8F0),
+                                      borderWidth: 1.5,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
                           const SizedBox(height: 16),
                           CustomInputField(
                             hintText: 'Existing Conditions (e.g. Diabetes, BP)',
