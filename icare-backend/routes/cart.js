@@ -271,10 +271,16 @@ router.post('/checkout', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Products in your cart are no longer available. Please refresh and try again.' });
     }
 
-    // 4. Create order
+    // 4. If no pharmacy found from products, pick the first active pharmacy user
+    if (!resolvedPharmacyId) {
+      const anyPharmacy = await User.findOne({ role: { $in: ['Pharmacy', 'pharmacy'] } }).lean().catch(() => null);
+      if (anyPharmacy) resolvedPharmacyId = anyPharmacy._id;
+    }
+
+    // 5. Create order
     const orderPayload = {
       patient_id:       userId,
-      pharmacy_id:      resolvedPharmacyId || userId,
+      pharmacy_id:      resolvedPharmacyId || null,   // null = unassigned, pharmacy list shows these too
       total_amount:     totalAmount,
       delivery_address: String(deliveryAddress).trim(),
       status:           'pending',
