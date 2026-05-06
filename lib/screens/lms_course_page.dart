@@ -261,7 +261,7 @@ class _PostCard extends StatelessWidget {
 
   String _fmt(dynamic d) {
     if (d == null) return '';
-    try { return DateFormat('MMM d, yyyy').format(DateTime.parse(d.toString())); } catch { return ''; }
+    try { return DateFormat('MMM d, yyyy').format(DateTime.parse(d.toString())); } catch (_) { return ''; }
   }
 }
 
