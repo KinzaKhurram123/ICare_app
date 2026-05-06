@@ -777,7 +777,7 @@ class _CardData {
 }
 
 // ── Navbar Button ─────────────────────────────────────────────────────────────
-class _NavButton extends StatelessWidget {
+class _NavButton extends StatefulWidget {
   final String label;
   final bool filled;
   final bool accent;
@@ -791,11 +791,18 @@ class _NavButton extends StatelessWidget {
   });
 
   @override
+  State<_NavButton> createState() => _NavButtonState();
+}
+
+class _NavButtonState extends State<_NavButton> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    if (isMobile && label == 'Work With Us') {
+    if (isMobile && widget.label == 'Work With Us') {
       return GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
@@ -807,40 +814,51 @@ class _NavButton extends StatelessWidget {
         ),
       );
     }
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 20,
-          vertical: isMobile ? 8 : 10,
-        ),
-        decoration: BoxDecoration(
-          color: filled
-              ? AppColors.primaryColor
-              : accent
-                  ? const Color(0xFF10B981).withOpacity(0.08)
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: filled
-                ? AppColors.primaryColor
-                : accent
-                    ? const Color(0xFF10B981)
-                    : AppColors.primaryColor,
-            width: 1.5,
+
+    final bgColor = widget.filled
+        ? (_hovered ? AppColors.primaryColor.withOpacity(0.85) : AppColors.primaryColor)
+        : widget.accent
+            ? (_hovered ? const Color(0xFF10B981).withOpacity(0.15) : const Color(0xFF10B981).withOpacity(0.08))
+            : (_hovered ? AppColors.primaryColor.withOpacity(0.06) : Colors.transparent);
+
+    final textColor = widget.filled
+        ? Colors.white
+        : widget.accent
+            ? const Color(0xFF10B981)
+            : AppColors.primaryColor;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : 20,
+            vertical: isMobile ? 8 : 10,
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: filled
-                ? Colors.white
-                : accent
-                    ? const Color(0xFF10B981)
-                    : AppColors.primaryColor,
-            fontWeight: FontWeight.w700,
-            fontSize: isMobile ? 12 : 14,
-            fontFamily: 'Gilroy-Bold',
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: widget.filled
+                  ? AppColors.primaryColor
+                  : widget.accent
+                      ? const Color(0xFF10B981)
+                      : AppColors.primaryColor,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w700,
+              fontSize: isMobile ? 12 : 14,
+              fontFamily: 'Gilroy-Bold',
+            ),
           ),
         ),
       ),
@@ -2790,6 +2808,7 @@ class PublicHomeBody extends StatelessWidget {
               _SectionHeader(
                 title: 'Browse by Specialty',
                 subtitle: 'Find the right specialist for your health needs',
+                titleColor: const Color(0xFF7C3AED),
               ),
               const SizedBox(height: 16),
               _ConditionSearchBar(),
@@ -2806,12 +2825,12 @@ class PublicHomeBody extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF0036BC), width: 1.5),
+                      border: Border.all(color: const Color(0xFF7C3AED), width: 1.5),
                     ),
                     child: const Text(
                       'See All Speciality',
                       style: TextStyle(
-                        color: Color(0xFF0036BC),
+                        color: Color(0xFF7C3AED),
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                         fontFamily: 'Gilroy-Bold',
@@ -2832,6 +2851,7 @@ class PublicHomeBody extends StatelessWidget {
               _SectionHeader(
                 title: 'Order Medicines',
                 subtitle: 'Order medicines from trusted pharmacies near you',
+                titleColor: const Color(0xFF10B981),
               ),
               const SizedBox(height: 16),
               _MedicineSearchBar(),
@@ -2852,6 +2872,7 @@ class PublicHomeBody extends StatelessWidget {
                 _SectionHeader(
                   title: 'Book a Lab Test',
                   subtitle: 'Book lab tests and get results delivered at home',
+                  titleColor: const Color(0xFFFF4D00),
                 ),
                 const SizedBox(height: 16),
                 _LabSearchBar(),
@@ -2866,12 +2887,12 @@ class PublicHomeBody extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                        border: Border.all(color: const Color(0xFFFF4D00), width: 1.5),
                       ),
                       child: const Text(
                         'Book Lab',
                         style: TextStyle(
-                          color: Color(0xFF8B5CF6),
+                          color: Color(0xFFFF4D00),
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                           fontFamily: 'Gilroy-Bold',

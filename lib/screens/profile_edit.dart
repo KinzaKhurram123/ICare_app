@@ -25,6 +25,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+  final TextEditingController emergencyContactController = TextEditingController();
+  final TextEditingController bloodGroupController = TextEditingController();
+  final TextEditingController existingConditionsController = TextEditingController();
+  final TextEditingController healthGoalsController = TextEditingController();
   final UserService _userService = UserService();
   bool isLoading = false;
   Uint8List? _imageBytes;
@@ -119,6 +123,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     heightController.dispose();
     weightController.dispose();
     addressController.dispose();
+    emergencyContactController.dispose();
+    bloodGroupController.dispose();
+    existingConditionsController.dispose();
+    healthGoalsController.dispose();
     super.dispose();
   }
 
@@ -530,6 +538,77 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                               color: Color(0xFF94A3B8),
                             ),
                             controller: addressController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Health Profile',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Blood Group
+                          DropdownButtonFormField<String>(
+                            value: bloodGroupController.text.isEmpty ? null : bloodGroupController.text,
+                            decoration: InputDecoration(
+                              labelText: 'Blood Group',
+                              prefixIcon: const Icon(Icons.bloodtype_outlined, color: Color(0xFF94A3B8)),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                              ),
+                            ),
+                            items: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+                                .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                                .toList(),
+                            onChanged: (v) => bloodGroupController.text = v ?? '',
+                          ),
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'Emergency Contact (Name & Phone)',
+                            leadingIcon: const Icon(
+                              Icons.emergency_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: emergencyContactController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
+                          ),
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'Existing Conditions (e.g. Diabetes, BP)',
+                            leadingIcon: const Icon(
+                              Icons.medical_information_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: existingConditionsController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
+                          ),
+                          const SizedBox(height: 16),
+                          CustomInputField(
+                            hintText: 'Health Goals (e.g. Weight loss, BP control)',
+                            leadingIcon: const Icon(
+                              Icons.flag_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            controller: healthGoalsController,
                             bgColor: const Color(0xFFF8FAFC),
                             borderRadius: 14,
                             borderColor: const Color(0xFFE2E8F0),
