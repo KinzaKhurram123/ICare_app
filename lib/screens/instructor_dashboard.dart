@@ -4,6 +4,7 @@ import 'package:icare/screens/instructor_assign_course_screen.dart';
 import 'package:icare/screens/instructor_courses_management.dart';
 import 'package:icare/screens/instructor_create_course.dart';
 import 'package:icare/screens/instructor_learners_screen.dart';
+import 'package:icare/screens/instructor_lms_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/instructor_service.dart';
@@ -223,6 +224,7 @@ class _InstructorDashboardScreenState extends State<InstructorDashboardScreen> {
 
   Widget _buildQuickActionList(BuildContext context) {
     final actions = [
+      _QAction('LMS Classroom', 'Open your courses — stream, assignments, grades', Icons.school_rounded, const Color(0xFF4F46E5), const InstructorLmsScreen()),
       _QAction('Manage Health Programs', 'Create, edit, and manage your health programs', Icons.health_and_safety_rounded, const Color(0xFF6366F1), const InstructorCoursesManagementScreen()),
       _QAction('Assign Programs', 'Assign professional development to doctors or patients', Icons.assignment_ind_rounded, const Color(0xFFF59E0B), const InstructorAssignCourseScreen()),
       _QAction('Assigned Learners', 'Monitor patient and doctor progress', Icons.group_rounded, const Color(0xFF3B82F6), const InstructorLearnersScreen()),
