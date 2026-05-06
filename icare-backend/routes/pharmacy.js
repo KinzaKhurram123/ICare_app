@@ -352,14 +352,9 @@ router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
     if (profile?._id) idSet.add(profile._id.toString());
     const pharmacyIds = [...idSet].map(id => toId(id)).filter(Boolean);
 
-    // Show orders for this pharmacy OR orders with no pharmacy assigned yet
-    const query = {
-      $or: [
-        { pharmacy_id: { $in: pharmacyIds } },
-        { pharmacy_id: null },
-        { pharmacy_id: { $exists: false } },
-      ],
-    };
+    // Show ALL orders — direct cart orders may have any pharmacy_id value
+    // In a single-pharmacy system all orders belong to this pharmacy
+    const query = {};
     if (status && status !== 'all') query.status = status;
 
     const rawOrders = await PharmacyOrder.find(query).sort({ createdAt: -1 }).lean();
