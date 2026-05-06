@@ -109,74 +109,24 @@ class _MyCartScreenState extends State<MyCartScreen> {
 
   Future<void> _checkout() async {
     if (_cartItems.isEmpty) return;
-    setState(() => _isCheckingOut = true);
 
-    // Show address input dialog
-    final addressController = TextEditingController();
-    final address = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delivery Address'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter your delivery address:'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: addressController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'House #, Street, City',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+    // Navigate to proper checkout screen
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _CheckoutScreen(
+          cartItems: _cartItems,
+          subtotal: _subtotal,
+          discount: _discount,
+          total: _total,
+          cartService: _cartService,
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, addressController.text.trim()),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
-            child: const Text('Confirm'),
-          ),
-        ],
       ),
     );
 
-    if (address == null || address.isEmpty) {
-      setState(() => _isCheckingOut = false);
-      return;
-    }
-
-    try {
-      final result = await _cartService.checkout(deliveryAddress: address);
-      if (mounted) {
-        if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Order placed successfully! Pharmacy will confirm shortly.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-          Navigator.pop(context);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Checkout failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isCheckingOut = false);
+    if (result == true) {
+      // Order placed — reload cart (should be empty now)
+      _loadCart();
     }
   }
 
@@ -403,18 +353,23 @@ class _MyCartScreenState extends State<MyCartScreen> {
       ),
       child: Row(
         children: [
-          // Medicine icon
+          // Medicine icon with category color
           Container(
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFF95BF47).withOpacity(0.1),
+              gradient: LinearGradient(
+                colors: _medicineGradient(product['category'] ?? product['medicine_category'] ?? ''),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.medication_liquid_rounded,
-              color: Color(0xFF95BF47),
-              size: 32,
+            child: Center(
+              child: Text(
+                _medicineEmoji(product['category'] ?? product['medicine_category'] ?? ''),
+                style: const TextStyle(fontSize: 28),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -647,6 +602,551 @@ class _MyCartScreenState extends State<MyCartScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  List<Color> _medicineGradient(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('pain') || cat.contains('relief')) return [const Color(0xFFEF4444), const Color(0xFFDC2626)];
+    if (cat.contains('antibiotic')) return [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)];
+    if (cat.contains('diabetes') || cat.contains('sugar')) return [const Color(0xFF3B82F6), const Color(0xFF2563EB)];
+    if (cat.contains('cardio') || cat.contains('heart')) return [const Color(0xFFEC4899), const Color(0xFFDB2777)];
+    if (cat.contains('gastric') || cat.contains('stomach')) return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
+    if (cat.contains('allergy')) return [const Color(0xFF10B981), const Color(0xFF059669)];
+    if (cat.contains('vitamin') || cat.contains('supplement')) return [const Color(0xFF06B6D4), const Color(0xFF0891B2)];
+    if (cat.contains('respiratory') || cat.contains('lung')) return [const Color(0xFF6366F1), const Color(0xFF4F46E5)];
+    return [const Color(0xFF0036BC), const Color(0xFF1D4ED8)];
+  }
+
+  String _medicineEmoji(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('pain')) return '💊';
+    if (cat.contains('antibiotic')) return '🧬';
+    if (cat.contains('diabetes')) return '🩸';
+    if (cat.contains('cardio') || cat.contains('heart')) return '❤️';
+    if (cat.contains('gastric')) return '🫃';
+    if (cat.contains('allergy')) return '🌿';
+    if (cat.contains('vitamin') || cat.contains('supplement')) return '💪';
+    if (cat.contains('respiratory')) return '🫁';
+    return '💊';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHECKOUT SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+class _CheckoutScreen extends StatefulWidget {
+  final List<dynamic> cartItems;
+  final double subtotal;
+  final double discount;
+  final double total;
+  final CartService cartService;
+
+  const _CheckoutScreen({
+    required this.cartItems,
+    required this.subtotal,
+    required this.discount,
+    required this.total,
+    required this.cartService,
+  });
+
+  @override
+  State<_CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<_CheckoutScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
+  String _paymentMethod = 'Cash on Delivery';
+  bool _isPlacing = false;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
+    _cityCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _placeOrder() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isPlacing = true);
+
+    final address = '${_addressCtrl.text.trim()}, ${_cityCtrl.text.trim()}';
+
+    try {
+      final result = await widget.cartService.checkout(deliveryAddress: address);
+      if (mounted) {
+        if (result['success'] == true) {
+          _showOrderSuccess();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Order failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPlacing = false);
+    }
+  }
+
+  void _showOrderSuccess() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 48),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Order Placed!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Your order has been placed successfully.\nThe pharmacy will confirm shortly.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context, true); // return true = order placed
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Done', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: const CustomBackButton(),
+        title: const Text(
+          'Checkout',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+        ),
+      ),
+      body: isDesktop ? _buildDesktop() : _buildMobile(),
+    );
+  }
+
+  Widget _buildMobile() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOrderItems(),
+            const SizedBox(height: 24),
+            _buildDeliveryForm(),
+            const SizedBox(height: 24),
+            _buildPaymentMethod(),
+            const SizedBox(height: 24),
+            _buildOrderTotal(),
+            const SizedBox(height: 24),
+            _buildPlaceOrderBtn(),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktop() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 6,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildOrderItems(),
+                  const SizedBox(height: 32),
+                  _buildDeliveryForm(),
+                  const SizedBox(height: 32),
+                  _buildPaymentMethod(),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Container(
+          width: 380,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(-4, 0))],
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                _buildOrderTotal(),
+                const SizedBox(height: 24),
+                _buildPlaceOrderBtn(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderItems() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Order Items',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+          ),
+          child: Column(
+            children: widget.cartItems.asMap().entries.map((entry) {
+              final i = entry.key;
+              final item = entry.value;
+              final product = item['product'] ?? item;
+              final name = product['productName'] ?? product['name'] ?? 'Medicine';
+              final price = double.tryParse((product['price'] ?? 0).toString()) ?? 0;
+              final qty = (item['quantity'] ?? 1) as int;
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(child: Text('💊', style: TextStyle(fontSize: 22))),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(name,
+                                  style: const TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                              Text('Qty: $qty',
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          'PKR ${(price * qty).toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (i < widget.cartItems.length - 1)
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeliveryForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Delivery Details',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const SizedBox(height: 16),
+        _formField(_nameCtrl, 'Full Name', Icons.person_outline_rounded,
+            validator: (v) => v == null || v.isEmpty ? 'Name is required' : null),
+        const SizedBox(height: 12),
+        _formField(_phoneCtrl, 'Phone Number', Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+            validator: (v) => v == null || v.isEmpty ? 'Phone is required' : null),
+        const SizedBox(height: 12),
+        _formField(_addressCtrl, 'Street Address', Icons.home_outlined,
+            validator: (v) => v == null || v.isEmpty ? 'Address is required' : null),
+        const SizedBox(height: 12),
+        _formField(_cityCtrl, 'City', Icons.location_city_outlined,
+            validator: (v) => v == null || v.isEmpty ? 'City is required' : null),
+      ],
+    );
+  }
+
+  Widget _formField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+        prefixIcon: Icon(icon, color: const Color(0xFF94A3B8), size: 20),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethod() {
+    final methods = ['Cash on Delivery', 'JazzCash', 'EasyPaisa', 'Bank Transfer'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Payment Method',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+          ),
+          child: Column(
+            children: methods.asMap().entries.map((entry) {
+              final i = entry.key;
+              final method = entry.value;
+              final isSelected = _paymentMethod == method;
+              return Column(
+                children: [
+                  InkWell(
+                    onTap: () => setState(() => _paymentMethod = method),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? AppColors.primaryColor : const Color(0xFFCBD5E1),
+                                width: 2,
+                              ),
+                            ),
+                            child: isSelected
+                                ? Center(
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primaryColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            method,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? AppColors.primaryColor : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (method == 'Cash on Delivery')
+                            const Icon(Icons.money_rounded, color: Color(0xFF10B981), size: 20),
+                          if (method == 'JazzCash')
+                            const Icon(Icons.phone_android_rounded, color: Color(0xFFEF4444), size: 20),
+                          if (method == 'EasyPaisa')
+                            const Icon(Icons.account_balance_wallet_rounded,
+                                color: Color(0xFF10B981), size: 20),
+                          if (method == 'Bank Transfer')
+                            const Icon(Icons.account_balance_rounded,
+                                color: Color(0xFF3B82F6), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (i < methods.length - 1)
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderTotal() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Order Summary',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 16),
+          _row('Subtotal', 'PKR ${widget.subtotal.toStringAsFixed(0)}'),
+          if (widget.discount > 0)
+            _row('Discount (${widget.discount.toInt()}%)',
+                '-PKR ${(widget.subtotal * widget.discount / 100).toStringAsFixed(0)}',
+                color: Colors.red),
+          _row('Delivery', 'Free', color: const Color(0xFF10B981)),
+          _row('Payment', _paymentMethod),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              Text(
+                'PKR ${widget.total.toStringAsFixed(0)}',
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primaryColor),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color ?? const Color(0xFF0F172A))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceOrderBtn() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isPlacing ? null : _placeOrder,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+        ),
+        child: _isPlacing
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.shopping_bag_rounded, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Place Order • PKR ${widget.total.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
       ),
     );
   }

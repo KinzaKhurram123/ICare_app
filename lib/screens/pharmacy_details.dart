@@ -873,12 +873,13 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
   Widget _buildMedicineImage(dynamic med) {
     final imageUrl = (med['imageUrl'] ?? med['image'] ?? '').toString().trim();
+    final category = (med['category'] ?? med['medicine_category'] ?? '').toString();
     if (imageUrl.isNotEmpty) {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
         width: double.infinity,
-        errorBuilder: (_, __, ___) => _medicineIconFallback(),
+        errorBuilder: (_, __, ___) => _medicineIconFallback(category: category),
         loadingBuilder: (_, child, progress) => progress == null
             ? child
             : Container(
@@ -889,19 +890,45 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
               ),
       );
     }
-    return _medicineIconFallback();
+    return _medicineIconFallback(category: category);
   }
 
-  Widget _medicineIconFallback() {
+  Widget _medicineIconFallback({String category = ''}) {
+    final cat = category.toLowerCase();
+    List<Color> colors;
+    String emoji;
+
+    if (cat.contains('pain') || cat.contains('relief')) {
+      colors = [const Color(0xFFEF4444), const Color(0xFFDC2626)]; emoji = '💊';
+    } else if (cat.contains('antibiotic')) {
+      colors = [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)]; emoji = '🧬';
+    } else if (cat.contains('diabetes')) {
+      colors = [const Color(0xFF3B82F6), const Color(0xFF2563EB)]; emoji = '🩸';
+    } else if (cat.contains('cardio') || cat.contains('heart')) {
+      colors = [const Color(0xFFEC4899), const Color(0xFFDB2777)]; emoji = '❤️';
+    } else if (cat.contains('gastric') || cat.contains('stomach')) {
+      colors = [const Color(0xFFF59E0B), const Color(0xFFD97706)]; emoji = '🫃';
+    } else if (cat.contains('allergy')) {
+      colors = [const Color(0xFF10B981), const Color(0xFF059669)]; emoji = '🌿';
+    } else if (cat.contains('vitamin') || cat.contains('supplement')) {
+      colors = [const Color(0xFF06B6D4), const Color(0xFF0891B2)]; emoji = '💪';
+    } else if (cat.contains('respiratory') || cat.contains('lung')) {
+      colors = [const Color(0xFF6366F1), const Color(0xFF4F46E5)]; emoji = '🫁';
+    } else {
+      colors = [const Color(0xFF0036BC), const Color(0xFF1D4ED8)]; emoji = '💊';
+    }
+
     return Container(
       width: double.infinity,
-      color: const Color(0xFFF8FAFC),
-      child: const Center(
-        child: Icon(
-          Icons.medication_liquid_rounded,
-          size: 50,
-          color: AppColors.primaryColor,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+      ),
+      child: Center(
+        child: Text(emoji, style: const TextStyle(fontSize: 48)),
       ),
     );
   }
@@ -963,11 +990,11 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                   decoration: BoxDecoration(
                     color: isAdding
                         ? Colors.grey[300]
-                        : const Color(0xFF95BF47),
+                        : AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: isAdding ? [] : [
                       BoxShadow(
-                        color: const Color(0xFF95BF47).withOpacity(0.3),
+                        color: AppColors.primaryColor.withOpacity(0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
