@@ -3,10 +3,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/screens/my_cart.dart';
 import 'package:icare/services/cart_service.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/imagePaths.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -43,25 +45,52 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Future<void> _addToCart(dynamic med) async {
     final id = med['_id']?.toString() ?? '';
     if (_addingToCart.contains(id)) return;
+
+    // Check if user is logged in
+    final token = await SharedPref().getToken();
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Login Required'),
+            content: const Text('Please log in to add items to your cart.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white),
+                child: const Text('Login'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    // Mock medicines are sample data only — pharmacy hasn't added real inventory yet
+    if (id.startsWith('mock_')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('This pharmacy hasn\'t listed their inventory yet. Please contact them directly.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ));
+      }
+      return;
+    }
+
     setState(() => _addingToCart.add(id));
     try {
-      // For mock medicines, show a success message (they're demo items)
-      if (id.startsWith('mock_')) {
-        await Future.delayed(const Duration(milliseconds: 400));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${med['productName']} added to cart'),
-            backgroundColor: const Color(0xFF95BF47),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ));
-        }
-        return;
-      }
       await _cartService.addItem(id, 1);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${med['productName']} added to cart'),
+          content: Text('${med['productName'] ?? med['name'] ?? 'Item'} added to cart'),
           backgroundColor: const Color(0xFF95BF47),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
@@ -290,7 +319,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   List<dynamic> get _filteredMedicines {
     if (_searchQuery.isEmpty) return _medicines;
     return _medicines.where((m) {
-      final name = (m['productName'] ?? '').toString().toLowerCase();
+      final name = (m['productName'] ?? m['name'] ?? '').toString().toLowerCase();
       return name.contains(_searchQuery.toLowerCase());
     }).toList();
   }
@@ -903,14 +932,14 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
           ),
           const SizedBox(height: 12),
           CustomText(
-            text: med['productName'] ?? 'Medicine Name',
+            text: med['productName'] ?? med['name'] ?? 'Medicine Name',
             fontWeight: FontWeight.bold,
             fontSize: 15,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
-            med['brand'] ?? 'Pharma Co.',
+            med['brand'] ?? med['manufacturer'] ?? 'Pharma Co.',
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 8),

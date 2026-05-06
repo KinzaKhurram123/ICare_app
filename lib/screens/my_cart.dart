@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/services/cart_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 
@@ -15,6 +17,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
   List<dynamic> _cartItems = [];
   bool _isLoading = true;
   bool _isCheckingOut = false;
+  bool _isLoggedIn = true;
   String _promoCode = '';
   double _discount = 0;
 
@@ -26,9 +29,17 @@ class _MyCartScreenState extends State<MyCartScreen> {
 
   Future<void> _loadCart() async {
     setState(() => _isLoading = true);
+
+    final token = await SharedPref().getToken();
+    if (token == null || token.isEmpty) {
+      if (mounted) setState(() { _isLoggedIn = false; _isLoading = false; });
+      return;
+    }
+
     final result = await _cartService.getCart();
     if (mounted) {
       setState(() {
+        _isLoggedIn = true;
         _cartItems = result['cart'] ?? [];
         _isLoading = false;
       });
@@ -211,11 +222,60 @@ class _MyCartScreenState extends State<MyCartScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _cartItems.isEmpty
-              ? _buildEmptyCart()
-              : isDesktop
-                  ? _buildDesktopLayout()
-                  : _buildMobileLayout(),
+          : !_isLoggedIn
+              ? _buildLoginRequired()
+              : _cartItems.isEmpty
+                  ? _buildEmptyCart()
+                  : isDesktop
+                      ? _buildDesktopLayout()
+                      : _buildMobileLayout(),
+    );
+  }
+
+  Widget _buildLoginRequired() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_rounded, size: 64, color: AppColors.primaryColor),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Login Required',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Please log in to view your cart and place orders.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              ),
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Log In'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
