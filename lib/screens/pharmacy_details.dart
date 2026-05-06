@@ -101,10 +101,18 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to add to cart. Please try again.'),
+        String errMsg = 'Failed to add to cart';
+        if (e is DioException) {
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+            errMsg = data['message'].toString();
+          }
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(errMsg),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
         ));
       }
     } finally {

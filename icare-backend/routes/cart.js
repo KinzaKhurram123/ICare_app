@@ -133,8 +133,16 @@ router.post('/add', authMiddleware, async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Item added to cart', cartItem: { ...cartItem.toObject(), _id: cartItem._id.toString() } });
   } catch (error) {
-    console.error('Add to cart error:', error);
-    res.status(500).json({ success: false, message: 'Failed to add item to cart' });
+    console.error('Add to cart error:', error.name, error.message, error.code);
+    // Duplicate key = item already in cart (race condition) — treat as success
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Item already in cart' });
+    }
+    // Validation error
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message || 'Failed to add item to cart' });
   }
 });
 
