@@ -232,7 +232,8 @@ router.post('/checkout', authMiddleware, async (req, res) => {
     }
 
     const productIds = cartItems.map(c => c.product_id);
-    const products = await Product.find({ _id: { $in: productIds }, is_active: true }).lean();
+    // No is_active filter — fetch all matching products
+    const products = await Product.find({ _id: { $in: productIds } }).lean();
     const pMap = {};
     products.forEach(p => { pMap[p._id.toString()] = p; });
 
@@ -241,13 +242,16 @@ router.post('/checkout', authMiddleware, async (req, res) => {
     const orderItems = [];
 
     for (const item of cartItems) {
-      const product = pMap[item.product_id.toString()];
-      if (!product) continue;
-      // Skip stock check for now — allow order even if stock is low
+      const pid = item.product_id?.toString();
+      const product = pMap[pid];
+      if (!product) {
+        console.log('Product not found for id:', pid);
+        continue;
+      }
       totalAmount += (product.price || 0) * item.quantity;
       orderItems.push({
         product_id: product._id,
-        product_name: product.name || product.productName,
+        product_name: product.name || product.productName || 'Medicine',
         generic_name: product.generic_name || '',
         quantity: item.quantity,
         price: product.price || 0,
@@ -261,7 +265,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
     const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
     const order = await PharmacyOrder.create({
       patient_id: userId,
-      pharmacy_id: selectedPharmacyId || userId, // fallback to userId if no pharmacy
+      pharmacy_id: selectedPharmacyId || userId,
       total_amount: totalAmount,
       delivery_address: deliveryAddress,
       status: 'pending',
@@ -279,8 +283,8 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Order placed successfully', order: { ...order.toObject(), _id: order._id.toString() } });
   } catch (error) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ success: false, message: 'Failed to place order' });
+    console.error('Checkout error:', error.message || error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to place order' });
   }
 });
 
