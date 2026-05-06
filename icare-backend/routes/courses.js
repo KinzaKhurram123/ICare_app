@@ -10,6 +10,36 @@ function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 }
 
+// GET /api/courses/public — list active courses WITHOUT auth (for browsing)
+router.get('/public', async (req, res) => {
+  try {
+    await connectMongoDB();
+    const filter = { is_active: true, isPublished: true };
+    if (req.query.q) filter.title = { $regex: req.query.q, $options: 'i' };
+    if (req.query.category) filter.category = req.query.category;
+    const courses = await Course.find(filter).select('-modules').lean();
+    res.json({ success: true, courses, count: courses.length });
+  } catch (e) {
+    res.json({ success: true, courses: [], count: 0 });
+  }
+});
+
+// GET /api/courses/students — enrolled students in a course (instructor use)
+router.get('/enrolled-students/:courseId', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const enrollments = await Enrollment.find({ courseId: toId(req.params.courseId) })
+      .populate('userId', 'name email username').lean();
+    const students = enrollments.map(e => ({
+      _id: e.userId?._id, name: e.userId?.name || e.userId?.username,
+      email: e.userId?.email, progress: e.progress, enrolledAt: e.createdAt,
+    }));
+    res.json({ success: true, students });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // GET /api/courses or GET /api/students/courses — list active courses
 router.get('/', authMiddleware, async (req, res) => {
   try {

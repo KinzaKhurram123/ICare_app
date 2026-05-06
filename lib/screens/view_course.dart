@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/screens/lesson_player.dart';
+import 'package:icare/screens/lms_course_page.dart';
 import 'package:icare/screens/quiz_screen.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/services/course_question_service.dart';
@@ -632,70 +633,61 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
     if (_isPurchased) {
       return Column(
         children: [
-          const Icon(
-            Icons.check_circle_rounded,
-            color: Color(0xFF10B981),
-            size: 48,
-          ),
+          const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 48),
           const SizedBox(height: 12),
-          const Text(
-            "Enrolled",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF10B981),
-            ),
-          ),
+          const Text('Enrolled', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
           const SizedBox(height: 8),
-          const Text(
-            "You have active access to this program.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF64748B)),
+          const Text('You have active access to this course.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B))),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
+              label: const Text('Open Course', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => LmsCoursePage(
+                  course: widget.courseData ?? {},
+                  enrollmentId: _currentEnrollmentId,
+                ),
+              )),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
           ),
         ],
       );
     }
 
+    final price = widget.courseData?['price'];
+    final isFree = price == null || price == 0;
+
     return Column(
       children: [
-        const Text(
-          "\$45.00",
+        Text(
+          isFree ? 'Free' : 'PKR ${price.toString()}',
           style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
+            fontSize: 32, fontWeight: FontWeight.w900,
+            color: isFree ? const Color(0xFF10B981) : const Color(0xFF0F172A),
           ),
         ),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (ctx) => SelectPaymentMethod(
-                    courseId: courseId,
-                    amount: 45.0, // Fixed price from UI context
-                  ),
-                ),
-              );
-            },
+            onPressed: _isPurchasing ? null : () => _enrollInCourse(courseId),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
-            child: const Text(
-              "Start Program",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.white,
-              ),
-            ),
+            child: _isPurchasing
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Enroll Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
           ),
         ),
       ],
