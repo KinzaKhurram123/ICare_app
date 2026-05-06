@@ -19,6 +19,10 @@ class VideoCall extends StatefulWidget {
   final String? appointmentId;
   /// Patient's user ID — used to load patient history (doctor-side only)
   final String? patientId;
+  /// Optional consultation ID for chat-based consultations
+  final String? consultationId;
+  /// Callback when call ends (to return to chat)
+  final VoidCallback? onCallEnded;
 
   const VideoCall({
     super.key,
@@ -29,6 +33,8 @@ class VideoCall extends StatefulWidget {
     this.currentUserName = 'User',
     this.appointmentId,
     this.patientId,
+    this.consultationId,
+    this.onCallEnded,
   });
 
   @override
@@ -134,21 +140,70 @@ class _VideoCallMobileState extends State<VideoCall> {
     }
   }
 
-  /// Leave video call only (red button)
+  /// Leave video call only (red button) - with confirmation
   Future<void> _leaveCall() async {
-    await _engine?.leaveChannel();
-    await _engine?.release();
-    _engine = null;
-    if (mounted) Navigator.pop(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave Video Call'),
+        content: const Text('Do you want to leave the video call? You can rejoin from the chat screen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _engine?.leaveChannel();
+      await _engine?.release();
+      _engine = null;
+      if (widget.onCallEnded != null) {
+        widget.onCallEnded!();
+      }
+      if (mounted) Navigator.pop(context);
+    }
   }
 
-  /// End Consultation button — opens workflow screen for doctor to complete documentation
+  /// End Consultation button — with confirmation dialog
   Future<void> _endConsultation() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('End Consultation'),
+        content: const Text('Do you want to end this consultation? This action cannot be undone and you will not be able to rejoin.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('End Consultation'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     // Check if this is a doctor ending consultation (has appointment details)
     if (widget.appointmentId == null || widget.appointmentId!.isEmpty) {
       // No appointment ID - just leave the call (for quick calls)
       try { await CallService().endCall(widget.channelName); } catch (_) {}
-      await _leaveCall();
+      await _engine?.leaveChannel();
+      await _engine?.release();
+      _engine = null;
+      if (mounted) Navigator.pop(context);
       return;
     }
 
@@ -158,12 +213,14 @@ class _VideoCallMobileState extends State<VideoCall> {
 
     if (!isDoctor) {
       // Patient cannot end consultation - only leave video
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only the doctor can end the consultation'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only the doctor can end the consultation'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
       return;
     }
 
