@@ -152,6 +152,8 @@ class PublicHome extends StatelessWidget {
                             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        _SpecialtySearchBar(),
                         const SizedBox(height: 14),
                         _SpecialtyGrid(),
                         const SizedBox(height: 28),
@@ -176,6 +178,8 @@ class PublicHome extends StatelessWidget {
                             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        _ConditionOnlySearchBar(),
                         const SizedBox(height: 14),
                         _ConditionGrid(),
                         const SizedBox(height: 16),
@@ -194,7 +198,7 @@ class PublicHome extends StatelessWidget {
                       _SectionHeader(
                         title: 'Order Medicines',
                         subtitle: 'Order medicines from trusted pharmacies near you',
-                        titleColor: const Color(0xFF10B981),
+                        titleColor: const Color(0xFF95BF47),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
@@ -319,6 +323,82 @@ class _BrowseSearchField extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
         onSubmitted: (_) => onSearch(),
+      ),
+    );
+  }
+}
+
+// ── Specialty Search Bar ──────────────────────────────────────────────────────
+class _SpecialtySearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.3), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Search by specialty (e.g. Cardiologist...)',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF7C3AED), size: 20),
+            suffixIcon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF7C3AED), size: 20),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ── Condition Only Search Bar ─────────────────────────────────────────────────
+class _ConditionOnlySearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF0891B2).withOpacity(0.3), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFF0891B2).withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Search by condition (e.g. Diabetes, Fever...)',
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0891B2), size: 20),
+            suffixIcon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF0891B2), size: 20),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          ),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+              );
+            }
+          },
+        ),
       ),
     );
   }
@@ -502,7 +582,7 @@ class _MedicineSearchBarState extends State<_MedicineSearchBar> {
                 value: _filter,
                 underline: const SizedBox(),
                 icon: const Icon(Icons.arrow_drop_down, size: 20),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF95BF47), fontWeight: FontWeight.w600),
                 items: const [
                   DropdownMenuItem(value: 'name', child: Text('Medicine Name')),
                   DropdownMenuItem(value: 'category', child: Text('Category')),
@@ -516,7 +596,7 @@ class _MedicineSearchBarState extends State<_MedicineSearchBar> {
                 decoration: InputDecoration(
                   hintText: hintMap[_filter],
                   hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  prefixIcon: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF10B981), size: 20),
+                  prefixIcon: const Icon(Icons.local_pharmacy_rounded, color: Color(0xFF95BF47), size: 20),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -1495,7 +1575,7 @@ class _PharmaciesGrid extends StatelessWidget {
           subtitle: p['area']!,
           rating: p['rating']!,
           icon: Icons.local_pharmacy_rounded,
-          iconColor: const Color(0xFF10B981),
+          iconColor: const Color(0xFF95BF47),
           width: double.infinity,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const PharmaciesScreen()),
@@ -2851,7 +2931,7 @@ class PublicHomeBody extends StatelessWidget {
               _SectionHeader(
                 title: 'Order Medicines',
                 subtitle: 'Order medicines from trusted pharmacies near you',
-                titleColor: const Color(0xFF10B981),
+                titleColor: const Color(0xFF95BF47),
               ),
               const SizedBox(height: 16),
               _MedicineSearchBar(),
