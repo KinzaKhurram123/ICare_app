@@ -116,25 +116,33 @@ class PharmacyService {
       debugPrint('✅ Got ${medicines.length} medicines');
 
       // Calculate stats
-      final totalOrders = orders.length;
-      final pendingOrders = orders
-          .where((o) => o['status'] == 'pending')
-          .length;
-      final completedOrders = orders
-          .where((o) => o['status'] == 'completed')
-          .length;
-      final totalProducts = medicines.length;
-      final lowStock = medicines.where((m) => (m['quantity'] ?? 0) < 30).length;
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
 
-      // Calculate revenue from completed orders
+      final totalOrders = orders.length;
+      final pendingOrders = orders.where((o) => o['status'] == 'pending').length;
+      final completedOrders = orders.where((o) => o['status'] == 'completed').length;
+
+      final todayOrders = orders.where((o) {
+        try {
+          final raw = o['createdAt'];
+          if (raw == null) return false;
+          final dt = raw is DateTime ? raw : DateTime.parse(raw.toString());
+          return dt.isAfter(todayStart) || dt.isAtSameMomentAs(todayStart);
+        } catch (_) { return false; }
+      }).length;
+
+      final totalProducts = medicines.length;
+      final lowStock = medicines
+          .where((m) => ((m['stock_quantity'] ?? m['quantity'] ?? 0) as num) < 10)
+          .length;
+
       final revenue = orders
           .where((o) => o['status'] == 'completed')
-          .fold<double>(
-            0,
-            (sum, o) => sum + (o['totalAmount'] ?? 0).toDouble(),
-          );
+          .fold<double>(0, (sum, o) => sum + ((o['totalAmount'] ?? o['total_amount'] ?? 0) as num).toDouble());
 
       return {
+        'todayOrders': todayOrders,
         'totalOrders': totalOrders,
         'pendingOrders': pendingOrders,
         'completedOrders': completedOrders,
@@ -146,6 +154,7 @@ class PharmacyService {
       debugPrint('❌ Error getting pharmacy stats: $e');
       // Return default stats instead of throwing
       return {
+        'todayOrders': 0,
         'totalOrders': 0,
         'pendingOrders': 0,
         'completedOrders': 0,
