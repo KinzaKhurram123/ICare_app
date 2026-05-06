@@ -1342,7 +1342,7 @@ class _StepIndicator extends StatelessWidget {
   final int currentStep;
   const _StepIndicator({required this.currentStep});
 
-  static const _steps = ['Basic Info', 'Partner Type', 'Details & Submit'];
+  static const _steps = ['Partner Type', 'Basic Info', 'Details & Submit'];
 
   @override
   Widget build(BuildContext context) {
