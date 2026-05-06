@@ -247,30 +247,24 @@ exports.endConsultation = async (req, res) => {
   }
 };
 
-// Upload attachment
+// Upload attachment — Cloudinary
 exports.uploadAttachment = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No file uploaded'
-      });
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-
-    // In production, upload to S3 or cloud storage
-    // For now, return local file path
-    const fileUrl = `/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      url: fileUrl
+    const cloudinary = require('../config/cloudinary');
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'icare/consultation-attachments', resource_type: 'auto' },
+        (err, result) => (err ? reject(err) : resolve(result))
+      );
+      stream.end(req.file.buffer);
     });
+    res.json({ success: true, url: result.secure_url });
   } catch (error) {
     console.error('Upload attachment error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

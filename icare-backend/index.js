@@ -31,6 +31,7 @@ const seedLocationsRoute = require('./routes/seed-locations');
 const debugLabRoute = require('./routes/debug-lab');
 const healthRoutes = require('./routes/healthRoutes');
 const consultationRoutes = require('./routes/consultationRoutes');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -123,6 +124,7 @@ app.use('/api/seed-locations', seedLocationsRoute);
 app.use('/api/debug-lab', debugLabRoute);
 app.use('/api/health', healthRoutes);
 app.use('/api/consultations', consultationRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Serve uploaded files (only in non-serverless environments)
 if (!process.env.VERCEL) {

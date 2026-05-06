@@ -839,6 +839,41 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
     );
   }
 
+  Widget _buildMedicineImage(dynamic med) {
+    final imageUrl = (med['imageUrl'] ?? med['image'] ?? '').toString().trim();
+    if (imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (_, __, ___) => _medicineIconFallback(),
+        loadingBuilder: (_, child, progress) => progress == null
+            ? child
+            : Container(
+                color: const Color(0xFFF8FAFC),
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+      );
+    }
+    return _medicineIconFallback();
+  }
+
+  Widget _medicineIconFallback() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF8FAFC),
+      child: const Center(
+        child: Icon(
+          Icons.medication_liquid_rounded,
+          size: 50,
+          color: AppColors.primaryColor,
+        ),
+      ),
+    );
+  }
+
   Widget _buildMedicineCard(dynamic med) {
     final id = med['_id']?.toString() ?? '';
     final isAdding = _addingToCart.contains(id);
@@ -861,19 +896,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Center(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.medication_liquid_rounded,
-                  size: 50,
-                  color: AppColors.primaryColor,
-                ),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: _buildMedicineImage(med),
             ),
           ),
           const SizedBox(height: 12),
