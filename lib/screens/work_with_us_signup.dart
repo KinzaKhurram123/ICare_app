@@ -614,6 +614,12 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             (v) => setState(() => _docExpCert = v), required: false),
         const SizedBox(height: 24),
 
+        _sectionHeader('3. Additional Comments', Icons.comment_outlined,
+            const Color(0xFF0036BC)),
+        const SizedBox(height: 12),
+        _multilineField(_docCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 24),
+
         // 4. Agreement
         _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFF0036BC)),
         const SizedBox(height: 12),
@@ -628,13 +634,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           onChanged: (v) => setState(() => _docAgreeOnboarding = v ?? false),
           label: 'I agree to the onboarding and verification process',
         ),
-        const SizedBox(height: 24),
-
-        // 5. Additional Comments
-        _sectionHeader('5. Additional Comments', Icons.comment_outlined,
-            const Color(0xFF0036BC)),
-        const SizedBox(height: 12),
-        _multilineField(_docCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 28),
 
         _submitButton(),
@@ -717,8 +716,14 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             (v) => setState(() => _pharmRegCert = v), required: true),
         const SizedBox(height: 24),
 
-        // 5. Agreement
-        _sectionHeader('5. Agreement', Icons.handshake_outlined, const Color(0xFF10B981)),
+        _sectionHeader('5. Additional Comments', Icons.comment_outlined,
+            const Color(0xFF10B981)),
+        const SizedBox(height: 12),
+        _multilineField(_pharmCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 24),
+
+        // 6. Agreement
+        _sectionHeader('6. Agreement', Icons.handshake_outlined, const Color(0xFF10B981)),
         const SizedBox(height: 12),
         _checkboxRow(
           value: _pharmConfirmInfo,
@@ -731,13 +736,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           onChanged: (v) => setState(() => _pharmAgreeOnboarding = v ?? false),
           label: 'I agree to the verification & onboarding process',
         ),
-        const SizedBox(height: 24),
-
-        // 6. Additional Comments
-        _sectionHeader('6. Additional Comments', Icons.comment_outlined,
-            const Color(0xFF10B981)),
-        const SizedBox(height: 12),
-        _multilineField(_pharmCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 28),
 
         _submitButton(),
@@ -828,8 +826,14 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             color: const Color(0xFF8B5CF6)),
         const SizedBox(height: 24),
 
-        // 5. Agreement
-        _sectionHeader('5. Agreement', Icons.handshake_outlined, const Color(0xFF8B5CF6)),
+        _sectionHeader('5. Additional Comments', Icons.comment_outlined,
+            const Color(0xFF8B5CF6)),
+        const SizedBox(height: 12),
+        _multilineField(_labCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 24),
+
+        // 6. Agreement
+        _sectionHeader('6. Agreement', Icons.handshake_outlined, const Color(0xFF8B5CF6)),
         const SizedBox(height: 12),
         _checkboxRow(
           value: _labConfirmInfo,
@@ -844,13 +848,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           label: 'I agree to the verification & onboarding process',
           color: const Color(0xFF8B5CF6),
         ),
-        const SizedBox(height: 24),
-
-        // 6. Additional Comments
-        _sectionHeader('6. Additional Comments', Icons.comment_outlined,
-            const Color(0xFF8B5CF6)),
-        const SizedBox(height: 12),
-        _multilineField(_labCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFF8B5CF6)),
@@ -888,7 +885,13 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             required: true, color: const Color(0xFFF59E0B)),
         const SizedBox(height: 24),
 
-        _sectionHeader('3. Agreement', Icons.handshake_outlined, const Color(0xFFF59E0B)),
+        _sectionHeader('3. Additional Comments', Icons.comment_outlined,
+            const Color(0xFFF59E0B)),
+        const SizedBox(height: 12),
+        _multilineField(_studentCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 24),
+
+        _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFFF59E0B)),
         const SizedBox(height: 12),
         _checkboxRow(
           value: _studentConfirmInfo,
@@ -896,12 +899,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           label: 'I confirm that the information provided is accurate',
           color: const Color(0xFFF59E0B),
         ),
-        const SizedBox(height: 24),
-
-        _sectionHeader('4. Additional Comments', Icons.comment_outlined,
-            const Color(0xFFF59E0B)),
-        const SizedBox(height: 12),
-        _multilineField(_studentCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFFF59E0B)),
@@ -948,7 +945,13 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             required: true, color: const Color(0xFFEF4444)),
         const SizedBox(height: 24),
 
-        _sectionHeader('3. Agreement', Icons.handshake_outlined, const Color(0xFFEF4444)),
+        _sectionHeader('3. Additional Comments', Icons.comment_outlined,
+            const Color(0xFFEF4444)),
+        const SizedBox(height: 12),
+        _multilineField(_instrCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 24),
+
+        _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFFEF4444)),
         const SizedBox(height: 12),
         _checkboxRow(
           value: _instructorConfirmInfo,
@@ -963,12 +966,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           label: 'I agree to the onboarding and content review process',
           color: const Color(0xFFEF4444),
         ),
-        const SizedBox(height: 24),
-
-        _sectionHeader('4. Additional Comments', Icons.comment_outlined,
-            const Color(0xFFEF4444)),
-        const SizedBox(height: 12),
-        _multilineField(_instrCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFFEF4444)),
