@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/screens/instructor_create_course.dart';
+import 'package:icare/screens/lms_course_page.dart';
 import 'package:icare/services/instructor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -370,44 +371,57 @@ class _InstructorCoursesManagementScreenState
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 4,
+              runSpacing: 4,
               children: [
-                TextButton.icon(
-                  onPressed: () => _togglePublishStatus(course),
-                  icon: Icon(
-                    isPublished ? Icons.unpublished : Icons.publish,
-                    size: 18,
+                // ── Open LMS ───────────────────────────────────────────────
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LmsCoursePage(
+                        course: Map<String, dynamic>.from(course),
+                        isInstructor: true,
+                      ),
+                    ),
                   ),
-                  label: Text(isPublished ? 'Unpublish' : 'Publish'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: isPublished
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFF10B981),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: const Text('Open LMS'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => _togglePublishStatus(course),
+                  icon: Icon(isPublished ? Icons.unpublished : Icons.publish, size: 16),
+                  label: Text(isPublished ? 'Unpublish' : 'Publish'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isPublished ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                  ),
+                ),
                 TextButton.icon(
                   onPressed: () async {
                     final result = await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (ctx) =>
-                            InstructorCreateCourseScreen(course: Course.fromJson(course)),
+                        builder: (ctx) => InstructorCreateCourseScreen(course: Course.fromJson(course)),
                       ),
                     );
                     if (result == true) _loadCourses();
                   },
-                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryColor,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
                 ),
-                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => _deleteCourse(course),
-                  icon: const Icon(Icons.delete_outline, size: 18),
+                  icon: const Icon(Icons.delete_outline, size: 16),
                   label: const Text('Delete'),
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
                 ),
