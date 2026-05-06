@@ -23,7 +23,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 
 // ─── GET ALL PHARMACIES ───────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     await connectMongoDB();
     const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
@@ -51,7 +51,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
+router.get('/get_all_pharmacy', async (req, res) => {
   try {
     await connectMongoDB();
     const users = await User.find({ role: { $in: ['pharmacy', 'Pharmacy'] }, is_active: { $ne: false } }).lean();
@@ -81,7 +81,7 @@ router.get('/get_all_pharmacy', authMiddleware, async (req, res) => {
 
 // ─── GET NEARBY PHARMACIES ────────────────────────────────────────────────────
 // GET /pharmacy/nearby?lat=31.5&lng=74.3&radius=20
-router.get('/nearby', authMiddleware, async (req, res) => {
+router.get('/nearby', async (req, res) => {
   try {
     await connectMongoDB();
     const userLat = parseFloat(req.query.lat);
@@ -571,7 +571,7 @@ router.put('/orders/:id/cancel', authMiddleware, async (req, res) => {
 });
 
 // ─── PRODUCTS ─────────────────────────────────────────────────────────────────
-router.get('/products', authMiddleware, async (req, res) => {
+router.get('/products', async (req, res) => {
   try {
     await connectMongoDB();
     const { pharmacyId, category, q } = req.query;
@@ -665,3 +665,4 @@ router.post('/orders/:id/rating', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+
