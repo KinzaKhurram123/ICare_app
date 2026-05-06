@@ -10,7 +10,7 @@ const orderItemSchema = new mongoose.Schema({
 
 const pharmacyOrderSchema = new mongoose.Schema({
   patient_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  pharmacy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  pharmacy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   prescription_id: String,
   delivery_address: { type: String, default: '' },
   total_amount: { type: Number, default: 0 },
