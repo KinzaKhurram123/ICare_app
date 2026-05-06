@@ -7,6 +7,7 @@ import 'package:icare/screens/quiz_screen.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/services/course_question_service.dart';
 import 'package:icare/utils/imagePaths.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/select_payment_method.dart';
@@ -29,6 +30,7 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
   bool _isPurchasing = false;
   List<dynamic> _questions = [];
   bool _loadingQuestions = false;
+  bool _isInstructor = false;
 
   @override
   void initState() {
@@ -38,6 +40,19 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
         widget.enrollmentId != null;
     _currentEnrollmentId = widget.enrollmentId;
     _loadQuestions();
+    _checkRole();
+  }
+
+  Future<void> _checkRole() async {
+    final role = await SharedPref().getUserRole();
+    if (mounted) {
+      final isInstr = role != null &&
+          (role.toLowerCase() == 'instructor' || role.toLowerCase() == 'doctor');
+      setState(() {
+        _isInstructor = isInstr;
+        if (isInstr) _isPurchased = true; // instructors always have access
+      });
+    }
   }
 
   @override
@@ -648,6 +663,7 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                 builder: (_) => LmsCoursePage(
                   course: widget.courseData ?? {},
                   enrollmentId: _currentEnrollmentId,
+                  isInstructor: _isInstructor,
                 ),
               )),
               style: ElevatedButton.styleFrom(

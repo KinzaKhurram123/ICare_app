@@ -111,18 +111,20 @@ const login = async (req, res) => {
   try {
     await connectMongoDB();
 
-    // Ensure admin exists on every login attempt (serverless-safe)
-    const adminExists = await User.findOne({ email: 'admin@icare.com' }).lean();
-    if (!adminExists) {
-      const hashed = await bcrypt.hash('adminPassword123', 10);
-      await User.create({
-        username: 'Admin', name: 'Admin',
-        email: 'admin@icare.com', password: hashed,
-        role: 'admin', is_approved: true, is_active: true,
-      }).catch(() => {}); // ignore duplicate key errors
-    } else if (adminExists.role !== 'admin') {
-      await User.findByIdAndUpdate(adminExists._id, { $set: { role: 'admin', is_active: true, is_approved: true } }).catch(() => {});
-    }
+    // Ensure default accounts exist (serverless-safe, runs once per cold start)
+    const ensureAccount = async (email, name, role, password) => {
+      const exists = await User.findOne({ email }).lean();
+      if (!exists) {
+        const hashed = await bcrypt.hash(password, 10);
+        await User.create({ username: name, name, email, password: hashed, role, is_approved: true, is_active: true }).catch(() => {});
+      } else if (exists.is_approved === false || exists.is_active === false) {
+        await User.findByIdAndUpdate(exists._id, { $set: { is_approved: true, is_active: true } }).catch(() => {});
+      }
+    };
+    await Promise.all([
+      ensureAccount('admin@icare.com',      'Admin',      'admin',      'adminPassword123'),
+      ensureAccount('instructor@icare.com', 'Dr. Instructor', 'Instructor', 'instructor123'),
+    ]);
 
     const { email, password } = req.body;
 
@@ -145,7 +147,7 @@ const login = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Your account has been deactivated' });
     }
 
-    // Check approval for professional roles
+    // Check approval for professional roles (only block if explicitly false)
     const rolesRequiringApproval = ['doctor', 'lab', 'pharmacy', 'instructor'];
     if (rolesRequiringApproval.includes(user.role?.toLowerCase()) && user.is_approved === false) {
       return res.status(403).json({ success: false, message: 'Your account is pending admin approval. Please wait for verification.' });
