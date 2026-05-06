@@ -278,7 +278,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
       total_amount:     totalAmount,
       delivery_address: String(deliveryAddress).trim(),
       status:           'pending',
-      order_number:     `ORD-${Date.now().toString().slice(-8)}`,
+      order_number:     `ORD-${Date.now()}-${Math.random().toString(36).substr(2,5).toUpperCase()}`,
       items:            orderItems,
     };
 
