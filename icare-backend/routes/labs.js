@@ -45,7 +45,7 @@ async function getAllLabs() {
   });
 }
 
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const labs = await getAllLabs();
     res.json({ success: true, labs, laboratories: labs });
@@ -55,7 +55,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/get_all_laboratories', authMiddleware, async (req, res) => {
+router.get('/get_all_laboratories', async (req, res) => {
   try {
     const labs = await getAllLabs();
     res.json({ success: true, laboratories: labs, labs });
@@ -67,7 +67,7 @@ router.get('/get_all_laboratories', authMiddleware, async (req, res) => {
 
 // ─── GET NEARBY LABS ──────────────────────────────────────────────────────────
 // GET /laboratories/nearby?lat=31.5&lng=74.3&radius=20
-router.get('/nearby', authMiddleware, async (req, res) => {
+router.get('/nearby', async (req, res) => {
   try {
     await connectMongoDB();
     const userLat = parseFloat(req.query.lat);

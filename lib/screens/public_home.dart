@@ -574,7 +574,7 @@ class _LabSearchBarState extends State<_LabSearchBar> {
                 value: _filter,
                 underline: const SizedBox(),
                 icon: const Icon(Icons.arrow_drop_down, size: 20),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF8B5CF6), fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 12, color: Color(0xFFFF4D00), fontWeight: FontWeight.w600),
                 items: const [
                   DropdownMenuItem(value: 'test', child: Text('Test Name')),
                   DropdownMenuItem(value: 'category', child: Text('Category')),
@@ -588,7 +588,7 @@ class _LabSearchBarState extends State<_LabSearchBar> {
                 decoration: InputDecoration(
                   hintText: hintMap[_filter],
                   hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  prefixIcon: const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 20),
+                  prefixIcon: const Icon(Icons.biotech_rounded, color: Color(0xFFFF4D00), size: 20),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),

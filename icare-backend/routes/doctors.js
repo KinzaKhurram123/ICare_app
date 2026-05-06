@@ -81,7 +81,7 @@ router.post('/online-status', authMiddleware, async (req, res) => {
 });
 
 // ─── GET ALL DOCTORS ──────────────────────────────────────────────────────────
-router.get('/get_all_doctors', authMiddleware, async (req, res) => {
+router.get('/get_all_doctors', async (req, res) => {
   try {
     await connectMongoDB();
     // Case-insensitive match — old accounts may have 'Doctor' (capital D)
@@ -176,7 +176,7 @@ router.post('/add_doctor_details', authMiddleware, async (req, res) => {
 });
 
 // ─── GET DOCTOR BY ID ─────────────────────────────────────────────────────────
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     await connectMongoDB();
     const id = toId(req.params.id);
