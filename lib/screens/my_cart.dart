@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/services/cart_service.dart';
@@ -695,8 +696,19 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String msg = 'Order failed. Please try again.';
+        if (e is DioException) {
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+            msg = data['message'].toString();
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
+          ),
         );
       }
     } finally {

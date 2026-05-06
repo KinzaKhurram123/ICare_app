@@ -219,72 +219,96 @@ router.delete('/', authMiddleware, async (req, res) => {
 router.post('/checkout', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const userId = toId(req.user.id);
-    const { deliveryAddress, pharmacyId } = req.body;
 
-    if (!deliveryAddress) {
+    const userId = toId(req.user.id);
+    if (!userId) return res.status(400).json({ success: false, message: 'Invalid user ID in token' });
+
+    const { deliveryAddress, pharmacyId } = req.body;
+    if (!deliveryAddress || !String(deliveryAddress).trim()) {
       return res.status(400).json({ success: false, message: 'Delivery address is required' });
     }
 
+    // 1. Load cart items
     const cartItems = await CartItem.find({ user_id: userId }).lean();
-    if (cartItems.length === 0) {
+    if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ success: false, message: 'Cart is empty' });
     }
 
-    const productIds = cartItems.map(c => c.product_id);
-    // No is_active filter — fetch all matching products
+    // 2. Load products (no is_active filter — take whatever is in cart)
+    const productIds = cartItems.map(c => c.product_id).filter(Boolean);
     const products = await Product.find({ _id: { $in: productIds } }).lean();
     const pMap = {};
-    products.forEach(p => { pMap[p._id.toString()] = p; });
+    products.forEach(p => { pMap[String(p._id)] = p; });
 
+    // 3. Build order items
     let totalAmount = 0;
-    const selectedPharmacyId = toId(pharmacyId) || (products.length > 0 ? products[0]?.pharmacy_id : null);
+    let resolvedPharmacyId = pharmacyId ? toId(pharmacyId) : null;
     const orderItems = [];
 
     for (const item of cartItems) {
-      const pid = item.product_id?.toString();
+      const pid = String(item.product_id || '');
       const product = pMap[pid];
       if (!product) {
-        console.log('Product not found for id:', pid);
+        console.warn('Checkout: product not in DB for id:', pid);
         continue;
       }
-      totalAmount += (product.price || 0) * item.quantity;
+      if (!resolvedPharmacyId && product.pharmacy_id) {
+        resolvedPharmacyId = product.pharmacy_id;
+      }
+      const price = Number(product.price) || 0;
+      const qty   = Number(item.quantity)  || 1;
+      totalAmount += price * qty;
       orderItems.push({
-        product_id: product._id,
-        product_name: product.name || product.productName || 'Medicine',
-        generic_name: product.generic_name || '',
-        quantity: item.quantity,
-        price: product.price || 0,
+        product_id:   product._id,
+        product_name: String(product.name || product.productName || 'Medicine'),
+        generic_name: String(product.generic_name || ''),
+        quantity: qty,
+        price,
       });
     }
 
     if (orderItems.length === 0) {
-      return res.status(400).json({ success: false, message: 'No valid items in cart' });
+      return res.status(400).json({ success: false, message: 'Products in your cart are no longer available. Please refresh and try again.' });
     }
 
-    const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
-    const order = await PharmacyOrder.create({
-      patient_id: userId,
-      pharmacy_id: selectedPharmacyId || userId,
-      total_amount: totalAmount,
-      delivery_address: deliveryAddress,
-      status: 'pending',
-      order_number: orderNumber,
-      items: orderItems,
-    });
+    // 4. Create order
+    const orderPayload = {
+      patient_id:       userId,
+      pharmacy_id:      resolvedPharmacyId || userId,
+      total_amount:     totalAmount,
+      delivery_address: String(deliveryAddress).trim(),
+      status:           'pending',
+      order_number:     `ORD-${Date.now().toString().slice(-8)}`,
+      items:            orderItems,
+    };
 
-    // Update stock
+    const order = await PharmacyOrder.create(orderPayload);
+
+    // 5. Decrement stock (best-effort, never block the response)
     for (const item of cartItems) {
-      await Product.findByIdAndUpdate(item.product_id, { $inc: { stock_quantity: -item.quantity } });
+      Product.findByIdAndUpdate(item.product_id, { $inc: { stock_quantity: -Number(item.quantity) } })
+        .catch(e => console.error('Stock update error:', e.message));
     }
 
-    // Clear cart
+    // 6. Clear cart
     await CartItem.deleteMany({ user_id: userId });
 
-    res.status(201).json({ success: true, message: 'Order placed successfully', order: { ...order.toObject(), _id: order._id.toString() } });
+    return res.status(201).json({
+      success: true,
+      message: 'Order placed successfully',
+      order: {
+        _id:          String(order._id),
+        order_number: order.order_number,
+        total_amount: order.total_amount,
+        status:       order.status,
+        items:        orderItems,
+      },
+    });
   } catch (error) {
-    console.error('Checkout error:', error.message || error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to place order' });
+    const errName = error.name || 'Error';
+    const errMsg  = error.message || 'Failed to place order';
+    console.error('Checkout error:', errName, '-', errMsg, '-', JSON.stringify(error.errors || {}));
+    return res.status(500).json({ success: false, message: errMsg, type: errName });
   }
 });
 
