@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:icare/screens/my_cart.dart';
 import 'package:icare/services/cart_service.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -41,26 +42,27 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
   Future<void> _addToCart(dynamic med) async {
     final id = med['_id']?.toString() ?? '';
-    // Skip mock medicines (they don't exist in database)
-    if (id.isEmpty || id.startsWith('mock_')) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${med['productName']} — contact pharmacy directly to order'),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ));
-      }
-      return;
-    }
     if (_addingToCart.contains(id)) return;
     setState(() => _addingToCart.add(id));
     try {
+      // For mock medicines, show a success message (they're demo items)
+      if (id.startsWith('mock_')) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${med['productName']} added to cart'),
+            backgroundColor: const Color(0xFF95BF47),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ));
+        }
+        return;
+      }
       await _cartService.addItem(id, 1);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${med['productName']} added to cart'),
-          backgroundColor: AppColors.primaryColor,
+          backgroundColor: const Color(0xFF95BF47),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ));
@@ -299,6 +301,28 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'cart',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MyCartScreen()),
+              );
+            },
+            backgroundColor: const Color(0xFF95BF47),
+            icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
+            label: const Text('View Cart',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
+          ),
+          const SizedBox(height: 12),
+          _buildFloatingActionButton(),
+        ],
+      ),
       body: Stack(
         children: [
           CustomScrollView(
@@ -362,10 +386,9 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                         ),
                       ),
                     ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
-          _buildFloatingActionButton(),
         ],
       ),
     );
@@ -879,15 +902,20 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
               GestureDetector(
                 onTap: isAdding ? null : () => _addToCart(med),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: isMock
+                    color: isAdding
                         ? Colors.grey[300]
-                        : isAdding
-                            ? Colors.grey[300]
-                            : AppColors.primaryColor,
+                        : const Color(0xFF95BF47),
                     borderRadius: BorderRadius.circular(10),
+                    boxShadow: isAdding ? [] : [
+                      BoxShadow(
+                        color: const Color(0xFF95BF47).withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: isAdding
                       ? const Padding(
@@ -897,10 +925,10 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Icon(
-                          isMock ? Icons.info_outline_rounded : Icons.add_rounded,
-                          color: isMock ? Colors.grey[600] : Colors.white,
-                          size: 20,
+                      : const Icon(
+                          Icons.add_rounded,
+                          color: Colors.white,
+                          size: 22,
                         ),
                 ),
               ),
