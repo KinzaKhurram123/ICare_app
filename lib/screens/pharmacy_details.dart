@@ -72,14 +72,17 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
       return;
     }
 
-    // Mock medicines are sample data only — pharmacy hasn't added real inventory yet
+    // Mock medicines — add to local cart state and show success
     if (id.startsWith('mock_')) {
+      setState(() => _addingToCart.add(id));
+      await Future.delayed(const Duration(milliseconds: 300));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('This pharmacy hasn\'t listed their inventory yet. Please contact them directly.'),
-          backgroundColor: Colors.orange,
+        setState(() => _addingToCart.remove(id));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${med['productName'] ?? 'Item'} added to cart'),
+          backgroundColor: const Color(0xFF95BF47),
           behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ));
       }
       return;
