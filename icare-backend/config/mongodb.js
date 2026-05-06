@@ -11,12 +11,18 @@ const connectMongoDB = async () => {
     });
     return;
   }
+  const uri = (process.env.MONGO_URI || '').trim();
+  if (!uri) {
+    const err = new Error('MONGO_URI environment variable is not set');
+    console.error('❌ MongoDB connection error:', err.message);
+    throw err;
+  }
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 5,
     });
     console.log('✅ MongoDB connected');
   } catch (err) {

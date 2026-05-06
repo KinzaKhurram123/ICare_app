@@ -44,8 +44,16 @@ async function ensureAdminExists() {
   }
 }
 
-// Run on module load
-ensureAdminExists();
+// Run on first request, not at module load (Vercel serverless safe)
+let adminEnsured = false;
+const ensureAdminMiddleware = async (req, res, next) => {
+  if (!adminEnsured) {
+    adminEnsured = true;
+    await ensureAdminExists();
+  }
+  next();
+};
+router.use(ensureAdminMiddleware);
 
 // ─── PENDING USERS ────────────────────────────────────────────────────────────
 // GET /api/admin/pending-users
