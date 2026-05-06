@@ -301,27 +301,20 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'cart',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MyCartScreen()),
-              );
-            },
-            backgroundColor: const Color(0xFF95BF47),
-            icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
-            label: const Text('View Cart',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13)),
-          ),
-          const SizedBox(height: 12),
-          _buildFloatingActionButton(),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'cart',
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MyCartScreen()),
+          );
+        },
+        backgroundColor: const Color(0xFF95BF47),
+        icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
+        label: const Text('View Cart',
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13)),
       ),
       body: Stack(
         children: [
@@ -388,6 +381,12 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                     ),
               const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
+          ),
+          // Upload Rx button at bottom right
+          Positioned(
+            bottom: 30,
+            right: 20,
+            child: _buildUploadRxButton(),
           ),
         ],
       ),
@@ -962,42 +961,34 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return Positioned(
-      bottom: 30,
-      right: 20,
-      child: InkWell(
-        onTap: _pickPrescription,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryColor.withOpacity(0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.upload_file_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              const CustomText(
-                text: "Upload Physical Rx",
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ],
-          ),
+  Widget _buildUploadRxButton() {
+    return InkWell(
+      onTap: _pickPrescription,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryColor.withOpacity(0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.upload_file_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            CustomText(
+              text: "Upload Physical Rx",
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 13,
+            ),
+          ],
         ),
       ),
     );
