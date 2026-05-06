@@ -100,6 +100,71 @@ router.get('/nearby', async (req, res) => {
   }
 });
 
+// ─── GET LAB BY ID (public — used by patient to fetch tests) ─────────────────
+router.get('/:labId', async (req, res) => {
+  try {
+    await connectMongoDB();
+    const labId = toId(req.params.labId);
+    if (!labId) {
+      return res.status(400).json({ success: false, message: 'Invalid lab ID' });
+    }
+
+    const user = await User.findById(labId).lean();
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Lab not found' });
+    }
+
+    const profile = await LabProfile.findOne({ user_id: labId }).lean() || {};
+
+    // Build availableTests — use profile tests or generate sample tests
+    let availableTests = profile.available_tests || profile.availableTests || [];
+
+    // If no tests configured, return common lab tests as defaults
+    if (!availableTests || availableTests.length === 0) {
+      availableTests = [
+        { _id: 'cbc', name: 'Complete Blood Count (CBC)', price: 800 },
+        { _id: 'lft', name: 'Liver Function Test (LFT)', price: 1500 },
+        { _id: 'kft', name: 'Kidney Function Test (KFT)', price: 1200 },
+        { _id: 'tsh', name: 'Thyroid Stimulating Hormone (TSH)', price: 1800 },
+        { _id: 'hba1c', name: 'HbA1c (Glycated Hemoglobin)', price: 1400 },
+        { _id: 'lipid', name: 'Lipid Profile', price: 1600 },
+        { _id: 'urine', name: 'Urine Complete Examination', price: 600 },
+        { _id: 'bs_fasting', name: 'Blood Sugar Fasting', price: 400 },
+        { _id: 'bs_random', name: 'Blood Sugar Random', price: 400 },
+        { _id: 'xray', name: 'Chest X-Ray', price: 1000 },
+        { _id: 'ecg', name: 'ECG (Electrocardiogram)', price: 800 },
+        { _id: 'dengue', name: 'Dengue NS1 Antigen', price: 2000 },
+        { _id: 'covid', name: 'COVID-19 PCR Test', price: 3500 },
+        { _id: 'hepatitis_b', name: 'Hepatitis B Surface Antigen', price: 1200 },
+        { _id: 'hepatitis_c', name: 'Hepatitis C Antibody', price: 1200 },
+      ];
+    }
+
+    const laboratory = {
+      _id: user._id.toString(),
+      id: user._id.toString(),
+      name: profile.lab_name || user.username || user.name || 'Laboratory',
+      labName: profile.lab_name || user.username || user.name || 'Laboratory',
+      email: user.email,
+      phone: user.phone,
+      address: profile.address || 'Address not available',
+      city: profile.city || '',
+      latitude: profile.latitude || null,
+      longitude: profile.longitude || null,
+      operating_hours: profile.operating_hours || '8AM - 10PM',
+      home_sample: profile.home_sample ?? true,
+      homeSample: profile.home_sample ?? true,
+      accreditation: profile.accreditation || '',
+      availableTests,
+    };
+
+    res.json({ success: true, laboratory });
+  } catch (error) {
+    console.error('Get lab by ID error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch lab details' });
+  }
+});
+
 // ─── LAB PROFILE ──────────────────────────────────────────────────────────────
 router.get('/profile', authMiddleware, async (req, res) => {
   try {

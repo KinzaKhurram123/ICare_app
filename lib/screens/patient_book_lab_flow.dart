@@ -532,18 +532,18 @@ class _PatientBookLabFlowState extends State<PatientBookLabFlow> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
+                  color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFED7AA)),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.location_on_outlined, color: Color(0xFFF97316), size: 16),
+                    Icon(Icons.location_on_rounded, color: Color(0xFF3B82F6), size: 16),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Geo-tagging coming soon — showing all available labs for now.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                        'Select a lab below to book your test. Address shown on each card.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF1D4ED8)),
                       ),
                     ),
                   ],
