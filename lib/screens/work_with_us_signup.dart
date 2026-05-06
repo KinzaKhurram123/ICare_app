@@ -15,7 +15,7 @@ class WorkWithUsSignup extends StatefulWidget {
 }
 
 class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
-  int _step = 0; // 0=Basic Info, 1=Partner Type, 2=Detailed Form
+  int _step = 0; // 0=Partner Type, 1=Basic Info, 2=Detailed Form
 
   // ── Step 1: Basic Info ───────────────────────────────────────────────────
   final _step1Key = GlobalKey<FormState>();
@@ -84,6 +84,27 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
   bool _labAgreeOnboarding = false;
   final _labCommentsCtrl = TextEditingController();
 
+  // ── Step 3: Student Fields ───────────────────────────────────────────────
+  final _studentUniversityCtrl = TextEditingController();
+  final _studentProgramCtrl = TextEditingController();
+  final _studentYearCtrl = TextEditingController();
+  final _studentIdCtrl = TextEditingController();
+  String? _studentIdFile;
+  bool _studentConfirmInfo = false;
+  final _studentCommentsCtrl = TextEditingController();
+
+  // ── Step 3: Instructor Fields ────────────────────────────────────────────
+  final _instrQualificationCtrl = TextEditingController();
+  final _instrSpecializationCtrl = TextEditingController();
+  final _instrExpCtrl = TextEditingController();
+  final _instrInstitutionCtrl = TextEditingController();
+  final _instrCoursesCtrl = TextEditingController();
+  String? _instrCnic;
+  String? _instrCvFile;
+  bool _instructorConfirmInfo = false;
+  bool _instructorAgreeOnboarding = false;
+  final _instrCommentsCtrl = TextEditingController();
+
   bool _submitting = false;
 
   static const _weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -110,6 +131,20 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
       'icon': Icons.biotech_rounded,
       'color': Color(0xFF8B5CF6),
     },
+    {
+      'role': 'Student',
+      'title': 'Student',
+      'subtitle': 'Access Medical Courses & Learning',
+      'icon': Icons.school_rounded,
+      'color': Color(0xFFF59E0B),
+    },
+    {
+      'role': 'Instructor',
+      'title': 'Instructor',
+      'subtitle': 'Teach & Create Medical Courses',
+      'icon': Icons.cast_for_education_rounded,
+      'color': Color(0xFFEF4444),
+    },
   ];
 
   @override
@@ -126,20 +161,27 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
     _labNameCtrl.dispose(); _labLicenseCtrl.dispose();
     _labYearsCtrl.dispose(); _labHoursCtrl.dispose();
     _labLISDetailCtrl.dispose(); _labCommentsCtrl.dispose();
+    _studentUniversityCtrl.dispose(); _studentProgramCtrl.dispose();
+    _studentYearCtrl.dispose(); _studentIdCtrl.dispose(); _studentCommentsCtrl.dispose();
+    _instrQualificationCtrl.dispose(); _instrSpecializationCtrl.dispose();
+    _instrExpCtrl.dispose(); _instrInstitutionCtrl.dispose();
+    _instrCoursesCtrl.dispose(); _instrCommentsCtrl.dispose();
     super.dispose();
   }
 
   void _nextStep() {
     if (_step == 0) {
-      if (!_step1Key.currentState!.validate()) return;
-      setState(() => _step = 1);
-    } else if (_step == 1) {
+      // Step 0: Partner Type — must select a role first
       if (_selectedRole == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select a partner type to continue')),
         );
         return;
       }
+      setState(() => _step = 1);
+    } else if (_step == 1) {
+      // Step 1: Basic Info — validate form
+      if (!_step1Key.currentState!.validate()) return;
       setState(() => _step = 2);
     }
   }
@@ -154,10 +196,12 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
     if (_selectedRole == 'Doctor') agreed = _docConfirmInfo && _docAgreeOnboarding;
     if (_selectedRole == 'Pharmacy') agreed = _pharmConfirmInfo && _pharmAgreeOnboarding;
     if (_selectedRole == 'Laboratory') agreed = _labConfirmInfo && _labAgreeOnboarding;
+    if (_selectedRole == 'Student') agreed = _studentConfirmInfo;
+    if (_selectedRole == 'Instructor') agreed = _instructorConfirmInfo && _instructorAgreeOnboarding;
 
     if (!agreed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept both agreement checkboxes to submit')),
+        const SnackBar(content: Text('Please accept the agreement checkboxes to submit')),
       );
       return;
     }
@@ -165,11 +209,12 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
     setState(() => _submitting = true);
 
     try {
-      // Map display role to backend role
       final roleMap = {
         'Doctor': 'doctor',
         'Pharmacy': 'pharmacy',
         'Laboratory': 'lab',
+        'Student': 'Student',
+        'Instructor': 'Instructor',
       };
       final backendRole = roleMap[_selectedRole] ?? _selectedRole!.toLowerCase();
 
@@ -336,9 +381,9 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         ],
         _StepIndicator(currentStep: _step),
         const SizedBox(height: 28),
-        if (_step == 0) _buildStep1(),
-        if (_step == 1) _buildStep2(),
-        if (_step == 2) _buildStep3(),
+        if (_step == 0) _buildStep1(),  // Partner Type
+        if (_step == 1) _buildStep2(),  // Basic Info
+        if (_step == 2) _buildStep3(),  // Detailed Form
         if (_step == 0) ...[
           const SizedBox(height: 24),
           Center(
@@ -370,9 +415,25 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // STEP 1 — Basic Information
+  // STEP 1 — Select Partner Type (shown FIRST)
   // ════════════════════════════════════════════════════════════════════════════
   Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _stepTitle('Select Partner Type', 'Choose how you want to work with iCare'),
+        const SizedBox(height: 24),
+        ..._roles.map((r) => _roleCard(r)),
+        const SizedBox(height: 28),
+        _primaryButton('Continue', Icons.arrow_forward_rounded, _nextStep),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STEP 2 — Basic Information (shown SECOND)
+  // ════════════════════════════════════════════════════════════════════════════
+  Widget _buildStep2() {
     return Form(
       key: _step1Key,
       child: Column(
@@ -394,7 +455,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
               keyboardType: TextInputType.emailAddress,
               validator: (v) => v == null || v.isEmpty ? 'Email is required' : null),
           const SizedBox(height: 14),
-          // Password field
           TextFormField(
             controller: _passwordCtrl,
             obscureText: _obscurePassword,
@@ -425,22 +485,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
           _primaryButton('Continue', Icons.arrow_forward_rounded, _nextStep),
         ],
       ),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // STEP 2 — Select Partner Type
-  // ════════════════════════════════════════════════════════════════════════════
-  Widget _buildStep2() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _stepTitle('Select Partner Type', 'Choose how you want to work with iCare'),
-        const SizedBox(height: 24),
-        ..._roles.map((r) => _roleCard(r)),
-        const SizedBox(height: 28),
-        _primaryButton('Continue', Icons.arrow_forward_rounded, _nextStep),
-      ],
     );
   }
 
@@ -513,6 +557,8 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
     if (_selectedRole == 'Doctor') return _buildDoctorForm();
     if (_selectedRole == 'Pharmacy') return _buildPharmacyForm();
     if (_selectedRole == 'Laboratory') return _buildLabForm();
+    if (_selectedRole == 'Student') return _buildStudentForm();
+    if (_selectedRole == 'Instructor') return _buildInstructorForm();
     return const SizedBox.shrink();
   }
 
@@ -808,6 +854,124 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFF8B5CF6)),
+      ],
+    );
+  }
+
+  // ── Student Form ─────────────────────────────────────────────────────────────
+  Widget _buildStudentForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _stepTitle('Student Registration', 'Complete your student profile'),
+        const SizedBox(height: 24),
+
+        _sectionHeader('1. Academic Details', Icons.school_rounded, const Color(0xFFF59E0B)),
+        const SizedBox(height: 12),
+        _inputField(_studentUniversityCtrl, 'University / Institution Name',
+            Icons.account_balance_outlined),
+        const SizedBox(height: 12),
+        _inputField(_studentProgramCtrl, 'Program / Degree',
+            Icons.menu_book_outlined, hint: 'e.g., MBBS, BDS, Pharm-D'),
+        const SizedBox(height: 12),
+        _inputField(_studentYearCtrl, 'Current Year / Semester',
+            Icons.timeline_rounded, hint: 'e.g., 3rd Year, Semester 5'),
+        const SizedBox(height: 12),
+        _inputField(_studentIdCtrl, 'Student ID / Roll Number',
+            Icons.badge_outlined),
+        const SizedBox(height: 24),
+
+        _sectionHeader('2. Documents', Icons.upload_file_rounded, const Color(0xFFF59E0B)),
+        const SizedBox(height: 12),
+        _fileUploadRow('Student ID Card', _studentIdFile,
+            (v) => setState(() => _studentIdFile = v),
+            required: true, color: const Color(0xFFF59E0B)),
+        const SizedBox(height: 24),
+
+        _sectionHeader('3. Agreement', Icons.handshake_outlined, const Color(0xFFF59E0B)),
+        const SizedBox(height: 12),
+        _checkboxRow(
+          value: _studentConfirmInfo,
+          onChanged: (v) => setState(() => _studentConfirmInfo = v ?? false),
+          label: 'I confirm that the information provided is accurate',
+          color: const Color(0xFFF59E0B),
+        ),
+        const SizedBox(height: 24),
+
+        _sectionHeader('4. Additional Comments', Icons.comment_outlined,
+            const Color(0xFFF59E0B)),
+        const SizedBox(height: 12),
+        _multilineField(_studentCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 28),
+
+        _submitButton(color: const Color(0xFFF59E0B)),
+      ],
+    );
+  }
+
+  // ── Instructor Form ───────────────────────────────────────────────────────────
+  Widget _buildInstructorForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _stepTitle('Instructor Registration', 'Complete your instructor profile'),
+        const SizedBox(height: 24),
+
+        _sectionHeader('1. Professional Details', Icons.cast_for_education_rounded,
+            const Color(0xFFEF4444)),
+        const SizedBox(height: 12),
+        _inputField(_instrQualificationCtrl, 'Highest Qualification',
+            Icons.school_outlined, hint: 'e.g., MBBS, MD, PhD'),
+        const SizedBox(height: 12),
+        _inputField(_instrSpecializationCtrl, 'Area of Expertise / Specialization',
+            Icons.psychology_outlined),
+        const SizedBox(height: 12),
+        _inputField(_instrExpCtrl, 'Years of Teaching Experience',
+            Icons.timeline_rounded, keyboardType: TextInputType.number),
+        const SizedBox(height: 12),
+        _inputField(_instrInstitutionCtrl, 'Current Institution / Organization',
+            Icons.account_balance_outlined),
+        const SizedBox(height: 12),
+        _inputField(_instrCoursesCtrl, 'Courses You Want to Teach',
+            Icons.menu_book_outlined,
+            hint: 'e.g., Anatomy, Pharmacology, Clinical Skills'),
+        const SizedBox(height: 24),
+
+        _sectionHeader('2. Documents', Icons.upload_file_rounded, const Color(0xFFEF4444)),
+        const SizedBox(height: 12),
+        _fileUploadRow('CNIC / ID', _instrCnic,
+            (v) => setState(() => _instrCnic = v),
+            required: true, color: const Color(0xFFEF4444)),
+        const SizedBox(height: 10),
+        _fileUploadRow('CV / Resume', _instrCvFile,
+            (v) => setState(() => _instrCvFile = v),
+            required: true, color: const Color(0xFFEF4444)),
+        const SizedBox(height: 24),
+
+        _sectionHeader('3. Agreement', Icons.handshake_outlined, const Color(0xFFEF4444)),
+        const SizedBox(height: 12),
+        _checkboxRow(
+          value: _instructorConfirmInfo,
+          onChanged: (v) => setState(() => _instructorConfirmInfo = v ?? false),
+          label: 'I confirm that the information provided is accurate',
+          color: const Color(0xFFEF4444),
+        ),
+        const SizedBox(height: 8),
+        _checkboxRow(
+          value: _instructorAgreeOnboarding,
+          onChanged: (v) => setState(() => _instructorAgreeOnboarding = v ?? false),
+          label: 'I agree to the onboarding and content review process',
+          color: const Color(0xFFEF4444),
+        ),
+        const SizedBox(height: 24),
+
+        _sectionHeader('4. Additional Comments', Icons.comment_outlined,
+            const Color(0xFFEF4444)),
+        const SizedBox(height: 12),
+        _multilineField(_instrCommentsCtrl, 'Any additional information (optional)'),
+        const SizedBox(height: 28),
+
+        _submitButton(color: const Color(0xFFEF4444)),
       ],
     );
   }
