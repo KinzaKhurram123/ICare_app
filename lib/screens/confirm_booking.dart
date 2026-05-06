@@ -37,15 +37,20 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
     setState(() => _isLoading = true);
     try {
       final labId = widget.bookingData['labId'];
+      final testNames = widget.selectedTests.map((e) => e.name).join(', ');
       final bookingDetails = {
-        'testName': widget.selectedTests.map((e) => e.name).join(', '),
+        'testType': testNames,
+        'test_type': testNames,
+        'testName': testNames,
         'date': widget.bookingData['date'],
+        'testDate': widget.bookingData['date'],
         'time': widget.bookingData['time'],
         'contactLocation': widget.bookingData['address'],
         'city': widget.bookingData['city'],
         'homeSample': widget.bookingData['homeSample'],
+        'collection_type': widget.bookingData['homeSample'] == true ? 'home' : 'walk-in',
         'totalAmount': _totalPrice,
-        'contactName': 'Patient User', // Ideally from profile
+        'contactName': 'Patient User',
         'contactPhone': '0000000000',
         'age': 25,
       };
