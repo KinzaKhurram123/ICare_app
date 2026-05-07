@@ -152,11 +152,11 @@ extension ConsultationTimerStatusExtension on ConsultationTimer {
   ConsultationTimerStatus get status {
     if (_elapsed == Duration.zero) {
       return ConsultationTimerStatus.notStarted;
-    } else if (_elapsed < minDuration) {
+    } else if (_elapsed < ConsultationTimer.minDuration) {
       return ConsultationTimerStatus.belowMinimum;
-    } else if (_elapsed >= maxDuration) {
+    } else if (_elapsed >= ConsultationTimer.maxDuration) {
       return ConsultationTimerStatus.reachedMaximum;
-    } else if (_elapsed >= (maxDuration - ConsultationTimer.warningBeforeEnd)) {
+    } else if (_elapsed >= (ConsultationTimer.maxDuration - ConsultationTimer.warningBeforeEnd)) {
       return ConsultationTimerStatus.nearMaximum;
     } else {
       return ConsultationTimerStatus.withinRange;

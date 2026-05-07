@@ -114,8 +114,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   Future<void> _sendConsentMessage() async {
     final consentMessage = 'Hi, I am Dr. ${widget.currentUserName}. I confirm that telehealth has limitations and some emergencies require in-person visits.';
     
-    await _consultationService.sendMessage(
+    await _consultationService.sendMessageV2(
       consultationId: _consultationId!,
+      senderId: widget.currentUserId,
+      senderName: 'Dr. ${widget.currentUserName}',
+      senderRole: 'doctor',
       message: consentMessage,
       isSystemMessage: true,
     );
@@ -123,13 +126,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   Future<void> _loadMessages() async {
     if (_consultationId == null) return;
-    
+
     try {
-      final result = await _consultationService.getMessages(_consultationId!);
-      if (result['success'] && mounted) {
+      final messages = await _consultationService.getMessagesV2(consultationId: _consultationId!);
+      if (mounted) {
         setState(() {
-          _messages = (result['messages'] as List)
-              .map((m) => ConsultationMessage.fromJson(m))
+          _messages = messages
+              .map((m) => ConsultationMessage.fromJson(m as Map<String, dynamic>))
               .toList();
           _isLoading = false;
         });
@@ -164,14 +167,14 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     _messageController.clear();
 
     try {
-      final result = await _consultationService.sendMessage(
+      await _consultationService.sendMessageV2(
         consultationId: _consultationId!,
+        senderId: widget.currentUserId,
+        senderName: widget.currentUserName,
+        senderRole: widget.isDoctor ? 'doctor' : 'patient',
         message: message,
       );
-
-      if (result['success']) {
-        await _loadMessages();
-      }
+      await _loadMessages();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -198,9 +201,12 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           result.files.single.path!,
         );
 
-        if (uploadResult['success']) {
-          await _consultationService.sendMessage(
+        if (uploadResult['success'] == true) {
+          await _consultationService.sendMessageV2(
             consultationId: _consultationId!,
+            senderId: widget.currentUserId,
+            senderName: widget.currentUserName,
+            senderRole: widget.isDoctor ? 'doctor' : 'patient',
             message: 'Sent an attachment: ${result.files.single.name}',
             attachmentUrl: uploadResult['url'],
           );
@@ -342,8 +348,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
     if (confirmed == true) {
       try {
-        final result = await _consultationService.endConsultation(_consultationId!);
-        if (result['success'] && mounted) {
+        final result = await _consultationService.endConsultationV2(
+          consultationId: _consultationId!,
+          duration: _timer.elapsed.inSeconds,
+        );
+        if (result['success'] == true && mounted) {
           _timer.stop();
           Navigator.pop(context);
         }

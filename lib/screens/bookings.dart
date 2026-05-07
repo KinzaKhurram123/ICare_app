@@ -1083,14 +1083,15 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                         final consultationService = ConsultationService();
                                         final sharedPref = SharedPref();
                                         
-                                        final currentUserId = await sharedPref.getUserId();
-                                        final currentUserName = await sharedPref.getUserName();
+                                        final userData = await sharedPref.getUserData();
+                                        final currentUserId = userData?.id ?? '';
+                                        final currentUserName = userData?.name ?? 'User';
 
                                         // Start/rejoin consultation
                                         final result = await consultationService.startConsultationV2(
                                           appointmentId: appt.id ?? '',
-                                          patientId: appt.patientId ?? '',
-                                          doctorId: appt.doctorId ?? '',
+                                          patientId: appt.patient?.id ?? '',
+                                          doctorId: appt.doctor?.id ?? '',
                                         );
 
                                         Navigator.pop(ctx); // Close loading
@@ -1101,11 +1102,10 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                             ctx,
                                             MaterialPageRoute(
                                               builder: (_) => ConsultationChatScreenV2(
-                                                consultationId: result['consultationId'],
                                                 appointment: appt,
                                                 isDoctor: false, // Patient side
-                                                currentUserId: currentUserId ?? '',
-                                                currentUserName: currentUserName ?? 'User',
+                                                currentUserId: currentUserId,
+                                                currentUserName: currentUserName,
                                               ),
                                             ),
                                           );

@@ -8,6 +8,7 @@ import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
 import '../screens/consultation_chat_screen_v2.dart';
 import '../models/appointment_detail.dart';
+import '../models/user.dart';
 
 /// Wraps the doctor's app and polls for Connect Now requests every 5 seconds.
 class DoctorConnectNowListener extends StatefulWidget {
@@ -188,11 +189,13 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                   // Create minimal appointment detail object for Connect Now
                   final appointment = AppointmentDetail(
                     id: appointmentId.isNotEmpty ? appointmentId : '',
-                    patientName: callPatient,
-                    doctorName: doctorName,
+                    patient: User(id: '', name: callPatient, email: '', phoneNumber: '', role: 'patient'),
+                    doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
                     status: 'confirmed',
                     timeSlot: 'Now',
-                    date: DateTime.now().toString().split(' ')[0],
+                    date: DateTime.now(),
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
                   );
 
                   // Navigate to chat screen (NOT video directly)

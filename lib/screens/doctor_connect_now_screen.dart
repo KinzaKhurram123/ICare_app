@@ -6,6 +6,7 @@ import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/models/user.dart';
 
 class DoctorConnectNowScreen extends StatefulWidget {
   final String requestId;
@@ -129,11 +130,13 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
           // Create minimal appointment detail object for Connect Now
           final appointment = AppointmentDetail(
             id: appointmentId.isNotEmpty ? appointmentId : '',
-            patientName: widget.patientName,
-            doctorName: doctorName,
+            patient: User(id: '', name: widget.patientName, email: '', phoneNumber: '', role: 'patient'),
+            doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
             status: 'confirmed',
             timeSlot: 'Now',
-            date: DateTime.now().toString().split(' ')[0],
+            date: DateTime.now(),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
           );
 
           // Navigate to chat screen (NOT video directly)

@@ -67,8 +67,8 @@ class _InConsultationPrescriptionFormState
       final result = await _consultationService.getPrescriptionDraft(
         widget.consultationId,
       );
-      if (result['success'] && result['prescription'] != null) {
-        final prescription = EnhancedPrescription.fromJson(result['prescription']);
+      if (result != null && result['success'] == true && result['prescription'] != null) {
+        final prescription = EnhancedPrescription.fromJson(result['prescription'] as Map<String, dynamic>);
         _populateFormWithDraft(prescription);
       }
     } catch (e) {
@@ -102,8 +102,8 @@ class _InConsultationPrescriptionFormState
     try {
       final prescription = _buildPrescriptionObject(isComplete: false);
       final result = await _consultationService.savePrescriptionDraft(
-        widget.consultationId,
-        prescription.toJson(),
+        consultationId: widget.consultationId,
+        prescriptionData: prescription.toJson(),
       );
 
       if (result['success'] && mounted) {
@@ -146,8 +146,8 @@ class _InConsultationPrescriptionFormState
 
     try {
       final result = await _consultationService.completePrescription(
-        widget.consultationId,
-        prescription.toJson(),
+        consultationId: widget.consultationId,
+        prescriptionData: prescription.toJson(),
       );
 
       if (result['success'] && mounted) {
@@ -548,11 +548,11 @@ class _InConsultationPrescriptionFormState
     showDialog(
       context: context,
       builder: (ctx) => ICDCodeSelector(
-        onSelected: (code, description) {
+        onCodeSelected: (codeMap) {
           setState(() {
             _diagnoses.add(DiagnosisItem(
-              diagnosis: description,
-              icd10Code: code,
+              diagnosis: codeMap['description']?.toString() ?? '',
+              icd10Code: codeMap['code']?.toString() ?? '',
             ));
           });
         },

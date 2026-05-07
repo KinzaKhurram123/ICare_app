@@ -112,15 +112,16 @@ class BookingCard extends ConsumerWidget {
                     final consultationService = ConsultationService();
                     final sharedPref = SharedPref();
                     
-                    final currentUserId = await sharedPref.getUserId();
-                    final currentUserName = await sharedPref.getUserName();
+                    final userData = await sharedPref.getUserData();
+                    final currentUserId = userData?.id ?? '';
+                    final currentUserName = userData?.name ?? 'User';
                     final isDoctor = selectedRole == 'Doctor';
 
                     // Start consultation with chat-first approach
                     final result = await consultationService.startConsultationV2(
                       appointmentId: appointment.id ?? '',
-                      patientId: appointment.patientId ?? '',
-                      doctorId: appointment.doctorId ?? '',
+                      patientId: appointment.patient?.id ?? '',
+                      doctorId: appointment.doctor?.id ?? '',
                     );
 
                     Navigator.pop(context); // Close loading
@@ -131,11 +132,10 @@ class BookingCard extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => ConsultationChatScreenV2(
-                            consultationId: result['consultationId'],
                             appointment: appointment,
                             isDoctor: isDoctor,
-                            currentUserId: currentUserId ?? '',
-                            currentUserName: currentUserName ?? 'User',
+                            currentUserId: currentUserId,
+                            currentUserName: currentUserName,
                           ),
                         ),
                       );
@@ -780,15 +780,16 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               final consultationService = ConsultationService();
                               final sharedPref = SharedPref();
                               
-                              final currentUserId = await sharedPref.getUserId();
-                              final currentUserName = await sharedPref.getUserName();
+                              final userData = await sharedPref.getUserData();
+                              final currentUserId = userData?.id ?? '';
+                              final currentUserName = userData?.name ?? 'User';
                               final isDoctor = widget.selectedRole == 'Doctor';
 
                               // Start/rejoin consultation
                               final result = await consultationService.startConsultationV2(
                                 appointmentId: widget.appointment.id ?? '',
-                                patientId: widget.appointment.patientId ?? '',
-                                doctorId: widget.appointment.doctorId ?? '',
+                                patientId: widget.appointment.patient?.id ?? '',
+                                doctorId: widget.appointment.doctor?.id ?? '',
                               );
 
                               Navigator.pop(context); // Close loading
@@ -799,11 +800,10 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => ConsultationChatScreenV2(
-                                      consultationId: result['consultationId'],
                                       appointment: widget.appointment,
                                       isDoctor: isDoctor,
-                                      currentUserId: currentUserId ?? '',
-                                      currentUserName: currentUserName ?? 'User',
+                                      currentUserId: currentUserId,
+                                      currentUserName: currentUserName,
                                     ),
                                   ),
                                 );
