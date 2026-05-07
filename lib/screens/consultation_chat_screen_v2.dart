@@ -8,6 +8,7 @@ import 'package:icare/models/consultation_message.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/in_consultation_prescription_form.dart';
+import 'package:icare/screens/patient_history_form_screen.dart';
 import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -255,6 +256,25 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
   }
 
+  void _openHistoryForm() {
+    if (!widget.isDoctor) return;
+    if (_consultationId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Consultation not initialized yet')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => PatientHistoryFormScreen(
+          appointment: widget.appointment,
+          consultationId: _consultationId!,
+        ),
+      ),
+    );
+  }
+
   void _openPrescriptionForm() {
     if (!widget.isDoctor) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -489,6 +509,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           onPressed: _startVideoCall,
           tooltip: 'Video Call',
         ),
+        // History Form Button (Doctor only)
+        if (widget.isDoctor)
+          IconButton(
+            icon: const Icon(Icons.history_edu_rounded, color: AppColors.primaryColor),
+            onPressed: _openHistoryForm,
+            tooltip: 'Patient History Form',
+          ),
         // Prescription Button (Doctor only)
         if (widget.isDoctor)
           IconButton(

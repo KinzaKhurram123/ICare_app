@@ -99,6 +99,10 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
   bool _substanceAbuse = false;
   String? _substanceDetails;
   String _exercise = '';
+  String _sexualHistory = '';
+  String _occupationalExposure = '';
+  String _travelHistory = '';
+  String _vaccinationHistory = '';
 
   // Section 8: Gynecological History (if applicable)
   bool _showGynecologicalHistory = false;
@@ -239,6 +243,10 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
           substanceAbuse: _substanceAbuse,
           substanceDetails: _substanceDetails,
           exercise: _exercise,
+          sexualHistory: _sexualHistory.isEmpty ? null : _sexualHistory,
+          occupationalExposure: _occupationalExposure.isEmpty ? null : _occupationalExposure,
+          travelHistory: _travelHistory.isEmpty ? null : _travelHistory,
+          vaccinationHistory: _vaccinationHistory.isEmpty ? null : _vaccinationHistory,
         ),
         gynecologicalHistory: _showGynecologicalHistory
             ? GynecologicalHistory(
@@ -479,123 +487,901 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
     );
   }
 
-  // Section builders (simplified for brevity)
+  // ── Shared helpers ───────────────────────────────────────────────────────
+
+  Widget _sectionHeader(String title) => Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+      );
+
+  InputDecoration _inputDec(String label, {String? hint}) => InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      );
+
+  Widget _buildField(String label, TextEditingController controller, {int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextField(controller: controller, decoration: _inputDec(label), maxLines: maxLines),
+    );
+  }
+
+  Widget _listHeader(List<String> cols, List<int> flex) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            ...List.generate(cols.length, (i) => Expanded(
+              flex: flex[i],
+              child: Text(cols[i], style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+            )),
+            const SizedBox(width: 40),
+          ],
+        ),
+      );
+
+  Widget _listRow(List<String> vals, List<int> flex, VoidCallback onRemove) => Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            ...List.generate(vals.length, (i) => Expanded(
+              flex: flex[i],
+              child: Text(vals[i], style: const TextStyle(fontSize: 14)),
+            )),
+            IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20), onPressed: onRemove, visualDensity: VisualDensity.compact),
+          ],
+        ),
+      );
+
+  Widget _emptyState(String msg, IconData icon, {bool compact = false}) => Center(
+        child: Padding(
+          padding: EdgeInsets.all(compact ? 12 : 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: compact ? 32 : 44, color: Colors.grey[400]),
+            const SizedBox(height: 6),
+            Text(msg, style: TextStyle(color: Colors.grey[500], fontSize: 13), textAlign: TextAlign.center),
+          ]),
+        ),
+      );
+
+  Widget _card({required Widget child}) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: child,
+      );
+
+  // ── Section 1: Chief Complaints ──────────────────────────────────────────
+
   Widget _buildChiefComplaintsSection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Chief Complaint(s)',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
+          _sectionHeader('Chief Complaint(s)'),
+          const SizedBox(height: 6),
+          const Text('List the patient\'s main complaints with duration',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(flex: 3, child: TextField(controller: _complaintController, decoration: _inputDec('Complaint'))),
+              const SizedBox(width: 10),
+              Expanded(flex: 2, child: TextField(controller: _durationController, decoration: _inputDec('Duration', hint: 'e.g. 3 days'))),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _addComplaint,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  minimumSize: const Size(48, 48),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          // Add chief complaints UI
-          const Text('Chief complaints form - Simplified for demo'),
+          const SizedBox(height: 16),
+          if (_chiefComplaints.isNotEmpty) ...[
+            _listHeader(['Complaint', 'Duration'], [3, 2]),
+            const SizedBox(height: 8),
+            ...List.generate(_chiefComplaints.length, (i) => _listRow(
+              [_chiefComplaints[i].complaint, _chiefComplaints[i].duration], [3, 2],
+              () => setState(() => _chiefComplaints.removeAt(i)),
+            )),
+          ] else
+            _emptyState('Add complaints using the fields above', Icons.add_circle_outline),
         ],
       ),
     );
   }
+
+  void _addComplaint() {
+    if (_complaintController.text.trim().isEmpty) return;
+    setState(() {
+      _chiefComplaints.add(ChiefComplaint(
+        complaint: _complaintController.text.trim(),
+        duration: _durationController.text.trim(),
+      ));
+      _complaintController.clear();
+      _durationController.clear();
+    });
+  }
+
+  // ── Section 2: HPI ───────────────────────────────────────────────────────
 
   Widget _buildHPISection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('HPI Section - To be implemented'),
+          _sectionHeader('History of Present Illness (HPI)'),
+          const SizedBox(height: 20),
+          _buildField('Onset', _onsetController),
+          _buildField('Duration', _hpiDurationController),
+          _buildField('Progression', _progressionController),
+          _buildField('Location', _locationController),
+          _buildField('Radiation', _radiationController),
+          _buildField('Character / Nature', _characterController),
+          _buildField('Severity', _severityController),
+          _buildField('Aggravating Factors', _aggravatingController, maxLines: 2),
+          _buildField('Relieving Factors', _relievingController, maxLines: 2),
+          _buildField('Associated Symptoms', _associatedController, maxLines: 2),
+          _buildField('Previous Episodes', _previousController),
+          _buildField('Treatment Taken', _treatmentController),
+          _buildField('Additional Notes', _additionalController, maxLines: 3),
         ],
       ),
     );
   }
+
+  // ── Section 3: Past Medical History ─────────────────────────────────────
 
   Widget _buildPastMedicalHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Past Medical History - To be implemented'),
+          _sectionHeader('Past Medical History'),
+          const SizedBox(height: 20),
+          _conditionRow('Hypertension', _hypertension, (v) => setState(() => _hypertension = v), _hypertensionDetails, (v) => setState(() => _hypertensionDetails = v)),
+          _conditionRow('Diabetes Mellitus', _diabetes, (v) => setState(() => _diabetes = v), _diabetesDetails, (v) => setState(() => _diabetesDetails = v)),
+          _conditionRow('Ischemic Heart Disease', _ihd, (v) => setState(() => _ihd = v), _ihdDetails, (v) => setState(() => _ihdDetails = v)),
+          _conditionRow('Asthma', _asthma, (v) => setState(() => _asthma = v), _asthmaDetails, (v) => setState(() => _asthmaDetails = v)),
+          _conditionRow('Tuberculosis', _tb, (v) => setState(() => _tb = v), _tbDetails, (v) => setState(() => _tbDetails = v)),
+          _conditionRow('Hepatitis', _hepatitis, (v) => setState(() => _hepatitis = v), _hepatitisDetails, (v) => setState(() => _hepatitisDetails = v)),
+          _conditionRow('Thyroid Disease', _thyroid, (v) => setState(() => _thyroid = v), _thyroidDetails, (v) => setState(() => _thyroidDetails = v)),
+          _conditionRow('Renal Disease', _renal, (v) => setState(() => _renal = v), _renalDetails, (v) => setState(() => _renalDetails = v)),
+          _conditionRow('Epilepsy', _epilepsy, (v) => setState(() => _epilepsy = v), _epilepsyDetails, (v) => setState(() => _epilepsyDetails = v)),
+          _conditionRow('Psychiatric Illness', _psychiatric, (v) => setState(() => _psychiatric = v), _psychiatricDetails, (v) => setState(() => _psychiatricDetails = v)),
         ],
       ),
     );
   }
+
+  Widget _conditionRow(String name, bool value, Function(bool) toggle, String? details, Function(String?) onDetails) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: value ? AppColors.primaryColor.withOpacity(0.4) : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+            child: Row(
+              children: [
+                Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                Switch(value: value, onChanged: toggle, activeColor: AppColors.primaryColor),
+                SizedBox(
+                  width: 32,
+                  child: Text(
+                    value ? 'Yes' : 'No',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: value ? AppColors.primaryColor : const Color(0xFF94A3B8)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (value)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                decoration: _inputDec('Details', hint: 'Duration, severity, treatment...'),
+                controller: TextEditingController(text: details),
+                onChanged: (v) => onDetails(v.isEmpty ? null : v),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ── Section 4: Surgical History ──────────────────────────────────────────
 
   Widget _buildSurgicalHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Surgical History - To be implemented'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _sectionHeader('Past Surgical History'),
+              ElevatedButton.icon(
+                onPressed: _showAddSurgeryDialog,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_surgicalHistory.isEmpty)
+            _emptyState('No surgical procedures recorded', Icons.healing_outlined)
+          else ...[
+            _listHeader(['Surgery / Procedure', 'Year', 'Hospital'], [3, 1, 2]),
+            const SizedBox(height: 8),
+            ...List.generate(_surgicalHistory.length, (i) => _listRow(
+              [
+                _surgicalHistory[i].surgeryProcedure,
+                _surgicalHistory[i].year.toString(),
+                _surgicalHistory[i].hospitalRemarks ?? '',
+              ],
+              [3, 1, 2],
+              () => setState(() => _surgicalHistory.removeAt(i)),
+            )),
+          ],
         ],
       ),
     );
   }
+
+  void _showAddSurgeryDialog() {
+    final procCtrl = TextEditingController();
+    final yearCtrl = TextEditingController(text: DateTime.now().year.toString());
+    final hospitalCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Surgical Procedure'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: procCtrl, decoration: _inputDec('Surgery / Procedure')),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: yearCtrl, decoration: _inputDec('Year'), keyboardType: TextInputType.number)),
+                const SizedBox(width: 12),
+                Expanded(child: TextField(controller: hospitalCtrl, decoration: _inputDec('Hospital / Remarks'))),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (procCtrl.text.trim().isNotEmpty) {
+                setState(() => _surgicalHistory.add(SurgicalHistory(
+                  surgeryProcedure: procCtrl.text.trim(),
+                  year: int.tryParse(yearCtrl.text.trim()) ?? DateTime.now().year,
+                  hospitalRemarks: hospitalCtrl.text.trim().isEmpty ? null : hospitalCtrl.text.trim(),
+                )));
+              }
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Section 5: Drug History ──────────────────────────────────────────────
 
   Widget _buildDrugHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Drug History - To be implemented'),
+          _sectionHeader('Drug History'),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Current Medications', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF475569))),
+              TextButton.icon(onPressed: _showAddMedicationDialog, icon: const Icon(Icons.add, size: 16), label: const Text('Add')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_currentMedications.isEmpty)
+            _emptyState('No current medications', Icons.medication_outlined, compact: true)
+          else ...[
+            _listHeader(['Medication', 'Dose', 'Frequency'], [3, 2, 2]),
+            const SizedBox(height: 8),
+            ...List.generate(_currentMedications.length, (i) => _listRow(
+              [_currentMedications[i].medication, _currentMedications[i].dose, _currentMedications[i].frequency],
+              [3, 2, 2],
+              () => setState(() => _currentMedications.removeAt(i)),
+            )),
+          ],
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Allergies', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF475569))),
+              TextButton.icon(onPressed: _showAddAllergyDialog, icon: const Icon(Icons.add, size: 16), label: const Text('Add')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_allergies.isEmpty)
+            _emptyState('No known allergies', Icons.warning_amber_outlined, compact: true)
+          else
+            ...List.generate(_allergies.length, (i) {
+              final a = _allergies[i];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(a.allergen, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        Text('${a.type.toString().split('.').last.toUpperCase()} allergy • ${a.reaction}',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      ]),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                      onPressed: () => setState(() => _allergies.removeAt(i)),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
   }
+
+  void _showAddMedicationDialog() {
+    final medCtrl = TextEditingController();
+    final doseCtrl = TextEditingController();
+    final freqCtrl = TextEditingController();
+    final durCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Current Medication'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: medCtrl, decoration: _inputDec('Medication Name')),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: doseCtrl, decoration: _inputDec('Dose'))),
+                const SizedBox(width: 10),
+                Expanded(child: TextField(controller: freqCtrl, decoration: _inputDec('Frequency'))),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(controller: durCtrl, decoration: _inputDec('Duration')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (medCtrl.text.trim().isNotEmpty) {
+                setState(() => _currentMedications.add(CurrentMedication(
+                  medication: medCtrl.text.trim(),
+                  dose: doseCtrl.text.trim(),
+                  frequency: freqCtrl.text.trim(),
+                  duration: durCtrl.text.trim(),
+                )));
+              }
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddAllergyDialog() {
+    final allergenCtrl = TextEditingController();
+    final reactionCtrl = TextEditingController();
+    AllergyType selectedType = AllergyType.drug;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Add Allergy'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<AllergyType>(
+                value: selectedType,
+                decoration: _inputDec('Allergy Type'),
+                items: [
+                  const DropdownMenuItem(value: AllergyType.drug, child: Text('Drug Allergy')),
+                  const DropdownMenuItem(value: AllergyType.food, child: Text('Food Allergy')),
+                  const DropdownMenuItem(value: AllergyType.other, child: Text('Other Allergy')),
+                ],
+                onChanged: (v) => setS(() => selectedType = v!),
+              ),
+              const SizedBox(height: 10),
+              TextField(controller: allergenCtrl, decoration: _inputDec('Allergen Name')),
+              const SizedBox(height: 10),
+              TextField(controller: reactionCtrl, decoration: _inputDec('Reaction / Symptoms')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                if (allergenCtrl.text.trim().isNotEmpty) {
+                  setState(() => _allergies.add(Allergy(
+                    type: selectedType,
+                    allergen: allergenCtrl.text.trim(),
+                    reaction: reactionCtrl.text.trim(),
+                  )));
+                }
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Section 6: Family History ─────────────────────────────────────────────
 
   Widget _buildFamilyHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Family History - To be implemented'),
+          _sectionHeader('Family History'),
+          const SizedBox(height: 20),
+          _familyMemberRow('Father', _father, (v) => setState(() => _father = v)),
+          const SizedBox(height: 12),
+          _familyMemberRow('Mother', _mother, (v) => setState(() => _mother = v)),
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 12),
+          const Text('Other Relevant Family History',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF475569))),
+          const SizedBox(height: 8),
+          TextField(
+            decoration: _inputDec('Describe hereditary conditions, patterns, etc.'),
+            maxLines: 3,
+            controller: TextEditingController(text: _otherFamilyHistory),
+            onChanged: (v) => setState(() => _otherFamilyHistory = v.isEmpty ? null : v),
+          ),
         ],
       ),
     );
   }
+
+  Widget _familyMemberRow(String member, FamilyMemberHistory? h, Function(FamilyMemberHistory) onChanged) {
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(member, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF475569))),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  decoration: _inputDec('Disease / Condition'),
+                  controller: TextEditingController(text: h?.diseaseCondition),
+                  onChanged: (v) => onChanged(FamilyMemberHistory(
+                    diseaseCondition: v.isEmpty ? null : v,
+                    ageAtDiagnosis: h?.ageAtDiagnosis,
+                  )),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  decoration: _inputDec('Age at Diagnosis'),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(text: h?.ageAtDiagnosis?.toString()),
+                  onChanged: (v) => onChanged(FamilyMemberHistory(
+                    diseaseCondition: h?.diseaseCondition,
+                    ageAtDiagnosis: int.tryParse(v),
+                  )),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Section 7: Personal & Social History ────────────────────────────────
 
   Widget _buildPersonalSocialHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Personal & Social History - To be implemented'),
+          _sectionHeader('Personal & Social History'),
+          const SizedBox(height: 20),
+          _inlineField('Diet', _diet, (v) => setState(() => _diet = v)),
+          _inlineField('Appetite', _appetite, (v) => setState(() => _appetite = v)),
+          _inlineField('Sleep', _sleep, (v) => setState(() => _sleep = v)),
+          _inlineField('Bowel Habits', _bowelHabits, (v) => setState(() => _bowelHabits = v)),
+          _inlineField('Bladder Habits', _bladderHabits, (v) => setState(() => _bladderHabits = v)),
+          _inlineField('Exercise', _exercise, (v) => setState(() => _exercise = v)),
+          const SizedBox(height: 4),
+          // Smoking
+          _card(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Smoking', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF475569))),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<SmokingStatus>(
+                value: _smoking,
+                decoration: _inputDec('Status'),
+                items: const [
+                  DropdownMenuItem(value: SmokingStatus.never, child: Text('Never')),
+                  DropdownMenuItem(value: SmokingStatus.former, child: Text('Former Smoker')),
+                  DropdownMenuItem(value: SmokingStatus.current, child: Text('Current Smoker')),
+                ],
+                onChanged: (v) => setState(() => _smoking = v!),
+              ),
+            ],
+          )),
+          // Alcohol
+          _card(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Alcohol Use', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF475569))),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<AlcoholStatus>(
+                value: _alcohol,
+                decoration: _inputDec('Status'),
+                items: const [
+                  DropdownMenuItem(value: AlcoholStatus.never, child: Text('Never')),
+                  DropdownMenuItem(value: AlcoholStatus.occasional, child: Text('Occasional')),
+                  DropdownMenuItem(value: AlcoholStatus.regular, child: Text('Regular')),
+                ],
+                onChanged: (v) => setState(() => _alcohol = v!),
+              ),
+            ],
+          )),
+          // Substance Abuse
+          _card(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Expanded(child: Text('Substance Abuse', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                Switch(value: _substanceAbuse, onChanged: (v) => setState(() => _substanceAbuse = v), activeColor: AppColors.primaryColor),
+              ]),
+              if (_substanceAbuse) ...[
+                const SizedBox(height: 8),
+                TextField(
+                  decoration: _inputDec('Details'),
+                  controller: TextEditingController(text: _substanceDetails),
+                  onChanged: (v) => _substanceDetails = v.isEmpty ? null : v,
+                ),
+              ],
+            ],
+          )),
+          _inlineField('Sexual History', _sexualHistory, (v) => setState(() => _sexualHistory = v)),
+          _inlineField('Occupational Exposure', _occupationalExposure, (v) => setState(() => _occupationalExposure = v)),
+          _inlineField('Travel History', _travelHistory, (v) => setState(() => _travelHistory = v)),
+          _inlineField('Vaccination History', _vaccinationHistory, (v) => setState(() => _vaccinationHistory = v)),
         ],
       ),
     );
   }
+
+  Widget _inlineField(String label, String value, Function(String) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        decoration: _inputDec(label),
+        controller: TextEditingController(text: value),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  // ── Section 8: Gynecological / Obstetric History ─────────────────────────
 
   Widget _buildGynecologicalHistorySection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Gynecological History - To be implemented'),
+          _sectionHeader('Gynecological / Obstetric History'),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: _card(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Menarche (age)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF475569))),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: _inputDec('Age in years'),
+                    keyboardType: TextInputType.number,
+                    controller: TextEditingController(text: _menarche?.toString()),
+                    onChanged: (v) => _menarche = int.tryParse(v),
+                  ),
+                ],
+              ))),
+              const SizedBox(width: 12),
+              Expanded(child: _card(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Menstrual Cycle', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF475569))),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: _inputDec('e.g. Regular, 28 days'),
+                    controller: TextEditingController(text: _menstrualCycle),
+                    onChanged: (v) => setState(() => _menstrualCycle = v),
+                  ),
+                ],
+              ))),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _card(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Obstetric History (G P A L)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF475569))),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _obsField('G (Gravida)', _gravida, (v) => setState(() => _gravida = int.tryParse(v) ?? 0)),
+                  const SizedBox(width: 8),
+                  _obsField('P (Para)', _para, (v) => setState(() => _para = int.tryParse(v) ?? 0)),
+                  const SizedBox(width: 8),
+                  _obsField('A (Abortions)', _abortions, (v) => setState(() => _abortions = int.tryParse(v) ?? 0)),
+                  const SizedBox(width: 8),
+                  _obsField('L (Living)', _livingChildren, (v) => setState(() => _livingChildren = int.tryParse(v) ?? 0)),
+                ],
+              ),
+            ],
+          )),
+          _card(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Contraceptive Use', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF475569))),
+              const SizedBox(height: 8),
+              TextField(
+                decoration: _inputDec('Type and duration', hint: 'e.g. OCP × 2 years'),
+                controller: TextEditingController(text: _contraceptive),
+                onChanged: (v) => _contraceptive = v.isEmpty ? null : v,
+              ),
+            ],
+          )),
+          Container(
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Expanded(child: Text('Menopause', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                  Switch(value: _menopause, onChanged: (v) => setState(() => _menopause = v), activeColor: AppColors.primaryColor),
+                  Text(_menopause ? 'Yes' : 'No', style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: _menopause ? AppColors.primaryColor : const Color(0xFF94A3B8),
+                  )),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Widget _obsField(String label, int value, Function(String) onChanged) {
+    return Expanded(child: Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+        const SizedBox(height: 4),
+        TextField(
+          controller: TextEditingController(text: value.toString()),
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          ),
+        ),
+      ],
+    ));
+  }
+
+  // ── Section 9: Review of Systems ─────────────────────────────────────────
+
   Widget _buildReviewOfSystemsSection() {
+    final systems = [
+      ('General', _generalController),
+      ('Cardiovascular', _cardiovascularController),
+      ('Respiratory', _respiratoryController),
+      ('Gastrointestinal', _giController),
+      ('Genitourinary', _guController),
+      ('Neurological', _neuroController),
+      ('Musculoskeletal', _musculoskeletalController),
+      ('Endocrine', _endocrineController),
+      ('Skin', _skinController),
+      ('Psychiatric', _psychiatricController),
+    ];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Review of Systems - To be implemented'),
+          _sectionHeader('Review of Systems'),
+          const SizedBox(height: 6),
+          const Text('Indicate findings for each system (leave blank if unremarkable)',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(height: 20),
+          ...systems.map((s) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: TextField(
+              controller: s.$2,
+              decoration: _inputDec(s.$1, hint: 'Findings or NAD (No Abnormality Detected)'),
+              maxLines: 2,
+            ),
+          )),
         ],
       ),
     );
   }
+
+  // ── Section 10: Virtual Physical Examination ─────────────────────────────
 
   Widget _buildVirtualExaminationSection() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: const Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Virtual Physical Examination - To be implemented'),
+          _sectionHeader('Virtual Physical Examination'),
+          const SizedBox(height: 20),
+          const Text('Vital Signs (Self-Reported / Home Monitoring)',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF475569))),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 3.2,
+            children: [
+              TextField(controller: _bpController, decoration: _inputDec('Blood Pressure', hint: 'mmHg')),
+              TextField(controller: _pulseController, decoration: _inputDec('Pulse Rate', hint: 'bpm')),
+              TextField(controller: _rrController, decoration: _inputDec('Respiratory Rate', hint: '/min')),
+              TextField(controller: _tempController, decoration: _inputDec('Temperature', hint: '°F / °C')),
+              TextField(controller: _spo2Controller, decoration: _inputDec('O₂ Saturation', hint: '%')),
+              TextField(controller: _weightController, decoration: _inputDec('Weight', hint: 'kg')),
+              TextField(controller: _heightController, decoration: _inputDec('Height', hint: 'cm')),
+              TextField(controller: _bmiController, decoration: _inputDec('BMI', hint: 'kg/m²')),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text('Virtual General Examination Findings',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF475569))),
+          const SizedBox(height: 12),
+          TextField(controller: _appearanceController, decoration: _inputDec('General Appearance on Video')),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: TextField(controller: _consciousnessController, decoration: _inputDec('Level of Consciousness'))),
+              const SizedBox(width: 12),
+              Expanded(child: TextField(controller: _orientationController, decoration: _inputDec('Orientation'))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(controller: _hydrationController, decoration: _inputDec('Hydration')),
+          const SizedBox(height: 16),
+          const Text('Clinical Signs', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF475569))),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _signChip('Pallor', _pallor, (v) => setState(() => _pallor = v)),
+              _signChip('Icterus', _icterus, (v) => setState(() => _icterus = v)),
+              _signChip('Cyanosis', _cyanosis, (v) => setState(() => _cyanosis = v)),
+              _signChip('Clubbing', _clubbing, (v) => setState(() => _clubbing = v)),
+              _signChip('Edema', _edema, (v) => setState(() => _edema = v)),
+              _signChip('Lymphadenopathy', _lymphadenopathy, (v) => setState(() => _lymphadenopathy = v)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: TextField(controller: _nutritionalController, decoration: _inputDec('Nutritional Status'))),
+              const SizedBox(width: 12),
+              Expanded(child: TextField(controller: _mobilityController, decoration: _inputDec('Mobility / Gait (virtual)'))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(controller: _examNotesController, decoration: _inputDec('Examination Notes'), maxLines: 3),
         ],
+      ),
+    );
+  }
+
+  Widget _signChip(String label, bool selected, Function(bool) onTap) {
+    return GestureDetector(
+      onTap: () => onTap(!selected),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? AppColors.primaryColor : const Color(0xFFCBD5E1)),
+        ),
+        child: Text(label, style: TextStyle(
+          color: selected ? Colors.white : const Color(0xFF475569),
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        )),
       ),
     );
   }

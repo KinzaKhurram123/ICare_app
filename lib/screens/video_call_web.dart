@@ -18,6 +18,7 @@ import '../services/call_service.dart';
 import '../services/medical_record_service.dart';
 import '../utils/theme.dart';
 import '../screens/end_consultation_workflow.dart';
+import '../screens/patient_history_form_screen.dart';
 import '../utils/shared_pref.dart';
 
 // JS interop
@@ -43,6 +44,8 @@ class VideoCall extends StatefulWidget {
   final String? appointmentId;
   /// Patient's user ID — used to load patient history (doctor-side only)
   final String? patientId;
+  /// Consultation ID — used for history form and prescription during call
+  final String? consultationId;
 
   const VideoCall({
     super.key,
@@ -53,6 +56,7 @@ class VideoCall extends StatefulWidget {
     this.currentUserName = 'User',
     this.appointmentId,
     this.patientId,
+    this.consultationId,
   });
 
   @override
@@ -351,6 +355,38 @@ class _VideoCallWebState extends State<VideoCall> {
         _historyLoaded = true;
         _historyLoading = false;
       });
+    }
+  }
+
+  Future<void> _openHistoryFormFromVideo() async {
+    if (widget.appointmentId == null || widget.appointmentId!.isEmpty) return;
+    try {
+      final api = ApiService();
+      final response = await api.get('/appointments/getAppointments');
+      final appts = response.data['appointments'] as List? ?? [];
+      final match = appts.firstWhere(
+        (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
+        orElse: () => null,
+      );
+      if (match == null) throw Exception('Appointment not found');
+      final appointment = AppointmentDetail.fromJson(match);
+      final consultationId = widget.consultationId ?? widget.channelName;
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PatientHistoryFormScreen(
+            appointment: appointment,
+            consultationId: consultationId,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open history form: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -805,7 +841,7 @@ class _VideoCallWebState extends State<VideoCall> {
                         children: [
                           _sideBtn(
                             icon: Icons.history_rounded,
-                            label: 'Patient History',
+                            label: 'Past History',
                             active: _showHistory,
                             badgeCount: 0,
                             onTap: () {
@@ -813,13 +849,20 @@ class _VideoCallWebState extends State<VideoCall> {
                                 _showHistory = !_showHistory;
                                 if (_showHistory) _showChat = false;
                               });
-                              // Always load history when panel opens (patientId optional)
                               if (_showHistory && !_historyLoaded && !_historyLoading) {
                                 _loadPatientHistory();
                               }
                             },
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
+                          _sideBtn(
+                            icon: Icons.history_edu_rounded,
+                            label: 'History Form',
+                            active: false,
+                            badgeCount: 0,
+                            onTap: _openHistoryFormFromVideo,
+                          ),
+                          const SizedBox(width: 10),
                           _sideBtn(
                             icon: Icons.chat_bubble_outline_rounded,
                             label: 'Chat',
@@ -829,7 +872,7 @@ class _VideoCallWebState extends State<VideoCall> {
                               _showChat = !_showChat;
                               if (_showChat) {
                                 _showHistory = false;
-                                _unreadChatCount = 0; // Clear unread count when opening chat
+                                _unreadChatCount = 0;
                               }
                             }),
                           ),
