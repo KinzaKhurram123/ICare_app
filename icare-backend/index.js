@@ -28,7 +28,7 @@ const callChatRoutes = require('./routes/call-chat');
 const clinicalRoutes = require('./routes/clinical');
 const adminRoutes = require('./routes/admin');
 const seedLocationsRoute = require('./routes/seed-locations');
-const debugLabRoute = require('./routes/debug-lab');
+
 const healthRoutes = require('./routes/healthRoutes');
 const consultationRoutes = require('./routes/consultationRoutes');
 const consultationV2Routes = require('./routes/consultation-v2');
@@ -131,7 +131,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/clinical', clinicalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/seed-locations', seedLocationsRoute);
-app.use('/api/debug-lab', debugLabRoute);
+
 app.use('/api/health', healthRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/consultations-v2', consultationV2Routes);
