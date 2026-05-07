@@ -206,6 +206,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                     MaterialPageRoute(
                       builder: (_) => _ConsultationWrapper(
                         child: ConsultationChatScreenV2(
+                          consultationId: consultResult['consultationId'],
                           appointment: appointment,
                           isDoctor: true,
                           currentUserId: doctorId,

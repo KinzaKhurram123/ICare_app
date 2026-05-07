@@ -158,6 +158,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => ConsultationChatScreenV2(
+              consultationId: result['consultationId'],
               appointment: appointment,
               isDoctor: false,
               currentUserId: patientId,

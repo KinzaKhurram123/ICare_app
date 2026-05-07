@@ -145,6 +145,7 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => ConsultationChatScreenV2(
+                consultationId: consultResult['consultationId'],
                 appointment: appointment,
                 isDoctor: true,
                 currentUserId: doctorId,

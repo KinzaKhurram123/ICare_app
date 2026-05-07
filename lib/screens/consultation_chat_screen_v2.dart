@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:icare/models/consultation_timer.dart';
 import 'package:icare/models/consultation_message.dart';
 import 'package:icare/models/appointment_detail.dart';
@@ -20,6 +21,7 @@ class ConsultationChatScreenV2 extends StatefulWidget {
   final bool isDoctor;
   final String currentUserId;
   final String currentUserName;
+  final String? consultationId; // Optional - if already created
 
   const ConsultationChatScreenV2({
     super.key,
@@ -27,6 +29,7 @@ class ConsultationChatScreenV2 extends StatefulWidget {
     required this.isDoctor,
     required this.currentUserId,
     required this.currentUserName,
+    this.consultationId, // Optional parameter
   });
 
   @override
@@ -84,7 +87,25 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   Future<void> _initializeConsultation() async {
     try {
-      // Create or get consultation
+      // If consultationId already provided, use it
+      if (widget.consultationId != null && widget.consultationId!.isNotEmpty) {
+        _consultationId = widget.consultationId;
+        
+        // Send consent message if doctor
+        if (widget.isDoctor) {
+          await _sendConsentMessage();
+        }
+        
+        // Load existing messages
+        await _loadMessages();
+        
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Otherwise create new consultation
       final result = await _consultationService.startConsultationV2(
         appointmentId: widget.appointment.id ?? '',
         patientId: widget.appointment.patient!.id,
@@ -763,5 +784,22 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
         ],
       ),
     );
+  }
+  
+  @override
+  void dispose() {
+    _timer.stop();
+    _messageController.dispose();
+    _scrollController.dispose();
+    
+    // Clear doctor_in_consultation flag when leaving consultation
+    if (widget.isDoctor) {
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool('doctor_in_consultation', false);
+        debugPrint('✅ Cleared doctor_in_consultation flag on dispose');
+      });
+    }
+    
+    super.dispose();
   }
 }
