@@ -7,6 +7,7 @@ import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/models/user.dart';
+import 'package:icare/models/user.dart';
 
 class DoctorConnectNowScreen extends StatefulWidget {
   final String requestId;
@@ -135,6 +136,7 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
             status: 'confirmed',
             timeSlot: 'Now',
             date: DateTime.now(),
+            channelName: widget.channelName,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           );

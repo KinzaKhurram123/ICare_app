@@ -91,10 +91,12 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
           _countdownTimer?.cancel();
           final acceptedBy = status['acceptedBy'] as Map? ?? {};
           final doctorName = (acceptedBy['doctorName'] ?? acceptedBy['name'] ?? 'Doctor').toString();
+          final doctorId = (acceptedBy['doctorId'] ?? '').toString();
           final appointmentId = status['appointmentId']?.toString() ?? '';
           _onDoctorAccepted(
             status['channelName']?.toString() ?? _channelName ?? '',
             doctorName,
+            doctorId,
             appointmentId,
           );
         } else if (status['status'] == 'expired') {
@@ -106,7 +108,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     });
   }
 
-  void _onDoctorAccepted(String channelName, String doctorName, String appointmentId) async {
+  void _onDoctorAccepted(String channelName, String doctorName, String doctorId, String appointmentId) async {
     if (!mounted) return;
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
@@ -132,7 +134,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
       final result = await consultationService.startConsultationV2(
         appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
         patientId: patientId,
-        doctorId: '', // Will be filled by backend from appointment
+        doctorId: doctorId, // Use doctorId from acceptedBy
       );
 
       if (!mounted) return;
@@ -147,6 +149,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
           status: 'confirmed',
           timeSlot: 'Now',
           date: DateTime.now(),
+          channelName: channelName,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

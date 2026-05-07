@@ -130,6 +130,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
 
   Future<void> _showRequestDialog(Map<String, dynamic> request) async {
     final requestId = request['id']?.toString() ?? '';
+    final patientId = request['patientId']?.toString() ?? '';
     final patientName = request['patientName']?.toString() ?? 'Patient';
     final channelName = request['channelName']?.toString() ?? '';
 
@@ -159,7 +160,8 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               final callChannel = result['channelName']?.toString() ?? channelName;
               final callPatient = result['patientName']?.toString() ?? patientName;
               final appointmentId = result['appointmentId']?.toString() ?? '';
-              // Get doctor's own name
+              
+              // Get doctor's own name and ID
               final userData = await _sharedPref.getUserData();
               final doctorName = userData?.name ?? 'Doctor';
               final doctorId = userData?.id ?? '';
@@ -179,7 +181,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                 // Start consultation with chat-first approach
                 final consultResult = await consultationService.startConsultationV2(
                   appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
-                  patientId: '', // Will be filled by backend from appointment
+                  patientId: patientId, // Use patientId from request
                   doctorId: doctorId,
                 );
 
@@ -189,11 +191,12 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                   // Create minimal appointment detail object for Connect Now
                   final appointment = AppointmentDetail(
                     id: appointmentId.isNotEmpty ? appointmentId : '',
-                    patient: User(id: '', name: callPatient, email: '', phoneNumber: '', role: 'patient'),
+                    patient: User(id: patientId, name: callPatient, email: '', phoneNumber: '', role: 'patient'),
                     doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
                     status: 'confirmed',
                     timeSlot: 'Now',
                     date: DateTime.now(),
+                    channelName: callChannel,
                     createdAt: DateTime.now(),
                     updatedAt: DateTime.now(),
                   );

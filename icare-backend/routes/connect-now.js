@@ -53,6 +53,7 @@ router.get('/pending', authMiddleware, async (req, res) => {
       request: {
         _id: request._id.toString(),
         id: request._id.toString(),
+        patientId: request.patientId,
         patientName: request.patientName,
         channelName: request.channelName,
         createdAt: request.createdAt,
