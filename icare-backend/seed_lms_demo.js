@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '.env.production' }); // Load production env
 const mongoose = require('mongoose');
 const { connectMongoDB } = require('./config/mongodb');
 const Course = require('./models/Course');

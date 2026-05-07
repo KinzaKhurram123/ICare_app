@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('dotenv').config(); // Load .env file
 
 // In serverless environments, reuse existing connection across warm invocations
 const connectMongoDB = async () => {
@@ -11,9 +12,9 @@ const connectMongoDB = async () => {
     });
     return;
   }
-  const uri = (process.env.MONGO_URI || '').trim();
+  const uri = (process.env.MONGO_URI || process.env.MONGODB_URI || '').trim();
   if (!uri) {
-    const err = new Error('MONGO_URI environment variable is not set');
+    const err = new Error('MONGO_URI or MONGODB_URI environment variable is not set');
     console.error('❌ MongoDB connection error:', err.message);
     throw err;
   }
