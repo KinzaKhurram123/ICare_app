@@ -72,7 +72,7 @@ class _LmsPurchaseFlowState extends State<LmsPurchaseFlow> {
     
     try {
       // Step 1: Create account
-      final signupResponse = await _api.post('/auth/signup', {
+      final signupResponse = await _api.post('/auth/register', {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
