@@ -7,16 +7,29 @@ const { connectMongoDB } = require('../config/mongodb');
 // Start consultation with appointment
 exports.startConsultation = async (req, res) => {
   try {
-    await connectMongoDB();
-    const { appointmentId, patientId, doctorId, reason } = req.body;
+    console.log('🔵 START CONSULTATION REQUEST:', JSON.stringify(req.body, null, 2));
 
-    // Validate required fields — doctorId required; patientId can be resolved from appointment
+    await connectMongoDB();
+    const { appointmentId, patientId, doctorId, reason, channelName } = req.body;
+
+    // Validate required fields
     if (!doctorId) {
+      console.error('❌ Missing doctorId');
       return res.status(400).json({
         success: false,
         message: 'Doctor ID is required'
       });
     }
+
+    if (!patientId) {
+      console.error('❌ Missing patientId');
+      return res.status(400).json({
+        success: false,
+        message: 'Patient ID is required'
+      });
+    }
+
+    console.log('✅ Validation passed. Checking for existing consultation...');
 
     // Check if consultation already exists for this appointment
     if (appointmentId) {
@@ -26,6 +39,7 @@ exports.startConsultation = async (req, res) => {
       });
 
       if (existingConsultation) {
+        console.log('✅ Found existing consultation:', existingConsultation._id);
         return res.json({
           success: true,
           consultationId: existingConsultation._id,
@@ -35,21 +49,26 @@ exports.startConsultation = async (req, res) => {
       }
     }
 
+    console.log('✅ No existing consultation. Creating new one...');
+
     // Create new consultation
     const consultation = new Consultation({
       patientId,
       doctorId,
       appointmentId,
+      channelName: channelName || `consultation_${Date.now()}_${patientId}`,
       reason: reason || 'Video consultation',
       status: 'active',
       startTime: new Date()
     });
 
     await consultation.save();
+    console.log('✅ Consultation created:', consultation._id);
 
     // Get doctor details for consent message
     const doctor = await User.findById(doctorId);
     const doctorName = doctor ? doctor.name : 'Doctor';
+    console.log('✅ Doctor found:', doctorName);
 
     // Auto-send consent message from doctor
     const consentMessage = new ConsultationMessage({
@@ -63,6 +82,7 @@ exports.startConsultation = async (req, res) => {
     });
 
     await consentMessage.save();
+    console.log('✅ Consent message sent');
 
     res.json({
       success: true,
@@ -71,11 +91,13 @@ exports.startConsultation = async (req, res) => {
       message: 'Consultation started successfully'
     });
   } catch (error) {
-    console.error('Error starting consultation:', error);
+    console.error('❌ ERROR STARTING CONSULTATION:', error);
+    console.error('❌ ERROR STACK:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Failed to start consultation',
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
