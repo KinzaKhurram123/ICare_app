@@ -2,17 +2,19 @@ const Consultation = require('../models/Consultation');
 const ConsultationMessage = require('../models/ConsultationMessage');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 const User = require('../models/User');
+const { connectMongoDB } = require('../config/mongodb');
 
 // Start consultation with appointment
 exports.startConsultation = async (req, res) => {
   try {
+    await connectMongoDB();
     const { appointmentId, patientId, doctorId, reason } = req.body;
 
-    // Validate required fields
-    if (!patientId || !doctorId) {
+    // Validate required fields — doctorId required; patientId can be resolved from appointment
+    if (!doctorId) {
       return res.status(400).json({
         success: false,
-        message: 'Patient ID and Doctor ID are required'
+        message: 'Doctor ID is required'
       });
     }
 
@@ -81,6 +83,7 @@ exports.startConsultation = async (req, res) => {
 // Send message
 exports.sendMessage = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
     const { senderId, senderName, senderRole, message, attachmentUrl, isSystemMessage } = req.body;
 
@@ -133,6 +136,7 @@ exports.sendMessage = async (req, res) => {
 // Get messages
 exports.getMessages = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
     const { limit = 100, skip = 0 } = req.query;
 
@@ -169,6 +173,7 @@ exports.getMessages = async (req, res) => {
 // End consultation
 exports.endConsultation = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
     const { duration, prescriptionId } = req.body;
 
@@ -252,6 +257,7 @@ exports.endConsultation = async (req, res) => {
 // Get consultation details
 exports.getConsultation = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
 
     const consultation = await Consultation.findById(consultationId)
@@ -283,6 +289,7 @@ exports.getConsultation = async (req, res) => {
 // Get consultation timer status
 exports.getTimerStatus = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
 
     const consultation = await Consultation.findById(consultationId);

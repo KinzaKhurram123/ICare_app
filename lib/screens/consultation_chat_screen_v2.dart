@@ -468,12 +468,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: _buildAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                _buildTimerBar(),
+                _buildConsultationHeader(),
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
@@ -488,141 +487,228 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: const CustomBackButton(),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.isDoctor
-                ? widget.appointment.patient?.name ?? 'Patient'
-                : 'Dr. ${widget.appointment.doctor?.name ?? 'Doctor'}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+  // ── Screenshot-matched consultation header ──────────────────────────────
+  Widget _buildConsultationHeader() {
+    final patientName = widget.appointment.patient?.name ?? 'Patient';
+    final doctorName = widget.appointment.doctor?.name ?? 'Doctor';
+    final mins = (_timer.elapsed.inSeconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (_timer.elapsed.inSeconds % 60).toString().padLeft(2, '0');
+
+    final timerColor = (_timer.status == ConsultationTimerStatus.nearMaximum ||
+            _timer.status == ConsultationTimerStatus.reachedMaximum)
+        ? Colors.red
+        : (_timer.status == ConsultationTimerStatus.belowMinimum
+            ? Colors.orange
+            : AppColors.primaryColor);
+
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // ── Names row ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Row(
+                children: [
+                  const CustomBackButton(),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _participantRow(Icons.person_outline, patientName),
+                        const SizedBox(height: 4),
+                        _participantRow(Icons.medical_services_outlined, 'Dr. $doctorName'),
+                      ],
+                    ),
+                  ),
+                  // Doctor action buttons (prescription + history)
+                  if (widget.isDoctor) ...[
+                    IconButton(
+                      icon: const Icon(Icons.history_edu_rounded, size: 22),
+                      color: AppColors.primaryColor,
+                      onPressed: _openHistoryForm,
+                      tooltip: 'History Form',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.description_rounded,
+                        size: 22,
+                        color: _prescriptionComplete ? Colors.green : AppColors.primaryColor,
+                      ),
+                      onPressed: _openPrescriptionForm,
+                      tooltip: 'Prescription',
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            'Consultation - ${_timer.formattedTime}',
-            style: TextStyle(
-              fontSize: 12,
-              color: _timer.status == ConsultationTimerStatus.nearMaximum
-                  ? Colors.orange
-                  : const Color(0xFF64748B),
-              fontWeight: FontWeight.w600,
+            // ── Timer + call buttons row ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // ── Timer digits (Mins | Secs) ──
+                  _timerDigits(mins, secs, timerColor),
+                  const SizedBox(width: 16),
+                  // ── Voice call circular button ──
+                  _callButton(
+                    icon: Icons.phone_rounded,
+                    onTap: _startVoiceCall,
+                    tooltip: 'Voice Call',
+                  ),
+                  const SizedBox(width: 10),
+                  // ── Video call circular button ──
+                  _callButton(
+                    icon: Icons.videocam_rounded,
+                    onTap: _startVideoCall,
+                    tooltip: 'Video Call',
+                  ),
+                  const Spacer(),
+                  // ── End Session button ──
+                  ElevatedButton(
+                    onPressed: _endConsultation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE91E63),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      'End Session',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            // ── Progress bar ──
+            LinearProgressIndicator(
+              value: _timer.progress,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(timerColor),
+              minHeight: 3,
+            ),
+          ],
+        ),
       ),
-      actions: [
-        // Voice Call Button
-        IconButton(
-          icon: const Icon(Icons.phone_rounded, color: AppColors.primaryColor),
-          onPressed: _startVoiceCall,
-          tooltip: 'Voice Call',
-        ),
-        // Video Call Button
-        IconButton(
-          icon: const Icon(Icons.videocam_rounded, color: AppColors.primaryColor),
-          onPressed: _startVideoCall,
-          tooltip: 'Video Call',
-        ),
-        // History Form Button (Doctor only)
-        if (widget.isDoctor)
-          IconButton(
-            icon: const Icon(Icons.history_edu_rounded, color: AppColors.primaryColor),
-            onPressed: _openHistoryForm,
-            tooltip: 'Patient History Form',
+    );
+  }
+
+  Widget _participantRow(IconData icon, String name) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.primaryColor, width: 1.5),
+            color: AppColors.primaryColor.withOpacity(0.08),
           ),
-        // Prescription Button (Doctor only)
-        if (widget.isDoctor)
-          IconButton(
-            icon: Icon(
-              Icons.description_rounded,
-              color: _prescriptionComplete ? Colors.green : AppColors.primaryColor,
-            ),
-            onPressed: _openPrescriptionForm,
-            tooltip: 'Prescription',
+          child: Icon(icon, size: 18, color: AppColors.primaryColor),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          name.toUpperCase(),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            color: Color(0xFF0F172A),
+            letterSpacing: 0.5,
           ),
-        // End Consultation Button
-        IconButton(
-          icon: const Icon(Icons.call_end_rounded, color: Colors.red),
-          onPressed: _endConsultation,
-          tooltip: 'End Consultation',
         ),
       ],
     );
   }
 
-  Widget _buildTimerBar() {
-    Color barColor;
-    switch (_timer.status) {
-      case ConsultationTimerStatus.belowMinimum:
-        barColor = Colors.orange;
-        break;
-      case ConsultationTimerStatus.nearMaximum:
-        barColor = Colors.red;
-        break;
-      case ConsultationTimerStatus.reachedMaximum:
-        barColor = Colors.red;
-        break;
-      default:
-        barColor = Colors.green;
-    }
+  Widget _timerDigits(String mins, String secs, Color color) {
+    return Row(
+      children: [
+        _digitBox(mins, 'Mins', color),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Text(' : ', style: TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w900, color: color,
+          )),
+        ),
+        _digitBox(secs, 'Secs', color),
+      ],
+    );
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  Widget _digitBox(String value, String label, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
+          child: Row(
             children: [
-              Icon(Icons.timer_outlined, size: 16, color: barColor),
-              const SizedBox(width: 8),
               Text(
-                _timer.statusMessage,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: barColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                value[0],
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color),
               ),
-              const Spacer(),
-              if (_timer.status == ConsultationTimerStatus.nearMaximum ||
-                  _timer.status == ConsultationTimerStatus.reachedMaximum)
-                Text(
-                  'Remaining: ${_timer.remainingTimeFormatted}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: barColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const SizedBox(width: 2),
+              Text(
+                value[1],
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: _timer.progress,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(barColor),
+        ),
+        Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  Widget _callButton({required IconData icon, required VoidCallback onTap, String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primaryColor,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryColor.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
     );
   }
+
 
   Widget _buildMessageBubble(ConsultationMessage message) {
     final isMe = message.senderId == widget.currentUserId;
