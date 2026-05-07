@@ -322,12 +322,13 @@ class _ClassworkTabState extends State<_ClassworkTab> {
             onPressed: () async {
               if (titleCtrl.text.trim().isEmpty) return;
               Navigator.pop(ctx);
-              await widget.lms.createAssignment(
-                courseId: widget.courseId, title: titleCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                dueDate: dueDate?.toIso8601String(),
-                totalMarks: int.tryParse(marksCtrl.text) ?? 100,
-              );
+              await widget.lms.createAssignment({
+                'courseId': widget.courseId,
+                'title': titleCtrl.text.trim(),
+                'description': descCtrl.text.trim(),
+                if (dueDate != null) 'dueDate': dueDate!.toIso8601String(),
+                'totalMarks': int.tryParse(marksCtrl.text) ?? 100,
+              });
               _load();
             },
             child: const Text('Create'),
@@ -511,7 +512,7 @@ class _AssignmentCard extends StatelessWidget {
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white),
           onPressed: () async {
             Navigator.pop(ctx);
-            final result = await lms.submitAssignment(assignment['_id'], content: ctrl.text.trim());
+            final result = await lms.submitAssignment(assignmentId: assignment['_id'], content: ctrl.text.trim());
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(result['success'] == true ? 'Submitted successfully!' : (result['message'] ?? 'Failed')),
               backgroundColor: result['success'] == true ? Colors.green : Colors.red,
