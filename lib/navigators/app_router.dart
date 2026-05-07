@@ -12,6 +12,9 @@ import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
 import 'package:icare/screens/lms_public_catalog.dart';
 import 'package:icare/screens/admin_verification_panel.dart';
+import 'package:icare/screens/instructor_lms_dashboard.dart';
+import 'package:icare/screens/instructor_lms_courses.dart';
+import 'package:icare/screens/instructor_lms_create_course.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/app_keys.dart';
 
@@ -85,6 +88,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/dashboard', builder: (_, __) => const TabsScreen()),
       GoRoute(path: '/lms/catalog', builder: (_, __) => const LmsPublicCatalog()),
       GoRoute(path: '/admin/verifications', builder: (_, __) => const AdminVerificationPanel()),
+      
+      // Instructor LMS Routes
+      GoRoute(path: '/instructor/lms', builder: (_, __) => const InstructorLmsDashboard()),
+      GoRoute(path: '/instructor/lms/courses', builder: (_, __) => const InstructorLmsCoursesScreen()),
+      GoRoute(path: '/instructor/lms/create-course', builder: (_, __) => const InstructorLmsCreateCourseScreen()),
     ],
   );
 });

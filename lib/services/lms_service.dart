@@ -239,4 +239,45 @@ class LmsService {
   Future<List<dynamic>> getEnrolledStudents(String courseId) async {
     return getCourseStudents(courseId);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INSTRUCTOR - COURSES
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Future<Map<String, dynamic>> getInstructorCourses() async {
+    final response = await _api.get('/courses');
+    return {
+      'success': true,
+      'courses': response.data['courses'] ?? [],
+    };
+  }
+
+  Future<Map<String, dynamic>> createCourse(Map<String, dynamic> courseData) async {
+    final response = await _api.post('/courses', courseData);
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> updateCourse(String courseId, Map<String, dynamic> data) async {
+    final response = await _api.put('/courses/$courseId', data);
+    return response.data;
+  }
+
+  Future<void> deleteCourse(String courseId) async {
+    await _api.delete('/courses/$courseId');
+  }
+
+  Future<Map<String, dynamic>> getCourseDetails(String courseId) async {
+    final response = await _api.get('/courses/$courseId');
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> publishCourse(String courseId) async {
+    final response = await _api.put('/courses/$courseId', {'isPublished': true});
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> unpublishCourse(String courseId) async {
+    final response = await _api.put('/courses/$courseId', {'isPublished': false});
+    return response.data;
+  }
 }

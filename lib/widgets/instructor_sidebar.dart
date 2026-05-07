@@ -7,6 +7,9 @@ import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
+import 'package:icare/screens/instructor_lms_dashboard.dart';
+import 'package:icare/screens/instructor_lms_courses.dart';
+import 'package:icare/screens/instructor_lms_create_course.dart';
 import 'package:icare/utils/theme.dart';
 
 class InstructorSidebar extends StatelessWidget {
@@ -32,6 +35,57 @@ class InstructorSidebar extends StatelessWidget {
                     Icons.dashboard_rounded,
                     'dashboard',
                     const InstructorDashboardScreen(),
+                  ),
+                  
+                  // LMS SECTION
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Text(
+                      'LEARNING MANAGEMENT',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  _buildNavItem(
+                    context,
+                    'LMS Dashboard',
+                    Icons.school_rounded,
+                    'lms',
+                    const InstructorLmsDashboard(),
+                  ),
+                  _buildNavItem(
+                    context,
+                    'My Courses',
+                    Icons.menu_book_rounded,
+                    'lms-courses',
+                    const InstructorLmsCoursesScreen(),
+                  ),
+                  _buildNavItem(
+                    context,
+                    'Create Course',
+                    Icons.add_circle_outline_rounded,
+                    'lms-create',
+                    const InstructorLmsCreateCourseScreen(),
+                  ),
+                  
+                  const Divider(),
+                  
+                  // HEALTH PROGRAMS SECTION
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      'HEALTH PROGRAMS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                   _buildNavItem(
                     context,
