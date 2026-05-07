@@ -447,7 +447,7 @@ class _InstructorLmsCoursesScreenState extends State<InstructorLmsCoursesScreen>
         ),
         PopupMenuButton(
           icon: const Icon(Icons.more_vert),
-          itemBuilder: (context) => [
+          itemBuilder: (context) => <PopupMenuEntry>[
             PopupMenuItem(
               child: const Row(
                 children: [

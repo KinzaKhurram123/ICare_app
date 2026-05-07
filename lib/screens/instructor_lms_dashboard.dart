@@ -40,8 +40,7 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       final courses = coursesResponse['courses'] ?? [];
       
       // Load upcoming sessions
-      final sessionsResponse = await _lmsService.getUpcomingSessions();
-      final sessions = sessionsResponse['sessions'] ?? [];
+      final sessions = await _lmsService.getUpcomingSessions();
       
       // Calculate stats
       int totalStudents = 0;
