@@ -54,9 +54,10 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
     );
 
     // Start consultation via API
-    final result = await _consultationService.startConsultation(
+    final result = await _consultationService.startConsultationV2(
+      appointmentId: '',
       patientId: patient['id'],
-      reason: patient['reason'],
+      doctorId: '', // Will be filled by backend
     );
 
     if (mounted) Navigator.pop(context); // Close loading

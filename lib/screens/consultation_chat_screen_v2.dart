@@ -465,14 +465,6 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   }
 
   @override
-  void dispose() {
-    _timer.dispose();
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
