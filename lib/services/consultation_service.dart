@@ -116,4 +116,169 @@ class ConsultationService {
       return {'success': false, 'message': e.message};
     }
   }
+
+  // NEW METHODS FOR ENHANCED CONSULTATION FLOW
+
+  // Start consultation with appointment
+  Future<Map<String, dynamic>> startConsultation({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/consultations/start-v2',
+        data: {
+          'appointmentId': appointmentId,
+          'patientId': patientId,
+          'doctorId': doctorId,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Send message with system message flag
+  Future<Map<String, dynamic>> sendMessage({
+    required String consultationId,
+    required String message,
+    String? attachmentUrl,
+    bool isSystemMessage = false,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/consultations/$consultationId/messages',
+        data: {
+          'message': message,
+          if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
+          'isSystemMessage': isSystemMessage,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Save prescription draft
+  Future<Map<String, dynamic>> savePrescriptionDraft(
+    String consultationId,
+    Map<String, dynamic> prescriptionData,
+  ) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/consultations/$consultationId/prescription/draft',
+        data: prescriptionData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Get prescription draft
+  Future<Map<String, dynamic>> getPrescriptionDraft(String consultationId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/consultations/$consultationId/prescription/draft',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Complete prescription
+  Future<Map<String, dynamic>> completePrescription(
+    String consultationId,
+    Map<String, dynamic> prescriptionData,
+  ) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/consultations/$consultationId/prescription/complete',
+        data: prescriptionData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Save patient history
+  Future<Map<String, dynamic>> savePatientHistory(
+    Map<String, dynamic> historyData,
+  ) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/patient-history/create',
+        data: historyData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Get patient history
+  Future<Map<String, dynamic>> getPatientHistory(String patientId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/patient-history/patient/$patientId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Save lifestyle advice
+  Future<Map<String, dynamic>> saveLifestyleAdvice(
+    String consultationId,
+    Map<String, dynamic> lifestyleData,
+  ) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/lifestyle-advice/create',
+        data: {
+          'consultationId': consultationId,
+          ...lifestyleData,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
+
+  // Get lifestyle advice templates
+  Future<Map<String, dynamic>> getLifestyleAdviceTemplates() async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/lifestyle-advice/templates',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.message};
+    }
+  }
 }
