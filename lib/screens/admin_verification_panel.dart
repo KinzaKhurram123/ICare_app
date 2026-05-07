@@ -142,7 +142,7 @@ class _AdminVerificationPanelState extends State<AdminVerificationPanel>
               content: Text('Failed to reject: $e'),
               backgroundColor: Colors.red,
             ),
-          ),
+          );
         }
       }
     }

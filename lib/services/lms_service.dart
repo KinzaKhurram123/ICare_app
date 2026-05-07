@@ -118,13 +118,30 @@ class LmsService {
     }
   }
 
+  Future<List<dynamic>> getAnnouncements(String courseId) async {
+    return getCourseAnnouncements(courseId);
+  }
+
   Future<Map<String, dynamic>> createAnnouncement(Map<String, dynamic> data) async {
     final response = await _api.post('/lms/announcements', data);
     return response.data;
   }
 
+  Future<Map<String, dynamic>> postAnnouncement(String courseId, String content) async {
+    return createAnnouncement({
+      'courseId': courseId,
+      'content': content,
+    });
+  }
+
   Future<void> deleteAnnouncement(String announcementId) async {
     await _api.delete('/lms/announcements/$announcementId');
+  }
+
+  Future<void> addComment(String announcementId, String comment) async {
+    await _api.post('/lms/announcements/$announcementId/comment', {
+      'comment': comment,
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -153,9 +170,35 @@ class LmsService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> createAssignment(Map<String, dynamic> data) async {
+    final response = await _api.post('/lms/assignments', data);
+    return response.data;
+  }
+
+  Future<List<dynamic>> getSubmissions(String assignmentId) async {
+    final response = await _api.get('/lms/assignments/$assignmentId/submissions');
+    return response.data['submissions'] ?? [];
+  }
+
+  Future<Map<String, dynamic>> gradeSubmission(
+    String submissionId,
+    num marksObtained, {
+    String? feedback,
+  }) async {
+    final response = await _api.put('/lms/assignments/submissions/$submissionId/grade', {
+      'marksObtained': marksObtained,
+      'feedback': feedback,
+    });
+    return response.data;
+  }
+
   Future<List<dynamic>> getMyGrades(String courseId) async {
     final response = await _api.get('/lms/assignments/course/$courseId/my-grades');
     return response.data['grades'] ?? [];
+  }
+
+  Future<List<dynamic>> getCourseGrades(String courseId) async {
+    return getMyGrades(courseId);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -191,5 +234,9 @@ class LmsService {
   Future<List<dynamic>> getCourseStudents(String courseId) async {
     final response = await _api.get('/courses/enrolled-students/$courseId');
     return response.data['students'] ?? [];
+  }
+
+  Future<List<dynamic>> getEnrolledStudents(String courseId) async {
+    return getCourseStudents(courseId);
   }
 }
