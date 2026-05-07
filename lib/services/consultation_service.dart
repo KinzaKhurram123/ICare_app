@@ -3,148 +3,47 @@ import 'package:icare/utils/api_constants.dart';
 import 'package:icare/utils/shared_pref.dart';
 
 class ConsultationService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: ApiConstants.baseUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+  ));
   final SharedPref _sharedPref = SharedPref();
 
-  // Start a new consultation
-  Future<Map<String, dynamic>> startConsultation({
-    required String patientId,
-    String? reason,
-    bool isForSelf = true,
-    String? patientName,
-    String? patientAge,
-    String? patientGender,
-  }) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.post(
-        '/consultations/start',
-        data: {
-          'patientId': patientId,
-          if (reason != null) 'reason': reason,
-          'isForSelf': isForSelf,
-          if (patientName != null) 'patientName': patientName,
-          if (patientAge != null) 'patientAge': patientAge,
-          if (patientGender != null) 'patientGender': patientGender,
-        },
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // Send chat message
-  Future<Map<String, dynamic>> sendMessage({
-    required String consultationId,
-    required String message,
-    String? attachmentUrl,
-  }) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.post(
-        '/consultations/$consultationId/messages',
-        data: {
-          'message': message,
-          if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
-        },
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // Get chat messages
-  Future<Map<String, dynamic>> getMessages(String consultationId) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.get(
-        '/consultations/$consultationId/messages',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // End consultation
-  Future<Map<String, dynamic>> endConsultation(String consultationId) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.post(
-        '/consultations/$consultationId/end',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // Get consultation details
-  Future<Map<String, dynamic>> getConsultation(String consultationId) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.get(
-        '/consultations/$consultationId',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // Upload attachment
-  Future<Map<String, dynamic>> uploadAttachment(String filePath) async {
-    try {
-      final token = await _sharedPref.getToken();
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
-      });
-      final response = await _dio.post(
-        '/consultations/upload',
-        data: formData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data;
-    } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
-    }
-  }
-
-  // NEW METHODS FOR ENHANCED CONSULTATION FLOW
-
-  // Start consultation with appointment
-  Future<Map<String, dynamic>> startConsultation({
+  // ==================== V2 CONSULTATION ENDPOINTS ====================
+  
+  // Start consultation with appointment (V2)
+  Future<Map<String, dynamic>> startConsultationV2({
     required String appointmentId,
     required String patientId,
     required String doctorId,
+    String? reason,
   }) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/consultations/start-v2',
+        '/consultations-v2/start-v2',
         data: {
           'appointmentId': appointmentId,
           'patientId': patientId,
           'doctorId': doctorId,
+          if (reason != null) 'reason': reason,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error starting consultation: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 
-  // Send message with system message flag
-  Future<Map<String, dynamic>> sendMessage({
+  // Send message (V2)
+  Future<Map<String, dynamic>> sendMessageV2({
     required String consultationId,
+    required String senderId,
+    required String senderName,
+    required String senderRole,
     required String message,
     String? attachmentUrl,
     bool isSystemMessage = false,
@@ -152,8 +51,11 @@ class ConsultationService {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/consultations/$consultationId/messages',
+        '/consultations-v2/$consultationId/messages',
         data: {
+          'senderId': senderId,
+          'senderName': senderName,
+          'senderRole': senderRole,
           'message': message,
           if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
           'isSystemMessage': isSystemMessage,
@@ -162,64 +64,191 @@ class ConsultationService {
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error sending message: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 
-  // Save prescription draft
-  Future<Map<String, dynamic>> savePrescriptionDraft(
-    String consultationId,
-    Map<String, dynamic> prescriptionData,
-  ) async {
+  // Get messages (V2)
+  Future<List<dynamic>> getMessagesV2({
+    required String consultationId,
+    int limit = 100,
+    int skip = 0,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/consultations-v2/$consultationId/messages?limit=$limit&skip=$skip',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response.data['success'] == true) {
+        return response.data['messages'] ?? [];
+      }
+      return [];
+    } on DioException catch (e) {
+      print('Error getting messages: ${e.message}');
+      return [];
+    }
+  }
+
+  // End consultation (V2)
+  Future<Map<String, dynamic>> endConsultationV2({
+    required String consultationId,
+    required int duration,
+    String? prescriptionId,
+  }) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/consultations/$consultationId/prescription/draft',
+        '/consultations-v2/$consultationId/end',
+        data: {
+          'duration': duration,
+          if (prescriptionId != null) 'prescriptionId': prescriptionId,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error ending consultation: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
+  // Get consultation details (V2)
+  Future<Map<String, dynamic>> getConsultationV2(String consultationId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/consultations-v2/$consultationId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error getting consultation: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
+  // Get timer status (V2)
+  Future<Map<String, dynamic>> getTimerStatus(String consultationId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/consultations-v2/$consultationId/timer',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error getting timer status: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
+  // ==================== PRESCRIPTION V2 ENDPOINTS ====================
+
+  // Save prescription draft
+  Future<Map<String, dynamic>> savePrescriptionDraft({
+    required String consultationId,
+    required Map<String, dynamic> prescriptionData,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/prescriptions-v2/consultations/$consultationId/prescription/draft',
         data: prescriptionData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error saving prescription draft: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 
   // Get prescription draft
-  Future<Map<String, dynamic>> getPrescriptionDraft(String consultationId) async {
+  Future<Map<String, dynamic>?> getPrescriptionDraft(String consultationId) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/consultations/$consultationId/prescription/draft',
+        '/prescriptions-v2/consultations/$consultationId/prescription/draft',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      if (response.data['success'] == true) {
+        return response.data['prescription'];
+      }
+      return null;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error getting prescription draft: ${e.message}');
+      return null;
     }
   }
 
   // Complete prescription
-  Future<Map<String, dynamic>> completePrescription(
-    String consultationId,
-    Map<String, dynamic> prescriptionData,
-  ) async {
+  Future<Map<String, dynamic>> completePrescription({
+    required String consultationId,
+    required Map<String, dynamic> prescriptionData,
+  }) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
-        '/consultations/$consultationId/prescription/complete',
+        '/prescriptions-v2/consultations/$consultationId/prescription/complete',
         data: prescriptionData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error completing prescription: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 
+  // Get prescription by ID
+  Future<Map<String, dynamic>?> getPrescription(String prescriptionId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/prescriptions-v2/prescriptions/$prescriptionId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response.data['success'] == true) {
+        return response.data['prescription'];
+      }
+      return null;
+    } on DioException catch (e) {
+      print('Error getting prescription: ${e.message}');
+      return null;
+    }
+  }
+
+  // Get patient prescriptions
+  Future<List<dynamic>> getPatientPrescriptions({
+    required String patientId,
+    String? status,
+    int limit = 20,
+    int skip = 0,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/prescriptions-v2/patients/$patientId/prescriptions?limit=$limit&skip=$skip${status != null ? '&status=$status' : ''}',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response.data['success'] == true) {
+        return response.data['prescriptions'] ?? [];
+      }
+      return [];
+    } on DioException catch (e) {
+      print('Error getting patient prescriptions: ${e.message}');
+      return [];
+    }
+  }
+
+  // ==================== PATIENT HISTORY ENDPOINTS ====================
+
   // Save patient history
-  Future<Map<String, dynamic>> savePatientHistory(
-    Map<String, dynamic> historyData,
-  ) async {
+  Future<Map<String, dynamic>> savePatientHistory({
+    required Map<String, dynamic> historyData,
+  }) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.post(
@@ -229,44 +258,70 @@ class ConsultationService {
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error saving patient history: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 
   // Get patient history
-  Future<Map<String, dynamic>> getPatientHistory(String patientId) async {
+  Future<List<dynamic>> getPatientHistory({
+    required String patientId,
+    int limit = 10,
+    int skip = 0,
+  }) async {
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
-        '/patient-history/patient/$patientId',
+        '/patient-history/patient/$patientId?limit=$limit&skip=$skip',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      if (response.data['success'] == true) {
+        return response.data['histories'] ?? [];
+      }
+      return [];
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error getting patient history: ${e.message}');
+      return [];
     }
   }
 
-  // Save lifestyle advice
-  Future<Map<String, dynamic>> saveLifestyleAdvice(
-    String consultationId,
-    Map<String, dynamic> lifestyleData,
-  ) async {
+  // Get history by consultation
+  Future<Map<String, dynamic>?> getHistoryByConsultation(String consultationId) async {
     try {
       final token = await _sharedPref.getToken();
-      final response = await _dio.post(
-        '/lifestyle-advice/create',
-        data: {
-          'consultationId': consultationId,
-          ...lifestyleData,
-        },
+      final response = await _dio.get(
+        '/patient-history/consultation/$consultationId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      if (response.data['success'] == true) {
+        return response.data['history'];
+      }
+      return null;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error getting history by consultation: ${e.message}');
+      return null;
     }
   }
+
+  // Get latest history
+  Future<Map<String, dynamic>?> getLatestHistory(String patientId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/patient-history/patient/$patientId/latest',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response.data['success'] == true) {
+        return response.data['history'];
+      }
+      return null;
+    } on DioException catch (e) {
+      print('Error getting latest history: ${e.message}');
+      return null;
+    }
+  }
+
+  // ==================== LIFESTYLE ADVICE ENDPOINTS ====================
 
   // Get lifestyle advice templates
   Future<Map<String, dynamic>> getLifestyleAdviceTemplates() async {
@@ -278,7 +333,71 @@ class ConsultationService {
       );
       return response.data;
     } on DioException catch (e) {
-      return {'success': false, 'message': e.message};
+      print('Error getting lifestyle advice templates: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
+  // Save lifestyle advice
+  Future<Map<String, dynamic>> saveLifestyleAdvice({
+    required String consultationId,
+    required String prescriptionId,
+    required Map<String, dynamic> lifestyleData,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.post(
+        '/lifestyle-advice/create',
+        data: {
+          'consultationId': consultationId,
+          'prescriptionId': prescriptionId,
+          ...lifestyleData,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error saving lifestyle advice: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
+  // Get lifestyle advice by consultation
+  Future<Map<String, dynamic>?> getLifestyleAdviceByConsultation(String consultationId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/lifestyle-advice/consultation/$consultationId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response.data['success'] == true) {
+        return response.data['advice'];
+      }
+      return null;
+    } on DioException catch (e) {
+      print('Error getting lifestyle advice: ${e.message}');
+      return null;
+    }
+  }
+
+  // ==================== FILE UPLOAD ====================
+
+  // Upload attachment
+  Future<Map<String, dynamic>> uploadAttachment(String filePath) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      final response = await _dio.post(
+        '/upload',
+        data: formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error uploading attachment: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
     }
   }
 }
