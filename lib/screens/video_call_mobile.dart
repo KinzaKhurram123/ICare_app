@@ -423,10 +423,10 @@ class _VideoCallMobileState extends State<VideoCall> {
                         onTap: _toggleCam,
                       ),
                     const SizedBox(width: 20),
-                    // End Consultation button (purple)
+                    // End Consultation button (purple) - camera icon as per client requirements
                     if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty)
                       _controlBtn(
-                        icon: Icons.stop_circle_rounded,
+                        icon: Icons.videocam_off_rounded,
                         color: Colors.white,
                         bg: const Color(0xFF7C3AED),
                         onTap: _endConsultation,
