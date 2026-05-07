@@ -728,6 +728,24 @@ class _CoursesSection extends StatelessWidget {
                       children: _courses.map((c) => _CourseCard(course: c)).toList(),
                     ),
             ),
+            const SizedBox(height: 32),
+            // Explore All Courses Button
+            ElevatedButton.icon(
+              onPressed: () {
+                context.go('/lms/catalog');
+              },
+              icon: const Icon(Icons.school_rounded, size: 20),
+              label: const Text('Explore All Courses'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+            ),
           ],
         ),
       ),

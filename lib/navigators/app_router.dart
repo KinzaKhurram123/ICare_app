@@ -10,6 +10,8 @@ import 'package:icare/screens/signup.dart';
 import 'package:icare/screens/splash.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/work_with_us_signup.dart';
+import 'package:icare/screens/lms_public_catalog.dart';
+import 'package:icare/screens/admin_verification_panel.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/app_keys.dart';
 
@@ -44,7 +46,7 @@ final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {
 });
 
 /// Public paths that don't require authentication.
-const _publicPaths = ['/home', '/login', '/signup', '/work-with-us', '/splash'];
+const _publicPaths = ['/home', '/login', '/signup', '/work-with-us', '/splash', '/lms/catalog'];
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Trigger auth init as soon as router is created.
@@ -81,6 +83,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
       GoRoute(path: '/work-with-us', builder: (_, __) => const WorkWithUsSignup()),
       GoRoute(path: '/dashboard', builder: (_, __) => const TabsScreen()),
+      GoRoute(path: '/lms/catalog', builder: (_, __) => const LmsPublicCatalog()),
+      GoRoute(path: '/admin/verifications', builder: (_, __) => const AdminVerificationPanel()),
     ],
   );
 });

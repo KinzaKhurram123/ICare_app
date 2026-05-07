@@ -35,6 +35,9 @@ const uploadRoutes = require('./routes/upload');
 const assignmentsRoutes = require('./routes/assignments');
 const attendanceRoutes  = require('./routes/attendance');
 const announcementsRoutes = require('./routes/announcements');
+const verificationRoutes = require('./routes/verification');
+const liveSessionsRoutes = require('./routes/live-sessions');
+const quizzesRoutes = require('./routes/quizzes');
 
 const app = express();
 
@@ -131,6 +134,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/lms/assignments',   assignmentsRoutes);
 app.use('/api/lms/attendance',    attendanceRoutes);
 app.use('/api/lms/announcements', announcementsRoutes);
+app.use('/api/verification', verificationRoutes);
+app.use('/api/live-sessions', liveSessionsRoutes);
+app.use('/api/quizzes', quizzesRoutes);
 
 // Serve uploaded files (only in non-serverless environments)
 if (!process.env.VERCEL) {
