@@ -5,7 +5,7 @@ import 'package:icare/services/connect_now_service.dart';
 import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:icare/models/appointment.dart';
+import 'package:icare/models/appointment_detail.dart';
 
 class DoctorConnectNowScreen extends StatefulWidget {
   final String requestId;
@@ -111,8 +111,9 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
         final sharedPref = SharedPref();
         final consultationService = ConsultationService();
         
-        final doctorId = await sharedPref.getUserId() ?? '';
-        final doctorName = (await sharedPref.getUserData())?.name ?? 'Doctor';
+        final userData = await sharedPref.getUserData();
+        final doctorId = userData?.id ?? '';
+        final doctorName = userData?.name ?? 'Doctor';
         final appointmentId = result['appointmentId']?.toString() ?? '';
         
         // Start consultation with chat-first approach
@@ -125,9 +126,9 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
         if (!mounted) return;
 
         if (consultResult['success'] == true) {
-          // Create minimal appointment object for Connect Now
-          final appointment = Appointment(
-            id: appointmentId.isNotEmpty ? appointmentId : null,
+          // Create minimal appointment detail object for Connect Now
+          final appointment = AppointmentDetail(
+            id: appointmentId.isNotEmpty ? appointmentId : '',
             patientName: widget.patientName,
             doctorName: doctorName,
             status: 'confirmed',
@@ -139,7 +140,6 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => ConsultationChatScreenV2(
-                consultationId: consultResult['consultationId'],
                 appointment: appointment,
                 isDoctor: true,
                 currentUserId: doctorId,

@@ -6,7 +6,7 @@ import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/app_keys.dart';
-import 'package:icare/models/appointment.dart';
+import 'package:icare/models/appointment_detail.dart';
 
 class ConnectNowWaitingScreen extends StatefulWidget {
   const ConnectNowWaitingScreen({super.key});
@@ -113,7 +113,7 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     final sharedPref = SharedPref();
     final userData = await sharedPref.getUserData();
     final patientName = userData?.name ?? 'Patient';
-    final patientId = await sharedPref.getUserId() ?? '';
+    final patientId = userData?.id ?? '';
 
     if (!mounted) return;
 
@@ -138,9 +138,9 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
       Navigator.pop(context); // Close loading
 
       if (result['success'] == true) {
-        // Create minimal appointment object for Connect Now
-        final appointment = Appointment(
-          id: appointmentId.isNotEmpty ? appointmentId : null,
+        // Create minimal appointment detail object for Connect Now
+        final appointment = AppointmentDetail(
+          id: appointmentId.isNotEmpty ? appointmentId : '',
           patientName: patientName,
           doctorName: doctorName,
           status: 'confirmed',
@@ -152,7 +152,6 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => ConsultationChatScreenV2(
-              consultationId: result['consultationId'],
               appointment: appointment,
               isDoctor: false,
               currentUserId: patientId,

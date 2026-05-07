@@ -7,7 +7,7 @@ import '../services/consultation_service.dart';
 import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
 import '../screens/consultation_chat_screen_v2.dart';
-import '../models/appointment.dart';
+import '../models/appointment_detail.dart';
 
 /// Wraps the doctor's app and polls for Connect Now requests every 5 seconds.
 class DoctorConnectNowListener extends StatefulWidget {
@@ -161,7 +161,7 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               // Get doctor's own name
               final userData = await _sharedPref.getUserData();
               final doctorName = userData?.name ?? 'Doctor';
-              final doctorId = await _sharedPref.getUserId() ?? '';
+              final doctorId = userData?.id ?? '';
               
               nav.pop();
               
@@ -185,9 +185,9 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                 nav.pop(); // Close loading
 
                 if (consultResult['success'] == true) {
-                  // Create minimal appointment object for Connect Now
-                  final appointment = Appointment(
-                    id: appointmentId.isNotEmpty ? appointmentId : null,
+                  // Create minimal appointment detail object for Connect Now
+                  final appointment = AppointmentDetail(
+                    id: appointmentId.isNotEmpty ? appointmentId : '',
                     patientName: callPatient,
                     doctorName: doctorName,
                     status: 'confirmed',
@@ -200,7 +200,6 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
                     MaterialPageRoute(
                       builder: (_) => _ConsultationWrapper(
                         child: ConsultationChatScreenV2(
-                          consultationId: consultResult['consultationId'],
                           appointment: appointment,
                           isDoctor: true,
                           currentUserId: doctorId,
