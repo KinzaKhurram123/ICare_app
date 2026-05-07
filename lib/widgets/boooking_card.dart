@@ -9,6 +9,9 @@ import 'package:icare/screens/chat_screen.dart';
 import 'package:icare/screens/consultation_workflow.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
+import 'package:icare/services/consultation_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -97,22 +100,62 @@ class BookingCard extends ConsumerWidget {
                 height: isDesktop ? 48 : Utils.windowHeight(context) * 0.055,
                 borderRadius: 30,
                 labelSize: 15,
-                onPressed: () {
-                  // Use stored channelName, fallback to appointment id
-                  final channelName = appointment.channelName?.isNotEmpty == true
-                      ? appointment.channelName!
-                      : appointment.id;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => VideoCall(
-                        channelName: channelName,
-                        remoteUserName: selectedRole == 'Doctor'
-                            ? appointment.patientName
-                            : appointment.doctorName,
-                        appointmentId: appointment.id,
-                      ),
-                    ),
+                onPressed: () async {
+                  // Show loading
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(child: CircularProgressIndicator()),
                   );
+
+                  try {
+                    final consultationService = ConsultationService();
+                    final sharedPref = SharedPref();
+                    
+                    final currentUserId = await sharedPref.getUserId();
+                    final currentUserName = await sharedPref.getUserName();
+                    final isDoctor = selectedRole == 'Doctor';
+
+                    // Start consultation with chat-first approach
+                    final result = await consultationService.startConsultationV2(
+                      appointmentId: appointment.id ?? '',
+                      patientId: appointment.patientId ?? '',
+                      doctorId: appointment.doctorId ?? '',
+                    );
+
+                    Navigator.pop(context); // Close loading
+
+                    if (result['success'] == true) {
+                      // Navigate to chat screen (NOT video directly)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ConsultationChatScreenV2(
+                            consultationId: result['consultationId'],
+                            appointment: appointment,
+                            isDoctor: isDoctor,
+                            currentUserId: currentUserId ?? '',
+                            currentUserName: currentUserName ?? 'User',
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result['message'] ?? 'Failed to start consultation'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
               ),
             ],
@@ -725,25 +768,62 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         ),
                         const SizedBox(width: 12),
                         ElevatedButton.icon(
-                          onPressed: () {
-                            // Use stored channelName, fallback to appointment id
-                            final channelName = widget.appointment.channelName?.isNotEmpty == true
-                                ? widget.appointment.channelName!
-                                : widget.appointment.id;
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => VideoCall(
-                                  channelName: channelName,
-                                  remoteUserName: widget.selectedRole == 'Doctor'
-                                      ? widget.appointment.patientName
-                                      : widget.appointment.doctorName,
-                                  appointmentId: widget.appointment.id,
-                                  currentUserName: widget.currentUserName,
-                                  currentUserId: widget.currentUserId,
-                                  patientId: widget.appointment.patient?.id,
-                                ),
-                              ),
+                          onPressed: () async {
+                            // Show loading
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (_) => const Center(child: CircularProgressIndicator()),
                             );
+
+                            try {
+                              final consultationService = ConsultationService();
+                              final sharedPref = SharedPref();
+                              
+                              final currentUserId = await sharedPref.getUserId();
+                              final currentUserName = await sharedPref.getUserName();
+                              final isDoctor = widget.selectedRole == 'Doctor';
+
+                              // Start/rejoin consultation
+                              final result = await consultationService.startConsultationV2(
+                                appointmentId: widget.appointment.id ?? '',
+                                patientId: widget.appointment.patientId ?? '',
+                                doctorId: widget.appointment.doctorId ?? '',
+                              );
+
+                              Navigator.pop(context); // Close loading
+
+                              if (result['success'] == true) {
+                                // Navigate to chat screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ConsultationChatScreenV2(
+                                      consultationId: result['consultationId'],
+                                      appointment: widget.appointment,
+                                      isDoctor: isDoctor,
+                                      currentUserId: currentUserId ?? '',
+                                      currentUserName: currentUserName ?? 'User',
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           },
                           icon: const Icon(Icons.video_call_rounded, size: 18),
                           label: const Text('Rejoin Consultation',

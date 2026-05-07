@@ -5,10 +5,13 @@ import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/booking_categories.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 import 'package:intl/intl.dart';
@@ -1068,16 +1071,61 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      Navigator.of(ctx).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => VideoCall(
-                                            channelName: channelName,
-                                            remoteUserName: appt.doctorName,
-                                            appointmentId: appt.id,
-                                          ),
-                                        ),
+                                    onPressed: () async {
+                                      // Show loading
+                                      showDialog(
+                                        context: ctx,
+                                        barrierDismissible: false,
+                                        builder: (_) => const Center(child: CircularProgressIndicator()),
                                       );
+
+                                      try {
+                                        final consultationService = ConsultationService();
+                                        final sharedPref = SharedPref();
+                                        
+                                        final currentUserId = await sharedPref.getUserId();
+                                        final currentUserName = await sharedPref.getUserName();
+
+                                        // Start/rejoin consultation
+                                        final result = await consultationService.startConsultationV2(
+                                          appointmentId: appt.id ?? '',
+                                          patientId: appt.patientId ?? '',
+                                          doctorId: appt.doctorId ?? '',
+                                        );
+
+                                        Navigator.pop(ctx); // Close loading
+
+                                        if (result['success'] == true) {
+                                          // Navigate to chat screen
+                                          Navigator.push(
+                                            ctx,
+                                            MaterialPageRoute(
+                                              builder: (_) => ConsultationChatScreenV2(
+                                                consultationId: result['consultationId'],
+                                                appointment: appt,
+                                                isDoctor: false, // Patient side
+                                                currentUserId: currentUserId ?? '',
+                                                currentUserName: currentUserName ?? 'User',
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(ctx).showSnackBar(
+                                            SnackBar(
+                                              content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        Navigator.pop(ctx);
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
                                     },
                                     icon: const Icon(
                                         Icons.video_call_rounded,

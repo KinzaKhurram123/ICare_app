@@ -85,7 +85,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   Future<void> _initializeConsultation() async {
     try {
       // Create or get consultation
-      final result = await _consultationService.startConsultation(
+      final result = await _consultationService.startConsultationV2(
         appointmentId: widget.appointment.id ?? '',
         patientId: widget.appointment.patient!.id,
         doctorId: widget.appointment.doctor!.id,
