@@ -304,7 +304,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
       );
 
       final result = await _consultationService.savePatientHistory(
-        historyForm.toJson(),
+        historyData: historyForm.toJson(),
       );
 
       if (result['success'] && mounted) {
