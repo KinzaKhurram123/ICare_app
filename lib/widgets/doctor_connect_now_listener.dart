@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/connect_now_service.dart';
+import '../services/consultation_service.dart';
 import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
-import '../screens/video_call.dart';
+import '../screens/consultation_chat_screen_v2.dart';
+import '../models/appointment.dart';
 
 /// Wraps the doctor's app and polls for Connect Now requests every 5 seconds.
 class DoctorConnectNowListener extends StatefulWidget {
@@ -159,31 +161,78 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               // Get doctor's own name
               final userData = await _sharedPref.getUserData();
               final doctorName = userData?.name ?? 'Doctor';
+              final doctorId = await _sharedPref.getUserId() ?? '';
+              
               nav.pop();
-              nav.push(
-                MaterialPageRoute(
-                  builder: (_) => _ConsultationWrapper(
-                    child: VideoCall(
-                      channelName: callChannel,
-                      remoteUserName: callPatient,
-                      currentUserName: doctorName,
-                      appointmentId: appointmentId.isNotEmpty ? appointmentId : null,
-                    ),
-                  ),
-                ),
+              
+              // Show loading
+              showDialog(
+                context: nav.context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
               );
-            } catch (e) {
-              debugPrint('❌ Accept failed: $e — trying with channel directly');
-              nav.pop();
-              nav.push(
-                MaterialPageRoute(
-                  builder: (_) => _ConsultationWrapper(
-                    child: VideoCall(
-                      channelName: channelName,
-                      remoteUserName: patientName,
-                      currentUserName: 'Doctor',
+
+              try {
+                final consultationService = ConsultationService();
+                
+                // Start consultation with chat-first approach
+                final consultResult = await consultationService.startConsultationV2(
+                  appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
+                  patientId: '', // Will be filled by backend from appointment
+                  doctorId: doctorId,
+                );
+
+                nav.pop(); // Close loading
+
+                if (consultResult['success'] == true) {
+                  // Create minimal appointment object for Connect Now
+                  final appointment = Appointment(
+                    id: appointmentId.isNotEmpty ? appointmentId : null,
+                    patientName: callPatient,
+                    doctorName: doctorName,
+                    status: 'confirmed',
+                    timeSlot: 'Now',
+                    date: DateTime.now().toString().split(' ')[0],
+                  );
+
+                  // Navigate to chat screen (NOT video directly)
+                  nav.push(
+                    MaterialPageRoute(
+                      builder: (_) => _ConsultationWrapper(
+                        child: ConsultationChatScreenV2(
+                          consultationId: consultResult['consultationId'],
+                          appointment: appointment,
+                          isDoctor: true,
+                          currentUserId: doctorId,
+                          currentUserName: doctorName,
+                        ),
+                      ),
                     ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(nav.context).showSnackBar(
+                    SnackBar(
+                      content: Text(consultResult['message'] ?? 'Failed to start consultation'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                nav.pop(); // Close loading
+                ScaffoldMessenger.of(nav.context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
                   ),
+                );
+              }
+            } catch (e) {
+              debugPrint('❌ Accept failed: $e');
+              nav.pop(); // Close loading
+              ScaffoldMessenger.of(nav.context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to accept request: $e'),
+                  backgroundColor: Colors.red,
                 ),
               );
             }

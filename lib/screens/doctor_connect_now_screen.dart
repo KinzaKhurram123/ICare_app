@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/connect_now_service.dart';
+import 'package:icare/services/consultation_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/models/appointment.dart';
 
 class DoctorConnectNowScreen extends StatefulWidget {
   final String requestId;
@@ -99,18 +102,54 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
   Future<void> _acceptRequest() async {
     setState(() => _isLoading = true);
     _countdownTimer?.cancel();
+    
     try {
       final result = await _service.acceptRequest(widget.requestId);
       if (!mounted) return;
+      
       if (result['success'] == true) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => VideoCall(
-              channelName: widget.channelName,
-              remoteUserName: widget.patientName,
-            ),
-          ),
+        final sharedPref = SharedPref();
+        final consultationService = ConsultationService();
+        
+        final doctorId = await sharedPref.getUserId() ?? '';
+        final doctorName = (await sharedPref.getUserData())?.name ?? 'Doctor';
+        final appointmentId = result['appointmentId']?.toString() ?? '';
+        
+        // Start consultation with chat-first approach
+        final consultResult = await consultationService.startConsultationV2(
+          appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
+          patientId: '', // Will be filled by backend from appointment
+          doctorId: doctorId,
         );
+
+        if (!mounted) return;
+
+        if (consultResult['success'] == true) {
+          // Create minimal appointment object for Connect Now
+          final appointment = Appointment(
+            id: appointmentId.isNotEmpty ? appointmentId : null,
+            patientName: widget.patientName,
+            doctorName: doctorName,
+            status: 'confirmed',
+            timeSlot: 'Now',
+            date: DateTime.now().toString().split(' ')[0],
+          );
+
+          // Navigate to chat screen (NOT video directly)
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ConsultationChatScreenV2(
+                consultationId: consultResult['consultationId'],
+                appointment: appointment,
+                isDoctor: true,
+                currentUserId: doctorId,
+                currentUserName: doctorName,
+              ),
+            ),
+          );
+        } else {
+          _showError(consultResult['message'] ?? 'Failed to start consultation');
+        }
       } else {
         _showError(result['message'] ?? 'Could not accept request');
       }

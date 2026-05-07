@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/connect_now_service.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/app_keys.dart';
+import 'package:icare/models/appointment.dart';
 
 class ConnectNowWaitingScreen extends StatefulWidget {
   const ConnectNowWaitingScreen({super.key});
@@ -107,22 +109,78 @@ class _ConnectNowWaitingScreenState extends State<ConnectNowWaitingScreen>
     if (!mounted) return;
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
-    final userData = await SharedPref().getUserData();
+    
+    final sharedPref = SharedPref();
+    final userData = await sharedPref.getUserData();
     final patientName = userData?.name ?? 'Patient';
+    final patientId = await sharedPref.getUserId() ?? '';
 
     if (!mounted) return;
 
-    // Use Navigator.of(context) directly — more reliable than appNavigatorKey
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => VideoCall(
-          channelName: channelName,
-          remoteUserName: doctorName.isNotEmpty ? doctorName : 'Doctor',
-          currentUserName: patientName,
-          appointmentId: appointmentId.isNotEmpty ? appointmentId : null,
-        ),
-      ),
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      final consultationService = ConsultationService();
+      
+      // Start consultation with chat-first approach
+      final result = await consultationService.startConsultationV2(
+        appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
+        patientId: patientId,
+        doctorId: '', // Will be filled by backend from appointment
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      if (result['success'] == true) {
+        // Create minimal appointment object for Connect Now
+        final appointment = Appointment(
+          id: appointmentId.isNotEmpty ? appointmentId : null,
+          patientName: patientName,
+          doctorName: doctorName,
+          status: 'confirmed',
+          timeSlot: 'Now',
+          date: DateTime.now().toString().split(' ')[0],
+        );
+
+        // Navigate to chat screen (NOT video directly)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ConsultationChatScreenV2(
+              consultationId: result['consultationId'],
+              appointment: appointment,
+              isDoctor: false,
+              currentUserId: patientId,
+              currentUserName: patientName,
+            ),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to start consultation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
   void _onExpired() {
