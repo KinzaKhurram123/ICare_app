@@ -8,6 +8,7 @@ import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/labb_details.dart';
 import 'package:icare/screens/pharmacy_details.dart';
 import 'package:icare/screens/pharmacy_prescription_screen.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -392,7 +393,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                   title: 'My Prescription',
                   subtitle: 'Patient info, SOAP notes & full details',
                   arrowColor: const Color(0xFF0EA5E9),
-                  onTap: () => _showPrescriptionDetail(context, record, medicines, labTests, recordNumber),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PrescriptionDetailScreen(
+                        prescription: Map<String, dynamic>.from(record as Map),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
 

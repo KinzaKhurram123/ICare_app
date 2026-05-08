@@ -924,14 +924,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
                   ? () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => LaboratoriesScreen(
-                            prescribedTests: _labTests
-                                .map((t) => t is Map
-                                    ? (t['name'] ?? t['testName'] ?? '').toString()
-                                    : t.toString())
-                                .where((n) => n.isNotEmpty)
-                                .toList(),
-                          ),
+                          builder: (_) => const LaboratoriesScreen(),
                         ),
                       )
                   : null,
