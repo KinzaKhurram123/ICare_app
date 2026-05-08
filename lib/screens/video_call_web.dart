@@ -24,7 +24,7 @@ import '../utils/shared_pref.dart';
 // JS interop
 @JS('agoraJoin')
 external JSPromise<JSString> _agoraJoin(
-    JSString appId, JSString channel, JSString token, JSNumber uid);
+    JSString appId, JSString channel, JSString token, JSNumber uid, JSBoolean audioOnly);
 
 @JS('agoraLeave')
 external JSPromise<JSAny?> _agoraLeave();
@@ -504,6 +504,7 @@ class _VideoCallWebState extends State<VideoCall> {
         widget.channelName.toJS,
         token.toJS,
         0.toJS,
+        widget.isAudioOnly.toJS,
       ).toDart;
 
       final resultStr = result.toDart;

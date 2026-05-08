@@ -50,7 +50,7 @@
     var _localAudioTrack = null;
     var _localVideoTrack = null;
 
-    window.agoraJoin = async function(appId, channel, token, uid) {
+    window.agoraJoin = async function(appId, channel, token, uid, audioOnly) {
       try {
         // Clean up any stale previous session so mic/cam aren't "in use"
         if (_localAudioTrack) { try { _localAudioTrack.stop(); _localAudioTrack.close(); } catch(_){} _localAudioTrack = null; }
@@ -139,7 +139,7 @@
           }
         }
 
-        // Try mic + camera; if mic fails, try camera only; if both fail, join audio-only
+        // Always try mic
         try {
           _localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         } catch(micErr) {
@@ -147,10 +147,16 @@
           _localAudioTrack = null;
         }
 
-        try {
-          _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-        } catch(camErr) {
-          console.warn('Camera not available:', camErr.message, '— joining without camera');
+        // Only create camera track when NOT audio-only
+        if (!audioOnly) {
+          try {
+            _localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+          } catch(camErr) {
+            console.warn('Camera not available:', camErr.message, '— joining without camera');
+            _localVideoTrack = null;
+          }
+        } else {
+          console.log('📞 Audio-only call — camera disabled');
           _localVideoTrack = null;
         }
 

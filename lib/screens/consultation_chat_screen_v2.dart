@@ -11,6 +11,7 @@ import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/in_consultation_prescription_form.dart';
 import 'package:icare/screens/patient_history_form_screen.dart';
 import 'package:icare/services/consultation_service.dart';
+import 'package:icare/services/call_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:file_picker/file_picker.dart';
@@ -243,16 +244,43 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     }
   }
 
-  void _startVideoCall() {
+  Future<void> _initiateCall({required bool audioOnly}) async {
+    // Determine the other party's ID to send them a ring signal
+    final receiverId = widget.isDoctor
+        ? widget.appointment.patient?.id ?? ''
+        : widget.appointment.doctor?.id ?? '';
+
+    if (receiverId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot determine call recipient')),
+      );
+      return;
+    }
+
+    final channelName = _consultationId ?? widget.appointment.id ?? 'consultation';
+    final remoteUserName = widget.isDoctor
+        ? widget.appointment.patient?.name ?? 'Patient'
+        : 'Dr. ${widget.appointment.doctor?.name ?? 'Doctor'}';
+
+    // Send ring signal to the other party via call signaling backend
+    final callService = CallService();
+    await callService.initiateCall(
+      receiverId: receiverId,
+      channelName: channelName,
+      callerName: widget.currentUserName,
+      callType: audioOnly ? 'audio' : 'video',
+    );
+
+    if (!mounted) return;
+
+    // Open call screen for the caller immediately
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => VideoCall(
-          channelName: _consultationId ?? widget.appointment.id ?? 'consultation',
-          remoteUserName: widget.isDoctor 
-              ? widget.appointment.patient?.name ?? 'Patient'
-              : 'Dr. ${widget.appointment.doctor?.name ?? 'Doctor'}',
-          isAudioOnly: false,
+          channelName: channelName,
+          remoteUserName: remoteUserName,
+          isAudioOnly: audioOnly,
           appointmentId: widget.appointment.id,
           consultationId: _consultationId,
           patientId: widget.appointment.patient?.id,
@@ -263,25 +291,8 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
   }
 
-  void _startVoiceCall() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => VideoCall(
-          channelName: _consultationId ?? widget.appointment.id ?? 'consultation',
-          remoteUserName: widget.isDoctor 
-              ? widget.appointment.patient?.name ?? 'Patient'
-              : 'Dr. ${widget.appointment.doctor?.name ?? 'Doctor'}',
-          isAudioOnly: true,
-          appointmentId: widget.appointment.id,
-          consultationId: _consultationId,
-          patientId: widget.appointment.patient?.id,
-          currentUserName: widget.currentUserName,
-          currentUserId: widget.currentUserId,
-        ),
-      ),
-    );
-  }
+  void _startVideoCall() => _initiateCall(audioOnly: false);
+  void _startVoiceCall() => _initiateCall(audioOnly: true);
 
   void _openHistoryForm() {
     if (!widget.isDoctor) return;
