@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/screens/classroom_course_view.dart';
 import 'package:icare/screens/instructor_lms_create_course.dart';
 import 'package:icare/screens/instructor_lms_courses.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:icare/services/auth_service.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,14 +14,14 @@ import 'package:intl/intl.dart';
 // iCare Classroom — Instructor Shell (top-level, Google Classroom style)
 // ─────────────────────────────────────────────────────────────
 
-class InstructorLmsDashboard extends StatefulWidget {
+class InstructorLmsDashboard extends ConsumerStatefulWidget {
   const InstructorLmsDashboard({super.key});
 
   @override
-  State<InstructorLmsDashboard> createState() => _InstructorLmsDashboardState();
+  ConsumerState<InstructorLmsDashboard> createState() => _InstructorLmsDashboardState();
 }
 
-class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
+class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard> {
   final LmsService _lms = LmsService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
 
@@ -103,8 +104,8 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       ),
     );
     if (confirm == true && mounted) {
-      await AuthService().logout();
-      if (mounted) context.go('/home');
+      // Clear auth provider state — GoRouter redirect will navigate to /home
+      await ref.read(authProvider.notifier).setUserLogout();
     }
   }
 
@@ -140,7 +141,6 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       _NavPage.home: 'Classroom',
       _NavPage.calendar: 'Calendar',
       _NavPage.todo: 'To do',
-      _NavPage.allCourses: 'All Courses',
       _NavPage.settings: 'Settings',
     };
     return Container(
@@ -153,8 +153,8 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
             IconButton(
               icon: const Icon(Icons.menu_rounded, color: Color(0xFF444746)),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              tooltip: 'Menu',
             ),
-          // iCare logo text
           if (!isWide) ...[
             Image.asset('assets/Asset 1.png', height: 28, fit: BoxFit.contain),
             const SizedBox(width: 6),
@@ -251,8 +251,8 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── iCare Logo ──────────────────────────────
-          if (isDrawer) ...[
+          // ── iCare Logo (fixed at top) ──────────────
+          if (isDrawer)
             SafeArea(
               bottom: false,
               child: Padding(
@@ -265,8 +265,8 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
                   ],
                 ),
               ),
-            ),
-          ] else ...[
+            )
+          else
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Row(
@@ -277,78 +277,90 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
                 ],
               ),
             ),
-          ],
 
-          // ── Nav items ───────────────────────────────
-          _navItem(Icons.home_rounded, 'Home', _NavPage.home),
-          _navItem(Icons.calendar_today_rounded, 'Calendar', _NavPage.calendar),
-          _navItem(Icons.check_circle_outline_rounded, 'To do', _NavPage.todo),
-          _navItem(Icons.menu_book_rounded, 'All Courses', _NavPage.allCourses),
-
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            child: Divider(color: Colors.grey.shade200, height: 1),
-          ),
-
-          // ── Taught courses ─────────────────────────
-          InkWell(
-            onTap: () => setState(() => _taughtExpanded = !_taughtExpanded),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-              child: Row(
-                children: [
-                  const Text('Taught', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF444746))),
-                  const SizedBox(width: 4),
-                  Icon(_taughtExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                      size: 18, color: const Color(0xFF444746)),
-                ],
+          // ── Scrollable nav + courses ─────────────
+          Expanded(
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _navItem(Icons.home_rounded, 'Home', _NavPage.home),
+                    _navItem(Icons.calendar_today_rounded, 'Calendar', _NavPage.calendar),
+                    _navItem(Icons.check_circle_outline_rounded, 'To do', _NavPage.todo),
+                    _navItemExternal(Icons.menu_book_rounded, 'All Courses', () {
+                      if (isDrawer) Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const InstructorLmsCoursesScreen()))
+                          .then((_) => _loadCourses());
+                    }),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      child: Divider(color: Colors.grey.shade200, height: 1),
+                    ),
+                    // Taught courses
+                    InkWell(
+                      onTap: () => setState(() => _taughtExpanded = !_taughtExpanded),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                        child: Row(
+                          children: [
+                            const Text('Taught', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF444746))),
+                            const SizedBox(width: 4),
+                            Icon(_taughtExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                                size: 18, color: const Color(0xFF444746)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_taughtExpanded)
+                      ..._courses.asMap().entries.map((e) {
+                        final color = _cardColor(e.key);
+                        final title = (e.value['title'] ?? e.value['name'] ?? 'Course').toString();
+                        final initial = title.isNotEmpty ? title[0].toUpperCase() : '?';
+                        return InkWell(
+                          onTap: () {
+                            if (isDrawer) Navigator.pop(context);
+                            _openCourse(e.value);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                            child: Row(
+                              children: [
+                                CircleAvatar(radius: 14, backgroundColor: color,
+                                    child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
+                                const SizedBox(width: 12),
+                                Expanded(child: Text(title,
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF202124)),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Divider(color: Colors.grey.shade200, height: 1),
+                    ),
+                    _navItem(Icons.settings_outlined, 'Settings', _NavPage.settings),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
           ),
-          if (_taughtExpanded)
-            ..._courses.asMap().entries.map((e) {
-              final color = _cardColor(e.key);
-              final title = (e.value['title'] ?? e.value['name'] ?? 'Course').toString();
-              final initial = title.isNotEmpty ? title[0].toUpperCase() : '?';
-              return InkWell(
-                onTap: () {
-                  if (isDrawer) Navigator.pop(context);
-                  _openCourse(e.value);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Row(
-                    children: [
-                      CircleAvatar(radius: 14, backgroundColor: color,
-                          child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700))),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(title,
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF202124)),
-                          maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ],
-                  ),
-                ),
-              );
-            }),
 
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            child: Divider(color: Colors.grey.shade200, height: 1),
-          ),
-
-          _navItem(Icons.settings_outlined, 'Settings', _NavPage.settings),
-
-          const Spacer(),
-
-          // ── Bottom: create class ───────────────────
+          // ── Create class button (fixed at bottom) ──
           Padding(
             padding: const EdgeInsets.all(16),
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _createClass,
+                onPressed: () {
+                  if (isDrawer) Navigator.pop(context);
+                  _createClass();
+                },
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: const Text('Create class'),
                 style: OutlinedButton.styleFrom(
@@ -402,6 +414,25 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
     );
   }
 
+  Widget _navItemExternal(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 16, top: 1, bottom: 1),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFF444746)),
+            const SizedBox(width: 16),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
+            const Spacer(),
+            const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF9AA0A6)),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════════
   // BODY ROUTER
   // ════════════════════════════════════════════════
@@ -411,11 +442,13 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       case _NavPage.home:     return _buildHomePage(isWide);
       case _NavPage.calendar: return _CalendarPage(courses: _courses, lms: _lms);
       case _NavPage.todo:     return _TodoPage(courses: _courses, lms: _lms);
-      case _NavPage.allCourses:
-        return const InstructorLmsCoursesScreen();
       case _NavPage.settings:
         return _SettingsPage(
           userName: _userName, userEmail: _userEmail, onLogout: _logout,
+          onManageCourses: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const InstructorLmsCoursesScreen()))
+              .then((_) => _loadCourses()),
+          onCreateCourse: _createClass,
         );
     }
   }
@@ -678,7 +711,7 @@ class _DiagonalPatternPainter extends CustomPainter {
   bool shouldRepaint(_DiagonalPatternPainter o) => o.color != color;
 }
 
-enum _NavPage { home, calendar, todo, allCourses, settings }
+enum _NavPage { home, calendar, todo, settings }
 
 // ─────────────────────────────────────────────────────────────
 // CALENDAR PAGE — shows real assignment due dates
@@ -1096,7 +1129,10 @@ class _SettingsPage extends StatefulWidget {
   final String userName;
   final String userEmail;
   final VoidCallback onLogout;
-  const _SettingsPage({required this.userName, required this.userEmail, required this.onLogout});
+  final VoidCallback onManageCourses;
+  final VoidCallback onCreateCourse;
+  const _SettingsPage({required this.userName, required this.userEmail, required this.onLogout,
+      required this.onManageCourses, required this.onCreateCourse});
   @override
   State<_SettingsPage> createState() => _SettingsPageState();
 }
@@ -1174,13 +1210,13 @@ class _SettingsPageState extends State<_SettingsPage> {
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.add_box_outlined, color: Color(0xFF1A73E8)),
           title: const Text('Create a new class', style: TextStyle(fontSize: 14, color: Color(0xFF1A73E8))),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InstructorLmsCreateCourseScreen())),
+          onTap: widget.onCreateCourse,
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.list_alt_outlined, color: Color(0xFF444746)),
           title: const Text('Manage all courses', style: TextStyle(fontSize: 14, color: Color(0xFF202124))),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InstructorLmsCoursesScreen())),
+          onTap: widget.onManageCourses,
         ),
       ],
     );

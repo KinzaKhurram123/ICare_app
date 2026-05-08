@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:icare/services/lms_service.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:go_router/go_router.dart';
 
 /// Course Creation Wizard - Google Classroom/Moodle style
 class InstructorLmsCreateCourseScreen extends StatefulWidget {
@@ -28,9 +30,54 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
   String _difficulty = 'Beginner';
   int _duration = 4;
   bool _isPublished = false;
-  
+  bool _uploadingThumbnail = false;
+  String? _thumbnailUrl;
+
   // Modules
   final List<Map<String, dynamic>> _modules = [];
+
+  Future<void> _pickAndUploadThumbnail() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+
+      setState(() => _uploadingThumbnail = true);
+      final api = ApiService();
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        'folder': 'icare/courses',
+      });
+      final response = await api.postMultipart('/upload/image', formData);
+      if (response.data['success'] == true) {
+        final url = response.data['url'] as String;
+        setState(() {
+          _thumbnailUrl = url;
+          _thumbnailController.text = url;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Thumbnail uploaded successfully')),
+          );
+        }
+      } else {
+        throw Exception(response.data['message'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingThumbnail = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -65,7 +112,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Course created successfully!')),
         );
-        context.go('/instructor/lms/courses');
+        Navigator.pop(context); // Return to LMS dashboard
       }
     } catch (e) {
       if (mounted) {
@@ -109,7 +156,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close, color: Color(0xFF0F172A)),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -265,14 +312,62 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
               ),
               const SizedBox(height: 20),
               
-              TextFormField(
-                controller: _thumbnailController,
-                decoration: const InputDecoration(
-                  labelText: 'Thumbnail URL (optional)',
-                  hintText: 'https://example.com/image.jpg',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.image),
+              // ── Thumbnail Upload ──────────────────────────────
+              const Text('Course Thumbnail (optional)',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
+              const SizedBox(height: 8),
+              // Preview
+              if (_thumbnailUrl != null && _thumbnailUrl!.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    _thumbnailUrl!,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 120,
+                      color: const Color(0xFFF1F5F9),
+                      child: const Icon(Icons.broken_image_outlined, color: Color(0xFF94A3B8), size: 40),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 8),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _thumbnailController,
+                      onChanged: (v) => setState(() => _thumbnailUrl = v.trim().isEmpty ? null : v.trim()),
+                      decoration: const InputDecoration(
+                        labelText: 'Paste image URL',
+                        hintText: 'https://example.com/image.jpg',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.link_rounded),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _uploadingThumbnail
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: _pickAndUploadThumbnail,
+                          icon: const Icon(Icons.upload_rounded, size: 16),
+                          label: const Text('Upload'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                        ),
+                ],
               ),
             ],
           ),
