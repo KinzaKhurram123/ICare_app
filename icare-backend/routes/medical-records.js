@@ -6,6 +6,71 @@ const { authMiddleware } = require('../middleware/auth');
 const MedicalRecord = require('../models/MedicalRecord');
 const PharmacyOrder = require('../models/PharmacyOrder');
 const LabTestRequest = require('../models/LabTestRequest');
+const EnhancedPrescription = require('../models/EnhancedPrescription');
+
+// Normalize an EnhancedPrescription into the same shape as MedicalRecord
+function normalizeEnhancedPrescription(ep) {
+  const diagnosisText = ep.diagnoses && ep.diagnoses.length > 0
+    ? ep.diagnoses.map(d => d.diagnosis).join(', ')
+    : 'General Consultation';
+
+  const medicines = (ep.medicines || []).map(m => ({
+    name: m.medicineName,
+    dosage: m.dose,
+    frequency: m.frequency,
+    duration: m.duration,
+    instructions: m.notes || '',
+  }));
+
+  const labTests = (ep.labTests || []).map(t => ({
+    name: t.testName,
+    urgency: t.isUrgent ? 'urgent' : 'routine',
+    notes: t.instructions || '',
+  }));
+
+  const doctor = ep.doctorId && typeof ep.doctorId === 'object'
+    ? { _id: ep.doctorId._id?.toString(), name: ep.doctorId.name, email: ep.doctorId.email }
+    : null;
+
+  const patient = ep.patientId && typeof ep.patientId === 'object'
+    ? { _id: ep.patientId._id?.toString(), name: ep.patientId.name, email: ep.patientId.email, gender: ep.patientId.gender, age: ep.patientId.age }
+    : null;
+
+  const referral = ep.referralFollowUp && ep.referralFollowUp.referralType && ep.referralFollowUp.referralType !== 'none'
+    ? {
+        specialty: ep.referralFollowUp.referralSpecialty,
+        reason: ep.referralFollowUp.referralNotes,
+        type: ep.referralFollowUp.referralType,
+      }
+    : null;
+
+  return {
+    _id: ep._id.toString(),
+    _source: 'enhanced',
+    _consultationId: ep.consultationId?.toString(),
+    diagnosis: diagnosisText,
+    doctor,
+    patient,
+    prescription: {
+      medicines,
+      labTests,
+      referral,
+      soapNotes: ep.soapNotes,
+    },
+    labTests: labTests.map(t => t.name),
+    notes: ep.doctorNotes || '',
+    createdAt: ep.createdAt,
+    prescribedAt: ep.prescribedAt,
+    status: ep.status,
+    expiresAt: ep.expiresAt,
+    followUpDays: ep.referralFollowUp?.followUpDuration ? _followUpToDays(ep.referralFollowUp.followUpDuration) : 0,
+  };
+}
+
+function _followUpToDays(duration) {
+  const map = { oneWeek: 7, twoWeeks: 14, oneMonth: 30, twoMonths: 60, threeMonths: 90, sixMonths: 180 };
+  return map[duration] || 0;
+}
 
 // POST /api/medical-records/create
 router.post('/create', authMiddleware, async (req, res) => {
@@ -170,14 +235,14 @@ router.get('/my-records', authMiddleware, async (req, res) => {
 
     const records = await MedicalRecord.find(query)
       .populate('doctor', 'name email')
-      .populate('patient', 'name email')
+      .populate('patient', 'name email age gender')
       .sort({ createdAt: -1 })
       .lean();
 
-    // Normalize records so prescription.labTests is always an accessible array
-    const normalized = records.map(r => ({
+    const normalizedMedical = records.map(r => ({
       ...r,
       _id: r._id.toString(),
+      _source: 'medical',
       prescription: {
         ...(r.prescription || {}),
         medicines: r.prescription?.medicines || [],
@@ -188,7 +253,40 @@ router.get('/my-records', authMiddleware, async (req, res) => {
       patient: r.patient ? { ...r.patient, _id: r.patient._id?.toString() } : null,
     }));
 
-    res.json({ success: true, records: normalized, count: normalized.length });
+    // Also fetch EnhancedPrescription records (from video consultations)
+    let normalizedEnhanced = [];
+    try {
+      const epQuery = role === 'doctor'
+        ? { doctorId: userId, isComplete: true }
+        : { patientId: userId, isComplete: true };
+
+      const enhancedPrescriptions = await EnhancedPrescription.find(epQuery)
+        .populate('doctorId', 'name email')
+        .populate('patientId', 'name email age gender')
+        .sort({ createdAt: -1 })
+        .lean();
+
+      normalizedEnhanced = enhancedPrescriptions.map(ep => normalizeEnhancedPrescription(ep));
+    } catch (epErr) {
+      console.error('Warning: failed to load enhanced prescriptions:', epErr.message);
+    }
+
+    // Deduplicate: if a MedicalRecord has the same consultationId as an EP, prefer the EP
+    const epConsultationIds = new Set(
+      normalizedEnhanced.map(ep => ep._consultationId).filter(Boolean)
+    );
+    const filteredMedical = normalizedMedical.filter(
+      r => !r.consultationId || !epConsultationIds.has(r.consultationId?.toString())
+    );
+
+    // Merge and sort by date descending
+    const merged = [...filteredMedical, ...normalizedEnhanced].sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.prescribedAt || 0);
+      const dateB = new Date(b.createdAt || b.prescribedAt || 0);
+      return dateB - dateA;
+    });
+
+    res.json({ success: true, records: merged, count: merged.length });
   } catch (err) {
     console.error('Get my records error:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });

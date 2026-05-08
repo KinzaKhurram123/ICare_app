@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/classroom_course_view.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/widgets/instructor_sidebar.dart';
 import 'package:icare/utils/theme.dart';
@@ -297,7 +298,15 @@ class _InstructorLmsCoursesScreenState extends State<InstructorLmsCoursesScreen>
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       child: InkWell(
-        onTap: () => context.push('/instructor/lms/course/${course['_id']}'),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClassroomCourseView(
+              course: Map<String, dynamic>.from(course),
+              isInstructor: true,
+            ),
+          ),
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(20),

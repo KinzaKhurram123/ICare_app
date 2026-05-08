@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/instructor_lms_create_course.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:icare/widgets/instructor_sidebar.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:go_router/go_router.dart';
 
-/// Instructor LMS Dashboard - Google Classroom/Moodle style
+/// Instructor LMS Dashboard — Google Classroom style
 class InstructorLmsDashboard extends StatefulWidget {
   const InstructorLmsDashboard({super.key});
 
@@ -14,264 +16,221 @@ class InstructorLmsDashboard extends StatefulWidget {
 
 class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
   final LmsService _lmsService = LmsService();
-  
-  Map<String, dynamic> _stats = {
-    'totalCourses': 0,
-    'totalStudents': 0,
-    'pendingAssignments': 0,
-    'upcomingSessions': 0,
-  };
-  
-  List<dynamic> _recentCourses = [];
-  List<dynamic> _upcomingSessions = [];
+
+  List<dynamic> _courses = [];
   bool _isLoading = true;
+  String _userName = '';
+  int _totalStudents = 0;
+
+  static const List<Color> _classColors = [
+    Color(0xFF1565C0),
+    Color(0xFF2E7D32),
+    Color(0xFF6A1B9A),
+    Color(0xFFD84315),
+    Color(0xFF00695C),
+    Color(0xFF1976D2),
+    Color(0xFFAD1457),
+    Color(0xFF4527A0),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
+    _loadUserName();
+    _loadCourses();
   }
 
-  Future<void> _loadDashboardData() async {
-    setState(() => _isLoading = true);
-    try {
-      // Load instructor courses
-      final coursesResponse = await _lmsService.getInstructorCourses();
-      final courses = coursesResponse['courses'] ?? [];
-      
-      // Load upcoming sessions
-      final sessions = await _lmsService.getUpcomingSessions();
-      
-      // Calculate stats
-      int totalStudents = 0;
-      for (var course in courses) {
-        totalStudents += (course['enrolledCount'] ?? 0) as int;
-      }
-      
+  Future<void> _loadUserName() async {
+    final user = await SharedPref().getUserData();
+    if (mounted && user != null) {
       setState(() {
-        _recentCourses = courses.take(4).toList();
-        _upcomingSessions = sessions.take(3).toList();
-        _stats = {
-          'totalCourses': courses.length,
-          'totalStudents': totalStudents,
-          'pendingAssignments': 0, // TODO: Implement
-          'upcomingSessions': sessions.length,
-        };
-        _isLoading = false;
+        _userName = user.name.isNotEmpty ? user.name : user.email.split('@').first;
       });
-    } catch (e) {
-      setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _loadCourses() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _lmsService.getInstructorCourses();
+      final courses = (response['courses'] ?? []) as List;
+      int totalStudents = 0;
+      for (final c in courses) {
+        totalStudents += ((c['enrolledCount'] ?? 0) as num).toInt();
+      }
+      if (mounted) {
+        setState(() {
+          _courses = courses;
+          _totalStudents = totalStudents;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Color _cardColor(int index) => _classColors[index % _classColors.length];
+
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width > 900;
-    
+    final isWide = MediaQuery.of(context).size.width > 900;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'LMS - Teaching Dashboard',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.w800,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.school_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'iCare Academy',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryColor),
-            tooltip: 'Create New Course',
-            onPressed: () => context.push('/instructor/lms/create-course'),
+            icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF64748B)),
+            onPressed: () => context.go('/instructor/lms/courses'),
+            tooltip: 'All Courses',
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF0F172A)),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      drawer: const InstructorSidebar(currentRoute: 'lms'),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDashboardData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(isDesktop ? 32 : 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Welcome Section
-                    _buildWelcomeSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Stats Cards
-                    _buildStatsGrid(isDesktop),
-                    const SizedBox(height: 32),
-                    
-                    // Quick Actions
-                    _buildQuickActions(isDesktop),
-                    const SizedBox(height: 32),
-                    
-                    // Recent Courses & Upcoming Sessions
-                    if (isDesktop)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildRecentCourses()),
-                          const SizedBox(width: 24),
-                          Expanded(child: _buildUpcomingSessions()),
-                        ],
-                      )
-                    else ...[
-                      _buildRecentCourses(),
-                      const SizedBox(height: 24),
-                      _buildUpcomingSessions(),
-                    ],
-                  ],
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+              child: Text(
+                _userName.isNotEmpty ? _userName[0].toUpperCase() : 'I',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryColor,
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const InstructorLmsCreateCourseScreen()),
+        ).then((_) => _loadCourses()),
+        backgroundColor: AppColors.primaryColor,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'Create Class',
+          style:
+              TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadCourses,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : CustomScrollView(
+                slivers: [
+                  // Stats banner
+                  SliverToBoxAdapter(
+                    child: _buildStatsBanner(),
+                  ),
+                  // Section title
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          isWide ? 24 : 16, 20, isWide ? 24 : 16, 8),
+                      child: const Text(
+                        'Your Classes',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Courses grid
+                  _courses.isEmpty
+                      ? SliverToBoxAdapter(child: _buildEmptyClasses())
+                      : SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                              isWide ? 24 : 16, 0, isWide ? 24 : 16, 100),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: isWide
+                                  ? 3
+                                  : (MediaQuery.of(context).size.width > 600
+                                      ? 2
+                                      : 1),
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: isWide ? 1.05 : 0.95,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (ctx, i) => _buildClassCard(_courses[i], i),
+                              childCount: _courses.length,
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+      ),
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildStatsBanner() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryColor, Color(0xFF6366F1)],
+        gradient: LinearGradient(
+          colors: [AppColors.primaryColor, const Color(0xFF1E40AF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Welcome back, Instructor! 👋',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Manage your courses, students, and teaching activities',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.school_rounded, color: Colors.white, size: 64),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid(bool isDesktop) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isDesktop ? 4 : 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: isDesktop ? 1.5 : 1.3,
-      children: [
-        _buildStatCard(
-          'My Courses',
-          '${_stats['totalCourses']}',
-          Icons.menu_book_rounded,
-          const Color(0xFF6366F1),
-        ),
-        _buildStatCard(
-          'Total Students',
-          '${_stats['totalStudents']}',
-          Icons.group_rounded,
-          const Color(0xFF10B981),
-        ),
-        _buildStatCard(
-          'Pending Grading',
-          '${_stats['pendingAssignments']}',
-          Icons.assignment_turned_in_rounded,
-          const Color(0xFFF59E0B),
-        ),
-        _buildStatCard(
-          'Live Sessions',
-          '${_stats['upcomingSessions']}',
-          Icons.video_call_rounded,
-          const Color(0xFFEC4899),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-            ],
+          Text(
+            _userName.isNotEmpty ? 'Welcome back, $_userName' : 'Welcome back',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                ),
-              ),
+              _statTile(
+                  Icons.class_rounded, '${_courses.length}', 'Classes'),
+              const SizedBox(width: 12),
+              _statTile(Icons.people_rounded, '$_totalStudents', 'Students'),
             ],
           ),
         ],
@@ -279,304 +238,376 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
     );
   }
 
-  Widget _buildQuickActions(bool isDesktop) {
-    final actions = [
-      {
-        'title': 'Create Course',
-        'icon': Icons.add_circle_outline,
-        'color': const Color(0xFF6366F1),
-        'route': '/instructor/lms/create-course',
-      },
-      {
-        'title': 'Schedule Session',
-        'icon': Icons.video_call_rounded,
-        'color': const Color(0xFFEC4899),
-        'route': '/instructor/lms/schedule-session',
-      },
-      {
-        'title': 'Create Quiz',
-        'icon': Icons.quiz_rounded,
-        'color': const Color(0xFF10B981),
-        'route': '/instructor/lms/create-quiz',
-      },
-      {
-        'title': 'View Students',
-        'icon': Icons.people_rounded,
-        'color': const Color(0xFFF59E0B),
-        'route': '/instructor/lms/students',
-      },
-    ];
+  Widget _statTile(IconData icon, String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900)),
+                Text(label,
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 11)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+  Widget _buildClassCard(dynamic course, int index) {
+    final title = course['title'] ?? course['name'] ?? 'Untitled Course';
+    final section = course['category'] ?? course['section'] ?? '';
+    final enrolledCount = (course['enrolledCount'] ?? 0) as int;
+    final color = _cardColor(index);
+    final courseId = course['_id']?.toString() ?? '';
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ClassroomCourseView(
+            course: Map<String, dynamic>.from(course is Map ? course : {}),
+            isInstructor: true,
           ),
         ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 4 : 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.5,
-          ),
-          itemCount: actions.length,
-          itemBuilder: (context, index) {
-            final action = actions[index];
-            return InkWell(
-              onTap: () => context.push(action['route'] as String),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Colored header
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      action['icon'] as IconData,
-                      color: action['color'] as Color,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      action['title'] as String,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
+              ),
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.menu_book_rounded,
+                            color: Colors.white, size: 16),
+                      ),
+                    ],
+                  ),
+                  if (section.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        section,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
+                ],
+              ),
+            ),
+            // Enrolled count
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.people_alt_rounded, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$enrolledCount student${enrolledCount != 1 ? 's' : ''}',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: color),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            // Status indicator
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: course['isPublished'] == true
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: course['isPublished'] == true
+                        ? const Color(0xFF10B981).withOpacity(0.3)
+                        : const Color(0xFFF59E0B).withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  course['isPublished'] == true ? 'Published' : 'Draft',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: course['isPublished'] == true
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFF59E0B),
+                  ),
                 ),
               ),
-            );
-          },
+            ),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            // Action buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _cardIconBtn(
+                    Icons.open_in_new_rounded,
+                    'Open',
+                    color,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ClassroomCourseView(
+                          course: Map<String, dynamic>.from(
+                              course is Map ? course : {}),
+                          isInstructor: true,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _cardIconBtn(
+                    Icons.people_rounded,
+                    'Students',
+                    const Color(0xFF64748B),
+                    () {
+                      if (courseId.isNotEmpty) {
+                        context.go(
+                          '/instructor/lms/course/$courseId/students',
+                          extra: {'title': title},
+                        );
+                      }
+                    },
+                  ),
+                  _cardIconBtn(
+                    Icons.more_vert_rounded,
+                    'More',
+                    const Color(0xFF64748B),
+                    () => _showCourseMenu(course, color),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRecentCourses() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  Widget _cardIconBtn(
+      IconData icon, String tooltip, Color color, VoidCallback onTap) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 18, color: color),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'My Courses',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push('/instructor/lms/courses'),
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_recentCourses.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('No courses yet. Create your first course!'),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _recentCourses.length,
-              separatorBuilder: (_, __) => const Divider(height: 24),
-              itemBuilder: (context, index) {
-                final course = _recentCourses[index];
-                return _buildCourseItem(course);
-              },
+    );
+  }
+
+  void _showCourseMenu(dynamic course, Color color) {
+    final courseId = course['_id']?.toString() ?? '';
+    final title = course['title'] ?? 'Course';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
             ),
-        ],
+            _menuItem(Icons.edit_rounded, 'Edit Course', color, () {
+              Navigator.pop(context);
+              if (courseId.isNotEmpty) {
+                context.go('/instructor/lms/course/$courseId/content');
+              }
+            }),
+            _menuItem(Icons.quiz_rounded, 'Add Quiz', color, () {
+              Navigator.pop(context);
+              if (courseId.isNotEmpty) {
+                context.go(
+                    '/instructor/lms/create-quiz?courseId=$courseId');
+              }
+            }),
+            _menuItem(Icons.assignment_rounded, 'Add Assignment', color, () {
+              Navigator.pop(context);
+              if (courseId.isNotEmpty) {
+                context.go(
+                    '/instructor/lms/create-assignment?courseId=$courseId');
+              }
+            }),
+            _menuItem(Icons.videocam_rounded, 'Schedule Session', color, () {
+              Navigator.pop(context);
+              if (courseId.isNotEmpty) {
+                context.go(
+                    '/instructor/lms/schedule-session?courseId=$courseId');
+              }
+            }),
+            _menuItem(Icons.analytics_rounded, 'View Analytics', color, () {
+              Navigator.pop(context);
+              if (courseId.isNotEmpty) {
+                context.go('/instructor/lms/course/$courseId/analytics',
+                    extra: {'title': title});
+              }
+            }),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCourseItem(Map<String, dynamic> course) {
+  Widget _menuItem(
+      IconData icon, String label, Color color, VoidCallback onTap) {
     return InkWell(
-      onTap: () => context.push('/instructor/lms/course/${course['_id']}'),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: AppColors.primaryColor,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  course['title'] ?? 'Untitled Course',
-                  style: const TextStyle(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 14),
+            Text(label,
+                style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${course['enrolledCount'] ?? 0} students • ${course['modules']?.length ?? 0} modules',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
-        ],
+                    color: Color(0xFF0F172A))),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildUpcomingSessions() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Upcoming Sessions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
+  Widget _buildEmptyClasses() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
               ),
-              TextButton(
-                onPressed: () => context.push('/instructor/lms/sessions'),
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_upcomingSessions.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('No upcoming sessions'),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _upcomingSessions.length,
-              separatorBuilder: (_, __) => const Divider(height: 24),
-              itemBuilder: (context, index) {
-                final session = _upcomingSessions[index];
-                return _buildSessionItem(session);
-              },
+              child: Icon(Icons.add_box_rounded,
+                  size: 64, color: AppColors.primaryColor),
             ),
-        ],
+            const SizedBox(height: 24),
+            const Text(
+              'No classes yet',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Create your first class to get started teaching.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const InstructorLmsCreateCourseScreen()),
+              ).then((_) => _loadCourses()),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Create Class',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildSessionItem(Map<String, dynamic> session) {
-    return Row(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEC4899).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.video_call_rounded,
-            color: Color(0xFFEC4899),
-            size: 28,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                session['title'] ?? 'Untitled Session',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${session['duration'] ?? 60} min • ${session['participants']?.length ?? 0} registered',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

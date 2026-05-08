@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icare/screens/lms_public_course_detail.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:icare/widgets/back_button.dart';
 
 /// Public LMS Course Catalog - Browse courses without login
 /// Inspired by Moodle & Coursera course marketplace
@@ -33,7 +34,6 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
     'Professional Development'
   ];
   
-  final List<String> _difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
   @override
   void initState() {
@@ -103,181 +103,187 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
     
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Explore Courses',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.login, color: Color(0xFF6366F1)),
-            onPressed: () {
-              Navigator.pushNamed(context, '/login');
-            },
-            tooltip: 'Login',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search & Filters Section
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.all(isDesktop ? 24 : 16),
-            child: Column(
-              children: [
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search courses...',
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF6366F1)),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              _applyFilters();
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: const Color(0xFFF1F5F9),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+      body: CustomScrollView(
+        slivers: [
+          // Hero banner (like Coursera/Udemy)
+          SliverAppBar(
+            expandedHeight: 160,
+            pinned: true,
+            backgroundColor: AppColors.primaryColor,
+            leading: const CustomBackButton(color: Colors.white),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.login_rounded, color: Colors.white),
+                onPressed: () => Navigator.pushNamed(context, '/login'),
+                tooltip: 'Login',
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 72, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'iCare Academy',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900),
                     ),
-                  ),
-                  onChanged: (_) => _applyFilters(),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Learn health, wellness, and medical skills online',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    const SizedBox(height: 14),
+                    // Search bar inline in banner
+                    Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search for courses...',
+                          hintStyle: TextStyle(
+                              fontSize: 13, color: Color(0xFF94A3B8)),
+                          prefixIcon: Icon(Icons.search_rounded,
+                              size: 18, color: Color(0xFF94A3B8)),
+                          border: InputBorder.none,
+                          contentPadding:
+                              EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        onChanged: (_) => _applyFilters(),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                
-                // Filters Row
-                if (isDesktop)
-                  Row(
-                    children: [
-                      Expanded(child: _buildCategoryFilter()),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildDifficultyFilter()),
-                    ],
-                  )
-                else
-                  Column(
-                    children: [
-                      _buildCategoryFilter(),
-                      const SizedBox(height: 12),
-                      _buildDifficultyFilter(),
-                    ],
-                  ),
-              ],
+              ),
             ),
           ),
-          
-          // Results Count
-          Padding(
-            padding: EdgeInsets.all(isDesktop ? 24 : 16),
-            child: Row(
-              children: [
-                Text(
-                  '${_filteredCourses.length} courses found',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Course Grid
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredCourses.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _loadPublicCourses,
-                        child: GridView.builder(
-                          padding: EdgeInsets.all(isDesktop ? 24 : 16),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: isDesktop ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 20,
-                            childAspectRatio: isDesktop ? 0.75 : 0.85,
+
+          // Category chips (horizontal scroll)
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.white,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: _categories.map((cat) {
+                    final selected = _selectedCategory == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedCategory = cat);
+                          _applyFilters();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColors.primaryColor
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: selected
+                                  ? AppColors.primaryColor
+                                  : const Color(0xFFE2E8F0),
+                            ),
                           ),
-                          itemCount: _filteredCourses.length,
-                          itemBuilder: (context, index) {
-                            return _CourseCard(
-                              course: _filteredCourses[index],
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => LmsPublicCourseDetail(
-                                      courseId: _filteredCourses[index]['_id'],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: selected
+                                  ? Colors.white
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
                         ),
                       ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
           ),
+
+          // Results count
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  isDesktop ? 24 : 16, 16, isDesktop ? 24 : 16, 4),
+              child: Text(
+                '${_filteredCourses.length} course${_filteredCourses.length != 1 ? 's' : ''} found',
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B)),
+              ),
+            ),
+          ),
+
+          // Course grid
+          _isLoading
+              ? const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              : _filteredCourses.isEmpty
+                  ? SliverToBoxAdapter(child: _buildEmptyState())
+                  : SliverPadding(
+                      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isDesktop
+                              ? 3
+                              : (MediaQuery.of(context).size.width > 600
+                                  ? 2
+                                  : 1),
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: isDesktop ? 0.78 : 0.85,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (ctx, index) => _CourseCard(
+                            course: _filteredCourses[index],
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LmsPublicCourseDetail(
+                                  courseId: _filteredCourses[index]['_id'],
+                                ),
+                              ),
+                            ),
+                          ),
+                          childCount: _filteredCourses.length,
+                        ),
+                      ),
+                    ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCategoryFilter() {
-    return DropdownButtonFormField<String>(
-      value: _selectedCategory,
-      decoration: InputDecoration(
-        labelText: 'Category',
-        prefixIcon: const Icon(Icons.category, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF1F5F9),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      items: _categories.map((cat) {
-        return DropdownMenuItem(value: cat, child: Text(cat));
-      }).toList(),
-      onChanged: (value) {
-        setState(() => _selectedCategory = value!);
-        _applyFilters();
-      },
-    );
-  }
-
-  Widget _buildDifficultyFilter() {
-    return DropdownButtonFormField<String>(
-      value: _selectedDifficulty,
-      decoration: InputDecoration(
-        labelText: 'Difficulty',
-        prefixIcon: const Icon(Icons.signal_cellular_alt, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF1F5F9),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      items: _difficulties.map((diff) {
-        return DropdownMenuItem(value: diff, child: Text(diff));
-      }).toList(),
-      onChanged: (value) {
-        setState(() => _selectedDifficulty = value!);
-        _applyFilters();
-      },
     );
   }
 
@@ -323,7 +329,6 @@ class _CourseCard extends StatelessWidget {
     final difficulty = course['difficulty'] ?? 'Beginner';
     final rating = (course['rating'] ?? 0.0).toDouble();
     final totalReviews = course['total_reviews'] ?? 0;
-    final duration = course['duration'] ?? 0;
     
     // Count modules and lessons
     final modules = (course['modules'] as List?) ?? [];
