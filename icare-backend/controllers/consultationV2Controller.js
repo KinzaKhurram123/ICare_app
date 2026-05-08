@@ -358,3 +358,25 @@ exports.getTimerStatus = async (req, res) => {
     });
   }
 };
+
+// Save doctor notes during consultation
+exports.saveDoctorNotes = async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { consultationId } = req.params;
+    const { notes } = req.body;
+
+    const consultation = await Consultation.findById(consultationId);
+    if (!consultation) {
+      return res.status(404).json({ success: false, message: 'Consultation not found' });
+    }
+
+    consultation.doctorNotes = notes || '';
+    await consultation.save();
+
+    res.json({ success: true, message: 'Notes saved', doctorNotes: consultation.doctorNotes });
+  } catch (error) {
+    console.error('Error saving doctor notes:', error);
+    res.status(500).json({ success: false, message: 'Failed to save notes', error: error.message });
+  }
+};

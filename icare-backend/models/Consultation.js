@@ -45,6 +45,10 @@ const consultationSchema = new mongoose.Schema({
   hasPrescription: {
     type: Boolean,
     default: false
+  },
+  doctorNotes: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true

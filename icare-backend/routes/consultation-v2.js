@@ -20,4 +20,8 @@ router.get('/:consultationId', consultationV2Controller.getConsultation);
 // Get timer status
 router.get('/:consultationId/timer', consultationV2Controller.getTimerStatus);
 
+// Save doctor's notes (PATCH or PUT)
+router.patch('/:consultationId/notes', consultationV2Controller.saveDoctorNotes);
+router.put('/:consultationId/notes', consultationV2Controller.saveDoctorNotes);
+
 module.exports = router;

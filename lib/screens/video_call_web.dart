@@ -1512,16 +1512,36 @@ class _VideoCallWebState extends State<VideoCall> {
                         ? null
                         : () async {
                             setState(() => _notesSaving = true);
-                            await Future.delayed(const Duration(milliseconds: 500));
-                            if (mounted) {
-                              setState(() => _notesSaving = false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notes saved'),
-                                  backgroundColor: Color(0xFF10B981),
-                                  duration: Duration(seconds: 2),
-                                ),
+                            try {
+                              // Save notes to backend via consultation notes endpoint
+                              final consultationId = widget.consultationId ??
+                                  widget.channelName;
+                              final api = ApiService();
+                              await api.put(
+                                '/consultations-v2/$consultationId/notes',
+                                data: {'notes': _doctorNotesController.text},
                               );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Notes saved'),
+                                    backgroundColor: Color(0xFF10B981),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to save: $e'),
+                                    backgroundColor: Colors.red,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _notesSaving = false);
                             }
                           },
                     icon: _notesSaving

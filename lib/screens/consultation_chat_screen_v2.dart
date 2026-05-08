@@ -2,6 +2,8 @@
 // Updated as per client requirements - May 4, 2026
 
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:icare/models/consultation_timer.dart';
@@ -43,6 +45,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   final ScrollController _scrollController = ScrollController();
   
   late ConsultationTimer _timer;
+  Timer? _messagePollTimer;          // polls for new messages every 4 s
   List<ConsultationMessage> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
@@ -91,21 +94,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       // If consultationId already provided, use it
       if (widget.consultationId != null && widget.consultationId!.isNotEmpty) {
         _consultationId = widget.consultationId;
-        
-        // Send consent message if doctor
-        if (widget.isDoctor) {
-          await _sendConsentMessage();
-        }
-        
-        // Load existing messages
+        if (widget.isDoctor) await _sendConsentMessage();
         await _loadMessages();
-        
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) setState(() => _isLoading = false);
+        _startMessagePolling();
         return;
       }
-      
+
       // Otherwise create new consultation
       final result = await _consultationService.startConsultationV2(
         appointmentId: widget.appointment.id ?? '',
@@ -113,24 +108,35 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
         doctorId: widget.appointment.doctor!.id,
       );
 
-      if (result['success']) {
-        _consultationId = result['consultationId'];
-        
-        // Send consent message if doctor
-        if (widget.isDoctor) {
-          await _sendConsentMessage();
-        }
-        
-        // Load messages
+      if (result['success'] == true) {
+        _consultationId = result['consultationId']?.toString();
+        if (widget.isDoctor) await _sendConsentMessage();
         await _loadMessages();
+        _startMessagePolling();
+      } else if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message']?.toString() ?? 'Failed to start consultation')),
+        );
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error initializing consultation: $e')),
         );
       }
     }
+  }
+
+  // Poll for new messages every 4 seconds so both parties see updates in real-time
+  void _startMessagePolling() {
+    _messagePollTimer?.cancel();
+    _messagePollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted && _consultationId != null) {
+        _loadMessages(silent: true);
+      }
+    });
   }
 
   Future<void> _sendConsentMessage() async {
@@ -146,24 +152,25 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
   }
 
-  Future<void> _loadMessages() async {
+  Future<void> _loadMessages({bool silent = false}) async {
     if (_consultationId == null) return;
-
     try {
-      final messages = await _consultationService.getMessagesV2(consultationId: _consultationId!);
+      final messages = await _consultationService.getMessagesV2(
+          consultationId: _consultationId!);
       if (mounted) {
+        final newList = messages
+            .map((m) => ConsultationMessage.fromJson(m as Map<String, dynamic>))
+            .toList();
+        final hadNewMessages = newList.length != _messages.length;
         setState(() {
-          _messages = messages
-              .map((m) => ConsultationMessage.fromJson(m as Map<String, dynamic>))
-              .toList();
-          _isLoading = false;
+          _messages = newList;
+          if (!silent) _isLoading = false;
         });
-        _scrollToBottom();
+        // Only auto-scroll when there are new messages (don't interrupt manual scrolling)
+        if (hadNewMessages) _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (!silent && mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -211,34 +218,53 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   }
 
   Future<void> _pickAndSendFile() async {
+    if (_consultationId == null) return;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        withData: kIsWeb, // on web, read bytes directly
       );
 
-      if (result != null && result.files.single.path != null) {
-        // Upload attachment
-        final uploadResult = await _consultationService.uploadAttachment(
-          result.files.single.path!,
-        );
+      if (result == null) return;
+      final file = result.files.single;
+      final fileName = file.name;
 
-        if (uploadResult['success'] == true) {
-          await _consultationService.sendMessageV2(
-            consultationId: _consultationId!,
-            senderId: widget.currentUserId,
-            senderName: widget.currentUserName,
-            senderRole: widget.isDoctor ? 'doctor' : 'patient',
-            message: 'Sent an attachment: ${result.files.single.name}',
-            attachmentUrl: uploadResult['url'],
-          );
-          await _loadMessages();
+      Map<String, dynamic> uploadResult;
+
+      if (kIsWeb) {
+        // Web: use bytes
+        final Uint8List? bytes = file.bytes;
+        if (bytes == null) {
+          throw Exception('Could not read file bytes');
         }
+        uploadResult = await _consultationService.uploadAttachmentBytes(
+          bytes: bytes,
+          fileName: fileName,
+        );
+      } else {
+        // Mobile/Desktop: use file path
+        if (file.path == null) throw Exception('No file path');
+        uploadResult = await _consultationService.uploadAttachment(file.path!);
+      }
+
+      if (uploadResult['success'] == true) {
+        await _consultationService.sendMessageV2(
+          consultationId: _consultationId!,
+          senderId: widget.currentUserId,
+          senderName: widget.currentUserName,
+          senderRole: widget.isDoctor ? 'doctor' : 'patient',
+          message: '📎 $fileName',
+          attachmentUrl: uploadResult['url'],
+        );
+        await _loadMessages();
+      } else {
+        throw Exception(uploadResult['message'] ?? 'Upload failed');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload file: $e')),
+          SnackBar(content: Text('Failed to upload: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -886,6 +912,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   @override
   void dispose() {
     _timer.stop();
+    _messagePollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:icare/utils/api_constants.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -400,7 +401,7 @@ class ConsultationService {
 
   // ==================== FILE UPLOAD ====================
 
-  // Upload attachment
+  // Upload attachment — mobile/desktop (file path)
   Future<Map<String, dynamic>> uploadAttachment(String filePath) async {
     try {
       final token = await _sharedPref.getToken();
@@ -412,10 +413,36 @@ class ConsultationService {
         data: formData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      return response.data is Map<String, dynamic>
+          ? response.data as Map<String, dynamic>
+          : {'success': false, 'message': 'Unexpected response'};
     } on DioException catch (e) {
       print('Error uploading attachment: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
+    }
+  }
+
+  // Upload attachment — web (bytes, no file path)
+  Future<Map<String, dynamic>> uploadAttachmentBytes({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: fileName),
+      });
+      final response = await _dio.post(
+        '/upload',
+        data: formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data is Map<String, dynamic>
+          ? response.data as Map<String, dynamic>
+          : {'success': false, 'message': 'Unexpected response'};
+    } on DioException catch (e) {
+      print('Error uploading attachment bytes: ${e.message}');
+      return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
     }
   }
 }
