@@ -2,8 +2,13 @@ const express = require('express');
 const router = express.Router();
 const patientHistoryController = require('../controllers/patientHistoryController');
 
-// Create patient history
+// Create patient history (POST only)
 router.post('/create', patientHistoryController.createPatientHistory);
+
+// Explicitly block GET /create so it never falls through to /:historyId
+router.get('/create', (req, res) => {
+  res.status(405).json({ success: false, message: 'Method Not Allowed. Use POST /create' });
+});
 
 // Get patient history by patient ID
 router.get('/patient/:patientId', patientHistoryController.getPatientHistory);
