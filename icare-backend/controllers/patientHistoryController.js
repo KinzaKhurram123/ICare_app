@@ -35,7 +35,11 @@ exports.createPatientHistory = async (req, res) => {
       });
     }
 
-    // Create new history
+    // Create new history — log body for debugging 500 errors
+    console.log('🔵 Creating patient history. Keys:', Object.keys(historyData));
+    if (historyData.virtualExamination?.generalFindings) {
+      console.log('📋 generalFindings:', JSON.stringify(historyData.virtualExamination.generalFindings));
+    }
     history = new PatientHistoryForm(historyData);
     await history.save();
 
@@ -56,11 +60,15 @@ exports.createPatientHistory = async (req, res) => {
       message: 'Patient history created successfully'
     });
   } catch (error) {
-    console.error('Error creating patient history:', error);
+    console.error('❌ Error creating patient history:', error.message);
+    // Return full validation errors to help debug
+    const details = error.errors
+      ? Object.keys(error.errors).map(k => `${k}: ${error.errors[k].message}`).join('; ')
+      : error.message;
     res.status(500).json({
       success: false,
       message: 'Failed to create patient history',
-      error: error.message
+      error: details
     });
   }
 };
