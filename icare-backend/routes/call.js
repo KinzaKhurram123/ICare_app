@@ -35,13 +35,27 @@ router.post('/initiate', authMiddleware, async (req, res) => {
 });
 
 // GET /api/call/incoming — callee polls this to check for incoming calls
+// Uses a hard 7-second deadline so Vercel never hangs on cold-start DB connections
 router.get('/incoming', authMiddleware, async (req, res) => {
+  // Hard timeout — respond within 7 s no matter what
+  const deadline = setTimeout(() => {
+    if (!res.headersSent) {
+      res.json({ success: true, hasIncomingCall: false });
+    }
+  }, 7000);
+
   try {
     await connectMongoDB();
     const signal = await CallSignal.findOne({
       receiverId: req.user.id,
       status: 'pending',
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(4000); // mongo query must finish in 4 s
+
+    clearTimeout(deadline);
+    if (res.headersSent) return;
+
     if (!signal) {
       return res.json({ success: true, hasIncomingCall: false });
     }
@@ -57,8 +71,11 @@ router.get('/incoming', authMiddleware, async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Call incoming error:', err);
-    res.status(500).json({ success: false, message: err.message });
+    clearTimeout(deadline);
+    if (!res.headersSent) {
+      // On timeout or DB error return "no call" so client doesn't crash
+      res.json({ success: true, hasIncomingCall: false });
+    }
   }
 });
 

@@ -1,10 +1,12 @@
 const PatientHistoryForm = require('../models/PatientHistoryForm');
 const Consultation = require('../models/Consultation');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
+const { connectMongoDB } = require('../config/mongodb');
 
 // Create patient history
 exports.createPatientHistory = async (req, res) => {
   try {
+    await connectMongoDB();
     const historyData = req.body;
 
     // Validate required fields
@@ -66,6 +68,7 @@ exports.createPatientHistory = async (req, res) => {
 // Get patient history by patient ID
 exports.getPatientHistory = async (req, res) => {
   try {
+    await connectMongoDB();
     const { patientId } = req.params;
     const { limit = 10, skip = 0 } = req.query;
 
@@ -97,6 +100,7 @@ exports.getPatientHistory = async (req, res) => {
 // Get history by consultation ID
 exports.getHistoryByConsultation = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
 
     const history = await PatientHistoryForm.findOne({ consultationId })
@@ -128,6 +132,7 @@ exports.getHistoryByConsultation = async (req, res) => {
 // Get history by ID
 exports.getHistoryById = async (req, res) => {
   try {
+    await connectMongoDB();
     const { historyId } = req.params;
 
     const history = await PatientHistoryForm.findById(historyId)
@@ -159,6 +164,7 @@ exports.getHistoryById = async (req, res) => {
 // Update patient history
 exports.updatePatientHistory = async (req, res) => {
   try {
+    await connectMongoDB();
     const { historyId } = req.params;
     const updateData = req.body;
 
@@ -192,6 +198,7 @@ exports.updatePatientHistory = async (req, res) => {
 // Get latest history for patient
 exports.getLatestHistory = async (req, res) => {
   try {
+    await connectMongoDB();
     const { patientId } = req.params;
 
     const history = await PatientHistoryForm.findOne({ patientId })

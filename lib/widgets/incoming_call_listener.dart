@@ -49,7 +49,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
   }
 
   void _startPolling() {
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _checkIncoming());
+    _timer = Timer.periodic(const Duration(seconds: 8), (_) => _checkIncoming());
   }
 
   Future<void> _checkIncoming() async {

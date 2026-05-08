@@ -20,10 +20,13 @@ const connectMongoDB = async () => {
   }
   try {
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 30000,
-      maxPoolSize: 5,
+      serverSelectionTimeoutMS: 4000,
+      connectTimeoutMS: 4000,
+      socketTimeoutMS: 8000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      maxIdleTimeMS: 10000,
+      waitQueueTimeoutMS: 4000, // fail fast if pool is full
     });
     console.log('✅ MongoDB connected');
   } catch (err) {

@@ -1,4 +1,5 @@
 const LifestyleAdvice = require('../models/LifestyleAdvice');
+const { connectMongoDB } = require('../config/mongodb');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 
 // Lifestyle advice templates
@@ -106,6 +107,7 @@ const TEMPLATES = {
 // Get lifestyle advice templates
 exports.getTemplates = async (req, res) => {
   try {
+    await connectMongoDB();
     res.json({
       success: true,
       templates: TEMPLATES
@@ -123,6 +125,7 @@ exports.getTemplates = async (req, res) => {
 // Create lifestyle advice
 exports.createLifestyleAdvice = async (req, res) => {
   try {
+    await connectMongoDB();
     const adviceData = req.body;
 
     // Validate required fields
@@ -181,6 +184,7 @@ exports.createLifestyleAdvice = async (req, res) => {
 // Get lifestyle advice by consultation ID
 exports.getAdviceByConsultation = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
 
     const advice = await LifestyleAdvice.findOne({ consultationId });
@@ -210,6 +214,7 @@ exports.getAdviceByConsultation = async (req, res) => {
 // Get lifestyle advice by prescription ID
 exports.getAdviceByPrescription = async (req, res) => {
   try {
+    await connectMongoDB();
     const { prescriptionId } = req.params;
 
     const advice = await LifestyleAdvice.findOne({ prescriptionId });
@@ -239,6 +244,7 @@ exports.getAdviceByPrescription = async (req, res) => {
 // Update lifestyle advice
 exports.updateLifestyleAdvice = async (req, res) => {
   try {
+    await connectMongoDB();
     const { adviceId } = req.params;
     const updateData = req.body;
 
@@ -272,6 +278,7 @@ exports.updateLifestyleAdvice = async (req, res) => {
 // Get lifestyle advice by ID
 exports.getAdviceById = async (req, res) => {
   try {
+    await connectMongoDB();
     const { adviceId } = req.params;
 
     const advice = await LifestyleAdvice.findById(adviceId);

@@ -1,10 +1,12 @@
 const EnhancedPrescription = require('../models/EnhancedPrescription');
+const { connectMongoDB } = require('../config/mongodb');
 const LifestyleAdvice = require('../models/LifestyleAdvice');
 const Consultation = require('../models/Consultation');
 
 // Save prescription draft
 exports.savePrescriptionDraft = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
     const prescriptionData = req.body;
 
@@ -61,6 +63,7 @@ exports.savePrescriptionDraft = async (req, res) => {
 // Get prescription draft
 exports.getPrescriptionDraft = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
 
     const prescription = await EnhancedPrescription.findOne({
@@ -95,6 +98,7 @@ exports.getPrescriptionDraft = async (req, res) => {
 // Complete prescription
 exports.completePrescription = async (req, res) => {
   try {
+    await connectMongoDB();
     const { consultationId } = req.params;
     const prescriptionData = req.body;
 
@@ -171,6 +175,7 @@ exports.completePrescription = async (req, res) => {
 // Get prescription by ID
 exports.getPrescription = async (req, res) => {
   try {
+    await connectMongoDB();
     const { prescriptionId } = req.params;
 
     const prescription = await EnhancedPrescription.findById(prescriptionId)
@@ -204,6 +209,7 @@ exports.getPrescription = async (req, res) => {
 // Get patient prescriptions
 exports.getPatientPrescriptions = async (req, res) => {
   try {
+    await connectMongoDB();
     const { patientId } = req.params;
     const { status, limit = 20, skip = 0 } = req.query;
 
@@ -239,6 +245,7 @@ exports.getPatientPrescriptions = async (req, res) => {
 // Get doctor prescriptions
 exports.getDoctorPrescriptions = async (req, res) => {
   try {
+    await connectMongoDB();
     const { doctorId } = req.params;
     const { status, limit = 20, skip = 0 } = req.query;
 
@@ -274,6 +281,7 @@ exports.getDoctorPrescriptions = async (req, res) => {
 // Update prescription status
 exports.updatePrescriptionStatus = async (req, res) => {
   try {
+    await connectMongoDB();
     const { prescriptionId } = req.params;
     const { status } = req.body;
 
