@@ -156,21 +156,19 @@ enhancedPrescriptionSchema.methods.validateCompletion = function() {
 };
 
 // Pre-save hook to set expiration date (30 days from prescription)
-enhancedPrescriptionSchema.pre('save', function(next) {
+enhancedPrescriptionSchema.pre('save', async function() {
   if (this.isNew && this.status === 'active') {
     const expirationDate = new Date(this.prescribedAt);
     expirationDate.setDate(expirationDate.getDate() + 30);
     this.expiresAt = expirationDate;
   }
-  next();
 });
 
 // Pre-save hook to update status based on expiration
-enhancedPrescriptionSchema.pre('save', function(next) {
+enhancedPrescriptionSchema.pre('save', async function() {
   if (this.status === 'active' && this.expiresAt && new Date() > this.expiresAt) {
     this.status = 'expired';
   }
-  next();
 });
 
 module.exports = mongoose.model('EnhancedPrescription', enhancedPrescriptionSchema);

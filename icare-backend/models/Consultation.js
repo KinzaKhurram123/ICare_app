@@ -50,12 +50,11 @@ const consultationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate duration when consultation ends
-consultationSchema.pre('save', function(next) {
+// Calculate duration when consultation ends (Mongoose 9 async-style hook)
+consultationSchema.pre('save', async function() {
   if (this.endTime && this.startTime) {
     this.duration = Math.floor((this.endTime - this.startTime) / 1000);
   }
-  next();
 });
 
 module.exports = mongoose.model('Consultation', consultationSchema);
