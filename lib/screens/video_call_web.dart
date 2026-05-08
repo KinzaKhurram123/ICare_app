@@ -1519,7 +1519,7 @@ class _VideoCallWebState extends State<VideoCall> {
                               final api = ApiService();
                               await api.put(
                                 '/consultations-v2/$consultationId/notes',
-                                data: {'notes': _doctorNotesController.text},
+                                {'notes': _doctorNotesController.text},
                               );
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
