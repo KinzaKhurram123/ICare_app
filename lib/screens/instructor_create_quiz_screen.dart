@@ -647,7 +647,7 @@ class _QuestionDialogState extends State<_QuestionDialog> {
               const SizedBox(height: 16),
 
               TextField(
-                initialValue: _points.toString(),
+                controller: TextEditingController(text: _points.toString()),
                 decoration: const InputDecoration(
                   labelText: 'Points',
                   border: OutlineInputBorder(),

@@ -428,7 +428,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
                   builder: (_) => FutureBuilder(
                     future: _consultationService.getPrescription(prescriptionId),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionWaiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Scaffold(
                           body: Center(child: CircularProgressIndicator()),
                         );

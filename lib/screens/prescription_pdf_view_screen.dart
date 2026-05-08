@@ -538,7 +538,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _getFrequencyLabel(medicine.frequency),
+                            _getFrequencyLabel(medicine.frequency.toString()),
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -744,7 +744,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (referral.referralType != null && referral.referralType != 'none') ...[
-            _buildInfoRow('Referral Type', referral.referralType ?? ''),
+            _buildInfoRow('Referral Type', referral.referralType?.toString() ?? ''),
             if (referral.referralSpecialty != null)
               _buildInfoRow('Specialty', referral.referralSpecialty!),
             if (referral.referralNotes != null)
@@ -752,7 +752,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
             const SizedBox(height: 8),
           ],
           if (referral.followUpDuration != null && referral.followUpDuration != 'none') ...[
-            _buildInfoRow('Follow-up', _getFollowUpLabel(referral.followUpDuration!)),
+            _buildInfoRow('Follow-up', _getFollowUpLabel(referral.followUpDuration!.toString())),
             if (referral.followUpDate != null)
               _buildInfoRow('Follow-up Date', DateFormat('dd MMM yyyy').format(referral.followUpDate!)),
             if (referral.followUpNotes != null)
