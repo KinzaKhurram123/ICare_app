@@ -86,6 +86,7 @@ import 'package:icare/screens/instructor_learners_screen.dart';
 import 'package:icare/screens/instructor_precautions_management.dart';
 import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
+import 'package:icare/screens/instructor_lms_dashboard.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/models/appointment_detail.dart';
 
@@ -107,6 +108,11 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(authProvider).userRole;
+
+    // Instructor gets the full Google Classroom LMS as their main interface
+    if (role == 'Instructor') {
+      return const InstructorLmsDashboard();
+    }
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;

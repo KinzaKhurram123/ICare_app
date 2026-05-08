@@ -83,12 +83,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Not logged in trying to access protected route → home.
       if (!isLoggedIn && !isPublic) return '/home';
 
-      // Logged in trying to visit public route → role-based home.
-      if (isLoggedIn && isPublic && path != '/splash') {
-        final role = (ref.read(authProvider).user?.role ?? '').toLowerCase();
-        if (role == 'instructor') return '/instructor/lms';
-        return '/dashboard';
-      }
+      // Logged in trying to visit public route → dashboard.
+      if (isLoggedIn && isPublic && path != '/splash') return '/dashboard';
 
       return null;
     },
