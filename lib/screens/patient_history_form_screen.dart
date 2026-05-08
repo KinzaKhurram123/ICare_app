@@ -26,11 +26,13 @@ class PatientHistoryFormScreen extends StatefulWidget {
 }
 
 class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
-  final PageController _pageController = PageController();
   final ConsultationService _consultationService = ConsultationService();
-  
-  int _currentPage = 0;
+  final ScrollController _scrollController = ScrollController();
+
   bool _isSaving = false;
+
+  // Track which sections are expanded
+  final Set<int> _expandedSections = {0}; // First section open by default
 
   // Section 1: Chief Complaints
   List<ChiefComplaint> _chiefComplaints = [];
@@ -150,23 +152,6 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
   final TextEditingController _nutritionalController = TextEditingController();
   final TextEditingController _mobilityController = TextEditingController();
   final TextEditingController _examNotesController = TextEditingController();
-
-  // Titles are built dynamically so they always match the PageView child count
-  List<String> get _sectionTitles {
-    final titles = [
-      'Chief Complaint(s)',
-      'History of Present Illness',
-      'Past Medical History',
-      'Past Surgical History',
-      'Drug History',
-      'Family History',
-      'Personal & Social History',
-      if (_showGynecologicalHistory) 'Gynecological History',
-      'Review of Systems',
-      'Virtual Physical Examination',
-    ];
-    return titles;
-  }
 
   @override
   void initState() {
@@ -336,105 +321,104 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Build sections list dynamically
+    final sections = <_AccordionSection>[
+      _AccordionSection(index: 0, title: 'Chief Complaint(s)', icon: Icons.sick_rounded, child: _buildChiefComplaintsSection()),
+      _AccordionSection(index: 1, title: 'History of Present Illness', icon: Icons.history_edu_rounded, child: _buildHPISection()),
+      _AccordionSection(index: 2, title: 'Past Medical History', icon: Icons.medical_services_rounded, child: _buildPastMedicalHistorySection()),
+      _AccordionSection(index: 3, title: 'Past Surgical History', icon: Icons.cut_rounded, child: _buildSurgicalHistorySection()),
+      _AccordionSection(index: 4, title: 'Drug History', icon: Icons.medication_rounded, child: _buildDrugHistorySection()),
+      _AccordionSection(index: 5, title: 'Family History', icon: Icons.family_restroom_rounded, child: _buildFamilyHistorySection()),
+      _AccordionSection(index: 6, title: 'Personal & Social History', icon: Icons.person_rounded, child: _buildPersonalSocialHistorySection()),
+      if (_showGynecologicalHistory)
+        _AccordionSection(index: 7, title: 'Gynecological History', icon: Icons.female_rounded, child: _buildGynecologicalHistorySection()),
+      _AccordionSection(index: _showGynecologicalHistory ? 8 : 7, title: 'Review of Systems', icon: Icons.checklist_rounded, child: _buildReviewOfSystemsSection()),
+      _AccordionSection(index: _showGynecologicalHistory ? 9 : 8, title: 'Virtual Physical Examination', icon: Icons.monitor_heart_rounded, child: _buildVirtualExaminationSection()),
+    ];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: const CustomBackButton(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Patient History',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              'Section ${_currentPage + 1} of ${_sectionTitles.length}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
+        title: const Text(
+          'Patient History',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
         ),
         actions: [
           if (_isSaving)
             const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              padding: EdgeInsets.all(16),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else
+            TextButton.icon(
+              onPressed: _saveHistory,
+              icon: const Icon(Icons.save_rounded, size: 18),
+              label: const Text('Save'),
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
             ),
         ],
       ),
       body: Column(
         children: [
-          _buildProgressIndicator(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (page) {
-                setState(() => _currentPage = page);
-              },
+          // Expand All / Collapse All bar
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
               children: [
-                _buildChiefComplaintsSection(),
-                _buildHPISection(),
-                _buildPastMedicalHistorySection(),
-                _buildSurgicalHistorySection(),
-                _buildDrugHistorySection(),
-                _buildFamilyHistorySection(),
-                _buildPersonalSocialHistorySection(),
-                if (_showGynecologicalHistory) _buildGynecologicalHistorySection(),
-                _buildReviewOfSystemsSection(),
-                _buildVirtualExaminationSection(),
+                Text(
+                  '${sections.length} sections',
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _expandedSections.addAll(List.generate(sections.length, (i) => i));
+                  }),
+                  child: const Text('Expand All'),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _expandedSections.clear()),
+                  child: const Text('Collapse All'),
+                ),
               ],
             ),
           ),
-          _buildNavigationButtons(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: (_currentPage + 1) / _sectionTitles.length,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${((_currentPage + 1) / _sectionTitles.length * 100).toInt()}%',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _sectionTitles[_currentPage],
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF475569),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(12),
+              itemCount: sections.length + 1, // +1 for save button at bottom
+              itemBuilder: (ctx, i) {
+                if (i == sections.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveHistory,
+                        icon: _isSaving
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.save_rounded),
+                        label: Text(_isSaving ? 'Saving...' : 'Save Patient History'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                final sec = sections[i];
+                final expanded = _expandedSections.contains(sec.index);
+                return _buildAccordionTile(sec, expanded);
+              },
             ),
           ),
         ],
@@ -442,50 +426,80 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
     );
   }
 
-  Widget _buildNavigationButtons() {
-    final isLastPage = _currentPage == _sectionTitles.length - 1;
-    
+  Widget _buildAccordionTile(_AccordionSection sec, bool expanded) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: expanded ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+          width: expanded ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          if (_currentPage > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-                child: const Text('Previous'),
+          // Header — tap to toggle
+          InkWell(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            onTap: () => setState(() {
+              if (expanded) {
+                _expandedSections.remove(sec.index);
+              } else {
+                _expandedSections.add(sec.index);
+              }
+            }),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: expanded
+                          ? AppColors.primaryColor
+                          : AppColors.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(sec.icon,
+                        color: expanded ? Colors.white : AppColors.primaryColor,
+                        size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      sec.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: expanded ? AppColors.primaryColor : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: expanded ? AppColors.primaryColor : const Color(0xFF94A3B8),
+                  ),
+                ],
               ),
-            ),
-          if (_currentPage > 0) const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: isLastPage ? _saveHistory : () {
-                _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isLastPage ? Colors.green : AppColors.primaryColor,
-              ),
-              child: Text(isLastPage ? 'Save History' : 'Next'),
             ),
           ),
+          // Content
+          if (expanded) ...[
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: sec.child,
+            ),
+          ],
         ],
       ),
     );
@@ -1392,10 +1406,19 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _scrollController.dispose();
     _complaintController.dispose();
     _durationController.dispose();
     // Dispose all other controllers
     super.dispose();
   }
+}
+
+// Data class for accordion sections
+class _AccordionSection {
+  final int index;
+  final String title;
+  final IconData icon;
+  final Widget child;
+  const _AccordionSection({required this.index, required this.title, required this.icon, required this.child});
 }
