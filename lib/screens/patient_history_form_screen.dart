@@ -151,18 +151,22 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
   final TextEditingController _mobilityController = TextEditingController();
   final TextEditingController _examNotesController = TextEditingController();
 
-  final List<String> _sectionTitles = [
-    'Chief Complaint(s)',
-    'History of Present Illness',
-    'Past Medical History',
-    'Past Surgical History',
-    'Drug History',
-    'Family History',
-    'Personal & Social History',
-    'Gynecological History',
-    'Review of Systems',
-    'Virtual Physical Examination',
-  ];
+  // Titles are built dynamically so they always match the PageView child count
+  List<String> get _sectionTitles {
+    final titles = [
+      'Chief Complaint(s)',
+      'History of Present Illness',
+      'Past Medical History',
+      'Past Surgical History',
+      'Drug History',
+      'Family History',
+      'Personal & Social History',
+      if (_showGynecologicalHistory) 'Gynecological History',
+      'Review of Systems',
+      'Virtual Physical Examination',
+    ];
+    return titles;
+  }
 
   @override
   void initState() {
