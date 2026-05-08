@@ -61,13 +61,21 @@ exports.createPatientHistory = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error creating patient history:', error.message);
-    // Return full validation errors to help debug
+    // Distinguish validation / cast errors (bad input) from real server errors
+    const isClientError =
+      error.name === 'ValidationError' ||
+      error.name === 'CastError' ||
+      (error.message && error.message.includes('Cast to ObjectId failed'));
+
     const details = error.errors
       ? Object.keys(error.errors).map(k => `${k}: ${error.errors[k].message}`).join('; ')
       : error.message;
-    res.status(500).json({
+
+    res.status(isClientError ? 400 : 500).json({
       success: false,
-      message: 'Failed to create patient history',
+      message: isClientError
+        ? `Invalid data: ${details}`
+        : 'Failed to create patient history',
       error: details
     });
   }

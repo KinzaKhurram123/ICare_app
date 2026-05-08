@@ -19,6 +19,7 @@ import '../services/medical_record_service.dart';
 import '../utils/theme.dart';
 import '../screens/end_consultation_workflow.dart';
 import '../screens/patient_history_form_screen.dart';
+import '../services/consultation_service.dart';
 import '../utils/shared_pref.dart';
 
 // JS interop
@@ -405,6 +406,12 @@ class _VideoCallWebState extends State<VideoCall> {
     }
   }
 
+  /// Returns true if [id] looks like a valid 24-hex-char MongoDB ObjectId.
+  bool _isValidObjectId(String? id) {
+    if (id == null || id.isEmpty) return false;
+    return RegExp(r'^[a-fA-F0-9]{24}$').hasMatch(id);
+  }
+
   Future<void> _openHistoryFormFromVideo() async {
     if (widget.appointmentId == null || widget.appointmentId!.isEmpty) return;
     try {
@@ -417,14 +424,53 @@ class _VideoCallWebState extends State<VideoCall> {
       );
       if (match == null) throw Exception('Appointment not found');
       final appointment = AppointmentDetail.fromJson(match);
-      final consultationId = widget.consultationId ?? widget.channelName;
+
+      // Use consultationId only if it is a valid MongoDB ObjectId.
+      // The channelName (e.g. "connect_now_...") is NOT a valid ObjectId and
+      // will cause a Mongoose CastError / 500 on the backend.
+      String? consultationId = _isValidObjectId(widget.consultationId)
+          ? widget.consultationId
+          : null;
+
+      // If we still don't have a valid consultationId, try to start/fetch one
+      // from the backend using the appointmentId.
+      if (consultationId == null) {
+        try {
+          final consultService = ConsultationService();
+          final consultResult = await consultService.startConsultationV2(
+            appointmentId: widget.appointmentId!,
+            patientId: appointment.patient?.id ?? '',
+            doctorId: appointment.doctor?.id ?? '',
+          );
+          if (consultResult['success'] == true &&
+              _isValidObjectId(consultResult['consultationId']?.toString())) {
+            consultationId = consultResult['consultationId'].toString();
+          }
+        } catch (_) {
+          // If we can't get a consultation ID, we still open the form but
+          // saving will fail gracefully with a user-visible error.
+        }
+      }
+
+      if (consultationId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not resolve consultation ID. Please try from the chat screen.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => PatientHistoryFormScreen(
             appointment: appointment,
-            consultationId: consultationId,
+            consultationId: consultationId!,
           ),
         ),
       );
