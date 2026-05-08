@@ -154,7 +154,13 @@ class _InstructorLmsDashboardState extends State<InstructorLmsDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          if (!isWide)
+          // Back button (when pushed as a route from instructor sidebar)
+          if (Navigator.of(context).canPop())
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF444746)),
+              onPressed: () => Navigator.of(context).pop(),
+            )
+          else if (!isWide)
             IconButton(
               icon: const Icon(Icons.menu_rounded, color: Color(0xFF444746)),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
