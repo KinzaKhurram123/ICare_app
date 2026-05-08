@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:icare/screens/assignment_submit_screen.dart';
 import 'package:icare/screens/quiz_take_screen.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:icare/widgets/back_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-/// Google Classroom-inspired course view.
-/// Works for both students and instructors.
+// ─────────────────────────────────────────────────────────────
+// Google Classroom-style inside-course view
+// Works for students and instructors
+// ─────────────────────────────────────────────────────────────
+
 class ClassroomCourseView extends StatefulWidget {
   final Map<String, dynamic> course;
   final String? enrollmentId;
@@ -32,37 +34,51 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   late TabController _tabs;
   final LmsService _lms = LmsService();
 
-  // Stream data
   List<dynamic> _announcements = [];
   bool _loadingStream = true;
   final TextEditingController _postCtrl = TextEditingController();
-  bool _posting = false;
 
-  // Classwork data
   List<dynamic> _assignments = [];
   List<dynamic> _quizzes = [];
   List<dynamic> _sessions = [];
   bool _loadingClasswork = true;
 
-  // People data
   List<dynamic> _students = [];
   bool _loadingPeople = true;
 
   String get _courseId => widget.course['_id']?.toString() ?? '';
   String get _courseTitle =>
       widget.course['title'] ?? widget.course['name'] ?? 'Course';
+  String get _section =>
+      widget.course['category'] ?? widget.course['section'] ?? '';
 
-  static const Color _headerColor = Color(0xFF1565C0);
+  // Same color set as the card colors in the dashboard
+  static const List<Color> _bannerColors = [
+    Color(0xFF1A73E8),
+    Color(0xFF188038),
+    Color(0xFF9334E6),
+    Color(0xFFE37400),
+    Color(0xFF1E7E34),
+    Color(0xFFB3261E),
+    Color(0xFF006064),
+    Color(0xFF4527A0),
+  ];
+
+  Color get _bannerColor {
+    final t = _courseTitle;
+    final idx = t.isNotEmpty ? t.codeUnitAt(0) % _bannerColors.length : 0;
+    return _bannerColors[idx];
+  }
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(
-      length: 4,
+      length: widget.isInstructor ? 4 : 3,
       vsync: this,
-      initialIndex: widget.initialTab,
+      initialIndex: widget.initialTab.clamp(0, widget.isInstructor ? 3 : 2),
     );
-    _tabs.addListener(_onTabChange);
+    _tabs.addListener(() => setState(() {}));
     _loadStream();
     _loadClasswork();
     _loadPeople();
@@ -70,50 +86,32 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
   @override
   void dispose() {
-    _tabs.removeListener(_onTabChange);
     _tabs.dispose();
     _postCtrl.dispose();
     super.dispose();
   }
 
-  void _onTabChange() {
-    setState(() {});
-  }
-
   Future<void> _loadStream() async {
-    if (_courseId.isEmpty) {
-      setState(() => _loadingStream = false);
-      return;
-    }
+    if (_courseId.isEmpty) { setState(() => _loadingStream = false); return; }
     setState(() => _loadingStream = true);
     try {
       final data = await _lms.getCourseAnnouncements(_courseId);
-      if (mounted) {
-        setState(() {
-          _announcements = data;
-          _loadingStream = false;
-        });
-      }
+      if (mounted) setState(() { _announcements = data; _loadingStream = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingStream = false);
     }
   }
 
   Future<void> _loadClasswork() async {
-    if (_courseId.isEmpty) {
-      setState(() => _loadingClasswork = false);
-      return;
-    }
+    if (_courseId.isEmpty) { setState(() => _loadingClasswork = false); return; }
     setState(() => _loadingClasswork = true);
     try {
-      final assignments = await _lms.getCourseAssignments(_courseId);
-      final quizzes = await _lms.getCourseQuizzes(_courseId);
-      final sessions = await _lms.getCourseSessions(_courseId);
+      final a = await _lms.getCourseAssignments(_courseId);
+      final q = await _lms.getCourseQuizzes(_courseId);
+      final s = await _lms.getCourseSessions(_courseId);
       if (mounted) {
         setState(() {
-          _assignments = assignments;
-          _quizzes = quizzes;
-          _sessions = sessions;
+          _assignments = a; _quizzes = q; _sessions = s;
           _loadingClasswork = false;
         });
       }
@@ -123,19 +121,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   }
 
   Future<void> _loadPeople() async {
-    if (_courseId.isEmpty) {
-      setState(() => _loadingPeople = false);
-      return;
-    }
+    if (_courseId.isEmpty) { setState(() => _loadingPeople = false); return; }
     setState(() => _loadingPeople = true);
     try {
-      final result = await _lms.getEnrolledStudents(_courseId);
-      if (mounted) {
-        setState(() {
-          _students = result;
-          _loadingPeople = false;
-        });
-      }
+      final data = await _lms.getEnrolledStudents(_courseId);
+      if (mounted) setState(() { _students = data; _loadingPeople = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingPeople = false);
     }
@@ -144,7 +134,6 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   Future<void> _postAnnouncement() async {
     final text = _postCtrl.text.trim();
     if (text.isEmpty || _courseId.isEmpty) return;
-    setState(() => _posting = true);
     try {
       await _lms.postAnnouncement(_courseId, text);
       _postCtrl.clear();
@@ -152,433 +141,651 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to post: ${e.toString()}'),
-              backgroundColor: const Color(0xFFEF4444)),
+          SnackBar(content: Text('Failed to post: $e')),
         );
       }
-    } finally {
-      if (mounted) setState(() => _posting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 840;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: NestedScrollView(
-        headerSliverBuilder: (ctx, _) => [
-          SliverAppBar(
-            expandedHeight: 180,
-            pinned: true,
-            backgroundColor: _headerColor,
-            leading: const CustomBackButton(color: Colors.white),
-            actions: [
-              if (widget.isInstructor) ...[
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded, color: Colors.white),
-                  onPressed: () {
-                    if (_courseId.isNotEmpty) {
-                      context.go('/instructor/lms/course/$_courseId/content');
-                    }
-                  },
-                  tooltip: 'Course Settings',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
-                  onPressed: () => _showInstructorMenu(),
-                ),
-              ],
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Pattern overlay
-                    Positioned(
-                      right: -20,
-                      top: -20,
-                      child: Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.05),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 40,
-                      bottom: 60,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.05),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 80, 20, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            _courseTitle,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              if (widget.course['category'] != null) ...[
-                                Text(
-                                  widget.course['category'].toString(),
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                    width: 4,
-                                    height: 4,
-                                    decoration: const BoxDecoration(
-                                        color: Colors.white54,
-                                        shape: BoxShape.circle)),
-                                const SizedBox(width: 8),
-                              ],
-                              if (_courseId.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    Clipboard.setData(
-                                        ClipboardData(text: _courseId));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text('Class code copied!')),
-                                    );
-                                  },
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.vpn_key_rounded,
-                                          color: Colors.white70, size: 13),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _courseId.length >= 6
-                                            ? _courseId.substring(
-                                                _courseId.length - 6)
-                                            : _courseId,
-                                        style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            bottom: TabBar(
-              controller: _tabs,
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
-              labelStyle:
-                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              tabs: const [
-                Tab(text: 'Stream'),
-                Tab(text: 'Classwork'),
-                Tab(text: 'People'),
-                Tab(text: 'Grades'),
-              ],
-            ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabs,
-          children: [
-            _buildStreamTab(),
-            _buildClassworkTab(),
-            _buildPeopleTab(),
-            _buildGradesTab(),
-          ],
-        ),
-      ),
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
       floatingActionButton: widget.isInstructor && _tabs.index == 1
           ? FloatingActionButton.extended(
-              onPressed: () => _showCreateMenu(),
-              backgroundColor: _headerColor,
+              onPressed: _showCreateMenu,
+              backgroundColor: const Color(0xFF1A73E8),
               icon: const Icon(Icons.add_rounded, color: Colors.white),
               label: const Text('Create',
                   style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700)),
+                      color: Colors.white, fontWeight: FontWeight.w500)),
             )
           : null,
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          _buildStreamTab(isWide),
+          _buildClassworkTab(isWide),
+          _buildPeopleTab(isWide),
+          if (widget.isInstructor) _buildGradesTab(),
+        ],
+      ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // STREAM TAB
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
+  // APPBAR — breadcrumb style like Google Classroom
+  // ════════════════════════════════════════════════
 
-  Widget _buildStreamTab() {
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      scrolledUnderElevation: 1,
+      shadowColor: Colors.grey.shade200,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF444746)),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Text(
+              'Classroom',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF444746),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(Icons.chevron_right_rounded,
+                size: 18, color: Color(0xFF9AA0A6)),
+          ),
+          Flexible(
+            child: Text(
+              _courseTitle,
+              style: const TextStyle(
+                fontSize: 18,
+                color: Color(0xFF202124),
+                fontWeight: FontWeight.w400,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // Calendar icon
+        IconButton(
+          icon: const Icon(Icons.calendar_today_outlined,
+              color: Color(0xFF444746), size: 20),
+          onPressed: () {},
+        ),
+        // Settings
+        IconButton(
+          icon: const Icon(Icons.settings_outlined,
+              color: Color(0xFF444746), size: 20),
+          onPressed: () {
+            if (_courseId.isNotEmpty) {
+              context.go('/instructor/lms/course/$_courseId/content');
+            }
+          },
+        ),
+      ],
+      bottom: TabBar(
+        controller: _tabs,
+        labelColor: const Color(0xFF1A73E8),
+        unselectedLabelColor: const Color(0xFF444746),
+        indicatorColor: const Color(0xFF1A73E8),
+        indicatorWeight: 3,
+        labelStyle:
+            const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        unselectedLabelStyle:
+            const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+        tabs: [
+          const Tab(text: 'Stream'),
+          const Tab(text: 'Classwork'),
+          const Tab(text: 'People'),
+          if (widget.isInstructor) const Tab(text: 'Grades'),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  // STREAM TAB — banner + upcoming + feed
+  // ════════════════════════════════════════════════
+
+  Widget _buildStreamTab(bool isWide) {
     return RefreshIndicator(
       onRefresh: _loadStream,
       child: ListView(
-        padding: const EdgeInsets.all(16),
         children: [
-          // Post input (instructor only)
-          if (widget.isInstructor) ...[
-            _buildPostInput(),
-            const SizedBox(height: 16),
-          ],
-          // Classwork summary card (like Google Classroom)
-          if (_assignments.isNotEmpty || _quizzes.isNotEmpty)
-            _buildClassworkSummaryCard(),
-          if (_assignments.isNotEmpty || _quizzes.isNotEmpty)
-            const SizedBox(height: 16),
-          // Announcements
-          if (_loadingStream)
-            const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator()))
-          else if (_announcements.isEmpty)
-            _buildStreamEmpty()
-          else
-            ..._announcements.map((a) => _buildAnnouncementCard(a)),
-        ],
-      ),
-    );
-  }
+          // ── Large banner ──────────────────────────────────
+          _buildBanner(),
 
-  Widget _buildPostInput() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: _headerColor.withOpacity(0.1),
-                child: const Icon(Icons.person_rounded,
-                    color: _headerColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _postCtrl,
-                  maxLines: null,
-                  decoration: const InputDecoration(
-                    hintText: 'Announce something to your class...',
-                    hintStyle:
-                        TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => _postCtrl.clear(),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: _posting ? null : _postAnnouncement,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _headerColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6)),
-                  elevation: 0,
-                ),
-                child: _posting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Post',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 16),
 
-  Widget _buildClassworkSummaryCard() {
-    final total = _assignments.length + _quizzes.length;
-    return GestureDetector(
-      onTap: () => _tabs.animateTo(1),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _headerColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child:
-                  const Icon(Icons.assignment_rounded, color: _headerColor, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
+          // ── Two-column or single column ───────────────────
+          if (isWide)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '$total classwork item${total != 1 ? 's' : ''} available',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A)),
-                  ),
-                  const Text(
-                    'Tap to view all assignments and quizzes',
-                    style:
-                        TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  // Left: Upcoming widget (220px)
+                  SizedBox(width: 220, child: _buildUpcomingWidget()),
+                  const SizedBox(width: 16),
+                  // Right: announcement button + feed
+                  Expanded(
+                    child: Column(
+                      children: [
+                        if (widget.isInstructor) _buildAnnouncementInput(),
+                        if (widget.isInstructor) const SizedBox(height: 12),
+                        _buildAnnouncementFeed(),
+                      ],
+                    ),
                   ),
                 ],
               ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _buildUpcomingWidget(),
+                  const SizedBox(height: 16),
+                  if (widget.isInstructor) _buildAnnouncementInput(),
+                  if (widget.isInstructor) const SizedBox(height: 12),
+                  _buildAnnouncementFeed(),
+                ],
+              ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: Color(0xFFCBD5E1), size: 20),
-          ],
-        ),
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }
 
-  Widget _buildAnnouncementCard(dynamic announcement) {
-    final content =
-        announcement['content'] ?? announcement['message'] ?? '';
-    final authorName = (announcement['author'] as Map?)?['name'] ??
-        (announcement['authorName'] ?? 'Instructor');
-    final createdAt = announcement['createdAt']?.toString() ?? '';
-    String timeLabel = '';
-    if (createdAt.isNotEmpty) {
+  Widget _buildBanner() {
+    final color = _bannerColor;
+
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Gradient background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color,
+                  color.withValues(alpha: 0.75),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          // Diagonal pattern
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _BannerPatternPainter(Colors.white.withValues(alpha: 0.08)),
+            ),
+          ),
+          // Decorative circles (like GC illustrations)
+          Positioned(
+            right: -40,
+            top: -40,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 60,
+            bottom: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          // Course title at bottom-left
+          Positioned(
+            left: 24,
+            right: 80,
+            bottom: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _courseTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w400,
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (_section.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _section,
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Settings icon bottom-right (like GC)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: GestureDetector(
+              onTap: () {
+                if (_courseId.isNotEmpty) {
+                  Clipboard.setData(ClipboardData(text: _courseId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Class code copied!')),
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.vpn_key_outlined,
+                    color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingWidget() {
+    final upcoming = _assignments
+        .where((a) {
+          final d = a['dueDate']?.toString() ?? '';
+          if (d.isEmpty) return false;
+          try {
+            return DateTime.parse(d).isAfter(DateTime.now());
+          } catch (_) {
+            return false;
+          }
+        })
+        .take(3)
+        .toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFDADCE0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Upcoming',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF202124),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (upcoming.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Woohoo, no work due soon!',
+                style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
+              ),
+            )
+          else
+            ...upcoming.map((a) {
+              final title = a['title']?.toString() ?? 'Assignment';
+              final dueStr = a['dueDate']?.toString() ?? '';
+              String dueLabel = '';
+              if (dueStr.isNotEmpty) {
+                try {
+                  dueLabel = DateFormat('MMM d').format(DateTime.parse(dueStr));
+                } catch (_) {}
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.assignment_outlined,
+                        size: 16, color: Color(0xFF1A73E8)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                            fontSize: 13, color: Color(0xFF202124)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (dueLabel.isNotEmpty)
+                      Text(dueLabel,
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF70757A))),
+                  ],
+                ),
+              );
+            }),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: () => _tabs.animateTo(1),
+            child: const Text(
+              'View all',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1A73E8),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementInput() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFDADCE0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: [
+          // Avatar
+          const CircleAvatar(
+            radius: 16,
+            backgroundColor: Color(0xFF1A73E8),
+            child: Icon(Icons.person_rounded, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: GestureDetector(
+              onTap: _showAnnouncementDialog,
+              child: Container(
+                height: 40,
+                alignment: Alignment.centerLeft,
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFDADCE0)),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: const Text(
+                  'Announce something to your class...',
+                  style: TextStyle(
+                      fontSize: 14, color: Color(0xFF9AA0A6)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAnnouncementDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New announcement',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF202124))),
+        content: SizedBox(
+          width: 500,
+          child: TextField(
+            controller: _postCtrl,
+            autofocus: true,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Share something with your class...',
+              hintStyle:
+                  TextStyle(fontSize: 14, color: Color(0xFF9AA0A6)),
+              border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFDADCE0))),
+              enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFDADCE0))),
+              focusedBorder: OutlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Color(0xFF1A73E8), width: 2)),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _postCtrl.clear();
+              Navigator.pop(ctx);
+            },
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xFF444746))),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _postAnnouncement();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A73E8),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4)),
+            ),
+            child: const Text('Post'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementFeed() {
+    if (_loadingStream) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(strokeWidth: 2)));
+    }
+
+    // Build a combined feed: announcements + recent assignments
+    final feedItems = <_FeedItem>[];
+
+    // Announcements
+    for (final a in _announcements) {
+      feedItems.add(_FeedItem(
+        type: _FeedItemType.announcement,
+        data: a,
+        date: _parseDate(a['createdAt']?.toString() ?? ''),
+      ));
+    }
+
+    // Recent assignment posts
+    for (final a in _assignments) {
+      feedItems.add(_FeedItem(
+        type: _FeedItemType.assignment,
+        data: a,
+        date: _parseDate(a['createdAt']?.toString() ?? ''),
+      ));
+    }
+
+    // Sort by date descending
+    feedItems.sort((a, b) {
+      if (a.date == null && b.date == null) return 0;
+      if (a.date == null) return 1;
+      if (b.date == null) return -1;
+      return b.date!.compareTo(a.date!);
+    });
+
+    if (feedItems.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Icon(Icons.campaign_outlined,
+                size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            const Text(
+              'This is where you can talk to your class',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF202124)),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Use the stream to share announcements, post assignments, and reply to student comments.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13, color: Color(0xFF5F6368), height: 1.5),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: feedItems.map((item) => _buildFeedCard(item)).toList(),
+    );
+  }
+
+  Widget _buildFeedCard(_FeedItem item) {
+    final isAnnouncement = item.type == _FeedItemType.announcement;
+    String authorName = '';
+    String content = '';
+    String title = '';
+    String dateLabel = '';
+
+    if (item.date != null) {
       try {
-        final dt = DateTime.parse(createdAt);
-        timeLabel = DateFormat('MMM dd').format(dt);
+        dateLabel = DateFormat('d MMM yyyy').format(item.date!);
       } catch (_) {}
+    }
+
+    if (isAnnouncement) {
+      authorName = (item.data['author'] as Map?)?['name']?.toString() ??
+          item.data['authorName']?.toString() ??
+          'Instructor';
+      content = item.data['content']?.toString() ??
+          item.data['message']?.toString() ??
+          '';
+    } else {
+      final instructor = widget.course['instructor'] as Map?;
+      authorName = instructor?['name']?.toString() ?? 'Instructor';
+      title = item.data['title']?.toString() ?? 'Assignment';
+      content = '$authorName posted a new assignment: $title';
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border.all(color: const Color(0xFFDADCE0)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Author header
+          // Header row
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+            padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: _headerColor.withOpacity(0.1),
-                  child: Text(
-                    authorName.isNotEmpty
-                        ? authorName[0].toUpperCase()
-                        : 'I',
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: _headerColor),
+                // Icon/avatar
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isAnnouncement
+                        ? const Color(0xFF1A73E8)
+                        : const Color(0xFF1E7E34),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isAnnouncement
+                        ? Icons.campaign_rounded
+                        : Icons.assignment_outlined,
+                    color: Colors.white,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(authorName,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A))),
-                      if (timeLabel.isNotEmpty)
-                        Text(timeLabel,
-                            style: const TextStyle(
-                                fontSize: 11, color: Color(0xFF94A3B8))),
+                      Text(
+                        content,
+                        style: const TextStyle(
+                            fontSize: 14, color: Color(0xFF202124)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        dateLabel,
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF70757A)),
+                      ),
                     ],
                   ),
                 ),
-                if (widget.isInstructor)
-                  IconButton(
-                    icon: const Icon(Icons.more_vert_rounded,
-                        size: 18, color: Color(0xFF94A3B8)),
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
+                // Three-dot menu
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded,
+                      size: 18, color: Color(0xFF70757A)),
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit', style: TextStyle(fontSize: 14))),
+                    const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete', style: TextStyle(fontSize: 14))),
+                    const PopupMenuItem(
+                        value: 'copy',
+                        child: Text('Copy link', style: TextStyle(fontSize: 14))),
+                  ],
+                  onSelected: (_) {},
+                ),
               ],
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            child: Text(
-              content,
-              style: const TextStyle(
-                  fontSize: 14, color: Color(0xFF374151), height: 1.5),
             ),
           ),
         ],
@@ -586,309 +793,183 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
   }
 
-  Widget _buildStreamEmpty() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.campaign_outlined,
-                size: 56, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'No announcements yet',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B)),
-            ),
-            if (widget.isInstructor)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'Post an announcement to your class above.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+  DateTime? _parseDate(String s) {
+    if (s.isEmpty) return null;
+    try { return DateTime.parse(s); } catch (_) { return null; }
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
   // CLASSWORK TAB
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
 
-  Widget _buildClassworkTab() {
+  Widget _buildClassworkTab(bool isWide) {
     if (_loadingClasswork) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
 
-    final allItems = [
+    final all = [
       ..._assignments.map((a) => {'type': 'assignment', 'data': a}),
       ..._quizzes.map((q) => {'type': 'quiz', 'data': q}),
       ..._sessions.map((s) => {'type': 'session', 'data': s}),
     ];
 
-    if (allItems.isEmpty) {
-      return _buildClassworkEmpty();
-    }
-
-    // Group by topic if available, otherwise show all under one section
-    final Map<String, List<Map<String, dynamic>>> topics = {};
-    for (final item in allItems) {
-      final d = item['data'] as Map?;
-      final topic = d?['topic']?.toString() ?? d?['section']?.toString() ?? 'Class Materials';
-      topics.putIfAbsent(topic, () => []).add(item);
-    }
-
     return RefreshIndicator(
       onRefresh: _loadClasswork,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (widget.isInstructor) ...[
-            _buildInstructorClassworkActions(),
-            const SizedBox(height: 16),
-          ],
-          for (final entry in topics.entries) ...[
-            _buildTopicSection(entry.key, entry.value),
-            const SizedBox(height: 8),
-          ],
-        ],
-      ),
+      child: all.isEmpty
+          ? _buildClassworkEmpty()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 80),
+              children: [
+                if (widget.isInstructor) ...[
+                  _buildInstructorCreateBar(),
+                  const SizedBox(height: 12),
+                ],
+                // All items flat — could be grouped by topic
+                ...all.map((item) => _buildClassworkCard(item)),
+              ],
+            ),
     );
   }
 
-  Widget _buildInstructorClassworkActions() {
+  Widget _buildInstructorCreateBar() {
     return Row(
       children: [
-        Expanded(
-          child: _actionChip(
-            Icons.assignment_add,
-            'Assignment',
-            () {
-              if (_courseId.isNotEmpty) {
-                context.go(
-                    '/instructor/lms/create-assignment?courseId=$_courseId');
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _actionChip(
-            Icons.quiz_rounded,
-            'Quiz',
-            () {
-              if (_courseId.isNotEmpty) {
-                context.go(
-                    '/instructor/lms/create-quiz?courseId=$_courseId');
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _actionChip(
-            Icons.videocam_rounded,
-            'Session',
-            () {
-              if (_courseId.isNotEmpty) {
-                context.go(
-                    '/instructor/lms/schedule-session?courseId=$_courseId');
-              }
-            },
-          ),
-        ),
+        _createBtn(Icons.assignment_add, 'Assignment', () {
+          if (_courseId.isNotEmpty) {
+            context.go('/instructor/lms/create-assignment?courseId=$_courseId');
+          }
+        }),
+        const SizedBox(width: 10),
+        _createBtn(Icons.quiz_outlined, 'Quiz', () {
+          if (_courseId.isNotEmpty) {
+            context.go('/instructor/lms/create-quiz?courseId=$_courseId');
+          }
+        }),
+        const SizedBox(width: 10),
+        _createBtn(Icons.videocam_outlined, 'Session', () {
+          if (_courseId.isNotEmpty) {
+            context.go(
+                '/instructor/lms/schedule-session?courseId=$_courseId');
+          }
+        }),
       ],
     );
   }
 
-  Widget _actionChip(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _headerColor.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: _headerColor, size: 20),
-            const SizedBox(height: 4),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _headerColor)),
-          ],
+  Widget _createBtn(IconData icon, String label, VoidCallback onTap) {
+    return Expanded(
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 16),
+        label: Text(label,
+            style:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF1A73E8),
+          side: const BorderSide(color: Color(0xFFDADCE0)),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );
   }
 
-  Widget _buildTopicSection(
-      String topic, List<Map<String, dynamic>> items) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Topic header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Row(
-              children: [
-                const Icon(Icons.folder_outlined,
-                    size: 18, color: Color(0xFF64748B)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    topic,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          // Items
-          ...items.asMap().entries.map((entry) {
-            final i = entry.key;
-            final item = entry.value;
-            return Column(
-              children: [
-                _buildClassworkItem(item),
-                if (i < items.length - 1)
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClassworkItem(Map<String, dynamic> item) {
+  Widget _buildClassworkCard(Map<String, dynamic> item) {
     final type = item['type'] as String;
     final data = item['data'] as Map;
-    final title = data['title']?.toString() ?? (type == 'assignment' ? 'Assignment' : type == 'quiz' ? 'Quiz' : 'Live Session');
-    final dueDateStr = data['dueDate']?.toString() ?? data['scheduledAt']?.toString() ?? '';
-    final points = data['totalMarks']?.toString() ?? data['points']?.toString() ?? '';
-
-    String? dueLabel;
-    if (dueDateStr.isNotEmpty) {
+    final title =
+        data['title']?.toString() ?? (type == 'quiz' ? 'Quiz' : type == 'session' ? 'Session' : 'Assignment');
+    final dueStr = data['dueDate']?.toString() ?? data['scheduledAt']?.toString() ?? '';
+    final points = data['totalMarks']?.toString() ?? '';
+    String dueLabel = '';
+    if (dueStr.isNotEmpty) {
       try {
-        final dt = DateTime.parse(dueDateStr);
-        dueLabel = DateFormat('MMM dd').format(dt);
+        dueLabel = DateFormat('MMM d').format(DateTime.parse(dueStr));
       } catch (_) {}
     }
 
+    Color iconBg;
     IconData icon;
-    Color color;
     switch (type) {
       case 'quiz':
-        icon = Icons.quiz_rounded;
-        color = const Color(0xFF8B5CF6);
+        iconBg = const Color(0xFF9334E6);
+        icon = Icons.quiz_outlined;
         break;
       case 'session':
-        icon = Icons.videocam_rounded;
-        color = const Color(0xFF10B981);
+        iconBg = const Color(0xFF188038);
+        icon = Icons.videocam_outlined;
         break;
       default:
-        icon = Icons.assignment_rounded;
-        color = const Color(0xFF0EA5E9);
+        iconBg = const Color(0xFF1A73E8);
+        icon = Icons.assignment_outlined;
     }
 
     return InkWell(
-      onTap: () => _openClassworkItem(type, data),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      onTap: () => _openItem(type, data),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 1),
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+        ),
         child: Row(
           children: [
+            // Icon
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: iconBg,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: Icon(icon, color: Colors.white, size: 16),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
                       style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A))),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      if (dueLabel != null) ...[
-                        Text('Due $dueLabel',
-                            style: const TextStyle(
-                                fontSize: 11, color: Color(0xFF94A3B8))),
-                        const SizedBox(width: 8),
-                        Container(
-                            width: 3,
-                            height: 3,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFFCBD5E1),
-                                shape: BoxShape.circle)),
-                        const SizedBox(width: 8),
-                      ],
-                      if (points.isNotEmpty)
-                        Text('$points pts',
-                            style: const TextStyle(
-                                fontSize: 11, color: Color(0xFF94A3B8))),
-                    ],
-                  ),
+                          fontSize: 14, color: Color(0xFF202124))),
+                  if (dueLabel.isNotEmpty || points.isNotEmpty)
+                    Text(
+                      [
+                        if (dueLabel.isNotEmpty) 'Due $dueLabel',
+                        if (points.isNotEmpty) '$points points',
+                      ].join('  ·  '),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF70757A)),
+                    ),
                 ],
               ),
             ),
             if (widget.isInstructor)
               IconButton(
                 icon: const Icon(Icons.more_vert_rounded,
-                    size: 18, color: Color(0xFF94A3B8)),
-                onPressed: () => _showClassworkItemMenu(type, data),
+                    size: 18, color: Color(0xFF70757A)),
+                onPressed: () => _showClassworkMenu(type, data),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               )
             else
               const Icon(Icons.chevron_right_rounded,
-                  size: 18, color: Color(0xFFCBD5E1)),
+                  size: 18, color: Color(0xFFDADCE0)),
           ],
         ),
       ),
     );
   }
 
-  void _openClassworkItem(String type, Map data) {
-    final courseId = _courseId;
-    final enrollmentId = widget.enrollmentId;
-
+  void _openItem(String type, Map data) {
     if (type == 'assignment') {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => AssignmentSubmitScreen(
             assignment: Map<String, dynamic>.from(data),
-            courseId: courseId,
-            enrollmentId: enrollmentId,
+            courseId: _courseId,
+            enrollmentId: widget.enrollmentId,
           ),
         ),
       );
@@ -898,48 +979,46 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         MaterialPageRoute(
           builder: (_) => QuizTakeScreen(
             quiz: Map<String, dynamic>.from(data),
-            enrollmentId: enrollmentId ?? '',
+            enrollmentId: widget.enrollmentId ?? '',
           ),
         ),
       );
     }
   }
 
-  void _showClassworkItemMenu(String type, Map data) {
+  void _showClassworkMenu(String type, Map data) {
     final id = data['_id']?.toString() ?? '';
     final title = data['title']?.toString() ?? type;
-
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+      builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
             if (type == 'assignment' && id.isNotEmpty)
-              _sheetItem(
-                Icons.grade_rounded,
-                'Grade Submissions',
-                _headerColor,
-                () {
+              ListTile(
+                leading: const Icon(Icons.grade_outlined,
+                    color: Color(0xFF1A73E8)),
+                title: const Text('Grade submissions'),
+                onTap: () {
                   Navigator.pop(context);
                   context.go('/instructor/lms/assignment/$id/grade',
                       extra: {'title': title});
                 },
               ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined,
+                  color: Color(0xFF444746)),
+              title: const Text('Edit'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: Color(0xFFB3261E)),
+              title: const Text('Delete',
+                  style: TextStyle(color: Color(0xFFB3261E))),
+              onTap: () => Navigator.pop(context),
+            ),
           ],
         ),
       ),
@@ -948,304 +1027,213 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
   Widget _buildClassworkEmpty() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assignment_outlined,
-                size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'No classwork yet',
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.assignment_outlined,
+              size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text('No classwork yet',
               style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B)),
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF5F6368))),
+          if (widget.isInstructor) ...[
+            const SizedBox(height: 24),
+            _buildInstructorCreateBar(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showCreateMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.assignment_outlined,
+                  color: Color(0xFF1A73E8)),
+              title: const Text('Assignment'),
+              onTap: () {
+                Navigator.pop(context);
+                if (_courseId.isNotEmpty) {
+                  context.go(
+                      '/instructor/lms/create-assignment?courseId=$_courseId');
+                }
+              },
             ),
-            if (widget.isInstructor) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Create assignments, quizzes, and live sessions for your class.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-              ),
-              const SizedBox(height: 20),
-              _buildInstructorClassworkActions(),
-            ],
+            ListTile(
+              leading: const Icon(Icons.quiz_outlined,
+                  color: Color(0xFF9334E6)),
+              title: const Text('Quiz'),
+              onTap: () {
+                Navigator.pop(context);
+                if (_courseId.isNotEmpty) {
+                  context.go(
+                      '/instructor/lms/create-quiz?courseId=$_courseId');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined,
+                  color: Color(0xFF188038)),
+              title: const Text('Live session'),
+              onTap: () {
+                Navigator.pop(context);
+                if (_courseId.isNotEmpty) {
+                  context.go(
+                      '/instructor/lms/schedule-session?courseId=$_courseId');
+                }
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
   // PEOPLE TAB
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
 
-  Widget _buildPeopleTab() {
+  Widget _buildPeopleTab(bool isWide) {
     final instructor = widget.course['instructor'] as Map?;
-    final instructorName = instructor?['name'] ??
-        instructor?['username'] ??
+    final instructorName = instructor?['name']?.toString() ??
+        instructor?['username']?.toString() ??
         'iCare Instructor';
 
     return RefreshIndicator(
       onRefresh: _loadPeople,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
         children: [
-          // Teachers section
-          _peopleSectionHeader('Teacher'),
-          const SizedBox(height: 8),
-          _personTile(
-              name: instructorName,
-              subtitle: 'Instructor',
-              isInstructor: true),
-          const SizedBox(height: 20),
-
-          // Students section
+          // Teacher section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _peopleSectionHeader('Students'),
+              const Text(
+                'Teacher',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF1A73E8)),
+              ),
               if (widget.isInstructor)
                 TextButton.icon(
-                  onPressed: () {
-                    if (_courseId.isNotEmpty) {
-                      context.go('/instructor/lms/course/$_courseId/students',
-                          extra: {'title': _courseTitle});
-                    }
-                  },
-                  icon: const Icon(Icons.people_rounded, size: 16),
-                  label: const Text('Manage'),
+                  onPressed: () {},
+                  icon: const Icon(Icons.person_add_outlined,
+                      size: 16, color: Color(0xFF1A73E8)),
+                  label: const Text('Invite students',
+                      style: TextStyle(
+                          fontSize: 13, color: Color(0xFF1A73E8))),
                 ),
             ],
           ),
+          const Divider(color: Color(0xFF1A73E8), thickness: 1.5),
+          const SizedBox(height: 8),
+          _personRow(instructorName, isTeacher: true),
+          const SizedBox(height: 24),
+
+          // Students section
+          Row(
+            children: [
+              Text(
+                'Students',
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF1A73E8)),
+              ),
+              const SizedBox(width: 8),
+              if (_students.isNotEmpty)
+                Text(
+                  '(${_students.length})',
+                  style: const TextStyle(
+                      fontSize: 16, color: Color(0xFF70757A)),
+                ),
+            ],
+          ),
+          const Divider(color: Color(0xFF1A73E8), thickness: 1.5),
           const SizedBox(height: 8),
           if (_loadingPeople)
-            const Center(child: Padding(
-                padding: EdgeInsets.all(20),
-                child: CircularProgressIndicator()))
+            const Center(
+                child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(strokeWidth: 2)))
           else if (_students.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text(
-                  'No students enrolled yet',
-                  style: TextStyle(
-                      fontSize: 13, color: Colors.grey.shade400),
-                ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No students have joined yet.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF5F6368)),
               ),
             )
           else
             ..._students.map((s) {
-              final name = (s['user'] as Map?)?['name'] ??
-                  (s['user'] as Map?)?['username'] ??
-                  s['name'] ??
+              final name = (s['user'] as Map?)?['name']?.toString() ??
+                  s['name']?.toString() ??
                   'Student';
-              final email = (s['user'] as Map?)?['email'] ?? s['email'] ?? '';
-              return _personTile(name: name, subtitle: email);
+              return _personRow(name, isTeacher: false);
             }),
         ],
       ),
     );
   }
 
-  Widget _peopleSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF0F172A),
-      ),
-    );
-  }
-
-  Widget _personTile(
-      {required String name, String? subtitle, bool isInstructor = false}) {
+  Widget _personRow(String name, {required bool isTeacher}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 20,
-            backgroundColor: isInstructor
-                ? _headerColor.withOpacity(0.1)
-                : const Color(0xFFF1F5F9),
+            radius: 18,
+            backgroundColor: isTeacher
+                ? const Color(0xFF1A73E8)
+                : Colors.grey.shade300,
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
               style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: isInstructor
-                      ? _headerColor
-                      : const Color(0xFF64748B)),
+                color: isTeacher ? Colors.white : Colors.grey.shade600,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A))),
-                if (subtitle != null && subtitle.isNotEmpty)
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF94A3B8))),
-              ],
+            child: Text(
+              name,
+              style: const TextStyle(
+                  fontSize: 14, color: Color(0xFF202124)),
             ),
           ),
+          if (!isTeacher)
+            IconButton(
+              icon: const Icon(Icons.more_vert_rounded,
+                  size: 18, color: Color(0xFF70757A)),
+              onPressed: () {},
+              padding: EdgeInsets.zero,
+              constraints:
+                  const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
         ],
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // GRADES TAB
-  // ═══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════
+  // GRADES TAB (instructor)
+  // ════════════════════════════════════════════════
 
   Widget _buildGradesTab() {
-    if (widget.isInstructor) {
-      return _buildInstructorGrades();
-    } else {
-      return _buildStudentGrades();
-    }
-  }
-
-  Widget _buildStudentGrades() {
     if (_loadingClasswork) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
 
-    if (_assignments.isEmpty && _quizzes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.grade_outlined, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text('No grades yet',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B))),
-          ],
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Assignment grades
-        if (_assignments.isNotEmpty) ...[
-          const Text('Assignments',
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A))),
-          const SizedBox(height: 8),
-          ..._assignments.map((a) => _gradeItem(a, 'assignment')),
-          const SizedBox(height: 16),
-        ],
-        // Quiz grades
-        if (_quizzes.isNotEmpty) ...[
-          const Text('Quizzes',
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A))),
-          const SizedBox(height: 8),
-          ..._quizzes.map((q) => _gradeItem(q, 'quiz')),
-        ],
-      ],
-    );
-  }
-
-  Widget _gradeItem(dynamic item, String type) {
-    final title = item['title'] ?? (type == 'quiz' ? 'Quiz' : 'Assignment');
-    final submission = item['mySubmission'];
-    final attempt = item['myAttempt'] ?? (item['attempts'] as List?)?.lastOrNull;
-    final isSubmitted = submission != null || attempt != null;
-    final score = submission?['grade'] ?? attempt?['score'];
-    final totalMarks = item['totalMarks'] ?? item['points'];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: type == 'quiz'
-                  ? const Color(0xFF8B5CF6).withOpacity(0.1)
-                  : const Color(0xFF0EA5E9).withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              type == 'quiz' ? Icons.quiz_rounded : Icons.assignment_rounded,
-              size: 16,
-              color: type == 'quiz'
-                  ? const Color(0xFF8B5CF6)
-                  : const Color(0xFF0EA5E9),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(title,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A))),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (score != null && totalMarks != null)
-                Text('$score / $totalMarks',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF10B981)))
-              else if (isSubmitted)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text('Submitted',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF10B981)))
-                )
-              else
-                const Text('Missing',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF94A3B8))),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInstructorGrades() {
     if (_assignments.isEmpty) {
       return Center(
         child: Column(
@@ -1253,204 +1241,104 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           children: [
             Icon(Icons.grade_outlined, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            const Text('No assignments to grade',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B))),
+            const Text('No assignments to grade yet',
+                style:
+                    TextStyle(fontSize: 16, color: Color(0xFF5F6368))),
           ],
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       itemCount: _assignments.length,
       itemBuilder: (ctx, i) {
         final a = _assignments[i];
-        final title = a['title'] ?? 'Assignment';
         final id = a['_id']?.toString() ?? '';
-        final submissionCount =
-            (a['submissionCount'] ?? a['submissions']?.length ?? 0) as int;
-        final totalMarks = a['totalMarks'] ?? '--';
+        final title = a['title']?.toString() ?? 'Assignment';
+        final count = ((a['submissionCount'] ?? 0) as num).toInt();
+        final total = a['totalMarks']?.toString() ?? '--';
 
-        return GestureDetector(
-          onTap: () {
-            if (id.isNotEmpty) {
-              context.go('/instructor/lms/assignment/$id/grade',
-                  extra: {'title': title});
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A73E8),
+              shape: BoxShape.circle,
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.assignment_rounded,
-                      color: Color(0xFF0EA5E9), size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A))),
-                      Text('$submissionCount submitted  •  $totalMarks pts',
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF94A3B8))),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _headerColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text('Grade',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: _headerColor)),
-                ),
-              ],
-            ),
+            child: const Icon(Icons.assignment_outlined,
+                color: Colors.white, size: 18),
           ),
+          title: Text(title,
+              style: const TextStyle(
+                  fontSize: 14, color: Color(0xFF202124))),
+          subtitle: Text(
+            '$count submitted  ·  $total pts',
+            style: const TextStyle(
+                fontSize: 12, color: Color(0xFF70757A)),
+          ),
+          trailing: id.isNotEmpty
+              ? OutlinedButton(
+                  onPressed: () => context.go(
+                      '/instructor/lms/assignment/$id/grade',
+                      extra: {'title': title}),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1A73E8),
+                    side: const BorderSide(color: Color(0xFFDADCE0)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4)),
+                  ),
+                  child: const Text('View grades',
+                      style: TextStyle(fontSize: 13)),
+                )
+              : null,
         );
       },
     );
   }
+}
 
-  // ═══════════════════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────
+// Banner pattern painter (diagonal lines)
+// ─────────────────────────────────────────────────────────────
 
-  void _showCreateMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            _sheetItem(Icons.assignment_rounded, 'Create Assignment',
-                _headerColor, () {
-              Navigator.pop(context);
-              if (_courseId.isNotEmpty) {
-                context.go(
-                    '/instructor/lms/create-assignment?courseId=$_courseId');
-              }
-            }),
-            _sheetItem(Icons.quiz_rounded, 'Create Quiz', _headerColor, () {
-              Navigator.pop(context);
-              if (_courseId.isNotEmpty) {
-                context
-                    .go('/instructor/lms/create-quiz?courseId=$_courseId');
-              }
-            }),
-            _sheetItem(
-                Icons.videocam_rounded, 'Schedule Live Session', _headerColor,
-                () {
-              Navigator.pop(context);
-              if (_courseId.isNotEmpty) {
-                context.go(
-                    '/instructor/lms/schedule-session?courseId=$_courseId');
-              }
-            }),
-          ],
-        ),
-      ),
-    );
+class _BannerPatternPainter extends CustomPainter {
+  final Color color;
+  _BannerPatternPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    const gap = 30.0;
+    for (double i = -size.height; i < size.width + size.height; i += gap) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
   }
 
-  void _showInstructorMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            _sheetItem(Icons.edit_rounded, 'Edit Course', _headerColor, () {
-              Navigator.pop(context);
-              if (_courseId.isNotEmpty) {
-                context.go('/instructor/lms/course/$_courseId/content');
-              }
-            }),
-            _sheetItem(Icons.analytics_rounded, 'View Analytics', _headerColor,
-                () {
-              Navigator.pop(context);
-              if (_courseId.isNotEmpty) {
-                context.go('/instructor/lms/course/$_courseId/analytics',
-                    extra: {'title': _courseTitle});
-              }
-            }),
-          ],
-        ),
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(_BannerPatternPainter old) => old.color != color;
+}
 
-  Widget _sheetItem(
-      IconData icon, String label, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 14),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A))),
-          ],
-        ),
-      ),
-    );
-  }
+// ─────────────────────────────────────────────────────────────
+// Feed item model
+// ─────────────────────────────────────────────────────────────
+
+enum _FeedItemType { announcement, assignment }
+
+class _FeedItem {
+  final _FeedItemType type;
+  final dynamic data;
+  final DateTime? date;
+  _FeedItem({required this.type, required this.data, this.date});
 }
