@@ -203,6 +203,48 @@
         }
       }
     };
+
+    // ── Ringtone (Web Audio API — no external file needed) ────────────────
+    var _ringtoneInterval = null;
+    var _ringtoneCtx = null;
+
+    window.playRingtone = function() {
+      try {
+        if (_ringtoneInterval) return;
+        _ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function ringOnce() {
+          if (!_ringtoneCtx) return;
+          // Two-tone phone ring: 480 Hz + 440 Hz
+          [480, 440].forEach(function(freq, i) {
+            var osc = _ringtoneCtx.createOscillator();
+            var gain = _ringtoneCtx.createGain();
+            osc.connect(gain);
+            gain.connect(_ringtoneCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0, _ringtoneCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.25, _ringtoneCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.25, _ringtoneCtx.currentTime + 0.35);
+            gain.gain.linearRampToValueAtTime(0, _ringtoneCtx.currentTime + 0.5);
+            osc.start(_ringtoneCtx.currentTime);
+            osc.stop(_ringtoneCtx.currentTime + 0.5);
+          });
+        }
+
+        ringOnce();
+        _ringtoneInterval = setInterval(ringOnce, 2000);
+      } catch(e) {
+        console.warn('Ringtone error:', e);
+      }
+    };
+
+    window.stopRingtone = function() {
+      try {
+        if (_ringtoneInterval) { clearInterval(_ringtoneInterval); _ringtoneInterval = null; }
+        if (_ringtoneCtx) { _ringtoneCtx.close(); _ringtoneCtx = null; }
+      } catch(_) {}
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

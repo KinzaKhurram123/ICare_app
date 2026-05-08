@@ -1,10 +1,29 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/call_service.dart';
 import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
 import '../screens/video_call.dart';
+
+@JS('playRingtone')
+external void _jsPlayRingtone();
+
+@JS('stopRingtone')
+external void _jsStopRingtone();
+
+void _playRingtone() {
+  if (kIsWeb) {
+    try { _jsPlayRingtone(); } catch (_) {}
+  }
+}
+
+void _stopRingtone() {
+  if (kIsWeb) {
+    try { _jsStopRingtone(); } catch (_) {}
+  }
+}
 
 /// Wraps the app and polls for incoming calls every 3 seconds.
 /// When a call is detected it shows a full-screen incoming call dialog.
@@ -46,9 +65,11 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
 
     debugPrint('📞 Incoming call detected: ${signal['callerName']}');
     _dialogShowing = true;
+    _playRingtone();
     try {
       await _showIncomingCallDialog(signal);
     } finally {
+      _stopRingtone();
       _dialogShowing = false;
     }
   }

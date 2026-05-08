@@ -807,6 +807,7 @@ class _VideoCallWebState extends State<VideoCall> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) return _buildError();
+    if (widget.isAudioOnly) return _buildAudioCallUI();
     return Scaffold(
       backgroundColor: Colors.black,
       body: Row(
@@ -2300,6 +2301,180 @@ class _VideoCallWebState extends State<VideoCall> {
                     style: const TextStyle(
                         color: Colors.white60, fontSize: 12)),
               )),
+        ],
+      ),
+    );
+  }
+
+  // ── Dedicated Audio-Call UI ─────────────────────────────────────────────
+  Widget _buildAudioCallUI() {
+    final mins = (_sessionSeconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (_sessionSeconds % 60).toString().padLeft(2, '0');
+    final initial = widget.remoteUserName.isNotEmpty
+        ? widget.remoteUserName[0].toUpperCase()
+        : '?';
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF1E3A5F), Color(0xFF0F172A)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Top bar with timer
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phone_in_talk_rounded,
+                        color: Color(0xFF10B981), size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$mins:$secs',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Avatar
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white12,
+                  border: Border.all(color: const Color(0xFF10B981), width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 52,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Name
+              Text(
+                widget.remoteUserName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Audio Call',
+                style: TextStyle(color: Colors.white54, fontSize: 14),
+              ),
+
+              const Spacer(),
+
+              // Controls
+              Padding(
+                padding: const EdgeInsets.only(bottom: 48),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Mic toggle
+                        _audioCallBtn(
+                          icon: _micMuted
+                              ? Icons.mic_off_rounded
+                              : Icons.mic_rounded,
+                          label: _micMuted ? 'Unmute' : 'Mute',
+                          color: _micMuted ? Colors.grey : Colors.white,
+                          bg: Colors.white24,
+                          onTap: _toggleMic,
+                        ),
+                        const SizedBox(width: 32),
+                        // Red — leave call
+                        _audioCallBtn(
+                          icon: Icons.call_end_rounded,
+                          label: 'Leave',
+                          color: Colors.white,
+                          bg: Colors.red,
+                          onTap: _leaveVideo,
+                          size: 72,
+                        ),
+                        const SizedBox(width: 32),
+                        // Purple — end consultation
+                        if (widget.appointmentId != null &&
+                            widget.appointmentId!.isNotEmpty)
+                          _audioCallBtn(
+                            icon: Icons.videocam_off_rounded,
+                            label: 'End',
+                            color: Colors.white,
+                            bg: const Color(0xFF7C3AED),
+                            onTap: _endConsultation,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Red = Leave Call  •  Purple = End Consultation',
+                      style: TextStyle(color: Colors.white30, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _audioCallBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color bg,
+    required VoidCallback onTap,
+    double size = 60,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: size * 0.45),
+          ),
+          const SizedBox(height: 6),
+          Text(label,
+              style: const TextStyle(color: Colors.white54, fontSize: 11)),
         ],
       ),
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import '../config/agora_config.dart';
@@ -86,6 +87,7 @@ class _VideoCallMobileState extends State<VideoCall> {
           onJoinChannelSuccess: (connection, elapsed) {
             debugPrint('✅ Agora: joined channel ${connection.channelId}');
             if (mounted) setState(() { _joined = true; _loading = false; });
+            _startCallTimer();
           },
           onUserJoined: (connection, remoteUid, elapsed) {
             debugPrint('👤 Agora: remote user $remoteUid joined');
@@ -283,15 +285,26 @@ class _VideoCallMobileState extends State<VideoCall> {
 
   @override
   void dispose() {
+    _callTimer?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
     super.dispose();
+  }
+
+  int _elapsedSeconds = 0;
+  Timer? _callTimer;
+
+  void _startCallTimer() {
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _elapsedSeconds++);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_error != null) return _buildError();
     if (_loading) return _buildLoading();
+    if (widget.isAudioOnly) return _buildAudioCallUI();
     return _buildCallUI();
   }
 
@@ -442,6 +455,110 @@ class _VideoCallMobileState extends State<VideoCall> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAudioCallUI() {
+    final secs = _elapsedSeconds % 60;
+    final mins = _elapsedSeconds ~/ 60;
+    final timeStr =
+        '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    final initial = widget.remoteUserName.isNotEmpty
+        ? widget.remoteUserName[0].toUpperCase()
+        : '?';
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF1E3A5F), Color(0xFF0F172A)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.phone_in_talk_rounded,
+                      color: Color(0xFF10B981), size: 18),
+                  const SizedBox(width: 6),
+                  Text(timeStr,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const Spacer(),
+              Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white12,
+                  border: Border.all(color: const Color(0xFF10B981), width: 3),
+                ),
+                child: Center(
+                  child: Text(initial,
+                      style: const TextStyle(
+                          fontSize: 48,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(widget.remoteUserName,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(
+                _joined ? 'Audio Call' : 'Connecting...',
+                style: const TextStyle(color: Colors.white54, fontSize: 14),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 48),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _controlBtn(
+                      icon: _micMuted
+                          ? Icons.mic_off_rounded
+                          : Icons.mic_rounded,
+                      color: _micMuted ? Colors.grey : Colors.white,
+                      bg: Colors.white24,
+                      onTap: _toggleMic,
+                    ),
+                    const SizedBox(width: 24),
+                    _controlBtn(
+                      icon: Icons.call_end_rounded,
+                      color: Colors.white,
+                      bg: Colors.red,
+                      onTap: _leaveCall,
+                      size: 68,
+                    ),
+                    const SizedBox(width: 24),
+                    if (widget.appointmentId != null &&
+                        widget.appointmentId!.isNotEmpty)
+                      _controlBtn(
+                        icon: Icons.videocam_off_rounded,
+                        color: Colors.white,
+                        bg: const Color(0xFF7C3AED),
+                        onTap: _endConsultation,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
