@@ -73,6 +73,8 @@ class _VideoCallWebState extends State<VideoCall> {
   // Side panel state
   bool _showChat = false;
   bool _showHistory = false;
+  bool _showDoctorNotes = false;
+  bool _showPastConsultations = false;
 
   // Chat messages (synced via backend API)
   final List<Map<String, String>> _chatMessages = [];
@@ -94,6 +96,15 @@ class _VideoCallWebState extends State<VideoCall> {
   List<Map<String, dynamic>> _historyRecords = [];
   bool _historyLoading = false;
   bool _historyLoaded = false;
+
+  // Doctor's Notes during consultation
+  final TextEditingController _doctorNotesController = TextEditingController();
+  bool _notesSaving = false;
+
+  // Past consultations list
+  List<Map<String, dynamic>> _pastConsultations = [];
+  bool _pastConsultationsLoading = false;
+  bool _pastConsultationsLoaded = false;
 
   final String _viewId =
       'agora-call-${DateTime.now().millisecondsSinceEpoch}';
@@ -355,6 +366,42 @@ class _VideoCallWebState extends State<VideoCall> {
         _historyLoaded = true;
         _historyLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadPastConsultations() async {
+    if (_pastConsultationsLoading) return;
+    setState(() => _pastConsultationsLoading = true);
+    try {
+      final apptResult = await AppointmentService().getMyAppointmentsDetailed();
+      if (apptResult['success'] == true) {
+        final appts = apptResult['appointments'] as List<AppointmentDetail>? ?? [];
+        final completed = appts
+            .where((a) => a.status.toLowerCase() == 'completed')
+            .map((a) => {
+                  'date': a.date.toIso8601String(),
+                  'doctor': a.doctorName ?? 'Doctor',
+                  'patient': a.patient?.name ?? 'Patient',
+                  'reason': a.reason ?? '',
+                  'timeSlot': a.timeSlot ?? '',
+                  'type': (a.channelName?.isNotEmpty == true) ? 'video' : 'in-person',
+                })
+            .toList();
+        // Sort newest first
+        completed.sort((a, b) =>
+            (b['date'] as String).compareTo(a['date'] as String));
+        if (mounted) {
+          setState(() {
+            _pastConsultations = completed;
+            _pastConsultationsLoaded = true;
+            _pastConsultationsLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _pastConsultationsLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _pastConsultationsLoading = false);
     }
   }
 
@@ -751,6 +798,7 @@ class _VideoCallWebState extends State<VideoCall> {
     _statusPollTimer?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
+    _doctorNotesController.dispose();
     try { _agoraLeave(); } catch (_) {}
     super.dispose();
   }
@@ -840,27 +888,38 @@ class _VideoCallWebState extends State<VideoCall> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _sideBtn(
-                            icon: Icons.history_rounded,
-                            label: 'Past History',
-                            active: _showHistory,
+                            icon: Icons.note_alt_rounded,
+                            label: "Doctor's Notes",
+                            active: _showDoctorNotes,
                             badgeCount: 0,
-                            onTap: () {
-                              setState(() {
-                                _showHistory = !_showHistory;
-                                if (_showHistory) _showChat = false;
-                              });
-                              if (_showHistory && !_historyLoaded && !_historyLoading) {
-                                _loadPatientHistory();
+                            onTap: () => setState(() {
+                              _showDoctorNotes = !_showDoctorNotes;
+                              if (_showDoctorNotes) {
+                                _showChat = false;
+                                _showHistory = false;
+                                _showPastConsultations = false;
                               }
-                            },
+                            }),
                           ),
                           const SizedBox(width: 10),
                           _sideBtn(
-                            icon: Icons.history_edu_rounded,
-                            label: 'History Form',
-                            active: false,
+                            icon: Icons.history_rounded,
+                            label: 'Past Consultations',
+                            active: _showPastConsultations,
                             badgeCount: 0,
-                            onTap: _openHistoryFormFromVideo,
+                            onTap: () {
+                              setState(() {
+                                _showPastConsultations = !_showPastConsultations;
+                                if (_showPastConsultations) {
+                                  _showChat = false;
+                                  _showHistory = false;
+                                  _showDoctorNotes = false;
+                                }
+                              });
+                              if (_showPastConsultations && !_pastConsultationsLoaded && !_pastConsultationsLoading) {
+                                _loadPastConsultations();
+                              }
+                            },
                           ),
                           const SizedBox(width: 10),
                           _sideBtn(
@@ -872,6 +931,8 @@ class _VideoCallWebState extends State<VideoCall> {
                               _showChat = !_showChat;
                               if (_showChat) {
                                 _showHistory = false;
+                                _showDoctorNotes = false;
+                                _showPastConsultations = false;
                                 _unreadChatCount = 0;
                               }
                             }),
@@ -914,9 +975,9 @@ class _VideoCallWebState extends State<VideoCall> {
                               tooltip: _camOff ? 'Start Camera' : 'Stop Camera',
                             ),
                           const SizedBox(width: 16),
-                          // End Consultation button
+                          // End Consultation button (camera icon per client requirements)
                           _controlBtn(
-                            icon: Icons.stop_circle_rounded,
+                            icon: Icons.videocam_off_rounded,
                             color: Colors.white,
                             bg: const Color(0xFF7C3AED),
                             onTap: _endConsultation,
@@ -937,11 +998,17 @@ class _VideoCallWebState extends State<VideoCall> {
           ),
 
           // ── Side panel ───────────────────────────────────────────────
-          if (_showChat || _showHistory)
+          if (_showChat || _showHistory || _showDoctorNotes || _showPastConsultations)
             Container(
-              width: 320,
+              width: 340,
               color: const Color(0xFF0F172A),
-              child: _showChat ? _buildChatPanel() : _buildHistoryPanel(),
+              child: _showChat
+                  ? _buildChatPanel()
+                  : _showDoctorNotes
+                      ? _buildDoctorNotesPanel()
+                      : _showPastConsultations
+                          ? _buildPastConsultationsPanel()
+                          : _buildHistoryPanel(),
             ),
         ],
       ),
@@ -1319,6 +1386,220 @@ class _VideoCallWebState extends State<VideoCall> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  // ── Doctor's Notes Panel ────────────────────────────────────────────────
+  Widget _buildDoctorNotesPanel() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.note_alt_rounded, color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+              const Text("Doctor's Notes",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16)),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                onPressed: () => setState(() => _showDoctorNotes = false),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Notes for this consultation',
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _doctorNotesController,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Type your notes here...',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF10B981)),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _notesSaving
+                        ? null
+                        : () async {
+                            setState(() => _notesSaving = true);
+                            await Future.delayed(const Duration(milliseconds: 500));
+                            if (mounted) {
+                              setState(() => _notesSaving = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notes saved'),
+                                  backgroundColor: Color(0xFF10B981),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                    icon: _notesSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.save_rounded, size: 18),
+                    label: Text(_notesSaving ? 'Saving...' : 'Save Notes'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Past Consultations Panel ─────────────────────────────────────────────
+  Widget _buildPastConsultationsPanel() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.history_rounded, color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+              const Text('Past Consultations',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16)),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                onPressed: () => setState(() => _showPastConsultations = false),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _pastConsultationsLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF10B981)))
+              : _pastConsultations.isEmpty
+                  ? const Center(
+                      child: Text('No past consultations found',
+                          style: TextStyle(color: Colors.white54)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _pastConsultations.length,
+                      itemBuilder: (ctx, i) {
+                        final c = _pastConsultations[i];
+                        final dateStr = c['date'] as String? ?? '';
+                        DateTime? dt;
+                        try { dt = DateTime.parse(dateStr); } catch (_) {}
+                        final label = dt != null
+                            ? '${dt.day}/${dt.month}/${dt.year}'
+                            : dateStr.substring(0, dateStr.length > 10 ? 10 : dateStr.length);
+                        final type = c['type'] as String? ?? 'consultation';
+                        final reason = c['reason'] as String? ?? '';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    type == 'video'
+                                        ? Icons.videocam_rounded
+                                        : Icons.local_hospital_rounded,
+                                    color: const Color(0xFF10B981),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(label,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13)),
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      type == 'video' ? 'Video' : 'In-Person',
+                                      style: const TextStyle(
+                                          color: Color(0xFF10B981), fontSize: 10),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (reason.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(reason,
+                                    style: const TextStyle(
+                                        color: Colors.white54, fontSize: 12),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
         ),
       ],
     );

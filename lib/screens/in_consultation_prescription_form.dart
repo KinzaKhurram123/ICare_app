@@ -267,8 +267,8 @@ class _InConsultationPrescriptionFormState
           indicatorColor: AppColors.primaryColor,
           tabs: const [
             Tab(text: '1. History'),
-            Tab(text: '2. SOAP'),
-            Tab(text: '3. Notes'),
+            Tab(text: "2. Doctor's Notes"),
+            Tab(text: '3. Additional Notes'),
             Tab(text: '4. Diagnosis'),
             Tab(text: '5. Medications'),
             Tab(text: '6. Lab Tests'),
@@ -377,7 +377,7 @@ class _InConsultationPrescriptionFormState
     );
   }
 
-  // Tab 2: SOAP Notes
+  // Tab 2: Doctor's Notes (formerly SOAP Notes)
   Widget _buildSOAPTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -385,7 +385,7 @@ class _InConsultationPrescriptionFormState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'SOAP Notes',
+            "Doctor's Notes",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,

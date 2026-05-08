@@ -1,8 +1,11 @@
+const mongoose = require('mongoose');
 const Consultation = require('../models/Consultation');
 const ConsultationMessage = require('../models/ConsultationMessage');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 const User = require('../models/User');
 const { connectMongoDB } = require('../config/mongodb');
+
+const isValidObjectId = (id) => id && mongoose.Types.ObjectId.isValid(id);
 
 // Start consultation with appointment
 exports.startConsultation = async (req, res) => {
@@ -13,28 +16,31 @@ exports.startConsultation = async (req, res) => {
     const { appointmentId, patientId, doctorId, reason, channelName } = req.body;
 
     // Validate required fields
-    if (!doctorId) {
-      console.error('❌ Missing doctorId');
+    if (!doctorId || !isValidObjectId(doctorId)) {
+      console.error('❌ Missing or invalid doctorId:', doctorId);
       return res.status(400).json({
         success: false,
-        message: 'Doctor ID is required'
+        message: 'Valid Doctor ID is required'
       });
     }
 
-    if (!patientId) {
-      console.error('❌ Missing patientId');
+    if (!patientId || !isValidObjectId(patientId)) {
+      console.error('❌ Missing or invalid patientId:', patientId);
       return res.status(400).json({
         success: false,
-        message: 'Patient ID is required'
+        message: 'Valid Patient ID is required'
       });
     }
 
-    console.log('✅ Validation passed. Checking for existing consultation...');
+    // Only use appointmentId if it's a valid ObjectId (not a channel name or empty string)
+    const validAppointmentId = isValidObjectId(appointmentId) ? appointmentId : null;
+
+    console.log('✅ Validation passed. appointmentId valid:', !!validAppointmentId);
 
     // Check if consultation already exists for this appointment
-    if (appointmentId) {
+    if (validAppointmentId) {
       const existingConsultation = await Consultation.findOne({
-        appointmentId,
+        appointmentId: validAppointmentId,
         status: { $in: ['pending', 'active'] }
       });
 
@@ -51,17 +57,20 @@ exports.startConsultation = async (req, res) => {
 
     console.log('✅ No existing consultation. Creating new one...');
 
-    // Create new consultation
-    const consultation = new Consultation({
+    // Build consultation document — only include appointmentId if valid
+    const consultationData = {
       patientId,
       doctorId,
-      appointmentId,
       channelName: channelName || `consultation_${Date.now()}_${patientId}`,
       reason: reason || 'Video consultation',
       status: 'active',
       startTime: new Date()
-    });
+    };
+    if (validAppointmentId) {
+      consultationData.appointmentId = validAppointmentId;
+    }
 
+    const consultation = new Consultation(consultationData);
     await consultation.save();
     console.log('✅ Consultation created:', consultation._id);
 

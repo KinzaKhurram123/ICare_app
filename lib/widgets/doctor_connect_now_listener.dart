@@ -155,89 +155,92 @@ class _DoctorConnectNowListenerState extends State<DoctorConnectNowListener> {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('doctor_in_consultation', true);
             } catch (_) {}
+            bool loadingShowing = false;
             try {
               final result = await _service.acceptRequest(requestId);
               final callChannel = result['channelName']?.toString() ?? channelName;
               final callPatient = result['patientName']?.toString() ?? patientName;
               final appointmentId = result['appointmentId']?.toString() ?? '';
-              
+
               // Get doctor's own name and ID
               final userData = await _sharedPref.getUserData();
               final doctorName = userData?.name ?? 'Doctor';
               final doctorId = userData?.id ?? '';
-              
-              nav.pop();
-              
-              // Show loading
+
+              if (doctorId.isEmpty) {
+                debugPrint('❌ Accept: doctorId is empty, cannot start consultation');
+                if (nav.canPop()) nav.pop();
+                ScaffoldMessenger.of(nav.context).showSnackBar(
+                  const SnackBar(content: Text('Session expired — please log in again'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              // Close request dialog
+              if (nav.canPop()) nav.pop();
+
+              // Show loading spinner
+              loadingShowing = true;
               showDialog(
                 context: nav.context,
                 barrierDismissible: false,
                 builder: (_) => const Center(child: CircularProgressIndicator()),
               );
 
-              try {
-                final consultationService = ConsultationService();
-                
-                // Start consultation with chat-first approach
-                final consultResult = await consultationService.startConsultationV2(
-                  appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
-                  patientId: patientId, // Use patientId from request
-                  doctorId: doctorId,
+              final consultationService = ConsultationService();
+              final consultResult = await consultationService.startConsultationV2(
+                appointmentId: appointmentId,
+                patientId: patientId,
+                doctorId: doctorId,
+                channelName: callChannel,
+              );
+
+              // Close loading spinner
+              if (nav.canPop()) nav.pop();
+              loadingShowing = false;
+
+              if (consultResult['success'] == true) {
+                final appointment = AppointmentDetail(
+                  id: appointmentId.isNotEmpty ? appointmentId : '',
+                  patient: User(id: patientId, name: callPatient, email: '', phoneNumber: '', role: 'patient'),
+                  doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
+                  status: 'confirmed',
+                  timeSlot: 'Now',
+                  date: DateTime.now(),
+                  channelName: callChannel,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
                 );
 
-                nav.pop(); // Close loading
-
-                if (consultResult['success'] == true) {
-                  // Create minimal appointment detail object for Connect Now
-                  final appointment = AppointmentDetail(
-                    id: appointmentId.isNotEmpty ? appointmentId : '',
-                    patient: User(id: patientId, name: callPatient, email: '', phoneNumber: '', role: 'patient'),
-                    doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
-                    status: 'confirmed',
-                    timeSlot: 'Now',
-                    date: DateTime.now(),
-                    channelName: callChannel,
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                  );
-
-                  // Navigate to chat screen (NOT video directly)
-                  nav.push(
-                    MaterialPageRoute(
-                      builder: (_) => _ConsultationWrapper(
-                        child: ConsultationChatScreenV2(
-                          consultationId: consultResult['consultationId'],
-                          appointment: appointment,
-                          isDoctor: true,
-                          currentUserId: doctorId,
-                          currentUserName: doctorName,
-                        ),
+                nav.push(
+                  MaterialPageRoute(
+                    builder: (_) => _ConsultationWrapper(
+                      child: ConsultationChatScreenV2(
+                        consultationId: consultResult['consultationId']?.toString(),
+                        appointment: appointment,
+                        isDoctor: true,
+                        currentUserId: doctorId,
+                        currentUserName: doctorName,
                       ),
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(nav.context).showSnackBar(
-                    SnackBar(
-                      content: Text(consultResult['message'] ?? 'Failed to start consultation'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } catch (e) {
-                nav.pop(); // Close loading
+                  ),
+                );
+              } else {
                 ScaffoldMessenger.of(nav.context).showSnackBar(
                   SnackBar(
-                    content: Text('Error: $e'),
+                    content: Text(consultResult['message']?.toString() ?? 'Failed to start consultation'),
                     backgroundColor: Colors.red,
                   ),
                 );
               }
             } catch (e) {
               debugPrint('❌ Accept failed: $e');
-              nav.pop(); // Close loading
+              // Close any open dialog safely
+              if (loadingShowing && nav.canPop()) nav.pop();
+              if (!loadingShowing && nav.canPop()) nav.pop();
               ScaffoldMessenger.of(nav.context).showSnackBar(
                 SnackBar(
-                  content: Text('Failed to accept request: $e'),
+                  content: Text('Failed to accept: $e'),
                   backgroundColor: Colors.red,
                 ),
               );

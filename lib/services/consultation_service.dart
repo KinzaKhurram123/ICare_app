@@ -18,23 +18,41 @@ class ConsultationService {
     required String patientId,
     required String doctorId,
     String? reason,
+    String? channelName,
   }) async {
     try {
       final token = await _sharedPref.getToken();
+      // Only send appointmentId if it's a valid 24-char MongoDB ObjectId
+      final bool validApptId = appointmentId.length == 24 &&
+          RegExp(r'^[a-fA-F0-9]{24}$').hasMatch(appointmentId);
       final response = await _dio.post(
         '/consultations-v2/start-v2',
         data: {
-          'appointmentId': appointmentId,
+          if (validApptId) 'appointmentId': appointmentId,
           'patientId': patientId,
           'doctorId': doctorId,
           if (reason != null) 'reason': reason,
+          if (channelName != null) 'channelName': channelName,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'Unexpected response format'};
     } on DioException catch (e) {
-      print('Error starting consultation: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      final data = e.response?.data;
+      String msg = e.message ?? 'Network error';
+      if (data is Map<String, dynamic>) {
+        msg = data['message']?.toString() ?? msg;
+      } else if (data is String && data.isNotEmpty) {
+        msg = data.length > 100 ? msg : data;
+      }
+      print('Error starting consultation: $msg');
+      return {'success': false, 'message': msg};
+    } catch (e) {
+      print('Unexpected error starting consultation: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 
