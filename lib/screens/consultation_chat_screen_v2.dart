@@ -375,7 +375,8 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
         );
         if (result['success'] == true && mounted) {
           _timer.stop();
-          Navigator.pop(context);
+          await _clearConsultationState();
+          if (mounted) Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
@@ -385,6 +386,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
         }
       }
     }
+  }
+
+  Future<void> _clearConsultationState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('doctor_in_consultation', false);
+    } catch (_) {}
   }
 
   void _showWarningDialog() {
