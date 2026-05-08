@@ -15,6 +15,15 @@ import 'package:icare/screens/admin_verification_panel.dart';
 import 'package:icare/screens/instructor_lms_dashboard.dart';
 import 'package:icare/screens/instructor_lms_courses.dart';
 import 'package:icare/screens/instructor_lms_create_course.dart';
+import 'package:icare/screens/instructor_create_quiz_screen.dart';
+import 'package:icare/screens/instructor_create_assignment_screen.dart';
+import 'package:icare/screens/instructor_grading_screen.dart';
+import 'package:icare/screens/instructor_schedule_session_screen.dart';
+import 'package:icare/screens/instructor_student_progress_screen.dart';
+import 'package:icare/screens/instructor_course_content_screen.dart';
+import 'package:icare/screens/instructor_course_analytics_screen.dart';
+import 'package:icare/screens/instructor_course_stream_screen.dart';
+import 'package:icare/screens/lms_course_page.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/app_keys.dart';
 
@@ -93,6 +102,109 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/instructor/lms', builder: (_, __) => const InstructorLmsDashboard()),
       GoRoute(path: '/instructor/lms/courses', builder: (_, __) => const InstructorLmsCoursesScreen()),
       GoRoute(path: '/instructor/lms/create-course', builder: (_, __) => const InstructorLmsCreateCourseScreen()),
+      
+      // Quiz routes
+      GoRoute(
+        path: '/instructor/lms/create-quiz',
+        builder: (context, state) {
+          final courseId = state.uri.queryParameters['courseId'];
+          return InstructorCreateQuizScreen(courseId: courseId);
+        },
+      ),
+      GoRoute(
+        path: '/instructor/lms/edit-quiz/:id',
+        builder: (context, state) {
+          final quizId = state.pathParameters['id'];
+          return InstructorCreateQuizScreen(quizId: quizId);
+        },
+      ),
+      
+      // Assignment routes
+      GoRoute(
+        path: '/instructor/lms/create-assignment',
+        builder: (context, state) {
+          final courseId = state.uri.queryParameters['courseId'];
+          return InstructorCreateAssignmentScreen(courseId: courseId);
+        },
+      ),
+      GoRoute(
+        path: '/instructor/lms/assignment/:id/grade',
+        builder: (context, state) {
+          final assignmentId = state.pathParameters['id']!;
+          final title = state.uri.queryParameters['title'] ?? 'Assignment';
+          return InstructorGradingScreen(
+            assignmentId: assignmentId,
+            assignmentTitle: title,
+          );
+        },
+      ),
+      
+      // Live session routes
+      GoRoute(
+        path: '/instructor/lms/schedule-session',
+        builder: (context, state) {
+          final courseId = state.uri.queryParameters['courseId'];
+          return InstructorScheduleSessionScreen(courseId: courseId);
+        },
+      ),
+      
+      // Student progress routes
+      GoRoute(
+        path: '/instructor/lms/course/:id/students',
+        builder: (context, state) {
+          final courseId = state.pathParameters['id']!;
+          final title = state.uri.queryParameters['title'] ?? 'Course';
+          return InstructorStudentProgressScreen(
+            courseId: courseId,
+            courseTitle: title,
+          );
+        },
+      ),
+      
+      // Content management routes
+      GoRoute(
+        path: '/instructor/lms/course/:id/content',
+        builder: (context, state) {
+          final courseId = state.pathParameters['id']!;
+          return InstructorCourseContentScreen(courseId: courseId);
+        },
+      ),
+      
+      // Analytics routes
+      GoRoute(
+        path: '/instructor/lms/course/:id/analytics',
+        builder: (context, state) {
+          final courseId = state.pathParameters['id']!;
+          final title = state.uri.queryParameters['title'] ?? 'Course';
+          return InstructorCourseAnalyticsScreen(
+            courseId: courseId,
+            courseTitle: title,
+          );
+        },
+      ),
+      
+      // Stream/Announcements routes
+      GoRoute(
+        path: '/instructor/lms/course/:id/stream',
+        builder: (context, state) {
+          final courseId = state.pathParameters['id']!;
+          final title = state.uri.queryParameters['title'] ?? 'Course';
+          return InstructorCourseStreamScreen(
+            courseId: courseId,
+            courseTitle: title,
+          );
+        },
+      ),
+      
+      // Course detail page
+      GoRoute(
+        path: '/instructor/lms/course/:id',
+        builder: (context, state) {
+          final courseId = state.pathParameters['id']!;
+          // This will need the course data - for now redirect to content
+          return InstructorCourseContentScreen(courseId: courseId);
+        },
+      ),
     ],
   );
 });

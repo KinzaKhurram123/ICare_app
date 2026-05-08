@@ -9,9 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:icare/models/consultation_timer.dart';
 import 'package:icare/models/consultation_message.dart';
 import 'package:icare/models/appointment_detail.dart';
+import 'package:icare/models/enhanced_prescription.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/in_consultation_prescription_form.dart';
 import 'package:icare/screens/patient_history_form_screen.dart';
+import 'package:icare/screens/prescription_pdf_view_screen.dart';
 import 'package:icare/services/consultation_service.dart';
 import 'package:icare/services/call_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -413,7 +415,63 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
         if (result['success'] == true && mounted) {
           _timer.stop();
           await _clearConsultationState();
-          if (mounted) Navigator.pop(context);
+          
+          // FIX: Show prescription to patient after consultation ends
+          if (mounted && !widget.isDoctor) {
+            // Patient side - fetch and show prescription
+            final prescriptionId = result['prescriptionId']?.toString();
+            if (prescriptionId != null && prescriptionId.isNotEmpty) {
+              // Navigate to prescription view
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FutureBuilder(
+                    future: _consultationService.getPrescription(prescriptionId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionWaiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snapshot.hasError || !snapshot.hasData) {
+                        return Scaffold(
+                          appBar: AppBar(title: const Text('Consultation Ended')),
+                          body: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                                const SizedBox(height: 16),
+                                const Text('Consultation completed successfully'),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                                  child: const Text('Go to Dashboard'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      // Show prescription
+                      final prescriptionData = snapshot.data as Map<String, dynamic>;
+                      return PrescriptionPdfViewScreen(
+                        prescription: EnhancedPrescription.fromJson(prescriptionData['prescription']),
+                        patientData: prescriptionData['patient'],
+                        doctorData: prescriptionData['doctor'],
+                      );
+                    },
+                  ),
+                ),
+              );
+            } else {
+              // No prescription - just show success and go back
+              if (mounted) Navigator.pop(context);
+            }
+          } else {
+            // Doctor side - just go back
+            if (mounted) Navigator.pop(context);
+          }
         }
       } catch (e) {
         if (mounted) {

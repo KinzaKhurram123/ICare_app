@@ -136,6 +136,7 @@ class BookingCard extends ConsumerWidget {
                             isDoctor: isDoctor,
                             currentUserId: currentUserId,
                             currentUserName: currentUserName,
+                            consultationId: result['consultationId']?.toString(), // FIX: Pass consultationId
                           ),
                         ),
                       );
@@ -804,6 +805,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                       isDoctor: isDoctor,
                                       currentUserId: currentUserId,
                                       currentUserName: currentUserName,
+                                      consultationId: result['consultationId']?.toString(), // FIX: Pass consultationId
                                     ),
                                   ),
                                 );
