@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 // Sub-schemas for nested structures
 
 const chiefComplaintSchema = new mongoose.Schema({
-  complaint: { type: String, required: true },
-  duration: { type: String, required: true }
+  complaint: { type: String, default: '' },
+  duration: { type: String, default: '' }
 }, { _id: false });
 
 const historyOfPresentIllnessSchema = new mongoose.Schema({
@@ -53,22 +53,22 @@ const pastMedicalHistorySchema = new mongoose.Schema({
 }, { _id: false });
 
 const surgicalHistorySchema = new mongoose.Schema({
-  surgeryProcedure: { type: String, required: true },
-  year: { type: Number, required: true },
+  surgeryProcedure: { type: String, default: '' },
+  year: { type: Number, default: 0 },
   hospitalRemarks: String
 }, { _id: false });
 
 const currentMedicationSchema = new mongoose.Schema({
-  medication: { type: String, required: true },
-  dose: { type: String, required: true },
-  frequency: { type: String, required: true },
-  duration: { type: String, required: true }
+  medication: { type: String, default: '' },
+  dose: { type: String, default: '' },
+  frequency: { type: String, default: '' },
+  duration: { type: String, default: '' }
 }, { _id: false });
 
 const allergySchema = new mongoose.Schema({
-  type: { type: String, enum: ['drug', 'food', 'other'], required: true },
-  allergen: { type: String, required: true },
-  reaction: { type: String, required: true }
+  type: { type: String, enum: ['drug', 'food', 'other', ''], default: 'other' },
+  allergen: { type: String, default: '' },
+  reaction: { type: String, default: '' }
 }, { _id: false });
 
 const drugHistorySchema = new mongoose.Schema({

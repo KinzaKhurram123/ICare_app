@@ -3,6 +3,55 @@ const Consultation = require('../models/Consultation');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 const { connectMongoDB } = require('../config/mongodb');
 
+// Sanitize patient history data to prevent Mongoose CastErrors from bad client data
+function sanitizeHistoryData(data) {
+  const d = { ...data };
+
+  // Coerce allergy type — must be 'drug'|'food'|'other'
+  if (Array.isArray(d.drugHistory?.allergies)) {
+    d.drugHistory = { ...d.drugHistory };
+    d.drugHistory.allergies = d.drugHistory.allergies.map(a => ({
+      ...a,
+      type: ['drug', 'food', 'other'].includes(a.type) ? a.type : 'other',
+      allergen: a.allergen || '',
+      reaction: a.reaction || '',
+    }));
+  }
+
+  // Coerce surgical year to number
+  if (Array.isArray(d.surgicalHistory)) {
+    d.surgicalHistory = d.surgicalHistory.map(s => ({
+      ...s,
+      year: parseInt(s.year, 10) || 0,
+      surgeryProcedure: s.surgeryProcedure || '',
+    }));
+  }
+
+  // Coerce generalFindings booleans (Flutter might send strings in edge cases)
+  if (d.virtualExamination?.generalFindings) {
+    const gf = d.virtualExamination.generalFindings;
+    const toBool = v => v === true || v === 'true' || v === 1;
+    d.virtualExamination = {
+      ...d.virtualExamination,
+      generalFindings: {
+        ...gf,
+        pallor: toBool(gf.pallor),
+        icterus: toBool(gf.icterus),
+        cyanosis: toBool(gf.cyanosis),
+        clubbing: toBool(gf.clubbing),
+        edema: toBool(gf.edema),
+        lymphadenopathy: toBool(gf.lymphadenopathy),
+      },
+    };
+  }
+
+  // Remove _id / timestamps so Mongoose doesn't choke on them
+  delete d._id;
+  delete d.updatedAt;
+
+  return d;
+}
+
 // Create patient history
 exports.createPatientHistory = async (req, res) => {
   try {
@@ -35,12 +84,10 @@ exports.createPatientHistory = async (req, res) => {
       });
     }
 
-    // Create new history — log body for debugging 500 errors
-    console.log('🔵 Creating patient history. Keys:', Object.keys(historyData));
-    if (historyData.virtualExamination?.generalFindings) {
-      console.log('📋 generalFindings:', JSON.stringify(historyData.virtualExamination.generalFindings));
-    }
-    history = new PatientHistoryForm(historyData);
+    // Sanitize data before Mongoose sees it — coerce types to prevent CastErrors
+    const safe = sanitizeHistoryData(historyData);
+    console.log('🔵 Creating patient history for consultation:', safe.consultationId);
+    history = new PatientHistoryForm(safe);
     await history.save();
 
     // Update prescription with history reference if prescription exists
@@ -192,8 +239,9 @@ exports.updatePatientHistory = async (req, res) => {
       });
     }
 
-    // Update fields
-    Object.assign(history, updateData);
+    // Update fields (sanitize first)
+    const safe = sanitizeHistoryData(updateData);
+    Object.assign(history, safe);
     await history.save();
 
     res.json({

@@ -296,8 +296,8 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
         historyData: historyForm.toJson(),
       );
 
-      if (result['success'] && mounted) {
-        widget.onHistoryComplete?.call(result['historyId']);
+      if (result['success'] == true && mounted) {
+        widget.onHistoryComplete?.call(result['historyId'] ?? '');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Patient history saved successfully'),
@@ -305,6 +305,11 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
           ),
         );
         Navigator.pop(context);
+      } else if (mounted) {
+        final msg = result['message']?.toString() ?? result['error']?.toString() ?? 'Save failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
       if (mounted) {
