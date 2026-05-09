@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/services/laboratory_service.dart';
@@ -7,6 +6,7 @@ import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/labb_details.dart';
 import 'package:icare/screens/pharmacy_prescription_screen.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -28,10 +28,6 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  // Tracks which prescription cards are expanded (by record _id)
-  final Set<String> _expandedIds = {};
-  // Tracks which "Order Medicines" / "Order Lab Tests" accordions are open
-  final Set<String> _ordersExpanded = {};
 
   @override
   void initState() {
@@ -96,11 +92,11 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     setState(() => _isLoading = true);
     try {
       final result = await _medicalRecordService.getMyRecords();
-      debugPrint('🔍 PRESCRIPTION DEBUG: API result success = ${result['success']}');
+      debugPrint('ðŸ” PRESCRIPTION DEBUG: API result success = ${result['success']}');
 
       if (result['success'] && mounted) {
         final records = result['records'] as List<dynamic>;
-        debugPrint('🔍 PRESCRIPTION DEBUG: Total records = ${records.length}');
+        debugPrint('ðŸ” PRESCRIPTION DEBUG: Total records = ${records.length}');
 
         final prescriptions = records.where((r) {
           final p = r['prescription'];
@@ -113,14 +109,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
 
           final hasReferral = p is Map && p['referral'] != null;
 
-          debugPrint('🔍 Record ${r['_id']}: meds=${meds?.length ?? 0}, testsInPrescription=${testsInPrescription?.length ?? 0}, testsAtTopLevel=${testsAtTopLevel?.length ?? 0}, hasReferral=$hasReferral');
+          debugPrint('ðŸ” Record ${r['_id']}: meds=${meds?.length ?? 0}, testsInPrescription=${testsInPrescription?.length ?? 0}, testsAtTopLevel=${testsAtTopLevel?.length ?? 0}, hasReferral=$hasReferral');
 
           return (meds != null && meds.isNotEmpty) ||
               (tests != null && tests.isNotEmpty) ||
               hasReferral;
         }).toList();
 
-        debugPrint('🔍 PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
+        debugPrint('ðŸ” PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
 
         setState(() {
           _prescriptions = prescriptions;
@@ -131,7 +127,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('❌ Error loading prescriptions: $e');
+      debugPrint('âŒ Error loading prescriptions: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -159,7 +155,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // ── Search Bar ──────────────────────────────────────────
+                // â”€â”€ Search Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Container(
                   color: Colors.white,
                   padding: EdgeInsets.fromLTRB(
@@ -168,7 +164,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText:
-                          'Search by diagnosis, doctor, medicine, lab test…',
+                          'Search by diagnosis, doctor, medicine, lab testâ€¦',
                       hintStyle: const TextStyle(
                           fontSize: 13, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.search_rounded,
@@ -203,7 +199,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                     ),
                   ),
                 ),
-                // ── Result count ────────────────────────────────────────
+                // â”€â”€ Result count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (_searchQuery.isNotEmpty)
                   Padding(
                     padding: EdgeInsets.fromLTRB(
@@ -224,7 +220,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
                       ),
                     ),
                   ),
-                // ── List ────────────────────────────────────────────────
+                // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Expanded(
                   child: _filtered.isEmpty && _searchQuery.isNotEmpty
                       ? Center(
@@ -287,25 +283,14 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     final medicines = (record['prescription']?['medicines'] as List?) ?? [];
     final labTests = (record['prescription']?['labTests'] as List?)
         ?? (record['labTests'] as List?) ?? [];
-    final notes = record['notes']?.toString() ?? record['doctorNotes']?.toString() ?? '';
-    final followUpDays = record['followUpDays'];
-    final patientName = record['patient']?['name'] ?? record['patientId']?['name'] ?? '';
 
-    final isExpanded = _expandedIds.contains(rawId);
-    final ordersKey = '${rawId}_orders';
-    final labsKey = '${rawId}_labs';
-    final ordersOpen = _ordersExpanded.contains(ordersKey);
-    final labsOpen = _ordersExpanded.contains(labsKey);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isExpanded ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
-          width: isExpanded ? 1.5 : 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -317,864 +302,117 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── HEADER (tap to expand/collapse) ────────────────────────
-          InkWell(
-            onTap: () => setState(() {
-              if (isExpanded) {
-                _expandedIds.remove(rawId);
-              } else {
-                _expandedIds.add(rawId);
-              }
-            }),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
-              bottomRight: isExpanded ? Radius.zero : const Radius.circular(16),
-            ),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(15),
-                  topRight: const Radius.circular(15),
-                  bottomLeft:
-                      isExpanded ? Radius.zero : const Radius.circular(15),
-                  bottomRight:
-                      isExpanded ? Radius.zero : const Radius.circular(15),
-                ),
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.description_rounded,
-                        color: Colors.white, size: 20),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(diagnosis,
-                            style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 2),
-                        Text('Dr. $doctorName  ·  ${DateFormat('MMM dd, yyyy').format(date)}',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  child: const Icon(Icons.description_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(recordNumber,
-                            style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.4)),
-                      ),
-                      const SizedBox(height: 6),
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      Text(diagnosis,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('Dr. $doctorName',
+                          style: const TextStyle(fontSize: 13, color: Colors.white70)),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── EXPANDED DETAIL (inline accordion) ─────────────────────
-          if (isExpanded) ...[
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Patient info row
-                  if (patientName.isNotEmpty)
-                    _infoChip(Icons.person_rounded,
-                        const Color(0xFF0EA5E9), 'Patient: $patientName'),
-                  if (notes.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _infoBlock(Icons.notes_rounded, const Color(0xFF8B5CF6),
-                        'Doctor Notes', notes),
-                  ],
-
-                  // Medicines section
-                  if (medicines.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _sectionAccordion(
-                      icon: Icons.medication_rounded,
-                      color: const Color(0xFF3B82F6),
-                      title: 'Medicines (${medicines.length})',
-                      isOpen: ordersOpen,
-                      onToggle: () => setState(() {
-                        if (ordersOpen) {
-                          _ordersExpanded.remove(ordersKey);
-                        } else {
-                          _ordersExpanded.add(ordersKey);
-                        }
-                      }),
-                      content: Column(
-                        children: [
-                          ...medicines.map((m) => _buildMedicineItem(m)),
-                          const SizedBox(height: 8),
-                          // Order medicines inline
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showFindPharmacies(
-                                  context, medicines),
-                              icon: const Icon(
-                                  Icons.local_pharmacy_rounded,
-                                  size: 16),
-                              label: const Text('Find Pharmacies'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF3B82F6),
-                                side: const BorderSide(
-                                    color: Color(0xFF3B82F6)),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Lab tests section
-                  if (labTests.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _sectionAccordion(
-                      icon: Icons.biotech_rounded,
-                      color: const Color(0xFF8B5CF6),
-                      title: 'Lab Tests (${labTests.length})',
-                      isOpen: labsOpen,
-                      onToggle: () => setState(() {
-                        if (labsOpen) {
-                          _ordersExpanded.remove(labsKey);
-                        } else {
-                          _ordersExpanded.add(labsKey);
-                        }
-                      }),
-                      content: Column(
-                        children: [
-                          ...labTests.map((t) => _buildLabTestItem(t)),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  _showFindLabs(context, labTests),
-                              icon: const Icon(Icons.science_rounded,
-                                  size: 16),
-                              label: const Text('Find Labs'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF8B5CF6),
-                                side: const BorderSide(
-                                    color: Color(0xFF8B5CF6)),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Follow-up
-                  if (followUpDays != null && followUpDays != 0) ...[
-                    const SizedBox(height: 10),
-                    _infoChip(Icons.event_repeat_rounded,
-                        const Color(0xFF0EA5E9), 'Follow up in $followUpDays days'),
-                  ],
-
-                  // ── Action buttons: Download | Copy ──────────────
-                  const SizedBox(height: 14),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _copyPrescriptionText(record, medicines, labTests),
-                          icon: const Icon(Icons.copy_rounded, size: 16),
-                          label: const Text('Copy'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF64748B),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _sharePrescription(record, medicines, labTests),
-                          icon: const Icon(Icons.share_rounded, size: 16),
-                          label: const Text('Share'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0EA5E9),
-                            foregroundColor: Colors.white,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _infoChip(IconData icon, Color color, String text) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text(text,
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: color,
-                      fontWeight: FontWeight.w600))),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoBlock(
-      IconData icon, Color color, String title, String text) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 6),
-            Text(title,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: color)),
-          ]),
-          const SizedBox(height: 6),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF374151),
-                  height: 1.4)),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionAccordion({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required bool isOpen,
-    required VoidCallback onToggle,
-    required Widget content,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: isOpen
-                ? const BorderRadius.only(
-                    topLeft: Radius.circular(9),
-                    topRight: Radius.circular(9))
-                : BorderRadius.circular(9),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Row(
-                children: [
-                  Icon(icon, size: 18, color: color),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: Text(title,
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: color))),
-                  Icon(
-                    isOpen
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    size: 20,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (isOpen) ...[
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: content,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _copyPrescriptionText(
-      dynamic record, List<dynamic> medicines, List<dynamic> labTests) {
-    final buf = StringBuffer();
-    buf.writeln('=== PRESCRIPTION ===');
-    buf.writeln(
-        'Date: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(record['createdAt'] ?? DateTime.now().toIso8601String()))}');
-    buf.writeln('Diagnosis: ${record['diagnosis'] ?? 'N/A'}');
-    buf.writeln('Doctor: ${record['doctor']?['name'] ?? 'N/A'}');
-    if (medicines.isNotEmpty) {
-      buf.writeln('\nMEDICINES:');
-      for (final m in medicines) {
-        final name = m['name'] ?? m['medicineName'] ?? 'Medicine';
-        final dose = m['dosage'] ?? m['dose'] ?? '';
-        final freq = m['frequency'] ?? '';
-        final dur = m['duration'] ?? '';
-        buf.writeln(
-            '• $name${dose.isNotEmpty ? ' | $dose' : ''}${freq.isNotEmpty ? ' | $freq' : ''}${dur.isNotEmpty ? ' | $dur' : ''}');
-      }
-    }
-    if (labTests.isNotEmpty) {
-      buf.writeln('\nLAB TESTS:');
-      for (final t in labTests) {
-        final name = t is Map
-            ? (t['name'] ?? t['testName'] ?? 'Test')
-            : t.toString();
-        buf.writeln('• $name');
-      }
-    }
-    Clipboard.setData(ClipboardData(text: buf.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prescription copied to clipboard')),
-    );
-  }
-
-  void _sharePrescription(
-      dynamic record, List<dynamic> medicines, List<dynamic> labTests) {
-    _copyPrescriptionText(record, medicines, labTests);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text(
-              'Prescription copied! Paste it in WhatsApp or any app to share.')),
-    );
-  }
-
-  // ── MY PRESCRIPTION FULL DETAIL SHEET ──────────────────────────────────
-  void _showPrescriptionDetail(
-    BuildContext context,
-    dynamic record,
-    List<dynamic> medicines,
-    List<dynamic> labTests,
-    String recordNumber,
-  ) {
-    final patientData = record['patient'];
-    final doctorData = record['doctor'];
-    final date = DateTime.parse(record['createdAt']);
-
-    // Patient info
-    final patientName = patientData is Map
-        ? (patientData['name'] ?? patientData['username'] ?? 'Patient').toString()
-        : 'Patient';
-    final patientEmail = patientData is Map
-        ? (patientData['email'] ?? '').toString()
-        : '';
-    final patientGender = patientData is Map
-        ? (patientData['gender'] ?? '').toString()
-        : '';
-    final patientAge = patientData is Map
-        ? (patientData['age'] ?? '').toString()
-        : '';
-
-    // Doctor info
-    final doctorName = doctorData is Map
-        ? (doctorData['name'] ?? doctorData['username'] ?? 'Doctor').toString()
-        : 'Doctor';
-
-    // Determine if "For Myself" — if patient has a valid MR number (has _id)
-    final patientId = patientData is Map
-        ? (patientData['_id'] ?? patientData['id'] ?? '').toString()
-        : '';
-    final hasMrNumber = patientId.isNotEmpty && patientId.length >= 6;
-    final mrNumber = hasMrNumber
-        ? 'MR-${patientId.substring(patientId.length - 6).toUpperCase()}'
-        : null;
-
-    // Diagnosis / SOAP notes
-    final diagnosis = (record['diagnosis'] ?? 'General Consultation').toString();
-    final notes = (record['notes'] ?? '').toString();
-    final followUpDate = record['followUpDate'] != null
-        ? DateTime.tryParse(record['followUpDate'].toString())
-        : null;
-    final followUpDays = record['followUpDays'];
-    final followUpMonths = record['followUpMonths'];
-
-    // Assigned courses
-    final assignedCourses = (record['assignedCourses'] as List?) ?? [];
-
-    // Vital signs
-    final vitals = record['vitalSigns'] as Map?;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.92,
-        minChildSize: 0.5,
-        maxChildSize: 0.97,
-        builder: (ctx, scrollCtrl) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2)),
-              ),
-              // Header
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    Text(DateFormat('MMM dd, yyyy').format(date),
+                        style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.assignment_rounded,
-                          color: Colors.white, size: 24),
+                      child: Text(recordNumber,
+                          style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('My Prescription',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white)),
-                          Text(DateFormat('MMMM dd, yyyy').format(date),
-                              style: const TextStyle(
-                                  fontSize: 13, color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                    if (mrNumber != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(mrNumber,
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5)),
-                      ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 4),
-              // Scrollable content
-              Expanded(
-                child: ListView(
-                  controller: scrollCtrl,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  children: [
-                    // ── PATIENT INFO CARD ─────────────────────────────
-                    _prescriptionSection(
-                      icon: Icons.person_rounded,
-                      color: const Color(0xFF0EA5E9),
-                      title: 'Patient Information',
-                      child: Column(
-                        children: [
-                          _infoRow('Name', patientName),
-                          if (patientGender.isNotEmpty)
-                            _infoRow('Gender', patientGender),
-                          if (patientAge.isNotEmpty)
-                            _infoRow('Age', '$patientAge years'),
-                          if (patientEmail.isNotEmpty)
-                            _infoRow('Email', patientEmail),
-                          if (mrNumber != null)
-                            _infoRow('MR Number', mrNumber,
-                                highlight: true)
-                          else
-                            _infoRow('Appointment For', 'Someone Else',
-                                highlight: false),
-                        ],
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // My Prescription
+                _clickableTile(
+                  icon: Icons.assignment_rounded,
+                  color: const Color(0xFF0EA5E9),
+                  bgColor: const Color(0xFFE0F2FE),
+                  title: 'My Prescription',
+                  subtitle: 'View full prescription details',
+                  arrowColor: const Color(0xFF0EA5E9),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PrescriptionDetailScreen(
+                        prescription: Map<String, dynamic>.from(record as Map),
                       ),
                     ),
-                    const SizedBox(height: 12),
-
-                    // ── DOCTOR INFO ───────────────────────────────────
-                    _prescriptionSection(
-                      icon: Icons.medical_services_rounded,
-                      color: const Color(0xFF10B981),
-                      title: 'Consulting Doctor',
-                      child: _infoRow('Doctor', 'Dr. $doctorName'),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── DIAGNOSIS ─────────────────────────────────────
-                    _prescriptionSection(
-                      icon: Icons.local_hospital_rounded,
-                      color: const Color(0xFFEF4444),
-                      title: 'Diagnosis',
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: const Color(0xFFEF4444)
-                                  .withValues(alpha: 0.2)),
-                        ),
-                        child: Text(diagnosis,
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A))),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── SOAP NOTES / CLINICAL NOTES ───────────────────
-                    if (notes.isNotEmpty) ...[
-                      _prescriptionSection(
-                        icon: Icons.notes_rounded,
-                        color: const Color(0xFF8B5CF6),
-                        title: 'Clinical Notes',
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F3FF),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                                color: const Color(0xFF8B5CF6)
-                                    .withValues(alpha: 0.2)),
-                          ),
-                          child: Text(notes,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF374151),
-                                  height: 1.5)),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── VITAL SIGNS ───────────────────────────────────
-                    if (vitals != null && vitals.isNotEmpty) ...[
-                      _prescriptionSection(
-                        icon: Icons.monitor_heart_rounded,
-                        color: const Color(0xFFF59E0B),
-                        title: 'Vital Signs',
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if ((vitals['bloodPressure'] ?? '').toString().isNotEmpty)
-                              _vitalChip('BP', vitals['bloodPressure'].toString()),
-                            if (vitals['temperature'] != null)
-                              _vitalChip('Temp', '${vitals['temperature']}°C'),
-                            if (vitals['heartRate'] != null)
-                              _vitalChip('Heart Rate', '${vitals['heartRate']} bpm'),
-                            if (vitals['weight'] != null)
-                              _vitalChip('Weight', '${vitals['weight']} kg'),
-                            if (vitals['height'] != null)
-                              _vitalChip('Height', '${vitals['height']} cm'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── MEDICINES ─────────────────────────────────────
-                    if (medicines.isNotEmpty) ...[
-                      _prescriptionSection(
-                        icon: Icons.medication_rounded,
-                        color: const Color(0xFF3B82F6),
-                        title: 'Prescribed Medicines',
-                        child: Column(
-                          children: medicines
-                              .map((m) => _buildMedicineItem(m))
-                              .toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── LAB TESTS ─────────────────────────────────────
-                    if (labTests.isNotEmpty) ...[
-                      _prescriptionSection(
-                        icon: Icons.biotech_rounded,
-                        color: const Color(0xFF8B5CF6),
-                        title: 'Ordered Lab Tests',
-                        child: Column(
-                          children: labTests
-                              .map((t) => _buildLabTestItem(t))
-                              .toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── ASSIGNED COURSES ──────────────────────────────
-                    if (assignedCourses.isNotEmpty) ...[
-                      _prescriptionSection(
-                        icon: Icons.school_rounded,
-                        color: const Color(0xFF10B981),
-                        title: 'Assigned Courses',
-                        child: Column(
-                          children: assignedCourses.map((course) {
-                            final courseName = course is Map
-                                ? (course['title'] ?? course['name'] ?? 'Course').toString()
-                                : course.toString();
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                    color: const Color(0xFF10B981)
-                                        .withValues(alpha: 0.3)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.play_circle_rounded,
-                                      color: Color(0xFF10B981), size: 20),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(courseName,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF0F172A))),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── FOLLOW UP ─────────────────────────────────────
-                    if (followUpDate != null ||
-                        (followUpDays != null && followUpDays != 0) ||
-                        (followUpMonths != null && followUpMonths != 0)) ...[
-                      _prescriptionSection(
-                        icon: Icons.event_repeat_rounded,
-                        color: const Color(0xFF0EA5E9),
-                        title: 'Follow Up',
-                        child: _infoRow(
-                          'Next Visit',
-                          followUpDate != null
-                              ? DateFormat('MMMM dd, yyyy').format(followUpDate)
-                              : followUpDays != null && followUpDays != 0
-                                  ? 'In $followUpDays days'
-                                  : 'In $followUpMonths months',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                const SizedBox(height: 12),
 
-  Widget _prescriptionSection({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required Widget child,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 16),
-              ),
-              const SizedBox(width: 10),
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A))),
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
+                if (medicines.isNotEmpty) ...[
+                  _clickableTile(
+                    icon: Icons.medication_rounded,
+                    color: const Color(0xFF3B82F6),
+                    bgColor: const Color(0xFFEFF6FF),
+                    title: 'Medicines',
+                    subtitle: '${medicines.length} prescribed • Find pharmacies',
+                    arrowColor: const Color(0xFF3B82F6),
+                    onTap: () => _showFindPharmacies(context, medicines),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
-  Widget _infoRow(String label, String value, {bool highlight = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600)),
-          ),
-          Expanded(
-            child: Text(value,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: highlight
-                        ? const Color(0xFF0EA5E9)
-                        : const Color(0xFF0F172A))),
+                if (labTests.isNotEmpty) ...[
+                  _clickableTile(
+                    icon: Icons.biotech_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    bgColor: const Color(0xFFF5F3FF),
+                    title: 'Lab Tests',
+                    subtitle: '${labTests.length} tests ordered • Find labs',
+                    arrowColor: const Color(0xFF8B5CF6),
+                    onTap: () => _showFindLabs(context, labTests),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _vitalChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A))),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11, color: Color(0xFF64748B))),
-        ],
-      ),
-    );
-  }
-
-  // ── CLICKABLE TILE ───────────────────────────────────────────────────────
+  // â”€â”€ CLICKABLE TILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _clickableTile({
     required IconData icon,
     required Color color,
@@ -1228,7 +466,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  // ── MEDICINES DETAIL SHEET ───────────────────────────────────────────────
+  // â”€â”€ MEDICINES DETAIL SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showMedicinesDetail(BuildContext context, List<dynamic> medicines) {
     showModalBottomSheet(
       context: context,
@@ -1328,7 +566,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  // ── LAB TESTS DETAIL SHEET ───────────────────────────────────────────────
+  // â”€â”€ LAB TESTS DETAIL SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showLabTestsDetail(BuildContext context, List<dynamic> labTests) {
     showModalBottomSheet(
       context: context,
@@ -1528,7 +766,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
             Padding(
               padding: const EdgeInsets.only(left: 26),
               child: Text(
-                '📝 ${medicine['instructions']}',
+                'ðŸ“ ${medicine['instructions']}',
                 style: const TextStyle(
                     fontSize: 12, color: Color(0xFF64748B)),
               ),
@@ -1624,7 +862,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  // ── FIND LABS BOTTOM SHEET ──────────────────────────────────────────
+  // â”€â”€ FIND LABS BOTTOM SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showFindLabs(BuildContext context, List<dynamic> tests) {
     showModalBottomSheet(
       context: context,
@@ -1634,7 +872,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     );
   }
 
-  // ── FIND PHARMACIES BOTTOM SHEET ───────────────────────────────────
+  // â”€â”€ FIND PHARMACIES BOTTOM SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showFindPharmacies(BuildContext context, List<dynamic> medicines) {
     showModalBottomSheet(
       context: context,
@@ -1645,9 +883,9 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // FIND LABS SHEET
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _FindLabsSheet extends StatefulWidget {
   final List<dynamic> tests;
   const _FindLabsSheet({required this.tests});
@@ -1776,7 +1014,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Find Labs error: $e');
+      debugPrint('âŒ Find Labs error: $e');
       if (mounted) setState(() { _isLoading = false; _error = e.toString(); });
     }
   }
@@ -1840,7 +1078,7 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
                   ),
                   const SizedBox(height: 12),
 
-                  // ── Mode toggle: Nearest | Search by Location ──────────
+                  // â”€â”€ Mode toggle: Nearest | Search by Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   Row(
                     children: [
                       _modeBtn('nearest', Icons.near_me_rounded, 'Nearest', const Color(0xFF8B5CF6)),
@@ -2160,9 +1398,9 @@ class _FindLabsSheetState extends State<_FindLabsSheet> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // FIND PHARMACIES SHEET
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _FindPharmaciesSheet extends StatefulWidget {
   final List<dynamic> medicines;
   const _FindPharmaciesSheet({required this.medicines});
@@ -2344,7 +1582,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                   ),
                   const SizedBox(height: 14),
 
-                  // ── Mode toggle: Nearest | Search by Location ──────────
+                  // â”€â”€ Mode toggle: Nearest | Search by Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   Row(
                     children: [
                       _modeBtn('nearest', Icons.near_me_rounded, 'Nearest', const Color(0xFF3B82F6)),
@@ -2354,7 +1592,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                   ),
                   const SizedBox(height: 12),
 
-                  // ── Nearest: location status banner ───────────────────
+                  // â”€â”€ Nearest: location status banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (_mode == 'nearest')
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -2390,7 +1628,7 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                       ),
                     ),
 
-                  // ── Search by Location: text field ────────────────────
+                  // â”€â”€ Search by Location: text field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (_mode == 'search')
                     TextField(
                       controller: _searchCtrl,

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/laboratories.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 /// Full PDF-style prescription display screen.
 ///
@@ -179,6 +183,11 @@ class PrescriptionDetailScreen extends StatelessWidget {
                 color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
         actions: [
           IconButton(
+            onPressed: () => _downloadPdf(context),
+            icon: const Icon(Icons.download_rounded, color: Colors.white),
+            tooltip: 'Download PDF',
+          ),
+          IconButton(
             onPressed: () => _showShareSheet(context),
             icon: const Icon(Icons.share_rounded, color: Colors.white),
             tooltip: 'Share',
@@ -304,31 +313,42 @@ class PrescriptionDetailScreen extends StatelessWidget {
         children: [
           // iCare logo row + date/time
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Logo
+              // iCare logo image
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white.withOpacity(0.3)),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Image.asset(
+                  'assets/Asset 1.png',
+                  height: 36,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
+                      SizedBox(width: 6),
+                      Text('iCare', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
-                    const SizedBox(width: 6),
-                    const Text('iCare',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1)),
+                    Text('iCare Telemedicine Platform',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                    Text('RM Health Solutions (Private) Limited',
+                        style: TextStyle(color: Colors.white70, fontSize: 11)),
                   ],
                 ),
               ),
-              const Spacer(),
               // Date
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -840,36 +860,90 @@ class PrescriptionDetailScreen extends StatelessWidget {
     return Column(
       children: [
         const Divider(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Left: iCare seal/stamp
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primaryColor, width: 2),
+                color: const Color(0xFFEFF6FF),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/Asset 1.png', height: 32, fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital_rounded, color: AppColors.primaryColor, size: 28)),
+                  const SizedBox(height: 4),
+                  const Text('iCare', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primaryColor, letterSpacing: 1)),
+                ],
+              ),
+            ),
+            const Spacer(),
+            // Right: doctor signature block (Aga Khan style)
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Signature line
                 Container(
-                  width: 160,
-                  height: 1,
-                  color: const Color(0xFF374151),
+                  width: 180,
+                  height: 40,
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Stylized signature text
+                      Text(
+                        'Dr. $_doctorName',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primaryColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                Container(width: 180, height: 1, color: const Color(0xFF374151)),
                 const SizedBox(height: 6),
                 Text('Dr. $_doctorName',
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-                const Text('Authorized Signature',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
                 if (_doctorPmdc.isNotEmpty)
-                  Text('PMDC: $_doctorPmdc',
-                      style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                  Text('PMDC Reg. No. $_doctorPmdc',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                if (_doctorPhone.isNotEmpty)
+                  Text(_doctorPhone,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
               ],
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        const Center(
-          child: Text('This prescription is generated electronically via iCare Platform.',
-              style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1)),
-              textAlign: TextAlign.center),
+        const SizedBox(height: 20),
+        // Electronic generation notice (Aga Khan style footer)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF0EA5E9)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'This prescription has been electronically generated and authenticated via iCare — RM Health Solutions (Private) Limited. Valid only for the stated patient and date.',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF64748B), height: 1.4),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -946,6 +1020,229 @@ class PrescriptionDetailScreen extends StatelessWidget {
     );
   }
 
+  // ── PDF DOWNLOAD ─────────────────────────────────────────────────────────
+
+  Future<void> _downloadPdf(BuildContext context) async {
+    try {
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context ctx) => [
+            // Header
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('iCare', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                    pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                    pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(_prescriptionDate, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                    if (_prescriptionTime.isNotEmpty)
+                      pw.Text(_prescriptionTime, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                  ],
+                ),
+              ],
+            ),
+            pw.Divider(color: PdfColors.blue800, thickness: 2),
+            pw.SizedBox(height: 8),
+            // Patient + Doctor
+            pw.Row(
+              children: [
+                pw.Expanded(child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('PATIENT', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
+                    pw.Text(_patientName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    if (_patientAge.isNotEmpty) pw.Text('Age: $_patientAge  |  Gender: $_patientGender', style: const pw.TextStyle(fontSize: 10)),
+                    if (_patientMrNumber.isNotEmpty) pw.Text('MR#: $_patientMrNumber', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  ],
+                )),
+                pw.SizedBox(width: 20),
+                pw.Expanded(child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('DOCTOR', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
+                    pw.Text('Dr. $_doctorName', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    if (_doctorPmdc.isNotEmpty) pw.Text('PMDC: $_doctorPmdc', style: const pw.TextStyle(fontSize: 10)),
+                    if (_doctorPhone.isNotEmpty) pw.Text('Phone: $_doctorPhone', style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                )),
+              ],
+            ),
+            pw.SizedBox(height: 16),
+            // Diagnosis
+            if (_diagnoses.isNotEmpty) ...[
+              pw.Text('DIAGNOSIS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              pw.Wrap(spacing: 8, runSpacing: 4,
+                children: _diagnoses.map((d) {
+                  final desc = d is Map ? (d['description'] ?? d['desc'] ?? d['name'] ?? d.toString()) : d.toString();
+                  return pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: pw.BoxDecoration(color: PdfColors.red50, border: pw.Border.all(color: PdfColors.red200), borderRadius: pw.BorderRadius.circular(4)),
+                    child: pw.Text(desc.toString(), style: const pw.TextStyle(fontSize: 11)),
+                  );
+                }).toList(),
+              ),
+              pw.SizedBox(height: 12),
+            ],
+            // Medicines
+            if (_medicines.isNotEmpty) ...[
+              pw.Text('Rx  MEDICATIONS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              ..._medicines.asMap().entries.map((e) {
+                final m = e.value;
+                final name = m is Map ? (m['name'] ?? m['medicine'] ?? 'Medicine') : m.toString();
+                final dose = m is Map ? (m['dosage'] ?? m['dose'] ?? '') : '';
+                final freq = m is Map ? (m['frequency'] ?? '') : '';
+                final dur = m is Map ? (m['duration'] ?? '') : '';
+                return pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 6),
+                  padding: const pw.EdgeInsets.all(8),
+                  decoration: pw.BoxDecoration(color: PdfColors.blue50, border: pw.Border.all(color: PdfColors.blue200), borderRadius: pw.BorderRadius.circular(4)),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('${e.key + 1}. $name', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                      if (dose.isNotEmpty || freq.isNotEmpty || dur.isNotEmpty)
+                        pw.Text('${dose.isNotEmpty ? "Dose: $dose  " : ""}${freq.isNotEmpty ? "Frequency: $freq  " : ""}${dur.isNotEmpty ? "Duration: $dur" : ""}',
+                            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                    ],
+                  ),
+                );
+              }),
+              pw.SizedBox(height: 12),
+            ],
+            // Lab Tests
+            if (_labTests.isNotEmpty) ...[
+              pw.Text('LAB TESTS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              ..._labTests.map((t) {
+                final name = t is Map ? (t['name'] ?? t['testName'] ?? 'Lab Test') : t.toString();
+                return pw.Bullet(text: name.toString(), style: const pw.TextStyle(fontSize: 11));
+              }),
+              pw.SizedBox(height: 12),
+            ],
+            // Doctor notes
+            if (_doctorNotes.isNotEmpty) ...[
+              pw.Text('DOCTOR NOTES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              pw.Text(_doctorNotes, style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 12),
+            ],
+            // Follow-up
+            if (_followUpDate.isNotEmpty) ...[
+              pw.Text('FOLLOW-UP', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              pw.Text('Next visit: $_followUpDate', style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ],
+            // Signature
+            pw.Divider(),
+            pw.SizedBox(height: 8),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Container(width: 160, height: 1, color: PdfColors.black),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Dr. $_doctorName', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                    if (_doctorPmdc.isNotEmpty) pw.Text('PMDC Reg. No. $_doctorPmdc', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                    pw.Text('Authorized Signature', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                  ],
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 12),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: pw.BorderRadius.circular(4)),
+              child: pw.Text(
+                'This prescription has been electronically generated and authenticated via iCare — RM Health Solutions (Private) Limited. Valid only for the stated patient and date.',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdf.save(),
+        name: 'iCare_Prescription_${_patientName.replaceAll(' ', '_')}_$_prescriptionDate.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    }
+  }
+
+  // ── COPY TEXT ────────────────────────────────────────────────────────────
+
+  void _copyPrescriptionText(BuildContext context) {
+    final buf = StringBuffer();
+    buf.writeln('=== iCare PRESCRIPTION ===');
+    buf.writeln('Date: $_prescriptionDate');
+    buf.writeln('Patient: $_patientName');
+    if (_patientAge.isNotEmpty) buf.writeln('Age/Gender: $_patientAge / $_patientGender');
+    if (_patientMrNumber.isNotEmpty) buf.writeln('MR#: $_patientMrNumber');
+    buf.writeln('\nDoctor: Dr. $_doctorName');
+    if (_doctorPmdc.isNotEmpty) buf.writeln('PMDC: $_doctorPmdc');
+    if (_diagnoses.isNotEmpty) {
+      buf.writeln('\nDIAGNOSIS:');
+      for (final d in _diagnoses) {
+        buf.writeln('• ${d is Map ? (d['description'] ?? d['name'] ?? d.toString()) : d}');
+      }
+    }
+    if (_medicines.isNotEmpty) {
+      buf.writeln('\nMEDICINES:');
+      for (int i = 0; i < _medicines.length; i++) {
+        final m = _medicines[i];
+        if (m is Map) {
+          final name = m['name'] ?? m['medicine'] ?? 'Medicine';
+          final dose = m['dosage'] ?? m['dose'] ?? '';
+          final freq = m['frequency'] ?? '';
+          final dur = m['duration'] ?? '';
+          buf.writeln('${i + 1}. $name${dose.isNotEmpty ? ' | $dose' : ''}${freq.isNotEmpty ? ' | $freq' : ''}${dur.isNotEmpty ? ' | $dur' : ''}');
+        } else {
+          buf.writeln('${i + 1}. $m');
+        }
+      }
+    }
+    if (_labTests.isNotEmpty) {
+      buf.writeln('\nLAB TESTS:');
+      for (final t in _labTests) {
+        buf.writeln('• ${t is Map ? (t['name'] ?? t['testName'] ?? t.toString()) : t}');
+      }
+    }
+    if (_doctorNotes.isNotEmpty) {
+      buf.writeln('\nDOCTOR NOTES:\n$_doctorNotes');
+    }
+    if (_followUpDate.isNotEmpty) {
+      buf.writeln('\nFOLLOW-UP: $_followUpDate');
+    }
+    buf.writeln('\n--- Electronically generated via iCare Platform ---');
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Prescription copied to clipboard!')),
+    );
+  }
+
+  // ── SHARE SHEET ──────────────────────────────────────────────────────────
+
   void _showShareSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -962,8 +1259,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
             Container(
               width: 36, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
             ),
             const Text('Share Prescription',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
@@ -971,20 +1267,17 @@ class PrescriptionDetailScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _shareOption(Icons.share_rounded, 'Share', const Color(0xFF0036BC), () {
+                _shareOption(Icons.copy_rounded, 'Copy Text', const Color(0xFF0036BC), () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Share functionality coming soon')));
-                }),
-                _shareOption(Icons.print_rounded, 'Print', const Color(0xFF374151), () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Print functionality coming soon')));
+                  _copyPrescriptionText(context);
                 }),
                 _shareOption(Icons.download_rounded, 'Download PDF', const Color(0xFF8B5CF6), () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('PDF download coming soon')));
+                  _downloadPdf(context);
+                }),
+                _shareOption(Icons.print_rounded, 'Print', const Color(0xFF374151), () {
+                  Navigator.pop(context);
+                  _downloadPdf(context);
                 }),
               ],
             ),
@@ -1002,15 +1295,11 @@ class PrescriptionDetailScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
-          Text(label,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF374151), fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF374151), fontWeight: FontWeight.w600)),
         ],
       ),
     );
