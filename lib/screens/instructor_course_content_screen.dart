@@ -1,7 +1,9 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:icare/services/lms_service.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:go_router/go_router.dart';
 
 /// Course Content Management - Moodle/Udemy style
 class InstructorCourseContentScreen extends StatefulWidget {
@@ -609,7 +611,22 @@ class _LessonDialogState extends State<_LessonDialog> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _videoUrlController = TextEditingController();
-  int _duration = 15;
+  final _durationController = TextEditingController();
+  bool _uploadingVideo = false;
+  String? _uploadedVideoUrl;
+
+  // YouTube embed preview: extract video ID from URL
+  String? _youtubeId(String url) {
+    final patterns = [
+      RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})'),
+    ];
+    for (final p in patterns) {
+      final m = p.firstMatch(url);
+      if (m != null) return m.group(1);
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -618,7 +635,10 @@ class _LessonDialogState extends State<_LessonDialog> {
       _titleController.text = widget.lesson!['title'] ?? '';
       _contentController.text = widget.lesson!['content'] ?? '';
       _videoUrlController.text = widget.lesson!['videoUrl'] ?? '';
-      _duration = widget.lesson!['duration'] ?? 15;
+      _durationController.text = (widget.lesson!['duration'] ?? 15).toString();
+      _uploadedVideoUrl = widget.lesson!['videoUrl'];
+    } else {
+      _durationController.text = '15';
     }
   }
 
@@ -627,55 +647,275 @@ class _LessonDialogState extends State<_LessonDialog> {
     _titleController.dispose();
     _contentController.dispose();
     _videoUrlController.dispose();
+    _durationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _uploadVideo() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+
+      setState(() => _uploadingVideo = true);
+      final api = ApiService();
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        'folder': 'icare/lessons',
+        'resource_type': 'video',
+      });
+      final response = await api.postMultipart('/upload/image', formData);
+      if (response.data['success'] == true) {
+        final url = response.data['url'] as String;
+        setState(() {
+          _uploadedVideoUrl = url;
+          _videoUrlController.text = url;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Video uploaded successfully')),
+          );
+        }
+      } else {
+        throw Exception(response.data['message'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingVideo = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUrl = _videoUrlController.text.trim();
+    final ytId = currentUrl.isNotEmpty ? _youtubeId(currentUrl) : null;
+    final isCloudinaryVideo = currentUrl.contains('cloudinary.com') ||
+        currentUrl.contains('.mp4') ||
+        currentUrl.contains('.webm');
+
     return AlertDialog(
-      title: Text(widget.lesson != null ? 'Edit Lesson' : 'Add Lesson'),
+      title: Text(widget.lesson != null ? 'Edit Lesson' : 'Add Lesson',
+          style: const TextStyle(fontWeight: FontWeight.w700)),
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       content: SizedBox(
-        width: 500,
+        width: 560,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: 'Lesson Title *',
                   border: OutlineInputBorder(),
+                  isDense: true,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              // Description
               TextField(
                 controller: _contentController,
                 decoration: const InputDecoration(
-                  labelText: 'Content/Description',
+                  labelText: 'Description / Notes',
                   border: OutlineInputBorder(),
+                  isDense: true,
                 ),
-                maxLines: 4,
+                maxLines: 3,
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _videoUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Video URL (YouTube, Vimeo, etc.)',
-                  hintText: 'https://youtube.com/watch?v=...',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.video_library),
+
+              // ── Video Section ──────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.videocam_rounded,
+                            color: Color(0xFF1A73E8), size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Video',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: Color(0xFF0F172A))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // YouTube / paste URL
+                    TextField(
+                      controller: _videoUrlController,
+                      onChanged: (v) => setState(() => _uploadedVideoUrl = v.trim().isEmpty ? null : v.trim()),
+                      decoration: InputDecoration(
+                        labelText: 'Paste YouTube / Vimeo URL',
+                        hintText: 'https://youtube.com/watch?v=...',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.link_rounded, size: 18),
+                        suffixIcon: currentUrl.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 16),
+                                onPressed: () => setState(() {
+                                  _videoUrlController.clear();
+                                  _uploadedVideoUrl = null;
+                                }),
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Divider with OR
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('OR',
+                              style: TextStyle(
+                                  fontSize: 12, color: Color(0xFF94A3B8))),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Upload video button
+                    SizedBox(
+                      width: double.infinity,
+                      child: _uploadingVideo
+                          ? const Center(child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(width: 18, height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2)),
+                                  SizedBox(width: 10),
+                                  Text('Uploading video...', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                                ],
+                              ),
+                            ))
+                          : OutlinedButton.icon(
+                              onPressed: _uploadVideo,
+                              icon: const Icon(Icons.upload_rounded, size: 16),
+                              label: const Text('Upload Video File',
+                                  style: TextStyle(fontSize: 13)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF1A73E8),
+                                side: const BorderSide(color: Color(0xFF1A73E8)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                    ),
+
+                    // Preview
+                    if (ytId != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                'https://img.youtube.com/vi/$ytId/hqdefault.jpg',
+                                width: double.infinity,
+                                height: 160,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const SizedBox(),
+                              ),
+                            ),
+                            Container(
+                              width: 48, height: 48,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFF0000),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.play_arrow_rounded,
+                                  color: Colors.white, size: 28),
+                            ),
+                            Positioned(
+                              bottom: 8, left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text('YouTube Preview',
+                                    style: TextStyle(color: Colors.white, fontSize: 11)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (isCloudinaryVideo && _uploadedVideoUrl != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded,
+                                color: Color(0xFF10B981), size: 18),
+                            const SizedBox(width: 8),
+                            const Text('Video uploaded',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF10B981))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+
+              const SizedBox(height: 14),
+              // Duration
               TextField(
-                controller: TextEditingController(text: _duration.toString()),
+                controller: _durationController,
                 decoration: const InputDecoration(
                   labelText: 'Duration (minutes)',
                   border: OutlineInputBorder(),
+                  isDense: true,
+                  prefixIcon: Icon(Icons.timer_outlined, size: 18),
                 ),
                 keyboardType: TextInputType.number,
-                onChanged: (value) => _duration = int.tryParse(value) ?? 15,
               ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -687,24 +927,25 @@ class _LessonDialogState extends State<_LessonDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            if (_titleController.text.isEmpty) {
+            if (_titleController.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Lesson title is required')),
               );
               return;
             }
-
             widget.onSave({
-              'title': _titleController.text,
-              'content': _contentController.text,
-              'videoUrl': _videoUrlController.text,
-              'duration': _duration,
+              'title': _titleController.text.trim(),
+              'content': _contentController.text.trim(),
+              'videoUrl': _videoUrlController.text.trim(),
+              'duration': int.tryParse(_durationController.text) ?? 15,
               'order': widget.lesson?['order'] ?? 0,
             });
             Navigator.pop(context);
           },
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
-          child: const Text('Save'),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white),
+          child: const Text('Save Lesson'),
         ),
       ],
     );

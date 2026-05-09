@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/services/pharmacy_service.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/labb_details.dart';
-import 'package:icare/screens/pharmacy_details.dart';
 import 'package:icare/screens/pharmacy_prescription_screen.dart';
-import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -30,6 +28,10 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  // Tracks which prescription cards are expanded (by record _id)
+  final Set<String> _expandedIds = {};
+  // Tracks which "Order Medicines" / "Order Lab Tests" accordions are open
+  final Set<String> _ordersExpanded = {};
 
   @override
   void initState() {
@@ -275,29 +277,35 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   }
 
   Widget _buildPrescriptionCard(dynamic record) {
-    final date = DateTime.parse(record['createdAt']);
+    final date = DateTime.parse(record['createdAt'] ?? record['prescribedAt'] ?? DateTime.now().toIso8601String());
     final diagnosis = record['diagnosis'] ?? 'General Prescription';
-    final doctorName = record['doctor']?['name'] ?? 'Unknown Doctor';
+    final doctorName = record['doctor']?['name'] ?? record['doctorId']?['name'] ?? 'Unknown Doctor';
     final rawId = (record['_id'] ?? record['id'] ?? '').toString();
     final recordNumber = rawId.length >= 6
         ? 'MR-${rawId.substring(rawId.length - 6).toUpperCase()}'
         : 'MR-XXXXXX';
-    final medicines =
-        (record['prescription']?['medicines'] as List?) ?? [];
-    // labTests can be at top level OR inside prescription
+    final medicines = (record['prescription']?['medicines'] as List?) ?? [];
     final labTests = (record['prescription']?['labTests'] as List?)
-        ?? (record['labTests'] as List?)
-        ?? [];
+        ?? (record['labTests'] as List?) ?? [];
+    final notes = record['notes']?.toString() ?? record['doctorNotes']?.toString() ?? '';
+    final followUpDays = record['followUpDays'];
+    final patientName = record['patient']?['name'] ?? record['patientId']?['name'] ?? '';
 
-    debugPrint('🔍 CARD DEBUG for ${record['_id']}: medicines=${medicines.length}, labTests=${labTests.length}');
-    debugPrint('   labTests content: $labTests');
+    final isExpanded = _expandedIds.contains(rawId);
+    final ordersKey = '${rawId}_orders';
+    final labsKey = '${rawId}_labs';
+    final ordersOpen = _ordersExpanded.contains(ordersKey);
+    final labsOpen = _ordersExpanded.contains(labsKey);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isExpanded ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
+          width: isExpanded ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -309,150 +317,410 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── HEADER ─────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient:
-                  LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
+          // ── HEADER (tap to expand/collapse) ────────────────────────
+          InkWell(
+            onTap: () => setState(() {
+              if (isExpanded) {
+                _expandedIds.remove(rawId);
+              } else {
+                _expandedIds.add(rawId);
+              }
+            }),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(16),
+              topRight: const Radius.circular(16),
+              bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
+              bottomRight: isExpanded ? Radius.zero : const Radius.circular(16),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.description_rounded,
-                      color: Colors.white, size: 24),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(15),
+                  topRight: const Radius.circular(15),
+                  bottomLeft:
+                      isExpanded ? Radius.zero : const Radius.circular(15),
+                  bottomRight:
+                      isExpanded ? Radius.zero : const Radius.circular(15),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.description_rounded,
+                        color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(diagnosis,
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text('Dr. $doctorName  ·  ${DateFormat('MMM dd, yyyy').format(date)}',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(diagnosis,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('Dr. $doctorName',
-                          style: const TextStyle(
-                              fontSize: 13, color: Colors.white70)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(recordNumber,
+                            style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4)),
+                      ),
+                      const SizedBox(height: 6),
+                      Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      DateFormat('MMM dd, yyyy').format(date),
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        recordNumber,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5),
+                ],
+              ),
+            ),
+          ),
+
+          // ── EXPANDED DETAIL (inline accordion) ─────────────────────
+          if (isExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Patient info row
+                  if (patientName.isNotEmpty)
+                    _infoChip(Icons.person_rounded,
+                        const Color(0xFF0EA5E9), 'Patient: $patientName'),
+                  if (notes.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _infoBlock(Icons.notes_rounded, const Color(0xFF8B5CF6),
+                        'Doctor Notes', notes),
+                  ],
+
+                  // Medicines section
+                  if (medicines.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _sectionAccordion(
+                      icon: Icons.medication_rounded,
+                      color: const Color(0xFF3B82F6),
+                      title: 'Medicines (${medicines.length})',
+                      isOpen: ordersOpen,
+                      onToggle: () => setState(() {
+                        if (ordersOpen) {
+                          _ordersExpanded.remove(ordersKey);
+                        } else {
+                          _ordersExpanded.add(ordersKey);
+                        }
+                      }),
+                      content: Column(
+                        children: [
+                          ...medicines.map((m) => _buildMedicineItem(m)),
+                          const SizedBox(height: 8),
+                          // Order medicines inline
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showFindPharmacies(
+                                  context, medicines),
+                              icon: const Icon(
+                                  Icons.local_pharmacy_rounded,
+                                  size: 16),
+                              label: const Text('Find Pharmacies'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF3B82F6),
+                                side: const BorderSide(
+                                    color: Color(0xFF3B82F6)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
-          ),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── MY PRESCRIPTION TILE (full details) ──────────────
-                _clickableTile(
-                  icon: Icons.assignment_rounded,
-                  color: const Color(0xFF0EA5E9),
-                  bgColor: const Color(0xFFE0F2FE),
-                  title: 'My Prescription',
-                  subtitle: 'Patient info, SOAP notes & full details',
-                  arrowColor: const Color(0xFF0EA5E9),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PrescriptionDetailScreen(
-                        prescription: Map<String, dynamic>.from(record as Map),
+                  // Lab tests section
+                  if (labTests.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _sectionAccordion(
+                      icon: Icons.biotech_rounded,
+                      color: const Color(0xFF8B5CF6),
+                      title: 'Lab Tests (${labTests.length})',
+                      isOpen: labsOpen,
+                      onToggle: () => setState(() {
+                        if (labsOpen) {
+                          _ordersExpanded.remove(labsKey);
+                        } else {
+                          _ordersExpanded.add(labsKey);
+                        }
+                      }),
+                      content: Column(
+                        children: [
+                          ...labTests.map((t) => _buildLabTestItem(t)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  _showFindLabs(context, labTests),
+                              icon: const Icon(Icons.science_rounded,
+                                  size: 16),
+                              label: const Text('Find Labs'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF8B5CF6),
+                                side: const BorderSide(
+                                    color: Color(0xFF8B5CF6)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                  ],
 
-                // ── MEDICINES TILE (clickable) ────────────────────────
-                if (medicines.isNotEmpty) ...[
-                  _clickableTile(
-                    icon: Icons.medication_rounded,
-                    color: const Color(0xFF3B82F6),
-                    bgColor: const Color(0xFFEFF6FF),
-                    title: 'Medicines',
-                    subtitle: '${medicines.length} prescribed by doctor',
-                    arrowColor: const Color(0xFF3B82F6),
-                    onTap: () => _showMedicinesDetail(context, medicines),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                  // Follow-up
+                  if (followUpDays != null && followUpDays != 0) ...[
+                    const SizedBox(height: 10),
+                    _infoChip(Icons.event_repeat_rounded,
+                        const Color(0xFF0EA5E9), 'Follow up in $followUpDays days'),
+                  ],
 
-                // ── LAB TESTS TILE (clickable) ────────────────────────
-                if (labTests.isNotEmpty) ...[
-                  _clickableTile(
-                    icon: Icons.biotech_rounded,
-                    color: const Color(0xFF8B5CF6),
-                    bgColor: const Color(0xFFF5F3FF),
-                    title: 'Lab Tests',
-                    subtitle: '${labTests.length} tests ordered',
-                    arrowColor: const Color(0xFF8B5CF6),
-                    onTap: () => _showLabTestsDetail(context, labTests),
+                  // ── Action buttons: Download | Copy ──────────────
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              _copyPrescriptionText(record, medicines, labTests),
+                          icon: const Icon(Icons.copy_rounded, size: 16),
+                          label: const Text('Copy'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              _sharePrescription(record, medicines, labTests),
+                          icon: const Icon(Icons.share_rounded, size: 16),
+                          label: const Text('Share'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0EA5E9),
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
                 ],
-
-                // ── SPECIALIST REFERRAL TILE ──────────────────────────
-                if (record['prescription']?['referral'] != null) ...[
-                  _clickableTile(
-                    icon: Icons.person_search_rounded,
-                    color: const Color(0xFFF59E0B),
-                    bgColor: const Color(0xFFFFFBEB),
-                    title: record['prescription']['referral']['specialty'] ?? 'Specialist Referral',
-                    subtitle: record['prescription']['referral']['reason'] ?? 'Referred by doctor',
-                    arrowColor: const Color(0xFFF59E0B),
-                    onTap: () {
-                      final specialty = record['prescription']['referral']['specialty'];
-                      Navigator.push(context, MaterialPageRoute(
-                          builder: (ctx) => DoctorsListWithSpecialty(specialty: specialty)));
-                    },
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, Color color, String text) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(text,
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: color,
+                      fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoBlock(
+      IconData icon, Color color, String title, String text) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color)),
+          ]),
+          const SizedBox(height: 6),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF374151),
+                  height: 1.4)),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionAccordion({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required bool isOpen,
+    required VoidCallback onToggle,
+    required Widget content,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: isOpen
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(9),
+                    topRight: Radius.circular(9))
+                : BorderRadius.circular(9),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(icon, size: 18, color: color),
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: Text(title,
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: color))),
+                  Icon(
+                    isOpen
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    size: 20,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isOpen) ...[
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: content,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _copyPrescriptionText(
+      dynamic record, List<dynamic> medicines, List<dynamic> labTests) {
+    final buf = StringBuffer();
+    buf.writeln('=== PRESCRIPTION ===');
+    buf.writeln(
+        'Date: ${DateFormat('MMM dd, yyyy').format(DateTime.parse(record['createdAt'] ?? DateTime.now().toIso8601String()))}');
+    buf.writeln('Diagnosis: ${record['diagnosis'] ?? 'N/A'}');
+    buf.writeln('Doctor: ${record['doctor']?['name'] ?? 'N/A'}');
+    if (medicines.isNotEmpty) {
+      buf.writeln('\nMEDICINES:');
+      for (final m in medicines) {
+        final name = m['name'] ?? m['medicineName'] ?? 'Medicine';
+        final dose = m['dosage'] ?? m['dose'] ?? '';
+        final freq = m['frequency'] ?? '';
+        final dur = m['duration'] ?? '';
+        buf.writeln(
+            '• $name${dose.isNotEmpty ? ' | $dose' : ''}${freq.isNotEmpty ? ' | $freq' : ''}${dur.isNotEmpty ? ' | $dur' : ''}');
+      }
+    }
+    if (labTests.isNotEmpty) {
+      buf.writeln('\nLAB TESTS:');
+      for (final t in labTests) {
+        final name = t is Map
+            ? (t['name'] ?? t['testName'] ?? 'Test')
+            : t.toString();
+        buf.writeln('• $name');
+      }
+    }
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Prescription copied to clipboard')),
+    );
+  }
+
+  void _sharePrescription(
+      dynamic record, List<dynamic> medicines, List<dynamic> labTests) {
+    _copyPrescriptionText(record, medicines, labTests);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text(
+              'Prescription copied! Paste it in WhatsApp or any app to share.')),
     );
   }
 

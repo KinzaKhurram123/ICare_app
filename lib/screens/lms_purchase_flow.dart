@@ -58,9 +58,10 @@ class _LmsPurchaseFlowState extends State<LmsPurchaseFlow> {
     setState(() {
       _isLoggedIn = token != null && token.isNotEmpty;
     });
-    
-    // If already logged in, go directly to payment
-    if (_isLoggedIn) {
+
+    // If already logged in, force-set token on Dio and go directly to payment
+    if (_isLoggedIn && token != null) {
+      _api.forceSetToken(token);
       _proceedToPayment();
     }
   }
@@ -81,11 +82,20 @@ class _LmsPurchaseFlowState extends State<LmsPurchaseFlow> {
       });
       
       if (signupResponse.data['success'] == true) {
-        // Save token
-        final token = signupResponse.data['token'];
+        // Save token — check multiple possible locations in the response
+        final token = signupResponse.data['token']?.toString()
+            ?? signupResponse.data['data']?['token']?.toString()
+            ?? signupResponse.data['accessToken']?.toString();
+
+        if (token == null || token.isEmpty) {
+          throw Exception('Account created but no token received. Please log in.');
+        }
+
         await SharedPref().setToken(token);
         await SharedPref().setUserRole('Student');
-        
+        // Force-set Dio headers immediately so next call doesn't hit null token
+        _api.forceSetToken(token);
+
         // Step 2: Proceed to payment
         if (mounted) {
           _proceedToPayment();

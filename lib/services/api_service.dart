@@ -73,6 +73,15 @@ class ApiService {
     return await _dio.delete(endpoint);
   }
 
+  /// Force-set the Authorization header immediately (without reading SharedPref).
+  /// Call this right after a successful login/signup to ensure the next
+  /// API requests are authenticated without a SharedPref read delay.
+  void forceSetToken(String token) {
+    final trimmed = token.trim();
+    _dio.options.headers['Authorization'] = 'Bearer $trimmed';
+    debugPrint('✅ ApiService: Token force-set directly on Dio headers');
+  }
+
   // Support for file uploads
   Future<Response> postMultipart(
     String endpoint,
