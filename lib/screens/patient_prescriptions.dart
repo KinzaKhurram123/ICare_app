@@ -7,6 +7,10 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/screens/labb_details.dart';
 import 'package:icare/screens/pharmacy_prescription_screen.dart';
 import 'package:icare/screens/prescription_detail_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -98,22 +102,19 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         final records = result['records'] as List<dynamic>;
         debugPrint('ðŸ” PRESCRIPTION DEBUG: Total records = ${records.length}');
 
+        // Show ALL records with any meaningful content.
+        // Old filter missed prescriptions with only diagnoses + doctor notes.
         final prescriptions = records.where((r) {
+          if (r['_source'] == 'enhanced') return true; // always show completed prescriptions
           final p = r['prescription'];
           final meds = p is Map ? (p['medicines'] as List?) : null;
-
-          // labTests can be at top level OR inside prescription
-          final testsInPrescription = p is Map ? (p['labTests'] as List?) : null;
-          final testsAtTopLevel = r['labTests'] as List?;
-          final tests = testsInPrescription ?? testsAtTopLevel;
-
+          final testsInP = p is Map ? (p['labTests'] as List?) : null;
+          final testsTop = r['labTests'] as List?;
+          final tests = testsInP ?? testsTop;
           final hasReferral = p is Map && p['referral'] != null;
-
-          debugPrint('ðŸ” Record ${r['_id']}: meds=${meds?.length ?? 0}, testsInPrescription=${testsInPrescription?.length ?? 0}, testsAtTopLevel=${testsAtTopLevel?.length ?? 0}, hasReferral=$hasReferral');
-
-          return (meds != null && meds.isNotEmpty) ||
-              (tests != null && tests.isNotEmpty) ||
-              hasReferral;
+          final hasDiagnosis = (r['diagnosis']?.toString() ?? '').isNotEmpty;
+          final hasNotes = (r['notes']?.toString() ?? r['doctorNotes']?.toString() ?? '').isNotEmpty;
+          return (meds != null && meds.isNotEmpty) || (tests != null && tests.isNotEmpty) || hasReferral || hasDiagnosis || hasNotes;
         }).toList();
 
         debugPrint('ðŸ” PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
@@ -1018,12 +1019,21 @@ class _PrescriptionPage extends StatelessWidget {
               border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
             ),
             child: Column(children: [
-              SizedBox(width: double.infinity, child: OutlinedButton.icon(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PrescriptionDetailScreen(prescription: Map<String, dynamic>.from(record as Map)))),
-                icon: const Icon(Icons.download_rounded, size: 16),
-                label: const Text('Download / Print PDF', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF0036BC), side: const BorderSide(color: Color(0xFF0036BC)), padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              )),
+              Row(children: [
+                Expanded(child: OutlinedButton.icon(
+                  onPressed: () => _printPrescription(context),
+                  icon: const Icon(Icons.print_rounded, size: 16),
+                  label: const Text('Print / Download', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF0036BC), side: const BorderSide(color: Color(0xFF0036BC)), padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                )),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _shareText(context),
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: const Text('Share', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF10B981), side: const BorderSide(color: Color(0xFF10B981)), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                ),
+              ]),
               if (medicines.isNotEmpty || labTests.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Row(children: [
@@ -1049,6 +1059,154 @@ class _PrescriptionPage extends StatelessWidget {
     );
   }
 
+
+  Future<void> _printPrescription(BuildContext context) async {
+    try {
+      final pdf = pw.Document();
+      pdf.addPage(pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (ctx) => [
+          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('iCare', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+              pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+            ]),
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+              pw.Text(_prescriptionDate, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              if (_prescriptionTime.isNotEmpty) pw.Text(_prescriptionTime, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+            ]),
+          ]),
+          pw.Divider(color: PdfColors.blue800, thickness: 2),
+          pw.SizedBox(height: 8),
+          pw.Row(children: [
+            pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('PATIENT', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
+              pw.Text(_patientName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              if (_patientAge.isNotEmpty) pw.Text('$_patientAge  •  $_patientGender', style: const pw.TextStyle(fontSize: 10)),
+              if (_mrNumber.isNotEmpty) pw.Text(_mrNumber, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ])),
+            pw.SizedBox(width: 20),
+            pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('DOCTOR', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
+              pw.Text('Dr. $_doctorName', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              if (_doctorPmdc.isNotEmpty) pw.Text('PMDC: $_doctorPmdc', style: const pw.TextStyle(fontSize: 10)),
+              if (_doctorPhone.isNotEmpty) pw.Text(_doctorPhone, style: const pw.TextStyle(fontSize: 10)),
+            ])),
+          ]),
+          pw.SizedBox(height: 12),
+          if (_diagnoses.isNotEmpty || _diagnosis.isNotEmpty) ...[
+            pw.Text('DIAGNOSIS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+            pw.SizedBox(height: 4),
+            pw.Text(_diagnoses.isNotEmpty
+                ? _diagnoses.map((d) => d is Map ? (d['description'] ?? d['diagnosis'] ?? d['name'] ?? d.toString()) : d.toString()).join(', ')
+                : _diagnosis,
+                style: const pw.TextStyle(fontSize: 12)),
+            pw.SizedBox(height: 10),
+          ],
+          if (medicines.isNotEmpty) ...[
+            pw.Text('Rx  MEDICATIONS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+            pw.SizedBox(height: 4),
+            ...medicines.asMap().entries.map((e) {
+              final m = e.value;
+              final name = m is Map ? (m['name']?.toString() ?? 'Medicine') : m.toString();
+              final dose = m is Map ? (m['dosage']?.toString() ?? m['dose']?.toString() ?? '') : '';
+              final freq = m is Map ? (m['frequency']?.toString() ?? '') : '';
+              final dur = m is Map ? (m['duration']?.toString() ?? '') : '';
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(8),
+                  decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(4)),
+                  child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                    pw.Text('${e.key + 1}. $name', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                    if (dose.isNotEmpty || freq.isNotEmpty || dur.isNotEmpty)
+                      pw.Text('${dose.isNotEmpty ? "Dose: $dose  " : ""}${freq.isNotEmpty ? "Freq: $freq  " : ""}${dur.isNotEmpty ? "Duration: $dur" : ""}',
+                          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  ]),
+                ),
+              );
+            }),
+            pw.SizedBox(height: 8),
+          ],
+          if (labTests.isNotEmpty) ...[
+            pw.Text('LAB TESTS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+            pw.SizedBox(height: 4),
+            ...labTests.map((t) => pw.Bullet(
+                text: (t is Map ? (t['name'] ?? t['testName'] ?? 'Test') : t).toString(),
+                style: const pw.TextStyle(fontSize: 11))),
+            pw.SizedBox(height: 8),
+          ],
+          if (_doctorNotes.isNotEmpty) ...[
+            pw.Text("DOCTOR'S NOTES", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+            pw.SizedBox(height: 4),
+            pw.Text(_doctorNotes, style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 8),
+          ],
+          pw.Divider(),
+          pw.SizedBox(height: 8),
+          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+              pw.Container(width: 150, height: 1, color: PdfColors.black),
+              pw.SizedBox(height: 4),
+              pw.Text('Dr. $_doctorName', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              if (_doctorPmdc.isNotEmpty) pw.Text('PMDC: $_doctorPmdc', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+              pw.Text('Authorized Signature', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+            ]),
+          ]),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: pw.BorderRadius.circular(4)),
+            child: pw.Text('Electronically generated & authenticated via iCare — RM Health Solutions (Private) Limited.',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+          ),
+        ],
+      ));
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdf.save(),
+        name: 'iCare_Rx_${_patientName.replaceAll(' ', '_')}.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print failed: $e')));
+      }
+    }
+  }
+
+  void _shareText(BuildContext context) {
+    final buf = StringBuffer();
+    buf.writeln('=== iCare PRESCRIPTION ===');
+    buf.writeln('Date: $_prescriptionDate');
+    buf.writeln('Patient: $_patientName');
+    if (_patientAge.isNotEmpty) buf.writeln('Age: $_patientAge  Gender: $_patientGender');
+    if (_mrNumber.isNotEmpty) buf.writeln('MR#: $_mrNumber');
+    buf.writeln('\nDoctor: Dr. $_doctorName');
+    if (_doctorPmdc.isNotEmpty) buf.writeln('PMDC: $_doctorPmdc');
+    buf.writeln('\nDIAGNOSIS: $_diagnosis');
+    if (medicines.isNotEmpty) {
+      buf.writeln('\nMEDICINES:');
+      for (int i = 0; i < medicines.length; i++) {
+        final m = medicines[i];
+        final name = m is Map ? (m['name']?.toString() ?? 'Medicine') : m.toString();
+        final dose = m is Map ? (m['dosage']?.toString() ?? m['dose']?.toString() ?? '') : '';
+        final freq = m is Map ? (m['frequency']?.toString() ?? '') : '';
+        final dur = m is Map ? (m['duration']?.toString() ?? '') : '';
+        buf.writeln('${i+1}. $name${dose.isNotEmpty ? " | $dose" : ""}${freq.isNotEmpty ? " | $freq" : ""}${dur.isNotEmpty ? " | $dur" : ""}');
+      }
+    }
+    if (labTests.isNotEmpty) {
+      buf.writeln('\nLAB TESTS:');
+      for (final t in labTests) { buf.writeln('• ${t is Map ? (t['name'] ?? t['testName'] ?? t.toString()) : t}'); }
+    }
+    if (_doctorNotes.isNotEmpty) buf.writeln('\nNOTES: $_doctorNotes');
+    buf.writeln('\n--- Electronically generated via iCare ---');
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Prescription copied! Paste in WhatsApp or any app to share.')),
+    );
+  }
   Widget _hdrInfo(String label, String name, List<String> details) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: const TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.4)),
@@ -2079,5 +2237,9 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
     );
   }
 }
+
+
+
+
 
 
