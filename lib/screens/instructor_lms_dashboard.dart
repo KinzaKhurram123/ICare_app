@@ -4,10 +4,13 @@ import 'package:icare/screens/classroom_course_view.dart';
 import 'package:icare/screens/instructor_lms_create_course.dart';
 import 'package:icare/screens/instructor_lms_courses.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
+import 'package:icare/screens/instructor_course_content_screen.dart';
+import 'package:icare/screens/instructor_student_progress_screen.dart';
+import 'package:icare/screens/instructor_course_analytics_screen.dart';
+import 'package:icare/screens/instructor_grading_screen.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/utils/shared_pref.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -584,7 +587,9 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
                     // Manage button
                     _cardIconButton(Icons.folder_outlined, null, () {
                       final id = course['_id']?.toString() ?? '';
-                      if (id.isNotEmpty) context.go('/instructor/lms/course/$id/content');
+                      if (id.isNotEmpty) Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => InstructorCourseContentScreen(courseId: id),
+                      )).then((_) => _loadCourses());
                     }),
                     // More menu
                     _cardMoreButton(course),
@@ -647,13 +652,19 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
       onSelected: (val) {
         if (val == 'open') _openCourse(course);
         if (val == 'students' && courseId.isNotEmpty) {
-          context.go('/instructor/lms/course/$courseId/students', extra: {'title': title});
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => InstructorStudentProgressScreen(courseId: courseId, courseTitle: title),
+          ));
         }
         if (val == 'analytics' && courseId.isNotEmpty) {
-          context.go('/instructor/lms/course/$courseId/analytics', extra: {'title': title});
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => InstructorCourseAnalyticsScreen(courseId: courseId, courseTitle: title),
+          ));
         }
         if (val == 'edit' && courseId.isNotEmpty) {
-          context.go('/instructor/lms/course/$courseId/content');
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => InstructorCourseContentScreen(courseId: courseId),
+          )).then((_) => _loadCourses());
         }
       },
     );
@@ -1058,7 +1069,9 @@ class _TodoPageState extends State<_TodoPage> with SingleTickerProviderStateMixi
               style: const TextStyle(fontSize: 12, color: Color(0xFF5F6368))),
           trailing: id.isNotEmpty
               ? ElevatedButton(
-                  onPressed: () => context.go('/instructor/lms/assignment/$id/grade', extra: {'title': title}),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorGradingScreen(assignmentId: id, assignmentTitle: title),
+                  )),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A73E8), foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

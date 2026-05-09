@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/instructor_lms_create_course.dart';
+import 'package:icare/screens/instructor_student_progress_screen.dart';
+import 'package:icare/screens/instructor_course_analytics_screen.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:icare/widgets/instructor_sidebar.dart';
 import 'package:icare/utils/theme.dart';
-import 'package:go_router/go_router.dart';
 
 /// Instructor Courses Management - Moodle style course list
 class InstructorLmsCoursesScreen extends StatefulWidget {
@@ -119,37 +120,32 @@ class _InstructorLmsCoursesScreenState extends State<InstructorLmsCoursesScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A)),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'My Courses',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w700),
         ),
         actions: [
-          ElevatedButton.icon(
-            onPressed: () => context.push('/instructor/lms/create-course'),
-            icon: const Icon(Icons.add, size: 20),
-            label: const Text('Create Course'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          TextButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InstructorLmsCreateCourseScreen()),
+            ).then((_) => _loadCourses()),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Create'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
         ],
       ),
-      drawer: const InstructorSidebar(currentRoute: 'lms-courses'),
       body: Column(
         children: [
           // Filters & Search
@@ -272,7 +268,9 @@ class _InstructorLmsCoursesScreenState extends State<InstructorLmsCoursesScreen>
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.push('/instructor/lms/create-course'),
+            onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const InstructorLmsCreateCourseScreen()))
+              .then((_) => _loadCourses()),
             icon: const Icon(Icons.add),
             label: const Text('Create Course'),
             style: ElevatedButton.styleFrom(
@@ -440,19 +438,34 @@ class _InstructorLmsCoursesScreenState extends State<InstructorLmsCoursesScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: 'Edit',
-          onPressed: () => context.push('/instructor/lms/edit-course/${course['_id']}'),
+          icon: const Icon(Icons.open_in_new_rounded),
+          tooltip: 'Open Class',
+          onPressed: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ClassroomCourseView(
+              course: Map<String, dynamic>.from(course),
+              isInstructor: true,
+            ),
+          )).then((_) => _loadCourses()),
         ),
         IconButton(
           icon: const Icon(Icons.people_outline),
           tooltip: 'Students',
-          onPressed: () => context.push('/instructor/lms/course/${course['_id']}/students'),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => InstructorStudentProgressScreen(
+              courseId: course['_id']?.toString() ?? '',
+              courseTitle: course['title']?.toString() ?? 'Course',
+            ),
+          )),
         ),
         IconButton(
           icon: const Icon(Icons.analytics_outlined),
           tooltip: 'Analytics',
-          onPressed: () => context.push('/instructor/lms/course/${course['_id']}/analytics'),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => InstructorCourseAnalyticsScreen(
+              courseId: course['_id']?.toString() ?? '',
+              courseTitle: course['title']?.toString() ?? 'Course',
+            ),
+          )),
         ),
         PopupMenuButton(
           icon: const Icon(Icons.more_vert),

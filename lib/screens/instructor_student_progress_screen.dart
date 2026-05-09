@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:go_router/go_router.dart';
@@ -77,7 +77,7 @@ class _InstructorStudentProgressScreenState extends State<InstructorStudentProgr
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,3 +393,4 @@ class _InstructorStudentProgressScreenState extends State<InstructorStudentProgr
     );
   }
 }
+

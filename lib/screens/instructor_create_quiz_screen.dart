@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:go_router/go_router.dart';
@@ -143,7 +143,7 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Quiz ${widget.quizId != null ? 'updated' : 'created'} successfully!')),
         );
-        context.pop();
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -198,7 +198,7 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close, color: Color(0xFF0F172A)),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -763,3 +763,4 @@ class _QuestionDialogState extends State<_QuestionDialog> {
     );
   }
 }
+

@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:icare/screens/assignment_submit_screen.dart';
 import 'package:icare/screens/quiz_take_screen.dart';
+import 'package:icare/screens/instructor_create_assignment_screen.dart';
+import 'package:icare/screens/instructor_create_quiz_screen.dart';
+import 'package:icare/screens/instructor_schedule_session_screen.dart';
+import 'package:icare/screens/instructor_grading_screen.dart';
+import 'package:icare/screens/instructor_course_content_screen.dart';
+import 'package:icare/screens/instructor_student_progress_screen.dart';
+import 'package:icare/screens/instructor_course_analytics_screen.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -234,7 +240,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               color: Color(0xFF444746), size: 20),
           onPressed: () {
             if (_courseId.isNotEmpty) {
-              context.go('/instructor/lms/course/$_courseId/content');
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => InstructorCourseContentScreen(courseId: _courseId),
+              ));
             }
           },
         ),
@@ -836,20 +844,25 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       children: [
         _createBtn(Icons.assignment_add, 'Assignment', () {
           if (_courseId.isNotEmpty) {
-            context.go('/instructor/lms/create-assignment?courseId=$_courseId');
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => InstructorCreateAssignmentScreen(courseId: _courseId),
+            )).then((_) => _loadClasswork());
           }
         }),
         const SizedBox(width: 10),
         _createBtn(Icons.quiz_outlined, 'Quiz', () {
           if (_courseId.isNotEmpty) {
-            context.go('/instructor/lms/create-quiz?courseId=$_courseId');
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => InstructorCreateQuizScreen(courseId: _courseId),
+            )).then((_) => _loadClasswork());
           }
         }),
         const SizedBox(width: 10),
         _createBtn(Icons.videocam_outlined, 'Session', () {
           if (_courseId.isNotEmpty) {
-            context.go(
-                '/instructor/lms/schedule-session?courseId=$_courseId');
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => InstructorScheduleSessionScreen(courseId: _courseId),
+            )).then((_) => _loadClasswork());
           }
         }),
       ],
@@ -1002,8 +1015,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 title: const Text('Grade submissions'),
                 onTap: () {
                   Navigator.pop(context);
-                  context.go('/instructor/lms/assignment/$id/grade',
-                      extra: {'title': title});
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorGradingScreen(
+                      assignmentId: id,
+                      assignmentTitle: title,
+                    ),
+                  ));
                 },
               ),
             ListTile(
@@ -1055,38 +1072,38 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.assignment_outlined,
-                  color: Color(0xFF1A73E8)),
+              leading: const Icon(Icons.assignment_outlined, color: Color(0xFF1A73E8)),
               title: const Text('Assignment'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  context.go(
-                      '/instructor/lms/create-assignment?courseId=$_courseId');
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorCreateAssignmentScreen(courseId: _courseId),
+                  )).then((_) => _loadClasswork());
                 }
               },
             ),
             ListTile(
-              leading: const Icon(Icons.quiz_outlined,
-                  color: Color(0xFF9334E6)),
+              leading: const Icon(Icons.quiz_outlined, color: Color(0xFF9334E6)),
               title: const Text('Quiz'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  context.go(
-                      '/instructor/lms/create-quiz?courseId=$_courseId');
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorCreateQuizScreen(courseId: _courseId),
+                  )).then((_) => _loadClasswork());
                 }
               },
             ),
             ListTile(
-              leading: const Icon(Icons.videocam_outlined,
-                  color: Color(0xFF188038)),
+              leading: const Icon(Icons.videocam_outlined, color: Color(0xFF188038)),
               title: const Text('Live session'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  context.go(
-                      '/instructor/lms/schedule-session?courseId=$_courseId');
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorScheduleSessionScreen(courseId: _courseId),
+                  )).then((_) => _loadClasswork());
                 }
               },
             ),
@@ -1281,9 +1298,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           ),
           trailing: id.isNotEmpty
               ? OutlinedButton(
-                  onPressed: () => context.go(
-                      '/instructor/lms/assignment/$id/grade',
-                      extra: {'title': title}),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => InstructorGradingScreen(
+                      assignmentId: id,
+                      assignmentTitle: title,
+                    ),
+                  )),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF1A73E8),
                     side: const BorderSide(color: Color(0xFFDADCE0)),

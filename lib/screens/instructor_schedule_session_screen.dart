@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:go_router/go_router.dart';
@@ -157,7 +157,7 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Session ${widget.sessionId != null ? 'updated' : 'scheduled'} successfully!')),
         );
-        context.pop();
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -185,7 +185,7 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close, color: Color(0xFF0F172A)),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -454,3 +454,4 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
     );
   }
 }
+
