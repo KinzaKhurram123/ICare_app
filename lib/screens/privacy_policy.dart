@@ -35,7 +35,7 @@ class PrivacyPolicy extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CustomText(
-              text: "Last updated: January 1, 2025",
+              text: "iCare – RM Health Solutions (Private) Limited",
               fontFamily: "Gilroy-Medium",
               fontSize: 12,
               color: AppColors.themeDarkGrey,
@@ -86,34 +86,56 @@ class _MobilePolicySection extends StatelessWidget {
 }
 
 const List<List<String>> _sections = [
-  [
-    "1. Introduction",
-    "Welcome to ICare. We are committed to protecting your personal and medical information. This Privacy Policy explains how we collect, use, store, and share your data when you use our healthcare platform. By using ICare, you agree to the practices described in this policy.",
-  ],
-  [
-    "2. Information We Collect",
-    "We collect information you provide directly, including your name, contact details, date of birth, gender, and medical history. We also collect appointment records, lab test results, prescriptions, and payment information. Usage data such as device type, IP address, and app activity may also be collected automatically.",
-  ],
-  [
-    "3. How We Use Your Information",
-    "Your information is used to provide and improve our healthcare services, including booking appointments, processing lab tests, managing prescriptions, and facilitating doctor-patient communication. We may also use your data to send health reminders, service updates, and personalized recommendations.",
-  ],
-  [
-    "4. Sharing of Information",
-    "We do not sell your personal data. We may share your information with licensed healthcare providers involved in your care, diagnostic laboratories, pharmacies fulfilling your prescriptions, and payment processors. All third parties are bound by strict confidentiality agreements.",
-  ],
-  [
-    "5. Data Security",
-    "We implement industry-standard security measures including encryption, secure servers, and access controls to protect your data. However, no method of transmission over the internet is 100% secure. We encourage you to keep your account credentials confidential.",
-  ],
-  [
-    "6. Your Rights",
-    "You have the right to access, correct, or delete your personal information at any time through your profile settings. You may also request a copy of your data or withdraw consent for specific uses. To exercise these rights, contact our support team.",
-  ],
-  [
-    "7. Contact Us",
-    "If you have any questions or concerns about this Privacy Policy, please contact us at privacy@icare.health or through the Help & Support section in the app.",
-  ],
+  ["1. SCOPE OF POLICY",
+    "This Privacy Policy applies to:\n• Patients;\n• Doctors;\n• Clinics;\n• Pharmacies;\n• Laboratories;\n• Visitors;\n• Healthcare professionals;\n• Business partners;\n• All users interacting with iCare services."],
+  ["2. INFORMATION WE COLLECT",
+    "Personal Information: full name, CNIC/passport information, date of birth, gender, contact details, address, emergency contacts, and profile photographs.\n\nMedical Information: medical history, prescriptions, diagnostic reports, lab reports, mental health information, consultation notes, audio/video consultation recordings, uploaded medical records, symptoms and treatment history.\n\nTechnical Information: device information, browser type, IP address, operating system, login activity, app usage information, crash logs, and communication metadata.\n\nPayment Information: transaction references, billing information, and payment confirmations. Sensitive payment credentials are processed by authorized third-party payment processors."],
+  ["3. HOW WE COLLECT INFORMATION",
+    "Information may be collected:\n• Directly from users;\n• During account registration;\n• During consultations;\n• Through uploaded documents;\n• Through customer support;\n• Via cookies or analytics technologies;\n• Through third-party integrations."],
+  ["4. PURPOSE OF DATA COLLECTION",
+    "We may use collected information for:\n• Providing telemedicine services;\n• Appointment management;\n• Medical consultations;\n• E-prescriptions;\n• Identity verification;\n• Regulatory compliance;\n• Customer support;\n• Platform security;\n• Fraud prevention;\n• AI system training;\n• Analytics and business intelligence;\n• Research and development;\n• Improving healthcare services;\n• Communication and notifications."],
+  ["5. TELEMEDICINE & RECORDING CONSENT",
+    "By using the Platform, users expressly consent to electronic healthcare delivery, audio/video consultations, electronic prescriptions, storage of consultation records, and recording of consultations for legal, operational, security, medical, and quality assurance purposes.\n\nUsers acknowledge that telemedicine involves technological limitations and potential risks."],
+  ["6. AI & AUTOMATED SYSTEMS",
+    "The Platform may utilize AI-enabled systems for appointment routing, chat assistance, administrative support, and symptom triage support.\n\nAI systems do not replace professional medical judgment. Users must not rely solely on automated responses for medical decisions."],
+  ["7. LEGAL BASIS FOR PROCESSING",
+    "We process data based upon:\n• User consent;\n• Contractual necessity;\n• Healthcare service obligations;\n• Legal and regulatory compliance;\n• Legitimate business interests;\n• Public health obligations where applicable."],
+  ["8. DATA SHARING & DISCLOSURE",
+    "We may share information with licensed doctors, pharmacies, laboratories, payment processors, technology vendors, regulatory authorities, legal advisors, and government agencies where legally required.\n\nWe do not sell personal medical information to unauthorized third parties."],
+  ["9. INTERNATIONAL COMPLIANCE",
+    "iCare aims to align with applicable principles under:\n• Pakistan PECA laws;\n• Pakistan data protection principles;\n• GDPR principles;\n• UK GDPR principles;\n• International telehealth privacy standards;\n• Electronic consent regulations."],
+  ["10. DATA RETENTION",
+    "Medical and operational records may be retained permanently unless deletion is requested and legally permissible.\n\nCertain records may remain archived for legal compliance, fraud prevention, audit obligations, and medical continuity."],
+  ["11. DATA SECURITY",
+    "We implement reasonable safeguards including encryption technologies, access restrictions, authentication systems, administrative controls, secure servers, and monitoring mechanisms.\n\nHowever, no system can guarantee absolute security. Users acknowledge inherent cybersecurity risks associated with online services."],
+  ["12. USER RIGHTS",
+    "Subject to applicable laws, users may have rights to:\n• Access their information;\n• Correct inaccurate information;\n• Request account deletion;\n• Request restriction of processing;\n• Withdraw consent where applicable.\n\nCertain requests may be restricted due to legal obligations, medical record requirements, and regulatory compliance."],
+  ["13. ACCOUNT DELETION",
+    "Users may request deletion of their accounts. iCare may retain certain information where necessary for legal compliance, medical obligations, fraud prevention, security investigations, and regulatory requirements."],
+  ["14. COOKIES & TRACKING TECHNOLOGIES",
+    "The Platform may utilize cookies, session tracking, analytics technologies, and device identifiers for authentication, performance, security, and user experience optimization.\n\nUsers may limit certain tracking features through browser settings."],
+  ["15. THIRD-PARTY SERVICES",
+    "The Platform may integrate third-party services including payment gateways, laboratories, pharmacies, cloud providers, communication tools, and authentication services.\n\niCare is not responsible for independent privacy practices of third-party providers."],
+  ["16. PHARMACY & LABORATORY SERVICES",
+    "Third-party pharmacies and laboratories remain independently responsible for product quality, medication authenticity, lab accuracy, delivery operations, and regulatory compliance.\n\niCare acts primarily as a facilitating technology platform."],
+  ["17. CHILDREN'S PRIVACY",
+    "The Platform is not intended for users under 18 years of age. We do not knowingly collect personal data from minors without lawful authorization."],
+  ["18. COMMUNITY FEATURES",
+    "Users posting reviews, ratings, comments, or public content acknowledge that such information may become publicly visible. iCare reserves the right to moderate or remove content violating laws or policies."],
+  ["19. INTELLECTUAL PROPERTY & DATA USE",
+    "Users grant iCare a non-exclusive, worldwide, royalty-free license to use anonymized and aggregated information for analytics, research, AI training, platform improvement, healthcare innovation, and business intelligence."],
+  ["20. DATA BREACH RESPONSE",
+    "In the event of significant security incidents, iCare may investigate the breach, notify affected users where legally required, engage cybersecurity experts, and cooperate with regulatory authorities."],
+  ["21. LIMITATION OF LIABILITY",
+    "To the maximum extent permitted by law, iCare shall not be liable for cyberattacks, unauthorized access, technical failures, third-party breaches, data interception, internet disruptions, or user negligence."],
+  ["22. CROSS-BORDER OPERATIONS",
+    "Users acknowledge that technical infrastructure or service providers may involve systems operating across jurisdictions subject to applicable legal protections."],
+  ["23. POLICY CHANGES",
+    "We reserve the right to update this Privacy Policy at any time. Updated versions become effective immediately upon publication on the Platform. Continued use constitutes acceptance of revised policies."],
+  ["24. CONTACT INFORMATION",
+    "RM Health Solutions (Private) Limited\nBrand: iCare\n\nOfficial contact information, registered office address, legal email, and support details are available on the official website."],
+  ["25. USER ACKNOWLEDGMENT",
+    "By accessing or using iCare, you acknowledge that:\n• You have read this Privacy Policy;\n• You understand how your information is processed;\n• You consent to electronic healthcare operations;\n• You agree to the collection and processing practices described herein."],
 ];
 
 class _WebPrivacyPolicy extends StatelessWidget {
@@ -166,7 +188,7 @@ class _WebPrivacyPolicy extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Last updated: January 1, 2025",
+                    "iCare – RM Health Solutions (Private) Limited",
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF94A3B8),

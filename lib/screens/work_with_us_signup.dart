@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:icare/screens/terms_and_conditions.dart';
+import 'package:icare/screens/privacy_policy.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -191,21 +193,7 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
   }
 
   Future<void> _submit() async {
-    // Validate agreements
-    bool agreed = false;
-    if (_selectedRole == 'Doctor') agreed = _docConfirmInfo && _docAgreeOnboarding;
-    if (_selectedRole == 'Pharmacy') agreed = _pharmConfirmInfo && _pharmAgreeOnboarding;
-    if (_selectedRole == 'Laboratory') agreed = _labConfirmInfo && _labAgreeOnboarding;
-    if (_selectedRole == 'Student') agreed = _studentConfirmInfo;
-    if (_selectedRole == 'Instructor') agreed = _instructorConfirmInfo && _instructorAgreeOnboarding;
-
-    if (!agreed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the agreement checkboxes to submit')),
-      );
-      return;
-    }
-
+    // Agreement is implicit by submitting — no checkbox validation needed
     setState(() => _submitting = true);
 
     try {
@@ -620,22 +608,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         _multilineField(_docCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 24),
 
-        // 4. Agreement
-        _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFF0036BC)),
-        const SizedBox(height: 12),
-        _checkboxRow(
-          value: _docConfirmInfo,
-          onChanged: (v) => setState(() => _docConfirmInfo = v ?? false),
-          label: 'I confirm that the information provided is accurate',
-        ),
-        const SizedBox(height: 8),
-        _checkboxRow(
-          value: _docAgreeOnboarding,
-          onChanged: (v) => setState(() => _docAgreeOnboarding = v ?? false),
-          label: 'I agree to the onboarding and verification process',
-        ),
-        const SizedBox(height: 28),
-
         _submitButton(),
       ],
     );
@@ -721,22 +693,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         const SizedBox(height: 12),
         _multilineField(_pharmCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 24),
-
-        // 6. Agreement
-        _sectionHeader('6. Agreement', Icons.handshake_outlined, const Color(0xFF10B981)),
-        const SizedBox(height: 12),
-        _checkboxRow(
-          value: _pharmConfirmInfo,
-          onChanged: (v) => setState(() => _pharmConfirmInfo = v ?? false),
-          label: 'Information is correct',
-        ),
-        const SizedBox(height: 8),
-        _checkboxRow(
-          value: _pharmAgreeOnboarding,
-          onChanged: (v) => setState(() => _pharmAgreeOnboarding = v ?? false),
-          label: 'I agree to the verification & onboarding process',
-        ),
-        const SizedBox(height: 28),
 
         _submitButton(),
       ],
@@ -832,24 +788,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         _multilineField(_labCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 24),
 
-        // 6. Agreement
-        _sectionHeader('6. Agreement', Icons.handshake_outlined, const Color(0xFF8B5CF6)),
-        const SizedBox(height: 12),
-        _checkboxRow(
-          value: _labConfirmInfo,
-          onChanged: (v) => setState(() => _labConfirmInfo = v ?? false),
-          label: 'Information is correct',
-          color: const Color(0xFF8B5CF6),
-        ),
-        const SizedBox(height: 8),
-        _checkboxRow(
-          value: _labAgreeOnboarding,
-          onChanged: (v) => setState(() => _labAgreeOnboarding = v ?? false),
-          label: 'I agree to the verification & onboarding process',
-          color: const Color(0xFF8B5CF6),
-        ),
-        const SizedBox(height: 28),
-
         _submitButton(color: const Color(0xFF8B5CF6)),
       ],
     );
@@ -890,16 +828,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         const SizedBox(height: 12),
         _multilineField(_studentCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 24),
-
-        _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFFF59E0B)),
-        const SizedBox(height: 12),
-        _checkboxRow(
-          value: _studentConfirmInfo,
-          onChanged: (v) => setState(() => _studentConfirmInfo = v ?? false),
-          label: 'I confirm that the information provided is accurate',
-          color: const Color(0xFFF59E0B),
-        ),
-        const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFFF59E0B)),
       ],
@@ -950,23 +878,6 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
         const SizedBox(height: 12),
         _multilineField(_instrCommentsCtrl, 'Any additional information (optional)'),
         const SizedBox(height: 24),
-
-        _sectionHeader('4. Agreement', Icons.handshake_outlined, const Color(0xFFEF4444)),
-        const SizedBox(height: 12),
-        _checkboxRow(
-          value: _instructorConfirmInfo,
-          onChanged: (v) => setState(() => _instructorConfirmInfo = v ?? false),
-          label: 'I confirm that the information provided is accurate',
-          color: const Color(0xFFEF4444),
-        ),
-        const SizedBox(height: 8),
-        _checkboxRow(
-          value: _instructorAgreeOnboarding,
-          onChanged: (v) => setState(() => _instructorAgreeOnboarding = v ?? false),
-          label: 'I agree to the onboarding and content review process',
-          color: const Color(0xFFEF4444),
-        ),
-        const SizedBox(height: 28),
 
         _submitButton(color: const Color(0xFFEF4444)),
       ],
@@ -1304,30 +1215,87 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
   }
 
   Widget _submitButton({Color color = AppColors.primaryColor}) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: _submitting ? null : _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 0,
-        ),
-        child: _submitting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-            : const Text('Submit Application',
-                style: TextStyle(
-                    fontSize: 16,
+    return Column(
+      children: [
+        // "By clicking submit, you agree to our Terms and Conditions"
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            children: [
+              const Text(
+                'By clicking submit, you agree to our ',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TermsAndConditions()),
+                ),
+                child: Text(
+                  'Terms and Conditions',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'Gilroy-Bold')),
-      ),
+                    decoration: TextDecoration.underline,
+                    decorationColor: color,
+                  ),
+                ),
+              ),
+              const Text(
+                ' and ',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicy()),
+                ),
+                child: Text(
+                  'Privacy Policy',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                    decorationColor: color,
+                  ),
+                ),
+              ),
+              const Text(
+                '.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _submitting ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+            ),
+            child: _submitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
+                : const Text('Submit Application',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Gilroy-Bold')),
+          ),
+        ),
+      ],
     );
   }
 }
