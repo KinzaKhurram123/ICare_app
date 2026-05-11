@@ -752,18 +752,68 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                               ),
                             ),
                           ),
-                          // Rejoin video call
+                          // Rejoin consultation (chat interface)
                           ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => VideoCall(
-                                    channelName: _getChannelName(appointment),
-                                    remoteUserName: appointment.patient?.name ?? 'Patient',
-                                    appointmentId: appointment.id,
-                                  ),
-                                ),
-                              ).then((_) => _loadAppointments());
+                            onPressed: () async {
+                              // Show loading
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(child: CircularProgressIndicator()),
+                              );
+
+                              try {
+                                final consultationService = ConsultationService();
+                                final sharedPref = SharedPref();
+                                final userData = await sharedPref.getUserData();
+                                final currentUserId = userData?.id ?? '';
+                                final currentUserName = userData?.name ?? 'Doctor';
+
+                                // Lookup existing consultation by appointmentId
+                                final result = await consultationService.getConsultationByAppointmentId(appointment.id ?? '');
+
+                                if (context.mounted) Navigator.pop(context); // close loading
+
+                                if (result['success'] == true && context.mounted) {
+                                  final consultationId = result['consultation']?['_id']?.toString() ?? '';
+
+                                  if (consultationId.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Consultation not found. Please start a new consultation.'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (ctx) => ConsultationChatScreenV2(
+                                        appointment: appointment,
+                                        isDoctor: true,
+                                        currentUserId: currentUserId,
+                                        currentUserName: currentUserName,
+                                        consultationId: consultationId,
+                                      ),
+                                    ),
+                                  ).then((_) => _loadAppointments());
+                                } else if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result['message']?.toString() ?? 'Failed to rejoin consultation'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF8B5CF6),
@@ -771,7 +821,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            icon: const Icon(Icons.video_call_rounded, size: 18),
+                            icon: const Icon(Icons.chat_rounded, size: 18),
                             label: const Text('Rejoin', style: TextStyle(fontWeight: FontWeight.w700)),
                           ),
                         ],

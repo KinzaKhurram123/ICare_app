@@ -181,21 +181,28 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   Future<void> _loadMessages({bool silent = false}) async {
     if (_consultationId == null) return;
     try {
+      print('📥 LOADING MESSAGES for consultationId: $_consultationId');
       final messages = await _consultationService.getMessagesV2(
           consultationId: _consultationId!);
+      print('📥 RECEIVED ${messages.length} messages');
       if (mounted) {
         final newList = messages
             .map((m) => ConsultationMessage.fromJson(m as Map<String, dynamic>))
             .toList();
         final hadNewMessages = newList.length != _messages.length;
+        print('📥 Previous message count: ${_messages.length}, New count: ${newList.length}');
         setState(() {
           _messages = newList;
           if (!silent) _isLoading = false;
         });
         // Only auto-scroll when there are new messages (don't interrupt manual scrolling)
-        if (hadNewMessages) _scrollToBottom();
+        if (hadNewMessages) {
+          print('📥 New messages detected, scrolling to bottom');
+          _scrollToBottom();
+        }
       }
     } catch (e) {
+      print('❌ ERROR LOADING MESSAGES: $e');
       if (!silent && mounted) setState(() => _isLoading = false);
     }
   }
@@ -218,19 +225,28 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     final message = _messageController.text.trim();
     if (message.isEmpty || _isSending || _consultationId == null) return;
 
+    print('📤 SENDING MESSAGE:');
+    print('  consultationId: $_consultationId');
+    print('  senderId: ${widget.currentUserId}');
+    print('  senderName: ${widget.currentUserName}');
+    print('  senderRole: ${widget.isDoctor ? 'doctor' : 'patient'}');
+    print('  message: $message');
+
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
-      await _consultationService.sendMessageV2(
+      final result = await _consultationService.sendMessageV2(
         consultationId: _consultationId!,
         senderId: widget.currentUserId,
         senderName: widget.currentUserName,
         senderRole: widget.isDoctor ? 'doctor' : 'patient',
         message: message,
       );
+      print('📤 SEND MESSAGE RESULT: $result');
       await _loadMessages();
     } catch (e) {
+      print('❌ ERROR IN _sendMessage: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to send message: $e')),
