@@ -148,6 +148,21 @@ class ConsultationService {
     }
   }
 
+  // Get consultation by appointment ID
+  Future<Map<String, dynamic>> getConsultationByAppointment(String appointmentId) async {
+    try {
+      final token = await _sharedPref.getToken();
+      final response = await _dio.get(
+        '/consultations-v2/by-appointment/$appointmentId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error getting consultation by appointment: ${e.message}');
+      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+    }
+  }
+
   // Get timer status (V2)
   Future<Map<String, dynamic>> getTimerStatus(String consultationId) async {
     try {

@@ -638,19 +638,26 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                             try {
                                               final consultationService = ConsultationService();
 
-                                              // Rejoin existing consultation session
-                                              final result = await consultationService.startConsultationV2(
-                                                appointmentId: appointment.id,
-                                                patientId: appointment.patient?.id ?? '',
-                                                doctorId: appointment.doctor?.id ?? '',
-                                              );
+                                              // For in_progress appointments, fetch the EXISTING consultation
+                                              final result = await consultationService.getConsultationByAppointment(appointment.id);
 
                                               Navigator.pop(context); // Close loading
 
                                               if (result['success'] == true) {
-                                                final consultationId = result['consultationId']?.toString() ?? '';
+                                                final consultationId = result['consultation']?['_id']?.toString() ??
+                                                                       result['consultationId']?.toString() ?? '';
 
-                                                // Navigate to chat screen (NOT video directly)
+                                                if (consultationId.isEmpty) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('Consultation session not found'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+
+                                                // Navigate to chat screen with existing consultationId
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
@@ -659,7 +666,7 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                                       isDoctor: false,
                                                       currentUserId: _currentUser?.id ?? '',
                                                       currentUserName: _currentUser?.name ?? '',
-                                                      consultationId: consultationId.isNotEmpty ? consultationId : null,
+                                                      consultationId: consultationId,
                                                     ),
                                                   ),
                                                 ).then((_) => _loadAppointments());

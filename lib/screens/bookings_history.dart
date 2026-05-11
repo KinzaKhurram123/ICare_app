@@ -502,19 +502,26 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
     );
 
     try {
-      // Rejoin existing consultation session
-      final result = await _consultationService.startConsultationV2(
-        appointmentId: appt.id,
-        patientId: appt.patient?.id ?? '',
-        doctorId: appt.doctor?.id ?? '',
-      );
+      // For in_progress appointments, fetch the EXISTING consultation
+      final result = await _consultationService.getConsultationByAppointment(appt.id);
 
       if (mounted) Navigator.pop(context); // Close loading
 
       if (result['success'] == true && mounted) {
-        final consultationId = result['consultationId']?.toString() ?? '';
+        final consultationId = result['consultation']?['_id']?.toString() ??
+                               result['consultationId']?.toString() ?? '';
 
-        // Navigate to chat screen (NOT video directly)
+        if (consultationId.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Consultation session not found'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Navigate to chat screen with existing consultationId
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -523,7 +530,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               isDoctor: false,
               currentUserId: _currentUserId,
               currentUserName: _currentUserName,
-              consultationId: consultationId.isNotEmpty ? consultationId : null,
+              consultationId: consultationId,
             ),
           ),
         ).then((_) => _loadAppointments());
