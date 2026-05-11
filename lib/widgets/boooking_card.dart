@@ -128,6 +128,23 @@ class BookingCard extends ConsumerWidget {
                     Navigator.pop(context); // Close loading
 
                     if (result['success'] == true) {
+                      final consultationId = result['consultationId']?.toString() ?? '';
+
+                      // ✅ If doctor, notify patient via call signal
+                      if (isDoctor) {
+                        final patientId = appointment.patient?.id ?? '';
+                        if (patientId.isNotEmpty && consultationId.isNotEmpty) {
+                          try {
+                            await CallService().initiateCall(
+                              receiverId: patientId,
+                              channelName: consultationId,
+                              callerName: 'Dr. $currentUserName',
+                              callType: 'consultation',
+                            );
+                          } catch (_) {}
+                        }
+                      }
+
                       // Navigate to chat screen (NOT video directly)
                       Navigator.push(
                         context,
@@ -137,7 +154,7 @@ class BookingCard extends ConsumerWidget {
                             isDoctor: isDoctor,
                             currentUserId: currentUserId,
                             currentUserName: currentUserName,
-                            consultationId: result['consultationId']?.toString(), // FIX: Pass consultationId
+                            consultationId: consultationId,
                           ),
                         ),
                       );

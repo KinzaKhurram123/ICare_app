@@ -17,7 +17,7 @@ import '../services/appointment_service.dart';
 import '../services/call_service.dart';
 import '../services/medical_record_service.dart';
 import '../utils/theme.dart';
-import '../screens/end_consultation_workflow.dart';
+import '../screens/consultation_chat_screen_v2.dart';
 import '../screens/patient_history_form_screen.dart';
 import '../services/consultation_service.dart';
 import '../utils/shared_pref.dart';
@@ -664,37 +664,16 @@ class _VideoCallWebState extends State<VideoCall> {
       return;
     }
 
-    // Doctor ending consultation - fetch appointment details and open workflow
+    // Doctor ending consultation — leave video and go back to chat screen
     try {
-      final api = ApiService();
-      final response = await api.get('/appointments/getAppointments');
-      final appts = response.data['appointments'] as List? ?? [];
-      final match = appts.firstWhere(
-        (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
-        orElse: () => null,
-      );
-
-      if (match == null) {
-        throw Exception('Appointment not found');
-      }
-
-      final appointment = AppointmentDetail.fromJson(match);
-
       // Leave video call first
       try { await _agoraLeave().toDart; } catch (_) {}
 
       if (!mounted) return;
 
-      // Open End Consultation Workflow screen
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EndConsultationWorkflow(appointment: appointment),
-        ),
-      );
-
-      // After workflow completes, close video call screen
-      if (mounted) Navigator.pop(context);
+      // Navigate back — the chat screen is already in the stack
+      // Just pop back to ConsultationChatScreenV2
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

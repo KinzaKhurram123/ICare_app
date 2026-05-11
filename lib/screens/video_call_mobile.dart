@@ -6,7 +6,6 @@ import '../services/agora_service.dart';
 import '../services/call_service.dart';
 import '../services/api_service.dart';
 import '../models/appointment_detail.dart';
-import '../screens/end_consultation_workflow.dart';
 import '../utils/shared_pref.dart';
 
 /// Agora RTC video call — Android / iOS / Desktop
@@ -226,22 +225,8 @@ class _VideoCallMobileState extends State<VideoCall> {
       return;
     }
 
-    // Doctor ending consultation - fetch appointment details and open workflow
+    // Doctor ending consultation — leave video and go back to chat screen
     try {
-      final api = ApiService();
-      final response = await api.get('/appointments/getAppointments');
-      final appts = response.data['appointments'] as List? ?? [];
-      final match = appts.firstWhere(
-        (a) => (a['_id'] ?? a['id'])?.toString() == widget.appointmentId,
-        orElse: () => null,
-      );
-
-      if (match == null) {
-        throw Exception('Appointment not found');
-      }
-
-      final appointment = AppointmentDetail.fromJson(match);
-
       // Leave video call first
       await _engine?.leaveChannel();
       await _engine?.release();
@@ -249,16 +234,8 @@ class _VideoCallMobileState extends State<VideoCall> {
 
       if (!mounted) return;
 
-      // Open End Consultation Workflow screen
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EndConsultationWorkflow(appointment: appointment),
-        ),
-      );
-
-      // After workflow completes, close video call screen
-      if (mounted) Navigator.pop(context);
+      // Pop back to ConsultationChatScreenV2 which is already in the stack
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

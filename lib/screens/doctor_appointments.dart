@@ -5,6 +5,7 @@ import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
 import 'package:icare/services/consultation_service.dart';
+import 'package:icare/services/call_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -647,6 +648,21 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                 if (context.mounted) Navigator.pop(context); // close loading
 
                                 if (result['success'] == true && context.mounted) {
+                                  final consultationId = result['consultationId']?.toString() ?? '';
+
+                                  // ✅ Notify patient — send call signal so IncomingCallListener shows dialog
+                                  final patientId = appointment.patient?.id ?? '';
+                                  if (patientId.isNotEmpty && consultationId.isNotEmpty) {
+                                    try {
+                                      await CallService().initiateCall(
+                                        receiverId: patientId,
+                                        channelName: consultationId, // consultationId as channel
+                                        callerName: 'Dr. $currentUserName',
+                                        callType: 'consultation', // special type for chat-first
+                                      );
+                                    } catch (_) {} // non-blocking
+                                  }
+
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (ctx) => ConsultationChatScreenV2(
@@ -654,7 +670,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                         isDoctor: true,
                                         currentUserId: currentUserId,
                                         currentUserName: currentUserName,
-                                        consultationId: result['consultationId']?.toString(),
+                                        consultationId: consultationId,
                                       ),
                                     ),
                                   );
