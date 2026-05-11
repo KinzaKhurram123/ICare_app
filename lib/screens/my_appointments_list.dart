@@ -628,21 +628,55 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                         ),
                                         ElevatedButton(
                                           onPressed: () async {
-                                            // ── Strategy: skip broken by-appointment lookup.
-                                            // Pass consultationId=null → screen calls startConsultationV2
-                                            // which backend handles as "get or create" for in_progress sessions.
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => ConsultationChatScreenV2(
-                                                  appointment: appointment,
-                                                  isDoctor: false,
-                                                  currentUserId: _currentUser?.id ?? '',
-                                                  currentUserName: _currentUser?.name ?? '',
-                                                  consultationId: null,
+                                            try {
+                                              // First, try to get the existing consultation by appointment ID
+                                              final consultationService = ConsultationService();
+                                              final result = await consultationService.getConsultationByAppointmentId(appointment.id);
+
+                                              if (result['success'] == true) {
+                                                // Found existing consultation, navigate with consultationId
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => ConsultationChatScreenV2(
+                                                      appointment: appointment,
+                                                      isDoctor: false,
+                                                      currentUserId: _currentUser?.id ?? '',
+                                                      currentUserName: _currentUser?.name ?? '',
+                                                      consultationId: result['consultationId'],
+                                                    ),
+                                                  ),
+                                                ).then((_) => _loadAppointments());
+                                              } else {
+                                                // No existing consultation, start new one
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => ConsultationChatScreenV2(
+                                                      appointment: appointment,
+                                                      isDoctor: false,
+                                                      currentUserId: _currentUser?.id ?? '',
+                                                      currentUserName: _currentUser?.name ?? '',
+                                                      consultationId: null,
+                                                    ),
+                                                  ),
+                                                ).then((_) => _loadAppointments());
+                                              }
+                                            } catch (e) {
+                                              // On error, fallback to creating new
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => ConsultationChatScreenV2(
+                                                    appointment: appointment,
+                                                    isDoctor: false,
+                                                    currentUserId: _currentUser?.id ?? '',
+                                                    currentUserName: _currentUser?.name ?? '',
+                                                    consultationId: null,
+                                                  ),
                                                 ),
-                                              ),
-                                            ).then((_) => _loadAppointments());
+                                              ).then((_) => _loadAppointments());
+                                            }
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF8B5CF6),

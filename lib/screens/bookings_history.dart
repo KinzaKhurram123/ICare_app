@@ -496,22 +496,55 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   void _rejoin(AppointmentDetail appt) async {
     if (!mounted) return;
 
-    // ── Strategy: skip the broken by-appointment lookup entirely.
-    // Pass consultationId=null → ConsultationChatScreenV2 will call
-    // startConsultationV2 with the full appointment, which the backend
-    // handles as "get or create" (returns existing session for in_progress).
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ConsultationChatScreenV2(
-          appointment: appt,
-          isDoctor: false,
-          currentUserId: _currentUserId,
-          currentUserName: _currentUserName,
-          consultationId: null, // let the screen resolve it
+    try {
+      // First, try to get the existing consultation by appointment ID
+      final consultationService = ConsultationService();
+      final result = await consultationService.getConsultationByAppointmentId(appt.id);
+
+      if (result['success'] == true) {
+        // Found existing consultation, navigate with consultationId
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConsultationChatScreenV2(
+              appointment: appt,
+              isDoctor: false,
+              currentUserId: _currentUserId,
+              currentUserName: _currentUserName,
+              consultationId: result['consultationId'],
+            ),
+          ),
+        ).then((_) => _loadAppointments());
+      } else {
+        // No existing consultation, start new one
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConsultationChatScreenV2(
+              appointment: appt,
+              isDoctor: false,
+              currentUserId: _currentUserId,
+              currentUserName: _currentUserName,
+              consultationId: null, // let the screen create it
+            ),
+          ),
+        ).then((_) => _loadAppointments());
+      }
+    } catch (e) {
+      // On error, fallback to creating new
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConsultationChatScreenV2(
+            appointment: appt,
+            isDoctor: false,
+            currentUserId: _currentUserId,
+            currentUserName: _currentUserName,
+            consultationId: null,
+          ),
         ),
-      ),
-    ).then((_) => _loadAppointments());
+      ).then((_) => _loadAppointments());
+    }
   }
 
   // ── Category tile ─────────────────────────────────────────────────────────

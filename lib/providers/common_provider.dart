@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/auth.dart';
 import 'package:icare/models/coomon.dart';
 import 'package:icare/models/user.dart';

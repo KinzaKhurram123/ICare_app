@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const consultationV2Controller = require('../controllers/consultationV2Controller');
 
+// Get consultation by appointment ID
+router.get('/by-appointment/:appointmentId', consultationV2Controller.getConsultationByAppointment);
+
 // Start consultation
 router.post('/start-v2', consultationV2Controller.startConsultation);
 

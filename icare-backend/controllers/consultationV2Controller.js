@@ -298,6 +298,49 @@ exports.endConsultation = async (req, res) => {
   }
 };
 
+// Get consultation by appointment ID
+exports.getConsultationByAppointment = async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { appointmentId } = req.params;
+
+    if (!isValidObjectId(appointmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid appointment ID'
+      });
+    }
+
+    const consultation = await Consultation.findOne({
+      appointmentId,
+      status: { $in: ['pending', 'active'] }
+    })
+      .populate('patientId', 'name email phone')
+      .populate('doctorId', 'name email phone specialization')
+      .populate('prescriptionId');
+
+    if (!consultation) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active consultation found for this appointment'
+      });
+    }
+
+    res.json({
+      success: true,
+      consultationId: consultation._id,
+      consultation
+    });
+  } catch (error) {
+    console.error('Error getting consultation by appointment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get consultation',
+      error: error.message
+    });
+  }
+};
+
 // Get consultation details
 exports.getConsultation = async (req, res) => {
   try {

@@ -24,15 +24,11 @@ class DottedButton extends StatelessWidget {
     return SizedBox(
       width: width ?? Utils.windowWidth(context) * 0.8,
       child: DottedBorder(
-        options: RoundedRectDottedBorderOptions(
-          radius: Radius.circular(30),
-          color: AppColors.grayColor.withAlpha(60),
-
-          dashPattern: [10, 5],
-          strokeWidth: 2,
-          // padding: EdgeInsets.all(16),
-          // strokeCap: StrokeCap.square
-        ),
+        borderType: BorderType.RRect,
+        radius: const Radius.circular(30),
+        color: AppColors.grayColor.withAlpha(60),
+        dashPattern: const [10, 5],
+        strokeWidth: 2,
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
           onTap: onPressed,
