@@ -645,13 +645,17 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
 
                                               if (result['success'] == true) {
                                                 final consultationId = result['consultation']?['_id']?.toString() ??
-                                                                       result['consultationId']?.toString() ?? '';
+                                                                       result['consultation']?['id']?.toString() ??
+                                                                       result['consultationId']?.toString() ??
+                                                                       result['data']?['_id']?.toString() ??
+                                                                       result['data']?['consultationId']?.toString() ?? '';
 
                                                 if (consultationId.isEmpty) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     const SnackBar(
-                                                      content: Text('Consultation session not found'),
-                                                      backgroundColor: Colors.red,
+                                                      content: Text('Consultation session not found. Please ask the doctor to start the session first.'),
+                                                      backgroundColor: Colors.orange,
+                                                      duration: Duration(seconds: 4),
                                                     ),
                                                   );
                                                   return;

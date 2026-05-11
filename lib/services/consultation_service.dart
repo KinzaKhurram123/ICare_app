@@ -149,17 +149,35 @@ class ConsultationService {
   }
 
   // Get consultation by appointment ID
+  // Falls back to startConsultationV2 (idempotent) if the by-appointment endpoint is unavailable
   Future<Map<String, dynamic>> getConsultationByAppointment(String appointmentId) async {
+    // ── Try the dedicated lookup endpoint first ──────────────────────────
     try {
       final token = await _sharedPref.getToken();
       final response = await _dio.get(
         '/consultations-v2/by-appointment/$appointmentId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      print('by-appointment response: ${response.data}');
+      if (response.data is Map && response.data['success'] == true) {
+        return response.data as Map<String, dynamic>;
+      }
     } on DioException catch (e) {
-      print('Error getting consultation by appointment: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      // 404 = endpoint not on backend yet — fall through to startConsultationV2
+      if (e.response?.statusCode != 404) {
+        print('Error getting consultation by appointment: ${e.message}');
+        return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
+      }
+      print('by-appointment endpoint not found (404), falling back to startConsultationV2');
+    } catch (_) {}
+
+    // ── Fallback: startConsultationV2 is idempotent — returns existing session ──
+    try {
+      final result = await startConsultationV2(appointmentId: appointmentId, patientId: '', doctorId: '');
+      print('startConsultationV2 fallback result: $result');
+      return result;
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 

@@ -99,7 +99,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       // Backend already created the session and sent consent messages — just load
       if (widget.consultationId != null && widget.consultationId!.isNotEmpty) {
         _consultationId = widget.consultationId;
-        await _loadMessages();
+        // Load messages with a timeout — don't block UI if backend is slow
+        await _loadMessages().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            // Timeout is fine — show empty chat, polling will catch up
+          },
+        );
         if (mounted) {
           setState(() => _isLoading = false);
           _startMessagePolling();
