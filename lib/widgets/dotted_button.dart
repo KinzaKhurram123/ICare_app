@@ -24,7 +24,6 @@ class DottedButton extends StatelessWidget {
     return SizedBox(
       width: width ?? Utils.windowWidth(context) * 0.8,
       child: DottedBorder(
-        borderType: BorderType.RRect,
         radius: const Radius.circular(30),
         color: AppColors.grayColor.withAlpha(60),
         dashPattern: const [10, 5],
