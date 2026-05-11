@@ -6,14 +6,38 @@ echo "=== Flutter Build Script ==="
 if ! command -v flutter &> /dev/null; then
     echo "Flutter not found. Installing..."
 
-    # Clone Flutter
     if [ ! -d "/tmp/flutter" ]; then
         echo "Cloning Flutter repository..."
-        git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Failed to clone Flutter"
+
+        # Retry git clone up to 3 times with delay
+        MAX_RETRIES=3
+        RETRY_DELAY=10
+        SUCCESS=false
+
+        for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i of $MAX_RETRIES..."
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+            if [ $? -eq 0 ]; then
+                SUCCESS=true
+                echo "Flutter cloned successfully on attempt $i"
+                break
+            else
+                echo "Clone attempt $i failed."
+                rm -rf /tmp/flutter
+                if [ $i -lt $MAX_RETRIES ]; then
+                    echo "Waiting ${RETRY_DELAY}s before retry..."
+                    sleep $RETRY_DELAY
+                    RETRY_DELAY=$((RETRY_DELAY * 2))  # exponential backoff
+                fi
+            fi
+        done
+
+        if [ "$SUCCESS" = false ]; then
+            echo "ERROR: Failed to clone Flutter after $MAX_RETRIES attempts"
             exit 1
         fi
+    else
+        echo "Flutter directory already exists, skipping clone."
     fi
 
     # Add Flutter to PATH
@@ -27,6 +51,9 @@ if ! command -v flutter &> /dev/null; then
     echo "Precaching Flutter web..."
     flutter precache --web
 fi
+
+# Ensure PATH includes Flutter
+export PATH="$PATH:/tmp/flutter/bin"
 
 # Verify Flutter is working
 echo "Verifying Flutter installation..."
