@@ -896,9 +896,6 @@ class _InConsultationPrescriptionFormState
       ],
     );
   }
-      ),
-    );
-  }
 
   // ── Section 7: Lifestyle Advice ──────────────────────────────────────────
   Widget _buildLifestyleContent() {
@@ -1422,6 +1419,21 @@ class _InConsultationPrescriptionFormState
       );
   }
 
+  Widget _emptyState(IconData icon, String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, size: 40, color: Colors.grey.shade300),
+            const SizedBox(height: 8),
+            Text(message, style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -1455,7 +1467,6 @@ class _InConsultationPrescriptionFormState
       ],
     );
   }
-}
 
   // ── Section 3: Additional Notes ───────────────────────────────────────────
   Widget _buildDoctorNotesContent() {
@@ -1466,3 +1477,4 @@ class _InConsultationPrescriptionFormState
       maxLines: 6,
     );
   }
+}
