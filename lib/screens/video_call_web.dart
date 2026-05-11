@@ -379,14 +379,34 @@ class _VideoCallWebState extends State<VideoCall> {
         final appts = apptResult['appointments'] as List<AppointmentDetail>? ?? [];
         final completed = appts
             .where((a) => a.status.toLowerCase() == 'completed')
-            .map((a) => {
-                  'date': a.date.toIso8601String(),
-                  'doctor': a.doctorName ?? 'Doctor',
-                  'patient': a.patient?.name ?? 'Patient',
-                  'reason': a.reason ?? '',
-                  'timeSlot': a.timeSlot ?? '',
-                  'type': (a.channelName?.isNotEmpty == true) ? 'video' : 'in-person',
-                })
+            .map((a) {
+              // Clean up reason — remove raw channel name noise
+              String rawReason = a.reason ?? '';
+              String cleanReason;
+              if (rawReason.toLowerCase().contains('instant consultation via connect now') ||
+                  rawReason.toLowerCase().contains('channel:')) {
+                cleanReason = 'Instant Video Consultation';
+              } else if (rawReason.isEmpty) {
+                cleanReason = 'General Consultation';
+              } else {
+                cleanReason = rawReason;
+              }
+
+              final isVideo = (a.channelName?.isNotEmpty == true) ||
+                  rawReason.toLowerCase().contains('connect now') ||
+                  rawReason.toLowerCase().contains('video');
+
+              return {
+                'date': a.date.toIso8601String(),
+                'doctor': a.doctorName ?? 'Doctor',
+                'patient': a.patient?.name ?? 'Patient',
+                'reason': cleanReason,
+                'timeSlot': a.timeSlot ?? '',
+                'type': isVideo ? 'video' : 'in-person',
+                'appointmentId': a.id ?? '',
+                'doctorSpecialization': 'General Physician',
+              };
+            })
             .toList();
         // Sort newest first
         completed.sort((a, b) =>
@@ -1568,6 +1588,24 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   // ── Past Consultations Panel ─────────────────────────────────────────────
+  Widget _pastConsultDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF10B981), size: 16),
+          const SizedBox(width: 10),
+          Text('$label: ', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPastConsultationsPanel() {
     return Column(
       children: [
@@ -1614,56 +1652,198 @@ class _VideoCallWebState extends State<VideoCall> {
                             : dateStr.substring(0, dateStr.length > 10 ? 10 : dateStr.length);
                         final type = c['type'] as String? ?? 'consultation';
                         final reason = c['reason'] as String? ?? '';
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF334155)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    type == 'video'
-                                        ? Icons.videocam_rounded
-                                        : Icons.local_hospital_rounded,
-                                    color: const Color(0xFF10B981),
-                                    size: 16,
+                        final doctor = c['doctor'] as String? ?? '';
+                        final patient = c['patient'] as String? ?? '';
+                        final timeSlot = c['timeSlot'] as String? ?? '';
+                        final specialization = c['doctorSpecialization'] as String? ?? 'General Physician';
+
+                        // Format time nicely
+                        String timeLabel = '';
+                        if (dt != null) {
+                          final hour = dt.hour;
+                          final min = dt.minute.toString().padLeft(2, '0');
+                          final period = hour >= 12 ? 'PM' : 'AM';
+                          final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+                          timeLabel = '$h:$min $period';
+                        } else if (timeSlot.isNotEmpty) {
+                          timeLabel = timeSlot;
+                        }
+
+                        return GestureDetector(
+                          onTap: () {
+                            // Show consultation detail dialog
+                            showDialog(
+                              context: context,
+                              builder: (_) => Dialog(
+                                backgroundColor: const Color(0xFF1E293B),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF10B981).withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              type == 'video' ? Icons.videocam_rounded : Icons.local_hospital_rounded,
+                                              color: const Color(0xFF10B981),
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  reason.isNotEmpty ? reason : 'Consultation',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  type == 'video' ? 'Video Consultation' : 'In-Person Visit',
+                                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                                            onPressed: () => Navigator.pop(context),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 20),
+                                      const Divider(color: Color(0xFF334155)),
+                                      const SizedBox(height: 16),
+                                      _pastConsultDetailRow(Icons.calendar_today_rounded, 'Date', label),
+                                      if (timeLabel.isNotEmpty)
+                                        _pastConsultDetailRow(Icons.access_time_rounded, 'Time', timeLabel),
+                                      _pastConsultDetailRow(
+                                        Icons.person_rounded,
+                                        widget.patientId != null ? 'Patient' : 'Doctor',
+                                        widget.patientId != null ? patient : 'Dr. $doctor',
+                                      ),
+                                      if (widget.patientId == null)
+                                        _pastConsultDetailRow(Icons.medical_services_rounded, 'Specialization', specialization),
+                                      const SizedBox(height: 20),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                                        ),
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
+                                            SizedBox(width: 8),
+                                            Text('Consultation Completed', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(label,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13)),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981).withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      type == 'video' ? 'Video' : 'In-Person',
-                                      style: const TextStyle(
-                                          color: Color(0xFF10B981), fontSize: 10),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                              if (reason.isNotEmpty) ...[
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF334155)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      type == 'video'
+                                          ? Icons.videocam_rounded
+                                          : Icons.local_hospital_rounded,
+                                      color: const Color(0xFF10B981),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(label,
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13)),
+                                    if (timeLabel.isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Text(timeLabel,
+                                          style: const TextStyle(
+                                              color: Colors.white38,
+                                              fontSize: 11)),
+                                    ],
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981).withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        type == 'video' ? 'Video' : 'In-Person',
+                                        style: const TextStyle(
+                                            color: Color(0xFF10B981), fontSize: 10),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 const SizedBox(height: 6),
-                                Text(reason,
-                                    style: const TextStyle(
-                                        color: Colors.white54, fontSize: 12),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis),
+                                // Doctor/Patient name
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person_outline_rounded, color: Colors.white38, size: 13),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        widget.patientId != null ? patient : 'Dr. $doctor',
+                                        style: const TextStyle(color: Colors.white60, fontSize: 12),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (reason.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(reason,
+                                      style: const TextStyle(
+                                          color: Colors.white38, fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                                ],
+                                const SizedBox(height: 6),
+                                // Tap hint
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Text('Tap to view details',
+                                        style: TextStyle(color: Color(0xFF10B981), fontSize: 10)),
+                                    SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF10B981), size: 10),
+                                  ],
+                                ),
                               ],
-                            ],
+                            ),
                           ),
                         );
                       },
