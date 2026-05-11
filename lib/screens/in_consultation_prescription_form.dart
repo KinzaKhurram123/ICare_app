@@ -1,6 +1,5 @@
-// In-Consultation Prescription Form
-// Complete prescription form to be filled DURING consultation
-// As per client requirements - May 4, 2026
+// In-Consultation Prescription Form — Single Page Accordion
+// Updated: May 11, 2026
 
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
@@ -30,10 +29,12 @@ class InConsultationPrescriptionForm extends StatefulWidget {
 }
 
 class _InConsultationPrescriptionFormState
-    extends State<InConsultationPrescriptionForm>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+    extends State<InConsultationPrescriptionForm> {
   final ConsultationService _consultationService = ConsultationService();
+
+  // Accordion expanded state (9 sections)
+  // Open: Doctor's Notes (1), Diagnosis (3), Medications (4), Lab Tests (5) by default
+  final List<bool> _expanded = [false, true, false, true, true, true, false, false, false];
 
   // Form Controllers
   final TextEditingController _subjectiveController = TextEditingController();
@@ -57,12 +58,10 @@ class _InConsultationPrescriptionFormState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 9, vsync: this);
     _loadDraftIfExists();
   }
 
   Future<void> _loadDraftIfExists() async {
-    // Load any existing draft prescription
     try {
       final result = await _consultationService.getPrescriptionDraft(
         widget.consultationId,
@@ -205,13 +204,115 @@ class _InConsultationPrescriptionFormState
 
   @override
   void dispose() {
-    _tabController.dispose();
     _subjectiveController.dispose();
     _objectiveController.dispose();
     _assessmentController.dispose();
     _planController.dispose();
     _doctorNotesController.dispose();
     super.dispose();
+  }
+
+  // ── Accordion helper ──────────────────────────────────────────────────────
+  Widget _accordion({
+    required int index,
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required Widget child,
+    int? badgeCount,
+  }) {
+    final isOpen = _expanded[index];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isOpen ? color.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+          width: isOpen ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header — tap to expand/collapse
+          InkWell(
+            onTap: () => setState(() => _expanded[index] = !isOpen),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(title,
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF0F172A))),
+                            if (badgeCount != null && badgeCount > 0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text('$badgeCount',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Text(subtitle,
+                            style: const TextStyle(
+                                fontSize: 12, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: isOpen ? color : const Color(0xFF94A3B8),
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Content
+          if (isOpen) ...[
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: child,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -224,141 +325,220 @@ class _InConsultationPrescriptionFormState
         leading: const CustomBackButton(),
         title: const Text(
           'Prescription Form',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
         ),
         actions: [
           if (_isSaving)
             const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              padding: EdgeInsets.all(16),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
             )
           else ...[
             TextButton.icon(
               onPressed: _saveDraft,
-              icon: const Icon(Icons.save_outlined),
+              icon: const Icon(Icons.save_outlined, size: 18),
               label: const Text('Save Draft'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             ElevatedButton.icon(
               onPressed: _completePrescription,
-              icon: const Icon(Icons.check_circle_outline),
+              icon: const Icon(Icons.check_circle_outline, size: 18),
               label: const Text('Complete'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
           ],
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: AppColors.primaryColor,
-          unselectedLabelColor: const Color(0xFF64748B),
-          indicatorColor: AppColors.primaryColor,
-          tabs: const [
-            Tab(text: '1. History'),
-            Tab(text: "2. Doctor's Notes"),
-            Tab(text: '3. Additional Notes'),
-            Tab(text: '4. Diagnosis'),
-            Tab(text: '5. Medications'),
-            Tab(text: '6. Lab Tests'),
-            Tab(text: '7. Lifestyle'),
-            Tab(text: '8. Referral'),
-            Tab(text: '9. Courses'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // ── Patient info strip ──────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.person_rounded, color: AppColors.primaryColor, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${widget.appointment.patient?.name ?? 'Patient'}  •  Consultation ID: ${widget.consultationId.length >= 6 ? widget.consultationId.substring(widget.consultationId.length - 6).toUpperCase() : widget.consultationId}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ),
+                  if (_isComplete)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Colors.green, size: 13),
+                          SizedBox(width: 4),
+                          Text('Complete', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // ── 1. Patient History ──────────────────────────────────────
+            _accordion(
+              index: 0,
+              icon: Icons.history_edu_rounded,
+              color: const Color(0xFF6366F1),
+              title: '1. Patient History',
+              subtitle: _patientHistoryId != null ? 'Completed ✓' : 'Complete patient history form',
+              child: _buildHistoryContent(),
+            ),
+
+            // ── 2. Doctor's Notes (SOAP) ────────────────────────────────
+            _accordion(
+              index: 1,
+              icon: Icons.edit_note_rounded,
+              color: const Color(0xFF0EA5E9),
+              title: "2. Doctor's Notes",
+              subtitle: 'Subjective, Objective, Assessment, Plan',
+              child: _buildSOAPContent(),
+            ),
+
+            // ── 3. Additional Notes ─────────────────────────────────────
+            _accordion(
+              index: 2,
+              icon: Icons.notes_rounded,
+              color: const Color(0xFF64748B),
+              title: '3. Additional Notes',
+              subtitle: 'Free text clinical observations',
+              child: _buildDoctorNotesContent(),
+            ),
+
+            // ── 4. Diagnosis ────────────────────────────────────────────
+            _accordion(
+              index: 3,
+              icon: Icons.medical_information_rounded,
+              color: const Color(0xFFEF4444),
+              title: '4. Diagnosis',
+              subtitle: 'ICD-10 codes and diagnosis',
+              badgeCount: _diagnoses.length,
+              child: _buildDiagnosisContent(),
+            ),
+
+            // ── 5. Medications ──────────────────────────────────────────
+            _accordion(
+              index: 4,
+              icon: Icons.medication_rounded,
+              color: const Color(0xFF10B981),
+              title: '5. Medications',
+              subtitle: 'Prescribe medicines with dose & frequency',
+              badgeCount: _medicines.length,
+              child: _buildMedicationsContent(),
+            ),
+
+            // ── 6. Lab Tests ────────────────────────────────────────────
+            _accordion(
+              index: 5,
+              icon: Icons.biotech_rounded,
+              color: const Color(0xFF8B5CF6),
+              title: '6. Lab Tests',
+              subtitle: 'Order diagnostic tests',
+              badgeCount: _labTests.length,
+              child: _buildLabTestsContent(),
+            ),
+
+            // ── 7. Lifestyle Advice ─────────────────────────────────────
+            _accordion(
+              index: 6,
+              icon: Icons.spa_rounded,
+              color: const Color(0xFFF59E0B),
+              title: '7. Lifestyle Advice',
+              subtitle: 'Diet, exercise, sleep recommendations',
+              child: _buildLifestyleContent(),
+            ),
+
+            // ── 8. Referral & Follow-up ─────────────────────────────────
+            _accordion(
+              index: 7,
+              icon: Icons.event_repeat_rounded,
+              color: const Color(0xFFEC4899),
+              title: '8. Referral & Follow-up',
+              subtitle: 'Specialist referral and follow-up schedule',
+              child: _buildReferralContent(),
+            ),
+
+            // ── 9. Course Assignment ────────────────────────────────────
+            _accordion(
+              index: 8,
+              icon: Icons.school_rounded,
+              color: const Color(0xFF06B6D4),
+              title: '9. Course Assignment',
+              subtitle: 'Assign health awareness courses',
+              badgeCount: _assignedCourses.length,
+              child: _buildCoursesContent(),
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildHistoryTab(),
-          _buildSOAPTab(),
-          _buildDoctorNotesTab(),
-          _buildDiagnosisTab(),
-          _buildMedicationsTab(),
-          _buildLabTestsTab(),
-          _buildLifestyleTab(),
-          _buildReferralTab(),
-          _buildCoursesTab(),
-        ],
       ),
     );
   }
 
-  // Tab 1: Patient History
-  Widget _buildHistoryTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Patient History',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+  // ── Section 1: Patient History ───────────────────────────────────────────
+  Widget _buildHistoryContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_patientHistoryId != null)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('Patient history completed', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600))),
+                TextButton(onPressed: _openHistoryForm, child: const Text('Edit')),
+              ],
+            ),
+          )
+        else
+          ElevatedButton.icon(
+            onPressed: _openHistoryForm,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Complete History Form'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Complete comprehensive patient history form',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (_patientHistoryId != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Patient history completed',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => _openHistoryForm(),
-                    child: const Text('Edit'),
-                  ),
-                ],
-              ),
-            )
-          else
-            ElevatedButton.icon(
-              onPressed: () => _openHistoryForm(),
-              icon: const Icon(Icons.add),
-              label: const Text('Complete History Form'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -377,170 +557,72 @@ class _InConsultationPrescriptionFormState
     );
   }
 
-  // Tab 2: Doctor's Notes (formerly SOAP Notes)
-  Widget _buildSOAPTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Doctor's Notes",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildTextField(
-            controller: _subjectiveController,
-            label: 'Subjective',
-            hint: 'Patient\'s symptoms and complaints...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _objectiveController,
-            label: 'Objective',
-            hint: 'Clinical findings and observations...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _assessmentController,
-            label: 'Assessment',
-            hint: 'Clinical assessment and diagnosis...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _planController,
-            label: 'Plan',
-            hint: 'Treatment plan and recommendations...',
-            maxLines: 4,
-          ),
-        ],
-      ),
+  // ── Section 2: SOAP Notes ─────────────────────────────────────────────────
+  Widget _buildSOAPContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTextField(controller: _subjectiveController, label: 'Subjective', hint: "Patient's symptoms and complaints...", maxLines: 3),
+        const SizedBox(height: 12),
+        _buildTextField(controller: _objectiveController, label: 'Objective', hint: 'Clinical findings and observations...', maxLines: 3),
+        const SizedBox(height: 12),
+        _buildTextField(controller: _assessmentController, label: 'Assessment', hint: 'Clinical assessment and diagnosis...', maxLines: 3),
+        const SizedBox(height: 12),
+        _buildTextField(controller: _planController, label: 'Plan', hint: 'Treatment plan and recommendations...', maxLines: 3),
+      ],
     );
   }
 
-  // Tab 3: Doctor Notes
-  Widget _buildDoctorNotesTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Doctor Notes',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+  // ── Section 4: Diagnosis ──────────────────────────────────────────────────
+  Widget _buildDiagnosisContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: _addDiagnosis,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add Diagnosis'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Free text field for doctor\'s observations',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildTextField(
-            controller: _doctorNotesController,
-            label: 'Clinical Notes',
-            hint: 'Enter your clinical observations and notes...',
-            maxLines: 10,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Tab 4: Diagnosis
-  Widget _buildDiagnosisTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Diagnosis',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF0F172A),
-                ),
+        ),
+        const SizedBox(height: 12),
+        if (_diagnoses.isEmpty)
+          _emptyState(Icons.medical_information_outlined, 'No diagnoses added yet')
+        else
+          ...List.generate(_diagnoses.length, (index) {
+            final d = _diagnoses[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFCA5A5)),
               ),
-              ElevatedButton.icon(
-                onPressed: _addDiagnosis,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Diagnosis'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          if (_diagnoses.isEmpty)
-            Center(
-              child: Column(
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.medical_information_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(6)),
+                    child: Text(d.icd10Code, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No diagnoses added yet',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(d.diagnosis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                    onPressed: () => setState(() => _diagnoses.removeAt(index)),
                   ),
                 ],
               ),
-            )
-          else
-            ...List.generate(_diagnoses.length, (index) {
-              final diagnosis = _diagnoses[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        color: AppColors.primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    diagnosis.diagnosis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text('ICD-10: ${diagnosis.icd10Code}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () {
-                      setState(() => _diagnoses.removeAt(index));
-                    },
-                  ),
-                ),
-              );
-            }),
-        ],
-      ),
+            );
+          }),
+      ],
     );
   }
 
@@ -560,83 +642,65 @@ class _InConsultationPrescriptionFormState
     );
   }
 
-  // Tab 5: Medications
-  Widget _buildMedicationsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Medications',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _addMedicine,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Medicine'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                ),
-              ),
-            ],
+  // ── Section 5: Medications ────────────────────────────────────────────────
+  Widget _buildMedicationsContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: _addMedicine,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add Medicine'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
           ),
-          const SizedBox(height: 24),
-          if (_medicines.isEmpty)
-            Center(
-              child: Column(
+        ),
+        const SizedBox(height: 12),
+        if (_medicines.isEmpty)
+          _emptyState(Icons.medication_outlined, 'No medications added yet')
+        else
+          ...List.generate(_medicines.length, (index) {
+            final m = _medicines[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.medication_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
+                  Container(
+                    width: 28, height: 28,
+                    decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(6)),
+                    child: Center(child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No medications added yet',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(m.medicineName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text('${m.dose} · ${m.frequencyDisplay} · ${m.duration}',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                    onPressed: () => setState(() => _medicines.removeAt(index)),
                   ),
                 ],
               ),
-            )
-          else
-            ...List.generate(_medicines.length, (index) {
-              final medicine = _medicines[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.green.withOpacity(0.1),
-                    child: const Icon(Icons.medication, color: Colors.green),
-                  ),
-                  title: Text(
-                    medicine.medicineName,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${medicine.dose} - ${medicine.frequencyDisplay} - ${medicine.duration}',
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () {
-                      setState(() => _medicines.removeAt(index));
-                    },
-                  ),
-                ),
-              );
-            }),
-        ],
-      ),
+            );
+          }),
+      ],
     );
   }
 
@@ -803,77 +867,54 @@ class _InConsultationPrescriptionFormState
     }
   }
 
-  // Tab 6: Lab Tests
-  Widget _buildLabTestsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Lab Tests',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Common Tests',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF475569),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...CommonLabTests.tests.map((test) {
-            final isSelected = _labTests.any((t) => t.testName == test);
-            return CheckboxListTile(
-              title: Text(test),
-              value: isSelected,
-              onChanged: (value) {
-                setState(() {
-                  if (value == true) {
-                    _labTests.add(LabTestItem(
-                      testName: test,
-                      isUrgent: false,
-                    ));
-                  } else {
-                    _labTests.removeWhere((t) => t.testName == test);
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ],
+  // ── Section 6: Lab Tests ──────────────────────────────────────────────────
+  Widget _buildLabTestsContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Common Tests', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+        const SizedBox(height: 8),
+        ...CommonLabTests.tests.map((test) {
+          final isSelected = _labTests.any((t) => t.testName == test);
+          return CheckboxListTile(
+            dense: true,
+            title: Text(test, style: const TextStyle(fontSize: 13)),
+            value: isSelected,
+            activeColor: const Color(0xFF8B5CF6),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (value) {
+              setState(() {
+                if (value == true) {
+                  _labTests.add(LabTestItem(testName: test, isUrgent: false));
+                } else {
+                  _labTests.removeWhere((t) => t.testName == test);
+                }
+              });
+            },
+          );
+        }),
+      ],
+    );
+  }
       ),
     );
   }
 
-  // Tab 7: Lifestyle Advice
-  Widget _buildLifestyleTab() {
+  // ── Section 7: Lifestyle Advice ──────────────────────────────────────────
+  Widget _buildLifestyleContent() {
     final advice = _lifestyleAdvice;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Lifestyle Advice', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-          const SizedBox(height: 6),
-          const Text('Provide lifestyle recommendations for the patient', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
-          const SizedBox(height: 20),
-
-          // Quick templates row
-          const Text('Quick Templates', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF475569))),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: LifestyleAdviceTemplates.dietTemplates.map((t) => ActionChip(
-              label: Text(t['name'] as String),
-              avatar: const Icon(Icons.restaurant_outlined, size: 14),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Quick templates row
+        const Text('Quick Templates', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: LifestyleAdviceTemplates.dietTemplates.map((t) => ActionChip(
+            label: Text(t['name'] as String),
+            avatar: const Icon(Icons.restaurant_outlined, size: 14),
               onPressed: () => _applyDietTemplate(t),
             )).toList(),
           ),
@@ -997,8 +1038,7 @@ class _InConsultationPrescriptionFormState
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _lifestyleSection({required String title, required IconData icon, required Color color, required Widget child}) {
@@ -1183,35 +1223,31 @@ class _InConsultationPrescriptionFormState
   }
 
   // Tab 8: Referral & Follow-up
-  Widget _buildReferralTab() {
+  // ── Section 8: Referral & Follow-up ──────────────────────────────────────
+  Widget _buildReferralContent() {
     final ref = _referralFollowUp;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Referral & Follow-up', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-          const SizedBox(height: 20),
-
-          // Referral Type
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Referral', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF475569))),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<ReferralType>(
-                  value: ref?.referralType ?? ReferralType.none,
-                  decoration: InputDecoration(
-                    labelText: 'Referral Type',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    filled: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Referral Type
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Referral', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF475569))),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<ReferralType>(
+                value: ref?.referralType ?? ReferralType.none,
+                decoration: InputDecoration(
+                  labelText: 'Referral Type',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                   ),
                   items: const [
@@ -1341,16 +1377,13 @@ class _InConsultationPrescriptionFormState
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
-  // Tab 9: Course Assignment
-  Widget _buildCoursesTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  // ── Section 9: Course Assignment ─────────────────────────────────────────
+  Widget _buildCoursesContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Course Assignment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
           const SizedBox(height: 8),
@@ -1386,8 +1419,7 @@ class _InConsultationPrescriptionFormState
               ),
             )),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildTextField({
@@ -1424,3 +1456,13 @@ class _InConsultationPrescriptionFormState
     );
   }
 }
+
+  // ── Section 3: Additional Notes ───────────────────────────────────────────
+  Widget _buildDoctorNotesContent() {
+    return _buildTextField(
+      controller: _doctorNotesController,
+      label: 'Clinical Notes',
+      hint: 'Enter your clinical observations and notes...',
+      maxLines: 6,
+    );
+  }
