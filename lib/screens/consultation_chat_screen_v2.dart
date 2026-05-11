@@ -93,17 +93,19 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   Future<void> _initializeConsultation() async {
     try {
-      // If consultationId already provided, use it
+      // consultationId already provided (started from booking card)
+      // Backend already created the session and sent consent messages — just load
       if (widget.consultationId != null && widget.consultationId!.isNotEmpty) {
         _consultationId = widget.consultationId;
-        if (widget.isDoctor) await _sendConsentMessage();
         await _loadMessages();
-        if (mounted) setState(() => _isLoading = false);
-        _startMessagePolling();
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _startMessagePolling();
+        }
         return;
       }
 
-      // Otherwise create new consultation
+      // No consultationId provided — create new consultation (Connect Now flow)
       final result = await _consultationService.startConsultationV2(
         appointmentId: widget.appointment?.id ?? '',
         patientId: widget.appointment?.patient?.id ?? '',
@@ -112,9 +114,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
       if (result['success'] == true) {
         _consultationId = result['consultationId']?.toString();
-        if (widget.isDoctor) await _sendConsentMessage();
         await _loadMessages();
-        _startMessagePolling();
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _startMessagePolling();
+        }
       } else if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,7 +129,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing consultation: $e')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }

@@ -795,47 +795,52 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                 doctorId: widget.appointment.doctor?.id ?? '',
                               );
 
-                              Navigator.pop(context); // Close loading
-
                               if (result['success'] == true) {
                                 final consultationId = result['consultationId']?.toString() ?? '';
 
-                                // Notify patient that consultation has started
+                                // Fire-and-forget: notify patient (don't await — must not block or crash flow)
                                 if (isDoctor) {
                                   final patientId = widget.appointment.patient?.id ?? '';
                                   if (patientId.isNotEmpty && consultationId.isNotEmpty) {
-                                    await callService.initiateCall(
+                                    callService.initiateCall(
                                       receiverId: patientId,
                                       channelName: consultationId,
                                       callerName: 'Dr. $currentUserName',
                                       callType: 'consultation',
-                                    );
+                                    ).catchError((_) {}); // ignore errors — notification is optional
                                   }
                                 }
 
-                                // Doctor enters chat screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ConsultationChatScreenV2(
-                                      appointment: widget.appointment,
-                                      isDoctor: isDoctor,
-                                      currentUserId: currentUserId,
-                                      currentUserName: currentUserName,
-                                      consultationId: consultationId,
+                                if (context.mounted) Navigator.pop(context); // Close loading
+
+                                // Navigate to consultation chat
+                                if (context.mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ConsultationChatScreenV2(
+                                        appointment: widget.appointment,
+                                        isDoctor: isDoctor,
+                                        currentUserId: currentUserId,
+                                        currentUserName: currentUserName,
+                                        consultationId: consultationId,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(result['message'] ?? 'Failed to start consultation'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                                if (context.mounted) {
+                                  Navigator.pop(context); // Close loading
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result['message'] ?? 'Failed to start consultation'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }
                             } catch (e) {
-                              Navigator.pop(context);
+                              if (context.mounted) Navigator.pop(context); // Close loading only
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Error: $e'),
