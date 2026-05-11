@@ -5,7 +5,9 @@ import 'package:icare/models/user.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/lab_list.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/rating_dialog.dart';
 import 'package:icare/utils/theme.dart';
@@ -625,23 +627,59 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                           ),
                                         ),
                                         ElevatedButton(
-                                          onPressed: () {
-                                            // Extract real channelName from notes for Connect Now appointments
-                                            String channelName = appointment.id;
-                                            final notes = appointment.reason ?? '';
-                                            final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
-                                            if (match != null) channelName = match.group(1)!;
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => VideoCall(
-                                                  channelName: channelName,
-                                                  remoteUserName: appointment.doctorName,
-                                                  appointmentId: appointment.id,
-                                                  currentUserName: _currentUser?.name ?? '',
-                                                  currentUserId: _currentUser?.id ?? '',
+                                          onPressed: () async {
+                                            // Show loading
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (_) => const Center(child: CircularProgressIndicator()),
+                                            );
+
+                                            try {
+                                              final consultationService = ConsultationService();
+
+                                              // Rejoin existing consultation session
+                                              final result = await consultationService.startConsultationV2(
+                                                appointmentId: appointment.id,
+                                                patientId: appointment.patient?.id ?? '',
+                                                doctorId: appointment.doctor?.id ?? '',
+                                              );
+
+                                              Navigator.pop(context); // Close loading
+
+                                              if (result['success'] == true) {
+                                                final consultationId = result['consultationId']?.toString() ?? '';
+
+                                                // Navigate to chat screen (NOT video directly)
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => ConsultationChatScreenV2(
+                                                      appointment: appointment,
+                                                      isDoctor: false,
+                                                      currentUserId: _currentUser?.id ?? '',
+                                                      currentUserName: _currentUser?.name ?? '',
+                                                      consultationId: consultationId.isNotEmpty ? consultationId : null,
+                                                    ),
+                                                  ),
+                                                ).then((_) => _loadAppointments());
+                                              } else {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Error: $e'),
+                                                  backgroundColor: Colors.red,
                                                 ),
-                                              ),
-                                            ).then((_) => _loadAppointments());
+                                              );
+                                            }
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF8B5CF6),

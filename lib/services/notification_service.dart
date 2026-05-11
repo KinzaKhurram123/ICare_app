@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 import '../utils/error_handler.dart';
@@ -145,6 +146,26 @@ class NotificationService {
       return {
         'success': true,
         'notifications': [],
+      };
+    } on DioException catch (e) {
+      // 404 means the endpoint isn't implemented on the backend yet — return empty gracefully
+      if (e.response?.statusCode == 404) {
+        if (kDebugMode) {
+          print('Notifications endpoint not available (404) — returning empty list');
+        }
+        return {
+          'success': true,
+          'notifications': [],
+        };
+      }
+      ErrorHandler.logError(e, e.stackTrace ?? StackTrace.current, context: 'getNotifications');
+      if (kDebugMode) {
+        print('Error fetching notifications: $e');
+      }
+      return {
+        'success': false,
+        'notifications': [],
+        'error': e.toString(),
       };
     } catch (e, stackTrace) {
       ErrorHandler.logError(e, stackTrace, context: 'getNotifications');

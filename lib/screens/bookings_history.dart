@@ -4,7 +4,9 @@ import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call_web.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -490,28 +492,59 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
     );
   }
 
-  void _rejoin(AppointmentDetail appt) {
-    if (!kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video call is available on web only')),
-      );
-      return;
-    }
-    final channel = _extractChannel(appt);
-    if (channel == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VideoCall(
-          channelName: channel,
-          remoteUserName: appt.doctor?.name ?? 'Doctor',
-          currentUserId: _currentUserId,
-          currentUserName: _currentUserName,
-          appointmentId: appt.id,
-          patientId: appt.patient?.id,
-        ),
-      ),
+  void _rejoin(AppointmentDetail appt) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      // Rejoin existing consultation session
+      final result = await _consultationService.startConsultationV2(
+        appointmentId: appt.id,
+        patientId: appt.patient?.id ?? '',
+        doctorId: appt.doctor?.id ?? '',
+      );
+
+      if (mounted) Navigator.pop(context); // Close loading
+
+      if (result['success'] == true && mounted) {
+        final consultationId = result['consultationId']?.toString() ?? '';
+
+        // Navigate to chat screen (NOT video directly)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConsultationChatScreenV2(
+              appointment: appt,
+              isDoctor: false,
+              currentUserId: _currentUserId,
+              currentUserName: _currentUserName,
+              consultationId: consultationId.isNotEmpty ? consultationId : null,
+            ),
+          ),
+        ).then((_) => _loadAppointments());
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // ── Category tile ─────────────────────────────────────────────────────────

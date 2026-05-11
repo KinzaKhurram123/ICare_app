@@ -1023,6 +1023,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
           TextField(
             decoration: _inputDec('Describe hereditary conditions, patterns, etc.'),
             maxLines: 3,
+            textDirection: TextDirection.ltr,
             controller: TextEditingController(text: _otherFamilyHistory),
             onChanged: (v) => setState(() => _otherFamilyHistory = v.isEmpty ? null : v),
           ),
@@ -1044,6 +1045,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
                 flex: 3,
                 child: TextField(
                   decoration: _inputDec('Disease / Condition'),
+                  textDirection: TextDirection.ltr,
                   controller: TextEditingController(text: h?.diseaseCondition),
                   onChanged: (v) => onChanged(FamilyMemberHistory(
                     diseaseCondition: v.isEmpty ? null : v,
@@ -1056,6 +1058,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
                 flex: 2,
                 child: TextField(
                   decoration: _inputDec('Age at Diagnosis'),
+                  textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(text: h?.ageAtDiagnosis?.toString()),
                   onChanged: (v) => onChanged(FamilyMemberHistory(
@@ -1136,6 +1139,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   decoration: _inputDec('Details'),
+                  textDirection: TextDirection.ltr,
                   controller: TextEditingController(text: _substanceDetails),
                   onChanged: (v) => _substanceDetails = v.isEmpty ? null : v,
                 ),
@@ -1156,6 +1160,7 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         decoration: _inputDec(label),
+        textDirection: TextDirection.ltr,
         controller: TextEditingController(text: value),
         onChanged: onChanged,
       ),
