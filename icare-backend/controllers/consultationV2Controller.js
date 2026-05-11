@@ -79,19 +79,32 @@ exports.startConsultation = async (req, res) => {
     const doctorName = doctor ? doctor.name : 'Doctor';
     console.log('✅ Doctor found:', doctorName);
 
-    // Auto-send consent message from doctor
+    // Auto-send consent message from doctor (message 1)
     const consentMessage = new ConsultationMessage({
       consultationId: consultation._id,
       senderId: doctorId,
       senderName: doctorName,
       senderRole: 'doctor',
-      message: `Hi, I am Dr. ${doctorName}. I confirm that telehealth has limitations and some emergencies require in-person visits.`,
+      message: `Hi, I am Dr. ${doctorName}. This telehealth consultation is confidential and intended for medical guidance only. By continuing, you consent to a virtual consultation, understand its limitations compared to in-person examination, and agree to share accurate health information. In case of emergency, please contact local emergency services immediately.`,
       isSystemMessage: true,
       timestamp: new Date()
     });
 
     await consentMessage.save();
-    console.log('✅ Consent message sent');
+
+    // Auto-send follow-up greeting (message 2)
+    const greetingMessage = new ConsultationMessage({
+      consultationId: consultation._id,
+      senderId: doctorId,
+      senderName: doctorName,
+      senderRole: 'doctor',
+      message: `How can I help you?`,
+      isSystemMessage: false,
+      timestamp: new Date(Date.now() + 1000) // 1 second after consent
+    });
+
+    await greetingMessage.save();
+    console.log('✅ Consent + greeting messages sent');
 
     res.json({
       success: true,
