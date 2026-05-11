@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:icare/models/appointment_detail.dart';
-import 'package:icare/screens/consultation_workflow.dart';
+import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/consultation_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -622,14 +624,56 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => ConsultationWorkflowScreen(
-                                    appointment: appointment,
-                                  ),
-                                ),
+                            onTap: () async {
+                              // Show loading
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(child: CircularProgressIndicator()),
                               );
+                              try {
+                                final consultationService = ConsultationService();
+                                final sharedPref = SharedPref();
+                                final userData = await sharedPref.getUserData();
+                                final currentUserId = userData?.id ?? '';
+                                final currentUserName = userData?.name ?? 'Doctor';
+
+                                final result = await consultationService.startConsultationV2(
+                                  appointmentId: appointment.id ?? '',
+                                  patientId: appointment.patient?.id ?? '',
+                                  doctorId: appointment.doctor?.id ?? currentUserId,
+                                );
+
+                                if (context.mounted) Navigator.pop(context); // close loading
+
+                                if (result['success'] == true && context.mounted) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (ctx) => ConsultationChatScreenV2(
+                                        appointment: appointment,
+                                        isDoctor: true,
+                                        currentUserId: currentUserId,
+                                        currentUserName: currentUserName,
+                                        consultationId: result['consultationId']?.toString(),
+                                      ),
+                                    ),
+                                  );
+                                } else if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result['message']?.toString() ?? 'Failed to start consultation'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 14),
