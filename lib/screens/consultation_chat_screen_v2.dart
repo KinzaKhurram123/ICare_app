@@ -1,4 +1,4 @@
-// Consultation Chat Screen V2 - Chat-First Approach
+﻿// Consultation Chat Screen V2 - Chat-First Approach
 // Updated as per client requirements - May 4, 2026
 
 import 'dart:async';
@@ -22,7 +22,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 
 class ConsultationChatScreenV2 extends StatefulWidget {
-  final AppointmentDetail appointment;
+  final AppointmentDetail? appointment; // nullable — may be null for patient accepting call
   final bool isDoctor;
   final String currentUserId;
   final String currentUserName;
@@ -30,7 +30,7 @@ class ConsultationChatScreenV2 extends StatefulWidget {
 
   const ConsultationChatScreenV2({
     super.key,
-    required this.appointment,
+    this.appointment, // optional
     required this.isDoctor,
     required this.currentUserId,
     required this.currentUserName,
@@ -105,9 +105,9 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
       // Otherwise create new consultation
       final result = await _consultationService.startConsultationV2(
-        appointmentId: widget.appointment.id ?? '',
-        patientId: widget.appointment.patient!.id,
-        doctorId: widget.appointment.doctor!.id,
+        appointmentId: widget.appointment?.id ?? '',
+        patientId: widget.appointment?.patient?.id ?? '',
+        doctorId: widget.appointment?.doctor?.id ?? '',
       );
 
       if (result['success'] == true) {
@@ -275,8 +275,8 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   Future<void> _initiateCall({required bool audioOnly}) async {
     // Determine the other party's ID to send them a ring signal
     final receiverId = widget.isDoctor
-        ? widget.appointment.patient?.id ?? ''
-        : widget.appointment.doctor?.id ?? '';
+        ? widget.appointment?.patient?.id ?? ''
+        : widget.appointment?.doctor?.id ?? '';
 
     if (receiverId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -285,10 +285,10 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       return;
     }
 
-    final channelName = _consultationId ?? widget.appointment.id ?? 'consultation';
+    final channelName = _consultationId ?? widget.appointment?.id ?? 'consultation';
     final remoteUserName = widget.isDoctor
-        ? widget.appointment.patient?.name ?? 'Patient'
-        : 'Dr. ${widget.appointment.doctor?.name ?? 'Doctor'}';
+        ? widget.appointment?.patient?.name ?? 'Patient'
+        : 'Dr. ${widget.appointment?.doctor?.name ?? 'Doctor'}';
 
     // Send ring signal to the other party via call signaling backend
     final callService = CallService();
@@ -309,9 +309,9 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           channelName: channelName,
           remoteUserName: remoteUserName,
           isAudioOnly: audioOnly,
-          appointmentId: widget.appointment.id,
+          appointmentId: widget.appointment?.id,
           consultationId: _consultationId,
-          patientId: widget.appointment.patient?.id,
+          patientId: widget.appointment?.patient?.id,
           currentUserName: widget.currentUserName,
           currentUserId: widget.currentUserId,
         ),
@@ -330,11 +330,12 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       );
       return;
     }
+    if (widget.appointment == null) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => PatientHistoryFormScreen(
-          appointment: widget.appointment,
+          appointment: widget.appointment!,
           consultationId: _consultationId!,
         ),
       ),
@@ -348,12 +349,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       );
       return;
     }
+    if (widget.appointment == null) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => InConsultationPrescriptionForm(
-          appointment: widget.appointment,
+          appointment: widget.appointment!,
           consultationId: _consultationId!,
           onPrescriptionComplete: (isComplete) {
             setState(() => _prescriptionComplete = isComplete);
@@ -592,8 +594,8 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   // ── Screenshot-matched consultation header ──────────────────────────────
   Widget _buildConsultationHeader() {
-    final patientName = widget.appointment.patient?.name ?? 'Patient';
-    final doctorName = widget.appointment.doctor?.name ?? 'Doctor';
+    final patientName = widget.appointment?.patient?.name ?? 'Patient';
+    final doctorName = widget.appointment?.doctor?.name ?? 'Doctor';
     final mins = (_timer.elapsed.inSeconds ~/ 60).toString().padLeft(2, '0');
     final secs = (_timer.elapsed.inSeconds % 60).toString().padLeft(2, '0');
 
@@ -985,3 +987,4 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     super.dispose();
   }
 }
+

@@ -6,6 +6,7 @@ import '../services/call_service.dart';
 import '../utils/shared_pref.dart';
 import '../utils/app_keys.dart';
 import '../screens/video_call.dart';
+import '../screens/consultation_chat_screen_v2.dart';
 
 @JS('playRingtone')
 external void _jsPlayRingtone();
@@ -95,21 +96,40 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
         pageBuilder: (ctx, _, __) => _IncomingCallDialog(
           callerName: callerName,
           isAudioOnly: isAudioOnly,
+          isConsultation: callType == 'consultation',
           onAccept: () async {
             await _callService.respondToCall(signalId, 'accepted');
             final userData = await _sharedPref.getUserData();
             nav.pop();
-            nav.push(
-              MaterialPageRoute(
-                builder: (_) => VideoCall(
-                  channelName: channelName,
-                  remoteUserName: callerName,
-                  isAudioOnly: isAudioOnly,
-                  currentUserId: userData?.id ?? '',
-                  currentUserName: userData?.name ?? 'User',
+
+            if (callType == 'consultation') {
+              // Appointment-based consultation: enter chat screen (chat-first)
+              // channelName holds the consultationId
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => ConsultationChatScreenV2(
+                    appointment: null,
+                    isDoctor: false,
+                    currentUserId: userData?.id ?? '',
+                    currentUserName: userData?.name ?? 'User',
+                    consultationId: channelName,
+                  ),
                 ),
-              ),
-            );
+              );
+            } else {
+              // Direct video/audio call
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => VideoCall(
+                    channelName: channelName,
+                    remoteUserName: callerName,
+                    isAudioOnly: isAudioOnly,
+                    currentUserId: userData?.id ?? '',
+                    currentUserName: userData?.name ?? 'User',
+                  ),
+                ),
+              );
+            }
           },
           onDecline: () async {
             await _callService.respondToCall(signalId, 'rejected');
@@ -133,12 +153,14 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
 class _IncomingCallDialog extends StatelessWidget {
   final String callerName;
   final bool isAudioOnly;
+  final bool isConsultation;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
   const _IncomingCallDialog({
     required this.callerName,
     required this.isAudioOnly,
+    this.isConsultation = false,
     required this.onAccept,
     required this.onDecline,
   });
@@ -180,7 +202,11 @@ class _IncomingCallDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              isAudioOnly ? 'Incoming Audio Call' : 'Incoming Video Call',
+              isConsultation
+                  ? 'Your consultation has started'
+                  : isAudioOnly
+                      ? 'Incoming Audio Call'
+                      : 'Incoming Video Call',
               style: const TextStyle(color: Colors.white60, fontSize: 14),
             ),
             const SizedBox(height: 36),

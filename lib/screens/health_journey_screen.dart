@@ -174,10 +174,10 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: isDesktop ? 3 : 2,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.1,
+                              crossAxisCount: isDesktop ? 4 : 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.45,
                             ),
                             itemCount: _vitalData.length,
                             itemBuilder: (context, index) {
@@ -197,14 +197,14 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
 
   Widget _buildHealthModeCard() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: _healthModeEnabled
               ? [const Color(0xFF10B981), const Color(0xFF059669)]
               : [const Color(0xFF64748B), const Color(0xFF475569)],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: (_healthModeEnabled ? const Color(0xFF10B981) : const Color(0xFF64748B))
@@ -224,7 +224,7 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
             ),
             child: Icon(
               _healthModeEnabled ? Icons.health_and_safety_rounded : Icons.dashboard_rounded,
-              size: 40,
+              size: 28,
               color: Colors.white,
             ),
           ),
@@ -288,15 +288,15 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
         currentValue: hasData ? latestEntry.value : '',
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 8,
+              color: color.withValues(alpha: 0.08),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -308,26 +308,26 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(7),
                   ),
-                  child: Icon(config['icon'], color: color, size: 20),
+                  child: Icon(config['icon'], color: color, size: 15),
                 ),
                 if (hasData)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
                       color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
                           ? const Color(0xFF10B981).withValues(alpha: 0.1)
                           : const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
                       latestEntry.status,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                         fontWeight: FontWeight.w900,
                         color: (latestEntry.status == 'Normal' || latestEntry.status == 'Healthy')
                             ? const Color(0xFF10B981)
@@ -337,37 +337,42 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
                   )
                 else
                   const Icon(Icons.add_circle_outline_rounded,
-                      color: Color(0xFF94A3B8), size: 18),
+                      color: Color(0xFF94A3B8), size: 14),
               ],
             ),
             const Spacer(),
             Text(
               config['name'] ?? '',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 9,
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w600,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  hasData ? latestEntry.value : '--',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: hasData ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                Flexible(
+                  child: Text(
+                    hasData ? latestEntry.value : '--',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: hasData ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
                     config['unit'] ?? '',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 9,
                       color: Color(0xFF64748B),
                       fontWeight: FontWeight.w600,
                     ),
@@ -375,23 +380,17 @@ class _HealthJourneyScreenState extends State<HealthJourneyScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            if (summary != null && summary.count > 0)
-              Text(
-                '7-day avg: ${summary.average?.toStringAsFixed(1) ?? '--'}',
-                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-              )
-            else
-              Text(
-                hasData
-                    ? DateFormat('MMM dd, HH:mm').format(latestEntry.timestamp)
-                    : 'Tap to add reading',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: hasData ? const Color(0xFF94A3B8) : color,
-                  fontWeight: hasData ? FontWeight.normal : FontWeight.w600,
-                ),
+            const SizedBox(height: 3),
+            Text(
+              hasData
+                  ? DateFormat('MMM dd').format(latestEntry.timestamp)
+                  : 'Tap to add',
+              style: TextStyle(
+                fontSize: 9,
+                color: hasData ? const Color(0xFF94A3B8) : color,
+                fontWeight: hasData ? FontWeight.normal : FontWeight.w600,
               ),
+            ),
           ],
         ),
       ),

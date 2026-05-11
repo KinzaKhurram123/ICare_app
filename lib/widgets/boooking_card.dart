@@ -11,6 +11,7 @@ import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/consultation_chat_screen_v2.dart';
 import 'package:icare/services/consultation_service.dart';
+import 'package:icare/services/call_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/utils/imagePaths.dart';
@@ -779,14 +780,15 @@ class _WebBookingCardState extends State<_WebBookingCard> {
 
                             try {
                               final consultationService = ConsultationService();
+                              final callService = CallService();
                               final sharedPref = SharedPref();
-                              
+
                               final userData = await sharedPref.getUserData();
                               final currentUserId = userData?.id ?? '';
                               final currentUserName = userData?.name ?? 'User';
                               final isDoctor = widget.selectedRole == 'Doctor';
 
-                              // Start/rejoin consultation
+                              // Start consultation session in backend
                               final result = await consultationService.startConsultationV2(
                                 appointmentId: widget.appointment.id ?? '',
                                 patientId: widget.appointment.patient?.id ?? '',
@@ -796,7 +798,22 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                               Navigator.pop(context); // Close loading
 
                               if (result['success'] == true) {
-                                // Navigate to chat screen
+                                final consultationId = result['consultationId']?.toString() ?? '';
+
+                                // Notify patient that consultation has started
+                                if (isDoctor) {
+                                  final patientId = widget.appointment.patient?.id ?? '';
+                                  if (patientId.isNotEmpty && consultationId.isNotEmpty) {
+                                    await callService.initiateCall(
+                                      receiverId: patientId,
+                                      channelName: consultationId,
+                                      callerName: 'Dr. $currentUserName',
+                                      callType: 'consultation',
+                                    );
+                                  }
+                                }
+
+                                // Doctor enters chat screen
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -805,14 +822,14 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                       isDoctor: isDoctor,
                                       currentUserId: currentUserId,
                                       currentUserName: currentUserName,
-                                      consultationId: result['consultationId']?.toString(), // FIX: Pass consultationId
+                                      consultationId: consultationId,
                                     ),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+                                    content: Text(result['message'] ?? 'Failed to start consultation'),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
