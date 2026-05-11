@@ -315,16 +315,34 @@ class ConsultationService {
     required Map<String, dynamic> historyData,
   }) async {
     try {
+      print('📋 SAVING PATIENT HISTORY:');
+      print('  patientId: ${historyData['patientId']}');
+      print('  consultationId: ${historyData['consultationId']}');
+      print('  doctorId: ${historyData['doctorId']}');
+      print('  Data keys: ${historyData.keys.toList()}');
+
       final token = await _sharedPref.getToken();
+      print('  Token: ${token?.substring(0, 20)}...');
+
       final response = await _dio.post(
         '/patient-history/create',
         data: historyData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
+
+      print('✅ PATIENT HISTORY SAVE RESPONSE:');
+      print('  Status: ${response.statusCode}');
+      print('  Data: ${response.data}');
+
       final data = response.data;
       if (data is Map<String, dynamic>) return data;
       return {'success': true}; // non-map success response
     } on DioException catch (e) {
+      print('❌ ERROR SAVING PATIENT HISTORY:');
+      print('  Message: ${e.message}');
+      print('  Status: ${e.response?.statusCode}');
+      print('  Response data: ${e.response?.data}');
+
       // Safely extract message — response.data could be String/null/Map
       String message = e.message ?? 'Network error';
       try {
@@ -337,6 +355,7 @@ class ConsultationService {
       } catch (_) {}
       return {'success': false, 'message': message};
     } catch (e) {
+      print('❌ UNEXPECTED ERROR SAVING PATIENT HISTORY: $e');
       return {'success': false, 'message': 'Unexpected error: $e'};
     }
   }
