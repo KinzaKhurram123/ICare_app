@@ -21,6 +21,7 @@ class BookingsHistoryScreen extends StatefulWidget {
 
 class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   final AppointmentService _appointmentService = AppointmentService();
+  final ConsultationService _consultationService = ConsultationService();
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
   String _currentUserId = '';
