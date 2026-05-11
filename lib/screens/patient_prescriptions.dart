@@ -278,12 +278,23 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     final labTests = (record['prescription']?['labTests'] as List?)
         ?? (record['labTests'] as List?) ?? [];
 
+    // 30-day check: only allow ordering within 30 days of prescription
+    bool isWithin30Days = false;
+    try {
+      final createdAt = DateTime.parse(record['createdAt'].toString());
+      final daysDiff = DateTime.now().difference(createdAt).inDays;
+      isWithin30Days = daysDiff <= 30;
+    } catch (_) {
+      isWithin30Days = false;
+    }
+
     return _PrescriptionPage(
       record: record,
       medicines: medicines,
       labTests: labTests,
-      onFindPharmacies: () => _showFindPharmacies(context, medicines),
-      onFindLabs: () => _showFindLabs(context, labTests),
+      isWithin30Days: isWithin30Days,
+      onFindPharmacies: isWithin30Days ? () => _showFindPharmacies(context, medicines) : null,
+      onFindLabs: isWithin30Days ? () => _showFindLabs(context, labTests) : null,
     );
   }
 
@@ -770,15 +781,17 @@ class _PrescriptionPage extends StatelessWidget {
   final dynamic record;
   final List<dynamic> medicines;
   final List<dynamic> labTests;
-  final VoidCallback onFindPharmacies;
-  final VoidCallback onFindLabs;
+  final VoidCallback? onFindPharmacies;
+  final VoidCallback? onFindLabs;
+  final bool isWithin30Days;
 
   const _PrescriptionPage({
     required this.record,
     required this.medicines,
     required this.labTests,
-    required this.onFindPharmacies,
-    required this.onFindLabs,
+    required this.isWithin30Days,
+    this.onFindPharmacies,
+    this.onFindLabs,
   });
 
   String get _patientName {
@@ -1036,19 +1049,58 @@ class _PrescriptionPage extends StatelessWidget {
               ]),
               if (medicines.isNotEmpty || labTests.isNotEmpty) ...[
                 const SizedBox(height: 8),
+                // 30-day validity indicator
+                if (!isWithin30Days)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFED7AA)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.lock_clock_rounded, color: Color(0xFFF59E0B), size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Prescription expired (30+ days) — View only. Cannot order.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Row(children: [
                   if (medicines.isNotEmpty) Expanded(child: ElevatedButton.icon(
                     onPressed: onFindPharmacies,
                     icon: const Icon(Icons.local_pharmacy_rounded, size: 15),
                     label: const Text('Order Medicines', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0036BC), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isWithin30Days ? const Color(0xFF0036BC) : const Color(0xFF94A3B8),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      disabledForegroundColor: const Color(0xFF94A3B8),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
                   )),
                   if (medicines.isNotEmpty && labTests.isNotEmpty) const SizedBox(width: 8),
                   if (labTests.isNotEmpty) Expanded(child: ElevatedButton.icon(
                     onPressed: onFindLabs,
                     icon: const Icon(Icons.science_rounded, size: 15),
                     label: const Text('Order Lab Tests', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isWithin30Days ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      disabledForegroundColor: const Color(0xFF94A3B8),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
                   )),
                 ]),
               ],
