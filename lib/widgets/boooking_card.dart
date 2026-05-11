@@ -795,26 +795,28 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                 doctorId: widget.appointment.doctor?.id ?? '',
                               );
 
-                              if (result['success'] == true) {
-                                final consultationId = result['consultationId']?.toString() ?? '';
+                              // Always close loading dialog first
+                              if (Navigator.canPop(context)) Navigator.pop(context);
 
-                                // Fire-and-forget: notify patient (don't await — must not block or crash flow)
-                                if (isDoctor) {
+                              if (result['success'] == true) {
+                                // Null-safe consultation ID — pass null if empty so screen doesn't re-create
+                                final rawId = result['consultationId']?.toString() ?? '';
+                                final consultationId = rawId.isNotEmpty ? rawId : null;
+
+                                // Fire-and-forget: notify patient (never blocks the flow)
+                                if (isDoctor && consultationId != null) {
                                   final patientId = widget.appointment.patient?.id ?? '';
-                                  if (patientId.isNotEmpty && consultationId.isNotEmpty) {
+                                  if (patientId.isNotEmpty) {
                                     callService.initiateCall(
                                       receiverId: patientId,
                                       channelName: consultationId,
                                       callerName: 'Dr. $currentUserName',
                                       callType: 'consultation',
-                                    ).catchError((_) {}); // ignore errors — notification is optional
+                                    ).catchError((_) {});
                                   }
                                 }
 
-                                if (context.mounted) Navigator.pop(context); // Close loading
-
-                                // Navigate to consultation chat
-                                if (context.mounted) {
+                                if (mounted) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -829,8 +831,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                   );
                                 }
                               } else {
-                                if (context.mounted) {
-                                  Navigator.pop(context); // Close loading
+                                if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(result['message'] ?? 'Failed to start consultation'),
@@ -840,7 +841,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                                 }
                               }
                             } catch (e) {
-                              if (context.mounted) Navigator.pop(context); // Close loading only
+                              if (Navigator.canPop(context)) Navigator.pop(context); // Close loading
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Error: $e'),

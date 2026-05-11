@@ -113,7 +113,19 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       );
 
       if (result['success'] == true) {
-        _consultationId = result['consultationId']?.toString();
+        final rawId = result['consultationId']?.toString() ?? '';
+        _consultationId = rawId.isNotEmpty ? rawId : null;
+
+        if (_consultationId == null) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Consultation created but ID missing. Please try again.')),
+            );
+          }
+          return;
+        }
+
         await _loadMessages();
         if (mounted) {
           setState(() => _isLoading = false);
@@ -140,7 +152,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     _messagePollTimer?.cancel();
     _messagePollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (mounted && _consultationId != null) {
-        _loadMessages(silent: true);
+        _loadMessages(silent: true).catchError((_) {}); // catch unhandled Future errors
       }
     });
   }
@@ -196,7 +208,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   Future<void> _sendMessage() async {
     final message = _messageController.text.trim();
-    if (message.isEmpty || _isSending) return;
+    if (message.isEmpty || _isSending || _consultationId == null) return;
 
     setState(() => _isSending = true);
     _messageController.clear();
