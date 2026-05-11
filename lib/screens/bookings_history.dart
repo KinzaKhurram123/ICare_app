@@ -494,74 +494,24 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   }
 
   void _rejoin(AppointmentDetail appt) async {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    if (!mounted) return;
 
-    try {
-      // For in_progress appointments, fetch the EXISTING consultation
-      final result = await _consultationService.getConsultationByAppointment(
-        appt.id,
-        patientId: appt.patient?.id ?? '',
-        doctorId: appt.doctor?.id ?? '',
-      );
-
-      if (mounted) Navigator.pop(context); // Close loading
-
-      if (result['success'] == true && mounted) {
-        // Handle all possible response shapes from both endpoints
-        final consultationId = result['consultation']?['_id']?.toString() ??
-                               result['consultation']?['id']?.toString() ??
-                               result['consultationId']?.toString() ??
-                               result['data']?['_id']?.toString() ??
-                               result['data']?['consultationId']?.toString() ?? '';
-
-        if (consultationId.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Consultation session not found. Please ask the doctor to start the session first.'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-            ),
-          );
-          return;
-        }
-
-        // Navigate to chat screen with existing consultationId
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ConsultationChatScreenV2(
-              appointment: appt,
-              isDoctor: false,
-              currentUserId: _currentUserId,
-              currentUserName: _currentUserName,
-              consultationId: consultationId,
-            ),
-          ),
-        ).then((_) => _loadAppointments());
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']?.toString() ?? 'Failed to rejoin consultation'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // ── Strategy: skip the broken by-appointment lookup entirely.
+    // Pass consultationId=null → ConsultationChatScreenV2 will call
+    // startConsultationV2 with the full appointment, which the backend
+    // handles as "get or create" (returns existing session for in_progress).
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ConsultationChatScreenV2(
+          appointment: appt,
+          isDoctor: false,
+          currentUserId: _currentUserId,
+          currentUserName: _currentUserName,
+          consultationId: null, // let the screen resolve it
+        ),
+      ),
+    ).then((_) => _loadAppointments());
   }
 
   // ── Category tile ─────────────────────────────────────────────────────────

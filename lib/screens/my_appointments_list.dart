@@ -628,73 +628,21 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                         ),
                                         ElevatedButton(
                                           onPressed: () async {
-                                            // Show loading
-                                            showDialog(
-                                              context: context,
-                                              barrierDismissible: false,
-                                              builder: (_) => const Center(child: CircularProgressIndicator()),
-                                            );
-
-                                            try {
-                                              final consultationService = ConsultationService();
-
-                                              // For in_progress appointments, fetch the EXISTING consultation
-                                              final result = await consultationService.getConsultationByAppointment(
-                                                appointment.id,
-                                                patientId: _currentUser?.id ?? '',
-                                                doctorId: appointment.doctor?.id ?? '',
-                                              );
-
-                                              Navigator.pop(context); // Close loading
-
-                                              if (result['success'] == true) {
-                                                final consultationId = result['consultation']?['_id']?.toString() ??
-                                                                       result['consultation']?['id']?.toString() ??
-                                                                       result['consultationId']?.toString() ??
-                                                                       result['data']?['_id']?.toString() ??
-                                                                       result['data']?['consultationId']?.toString() ?? '';
-
-                                                if (consultationId.isEmpty) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text('Consultation session not found. Please ask the doctor to start the session first.'),
-                                                      backgroundColor: Colors.orange,
-                                                      duration: Duration(seconds: 4),
-                                                    ),
-                                                  );
-                                                  return;
-                                                }
-
-                                                // Navigate to chat screen with existing consultationId
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => ConsultationChatScreenV2(
-                                                      appointment: appointment,
-                                                      isDoctor: false,
-                                                      currentUserId: _currentUser?.id ?? '',
-                                                      currentUserName: _currentUser?.name ?? '',
-                                                      consultationId: consultationId,
-                                                    ),
-                                                  ),
-                                                ).then((_) => _loadAppointments());
-                                              } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(result['message'] ?? 'Failed to rejoin consultation'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Error: $e'),
-                                                  backgroundColor: Colors.red,
+                                            // ── Strategy: skip broken by-appointment lookup.
+                                            // Pass consultationId=null → screen calls startConsultationV2
+                                            // which backend handles as "get or create" for in_progress sessions.
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => ConsultationChatScreenV2(
+                                                  appointment: appointment,
+                                                  isDoctor: false,
+                                                  currentUserId: _currentUser?.id ?? '',
+                                                  currentUserName: _currentUser?.name ?? '',
+                                                  consultationId: null,
                                                 ),
-                                              );
-                                            }
+                                              ),
+                                            ).then((_) => _loadAppointments());
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF8B5CF6),
