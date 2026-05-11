@@ -104,7 +104,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
 
             if (callType == 'consultation') {
               // Appointment-based consultation: enter chat screen (chat-first)
-              // channelName holds the consultationId
+              // channelName holds the consultationId; callerName is "Dr. [Name]"
               nav.push(
                 MaterialPageRoute(
                   builder: (_) => ConsultationChatScreenV2(
@@ -113,6 +113,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
                     currentUserId: userData?.id ?? '',
                     currentUserName: userData?.name ?? 'User',
                     consultationId: channelName,
+                    remoteUserName: callerName, // e.g. "Dr. Ahmed"
                   ),
                 ),
               );

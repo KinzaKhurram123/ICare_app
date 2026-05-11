@@ -275,10 +275,23 @@ class ConsultationService {
         data: historyData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return response.data;
+      final data = response.data;
+      if (data is Map<String, dynamic>) return data;
+      return {'success': true}; // non-map success response
     } on DioException catch (e) {
-      print('Error saving patient history: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      // Safely extract message — response.data could be String/null/Map
+      String message = e.message ?? 'Network error';
+      try {
+        final data = e.response?.data;
+        if (data is Map) {
+          message = data['message']?.toString() ?? data['error']?.toString() ?? message;
+        } else if (data is String && data.isNotEmpty && data.length < 300) {
+          message = data;
+        }
+      } catch (_) {}
+      return {'success': false, 'message': message};
+    } catch (e) {
+      return {'success': false, 'message': 'Unexpected error: $e'};
     }
   }
 

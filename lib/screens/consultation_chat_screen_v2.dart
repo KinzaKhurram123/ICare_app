@@ -27,6 +27,7 @@ class ConsultationChatScreenV2 extends StatefulWidget {
   final String currentUserId;
   final String currentUserName;
   final String? consultationId; // Optional - if already created
+  final String? remoteUserName; // Doctor name when patient joins via call notification
 
   const ConsultationChatScreenV2({
     super.key,
@@ -34,7 +35,8 @@ class ConsultationChatScreenV2 extends StatefulWidget {
     required this.isDoctor,
     required this.currentUserId,
     required this.currentUserName,
-    this.consultationId, // Optional parameter
+    this.consultationId,
+    this.remoteUserName,
   });
 
   @override
@@ -610,8 +612,12 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
   // ── Screenshot-matched consultation header ──────────────────────────────
   Widget _buildConsultationHeader() {
-    final patientName = widget.appointment?.patient?.name ?? 'Patient';
-    final doctorName = widget.appointment?.doctor?.name ?? 'Doctor';
+    // When appointment is available use its names;
+    // when null (patient joined via call notification) use current/remote names.
+    final patientName = widget.appointment?.patient?.name
+        ?? (!widget.isDoctor ? widget.currentUserName : (widget.remoteUserName ?? 'Patient'));
+    final doctorName = widget.appointment?.doctor?.name
+        ?? (widget.isDoctor ? widget.currentUserName : (widget.remoteUserName?.replaceFirst('Dr. ', '') ?? 'Doctor'));
     final mins = (_timer.elapsed.inSeconds ~/ 60).toString().padLeft(2, '0');
     final secs = (_timer.elapsed.inSeconds % 60).toString().padLeft(2, '0');
 

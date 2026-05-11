@@ -102,8 +102,9 @@ class _VideoCallWebState extends State<VideoCall> {
   final TextEditingController _doctorNotesController = TextEditingController();
   bool _notesSaving = false;
 
-  // Past consultations list
+  // Past consultations list + prescriptions map (keyed by appointmentId or date)
   List<Map<String, dynamic>> _pastConsultations = [];
+  Map<String, Map<String, dynamic>> _prescriptionsByDate = {}; // date-key → prescription data
   bool _pastConsultationsLoading = false;
   bool _pastConsultationsLoaded = false;
 
@@ -373,6 +374,26 @@ class _VideoCallWebState extends State<VideoCall> {
   Future<void> _loadPastConsultations() async {
     if (_pastConsultationsLoading) return;
     setState(() => _pastConsultationsLoading = true);
+
+    // Fetch prescriptions in parallel — key by date string (yyyy-MM-dd)
+    MedicalRecordService().getMyRecords().then((res) {
+      if (res['success'] == true && mounted) {
+        final records = res['records'] as List? ?? [];
+        final map = <String, Map<String, dynamic>>{};
+        for (final r in records) {
+          final dateStr = r['createdAt']?.toString() ?? r['prescribedAt']?.toString() ?? '';
+          if (dateStr.isNotEmpty) {
+            try {
+              final d = DateTime.parse(dateStr);
+              final key = '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
+              map[key] = Map<String, dynamic>.from(r is Map ? r : {});
+            } catch (_) {}
+          }
+        }
+        if (mounted) setState(() => _prescriptionsByDate = map);
+      }
+    }).catchError((_) {});
+
     try {
       final apptResult = await AppointmentService().getMyAppointmentsDetailed();
       if (apptResult['success'] == true) {
@@ -1715,6 +1736,83 @@ class _VideoCallWebState extends State<VideoCall> {
                                       ),
                                       if (widget.patientId == null)
                                         _pastConsultDetailRow(Icons.medical_services_rounded, 'Specialization', specialization),
+                                      // ── Prescription data ──────────────────
+                                      Builder(builder: (_) {
+                                        // Match prescription by date key
+                                        final dateKey = dt != null
+                                            ? '${dt.year}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}'
+                                            : '';
+                                        final rx = dateKey.isNotEmpty ? _prescriptionsByDate[dateKey] : null;
+                                        final diagnosis = rx?['diagnosis']?.toString() ?? '';
+                                        final medicines = (rx?['prescription']?['medicines'] as List?) ?? [];
+                                        final labTests = (rx?['prescription']?['labTests'] as List?)
+                                            ?? (rx?['labTests'] as List?) ?? [];
+
+                                        if (rx == null) return const SizedBox.shrink();
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 14),
+                                            const Divider(color: Color(0xFF334155)),
+                                            const SizedBox(height: 10),
+                                            if (diagnosis.isNotEmpty)
+                                              _pastConsultDetailRow(Icons.local_hospital_rounded, 'Diagnosis', diagnosis),
+                                            if (medicines.isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Icon(Icons.medication_rounded, color: Color(0xFF3B82F6), size: 14),
+                                                  const SizedBox(width: 8),
+                                                  const SizedBox(width: 80,
+                                                    child: Text('Medicines', style: TextStyle(color: Colors.white54, fontSize: 12))),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: medicines.map((m) {
+                                                        final name = m is Map ? (m['name']?.toString() ?? m['medicineName']?.toString() ?? '') : m.toString();
+                                                        final dose = m is Map ? (m['dosage']?.toString() ?? m['dose']?.toString() ?? '') : '';
+                                                        final freq = m is Map ? (m['frequency']?.toString() ?? '') : '';
+                                                        return Padding(
+                                                          padding: const EdgeInsets.only(bottom: 3),
+                                                          child: Text(
+                                                            '• $name${dose.isNotEmpty ? " — $dose" : ""}${freq.isNotEmpty ? " ($freq)" : ""}',
+                                                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                            if (labTests.isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 14),
+                                                  const SizedBox(width: 8),
+                                                  const SizedBox(width: 80,
+                                                    child: Text('Lab Tests', style: TextStyle(color: Colors.white54, fontSize: 12))),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: labTests.map((t) {
+                                                        final name = t is Map ? (t['name']?.toString() ?? t['testName']?.toString() ?? '') : t.toString();
+                                                        return Padding(
+                                                          padding: const EdgeInsets.only(bottom: 3),
+                                                          child: Text('• $name', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        );
+                                      }),
                                       const SizedBox(height: 20),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
