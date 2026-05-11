@@ -149,45 +149,20 @@ class ConsultationService {
   }
 
   // Get consultation by appointment ID
-  // Falls back to startConsultationV2 (idempotent) if the by-appointment endpoint is unavailable
+  // Directly calls startConsultationV2 — backend returns existing session if already started
   Future<Map<String, dynamic>> getConsultationByAppointment(
     String appointmentId, {
     String patientId = '',
     String doctorId = '',
   }) async {
-    // ── Try the dedicated lookup endpoint first ──────────────────────────
-    try {
-      final token = await _sharedPref.getToken();
-      final response = await _dio.get(
-        '/consultations-v2/by-appointment/$appointmentId',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      if (response.data is Map && response.data['success'] == true) {
-        return response.data as Map<String, dynamic>;
-      }
-    } on DioException catch (e) {
-      // 404 = endpoint not on backend yet — fall through to startConsultationV2
-      if (e.response?.statusCode != 404) {
-        print('Error getting consultation by appointment: ${e.message}');
-        return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
-      }
-      print('by-appointment 404 — falling back to startConsultationV2');
-    } catch (_) {}
-
-    // ── Fallback: startConsultationV2 is idempotent — returns existing session ──
     if (patientId.isEmpty || doctorId.isEmpty) {
-      return {'success': false, 'message': 'Consultation session not found. Please ask the doctor to start the session.'};
+      return {'success': false, 'message': 'Missing patient or doctor ID'};
     }
-    try {
-      final result = await startConsultationV2(
-        appointmentId: appointmentId,
-        patientId: patientId,
-        doctorId: doctorId,
-      );
-      return result;
-    } catch (e) {
-      return {'success': false, 'message': e.toString()};
-    }
+    return startConsultationV2(
+      appointmentId: appointmentId,
+      patientId: patientId,
+      doctorId: doctorId,
+    );
   }
 
   // Get timer status (V2)
