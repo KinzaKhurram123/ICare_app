@@ -78,7 +78,8 @@ const enhancedPrescriptionSchema = new mongoose.Schema({
   // Doctor Notes (renamed from Diagnosis Notes)
   doctorNotes: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   
   // Diagnosis with ICD-10

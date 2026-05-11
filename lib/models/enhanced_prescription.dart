@@ -140,11 +140,17 @@ class EnhancedPrescription {
   }
 
   String? validateCompletion() {
-    if (doctorNotes.trim().isEmpty) {
-      return 'Doctor notes are required';
-    }
-    if (!hasMinimumRequiredFields) {
-      return 'At least one diagnosis, medication, or lab test is required';
+    // Doctor notes OR SOAP notes must have some content
+    final hasSoapContent = soapNotes != null && (
+      soapNotes!.subjective.trim().isNotEmpty ||
+      soapNotes!.objective.trim().isNotEmpty ||
+      soapNotes!.assessment.trim().isNotEmpty ||
+      soapNotes!.plan.trim().isNotEmpty
+    );
+    final hasNotes = doctorNotes.trim().isNotEmpty;
+
+    if (!hasNotes && !hasSoapContent && !hasMinimumRequiredFields) {
+      return 'Please add at least one item: diagnosis, medication, lab test, or doctor notes';
     }
     return null;
   }

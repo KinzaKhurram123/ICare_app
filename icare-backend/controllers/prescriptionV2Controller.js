@@ -25,6 +25,11 @@ exports.savePrescriptionDraft = async (req, res) => {
       status: 'draft'
     });
 
+    // Ensure doctorNotes has a default value
+    if (!prescriptionData.doctorNotes) {
+      prescriptionData.doctorNotes = '';
+    }
+
     if (prescription) {
       // Update existing draft
       Object.assign(prescription, prescriptionData);
@@ -117,6 +122,11 @@ exports.completePrescription = async (req, res) => {
       status: 'draft'
     });
 
+    // Ensure doctorNotes has a default value
+    if (!prescriptionData.doctorNotes) {
+      prescriptionData.doctorNotes = '';
+    }
+
     if (prescription) {
       // Update existing draft
       Object.assign(prescription, prescriptionData);
@@ -131,12 +141,20 @@ exports.completePrescription = async (req, res) => {
       });
     }
 
-    // Validate completion
-    const validationError = prescription.validateCompletion();
-    if (validationError) {
+    // Validate completion — only require at least one clinical item
+    const hasMeds = prescription.medicines && prescription.medicines.length > 0;
+    const hasDiagnoses = prescription.diagnoses && prescription.diagnoses.length > 0;
+    const hasLabTests = prescription.labTests && prescription.labTests.length > 0;
+    const hasNotes = prescription.doctorNotes && prescription.doctorNotes.trim().length > 0;
+    const hasSoap = prescription.soapNotes && (
+      (prescription.soapNotes.subjective && prescription.soapNotes.subjective.trim()) ||
+      (prescription.soapNotes.assessment && prescription.soapNotes.assessment.trim())
+    );
+
+    if (!hasMeds && !hasDiagnoses && !hasLabTests && !hasNotes && !hasSoap) {
       return res.status(400).json({
         success: false,
-        message: validationError
+        message: 'Please add at least one item: diagnosis, medication, lab test, or doctor notes'
       });
     }
 
