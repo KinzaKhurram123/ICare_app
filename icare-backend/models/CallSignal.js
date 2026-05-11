@@ -5,7 +5,7 @@ const callSignalSchema = new mongoose.Schema({
   callerId: { type: String, required: true },
   callerName: { type: String, required: true },
   receiverId: { type: String, required: true },
-  callType: { type: String, enum: ['video', 'audio'], default: 'video' },
+  callType: { type: String, enum: ['video', 'audio', 'consultation'], default: 'video' },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'ended', 'missed'],
