@@ -150,7 +150,11 @@ class ConsultationService {
 
   // Get consultation by appointment ID
   // Falls back to startConsultationV2 (idempotent) if the by-appointment endpoint is unavailable
-  Future<Map<String, dynamic>> getConsultationByAppointment(String appointmentId) async {
+  Future<Map<String, dynamic>> getConsultationByAppointment(
+    String appointmentId, {
+    String patientId = '',
+    String doctorId = '',
+  }) async {
     // ── Try the dedicated lookup endpoint first ──────────────────────────
     try {
       final token = await _sharedPref.getToken();
@@ -158,7 +162,6 @@ class ConsultationService {
         '/consultations-v2/by-appointment/$appointmentId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      print('by-appointment response: ${response.data}');
       if (response.data is Map && response.data['success'] == true) {
         return response.data as Map<String, dynamic>;
       }
@@ -168,13 +171,19 @@ class ConsultationService {
         print('Error getting consultation by appointment: ${e.message}');
         return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
       }
-      print('by-appointment endpoint not found (404), falling back to startConsultationV2');
+      print('by-appointment 404 — falling back to startConsultationV2');
     } catch (_) {}
 
     // ── Fallback: startConsultationV2 is idempotent — returns existing session ──
+    if (patientId.isEmpty || doctorId.isEmpty) {
+      return {'success': false, 'message': 'Consultation session not found. Please ask the doctor to start the session.'};
+    }
     try {
-      final result = await startConsultationV2(appointmentId: appointmentId, patientId: '', doctorId: '');
-      print('startConsultationV2 fallback result: $result');
+      final result = await startConsultationV2(
+        appointmentId: appointmentId,
+        patientId: patientId,
+        doctorId: doctorId,
+      );
       return result;
     } catch (e) {
       return {'success': false, 'message': e.toString()};

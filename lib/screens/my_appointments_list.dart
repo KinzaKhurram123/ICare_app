@@ -639,7 +639,11 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                               final consultationService = ConsultationService();
 
                                               // For in_progress appointments, fetch the EXISTING consultation
-                                              final result = await consultationService.getConsultationByAppointment(appointment.id);
+                                              final result = await consultationService.getConsultationByAppointment(
+                                                appointment.id,
+                                                patientId: _currentUser?.id ?? '',
+                                                doctorId: appointment.doctor?.id ?? '',
+                                              );
 
                                               Navigator.pop(context); // Close loading
 

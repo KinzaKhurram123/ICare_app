@@ -503,7 +503,11 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
 
     try {
       // For in_progress appointments, fetch the EXISTING consultation
-      final result = await _consultationService.getConsultationByAppointment(appt.id);
+      final result = await _consultationService.getConsultationByAppointment(
+        appt.id,
+        patientId: appt.patient?.id ?? '',
+        doctorId: appt.doctor?.id ?? '',
+      );
 
       if (mounted) Navigator.pop(context); // Close loading
 
