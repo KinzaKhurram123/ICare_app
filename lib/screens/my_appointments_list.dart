@@ -628,54 +628,76 @@ class _MyAppointmentsListScreenState extends State<MyAppointmentsListScreen> {
                                         ),
                                         ElevatedButton(
                                           onPressed: () async {
+                                            // Show loading
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (_) => const Center(child: CircularProgressIndicator()),
+                                            );
+
                                             try {
-                                              // First, try to get the existing consultation by appointment ID
+                                              print('🔄 PATIENT REJOIN: Fetching consultation for appointment ${appointment.id}');
                                               final consultationService = ConsultationService();
                                               final result = await consultationService.getConsultationByAppointmentId(appointment.id);
 
-                                              if (result['success'] == true) {
-                                                // Found existing consultation, navigate with consultationId
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => ConsultationChatScreenV2(
-                                                      appointment: appointment,
-                                                      isDoctor: false,
-                                                      currentUserId: _currentUser?.id ?? '',
-                                                      currentUserName: _currentUser?.name ?? '',
-                                                      consultationId: result['consultationId'],
+                                              print('📥 REJOIN RESPONSE: $result');
+
+                                              if (mounted) Navigator.pop(context); // close loading
+
+                                              if (result['success'] == true && result['consultation'] != null) {
+                                                final consultationId = result['consultation']['_id']?.toString() ?? '';
+                                                print('✅ Found consultation: $consultationId');
+
+                                                if (consultationId.isEmpty) {
+                                                  if (mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Consultation ID not found. Please contact support.'),
+                                                        backgroundColor: Colors.orange,
+                                                      ),
+                                                    );
+                                                  }
+                                                  return;
+                                                }
+
+                                                // Navigate to chat with existing consultation
+                                                if (mounted) {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) => ConsultationChatScreenV2(
+                                                        appointment: appointment,
+                                                        isDoctor: false,
+                                                        currentUserId: _currentUser?.id ?? '',
+                                                        currentUserName: _currentUser?.name ?? '',
+                                                        consultationId: consultationId,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ).then((_) => _loadAppointments());
+                                                  ).then((_) => _loadAppointments());
+                                                }
                                               } else {
-                                                // No existing consultation, start new one
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => ConsultationChatScreenV2(
-                                                      appointment: appointment,
-                                                      isDoctor: false,
-                                                      currentUserId: _currentUser?.id ?? '',
-                                                      currentUserName: _currentUser?.name ?? '',
-                                                      consultationId: null,
+                                                // Consultation not found
+                                                print('❌ Consultation not found for appointment ${appointment.id}');
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(result['message']?.toString() ?? 'Consultation not found. Please start a new consultation.'),
+                                                      backgroundColor: Colors.red,
                                                     ),
-                                                  ),
-                                                ).then((_) => _loadAppointments());
+                                                  );
+                                                }
                                               }
                                             } catch (e) {
-                                              // On error, fallback to creating new
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => ConsultationChatScreenV2(
-                                                    appointment: appointment,
-                                                    isDoctor: false,
-                                                    currentUserId: _currentUser?.id ?? '',
-                                                    currentUserName: _currentUser?.name ?? '',
-                                                    consultationId: null,
+                                              print('❌ ERROR IN PATIENT REJOIN: $e');
+                                              if (mounted) {
+                                                Navigator.pop(context); // close loading
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Error rejoining consultation: $e'),
+                                                    backgroundColor: Colors.red,
                                                   ),
-                                                ),
-                                              ).then((_) => _loadAppointments());
+                                                );
+                                              }
                                             }
                                           },
                                           style: ElevatedButton.styleFrom(
