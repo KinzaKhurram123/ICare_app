@@ -817,43 +817,6 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             filterQuality: FilterQuality.high,
           ),
           const SizedBox(height: 16),
-          // User info row
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.primaryColor,
-                radius: 22,
-                child: const Icon(Icons.person_outlined, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        color: AppColors.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      roleDisplay,
-                      style: const TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
