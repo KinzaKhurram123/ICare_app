@@ -1080,51 +1080,76 @@ class InProgressConsultationsScreen extends StatelessWidget {
                                       );
 
                                       try {
+                                        print('🔄 DOCTOR REJOIN: Fetching consultation for appointment ${appt.id}');
                                         final consultationService = ConsultationService();
                                         final sharedPref = SharedPref();
-                                        
+
                                         final userData = await sharedPref.getUserData();
                                         final currentUserId = userData?.id ?? '';
-                                        final currentUserName = userData?.name ?? 'User';
+                                        final currentUserName = userData?.name ?? 'Doctor';
 
-                                        // Start/rejoin consultation
-                                        final result = await consultationService.startConsultationV2(
-                                          appointmentId: appt.id ?? '',
-                                          patientId: appt.patient?.id ?? '',
-                                          doctorId: appt.doctor?.id ?? '',
-                                        );
+                                        // Fetch existing consultation by appointment ID
+                                        final result = await consultationService.getConsultationByAppointmentId(appt.id ?? '');
 
+                                        print('📥 DOCTOR REJOIN RESPONSE: $result');
+
+                                        if (!ctx.mounted) return;
                                         Navigator.pop(ctx); // Close loading
 
-                                        if (result['success'] == true) {
-                                          // Navigate to chat screen
-                                          Navigator.push(
-                                            ctx,
-                                            MaterialPageRoute(
-                                              builder: (_) => ConsultationChatScreenV2(
-                                                appointment: appt,
-                                                isDoctor: false, // Patient side
-                                                currentUserId: currentUserId,
-                                                currentUserName: currentUserName,
+                                        if (result['success'] == true && result['consultation'] != null) {
+                                          final consultationId = result['consultation']['_id']?.toString() ?? '';
+                                          print('✅ Doctor found consultation: $consultationId');
+
+                                          if (consultationId.isEmpty) {
+                                            if (ctx.mounted) {
+                                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Consultation ID not found. Please contact support.'),
+                                                  backgroundColor: Colors.orange,
+                                                ),
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          // Navigate to chat screen with existing consultation
+                                          if (ctx.mounted) {
+                                            Navigator.push(
+                                              ctx,
+                                              MaterialPageRoute(
+                                                builder: (_) => ConsultationChatScreenV2(
+                                                  appointment: appt,
+                                                  isDoctor: true, // Doctor side
+                                                  currentUserId: currentUserId,
+                                                  currentUserName: currentUserName,
+                                                  consultationId: consultationId,
+                                                ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          }
                                         } else {
+                                          // Consultation not found
+                                          print('❌ Doctor: Consultation not found for appointment ${appt.id}');
+                                          if (ctx.mounted) {
+                                            ScaffoldMessenger.of(ctx).showSnackBar(
+                                              SnackBar(
+                                                content: Text(result['message']?.toString() ?? 'Consultation not found. Please start a new consultation.'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      } catch (e) {
+                                        print('❌ ERROR IN DOCTOR REJOIN: $e');
+                                        if (ctx.mounted) {
+                                          Navigator.pop(ctx);
                                           ScaffoldMessenger.of(ctx).showSnackBar(
                                             SnackBar(
-                                              content: Text(result['message'] ?? 'Failed to rejoin consultation'),
+                                              content: Text('Error rejoining consultation: $e'),
                                               backgroundColor: Colors.red,
                                             ),
                                           );
                                         }
-                                      } catch (e) {
-                                        Navigator.pop(ctx);
-                                        ScaffoldMessenger.of(ctx).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
                                       }
                                     },
                                     icon: const Icon(
