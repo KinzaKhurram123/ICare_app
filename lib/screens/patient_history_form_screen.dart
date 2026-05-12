@@ -163,13 +163,28 @@ class _PatientHistoryFormScreenState extends State<PatientHistoryFormScreen> {
   }
 
   Future<void> _saveHistory() async {
+    final patientId = widget.appointment.patient?.id ?? '';
+    final doctorId = widget.appointment.doctor?.id ?? '';
+
+    if (patientId.isEmpty || doctorId.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to save: patient or doctor info missing. Please go back and retry.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
       final historyForm = PatientHistoryForm(
-        patientId: widget.appointment.patient!.id,
+        patientId: patientId,
         consultationId: widget.consultationId,
-        doctorId: widget.appointment.doctor!.id,
+        doctorId: doctorId,
         chiefComplaints: _chiefComplaints,
         hpi: HistoryOfPresentIllness(
           onset: _onsetController.text,
