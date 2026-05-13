@@ -95,6 +95,30 @@ router.post('/respond', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/call/signal/:id — check status of a specific call signal (for decline detection)
+router.get('/signal/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const signal = await CallSignal.findById(req.params.id);
+    if (!signal) {
+      return res.status(404).json({ success: false, message: 'Signal not found' });
+    }
+    res.json({
+      success: true,
+      status: signal.status,
+      signal: {
+        id: signal._id,
+        status: signal.status,
+        channelName: signal.channelName,
+        callType: signal.callType,
+      },
+    });
+  } catch (err) {
+    console.error('Call signal check error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // POST /api/call/end — either party ends the call
 router.post('/end', authMiddleware, async (req, res) => {
   try {

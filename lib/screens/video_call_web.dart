@@ -192,11 +192,31 @@ class _VideoCallWebState extends State<VideoCall> {
     _startDeclinePoller(); // detect patient decline immediately
   }
 
-  /// Decline detection disabled — backend /call/signal/:id endpoint not available.
-  /// No-answer timer handles this case instead.
+  /// Poll for decline status — if patient declines, show dialog and go back to chat
   void _startDeclinePoller() {
-    // No-op: backend doesn't have /call/signal/:id endpoint
-    // The _noAnswerTimer (10s) will show "Patient Declined or Unavailable"
+    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
+    if (!_isDoctor) return; // Only doctor needs to detect patient decline
+
+    _declinePoller = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (!mounted || _remoteJoined) {
+        _declinePoller?.cancel();
+        return;
+      }
+      try {
+        final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
+        if (status == 'rejected' || status == 'declined') {
+          _declinePoller?.cancel();
+          _noAnswerTimer?.cancel();
+          if (!mounted) return;
+          try { _agoraLeave(); } catch (_) {}
+          if (!mounted) return;
+          _showDeclinedDialog();
+        }
+      } catch (_) {
+        // If endpoint returns 404, stop polling
+        _declinePoller?.cancel();
+      }
+    });
   }
 
   void _showDeclinedDialog() {

@@ -21,6 +21,10 @@ class VideoCall extends StatefulWidget {
   final String? patientId;
   /// Optional consultation ID for chat-based consultations
   final String? consultationId;
+  /// Overall consultation elapsed seconds — syncs video call timer to chat timer
+  final int consultationElapsedSeconds;
+  /// Signal ID of the outgoing call — used to detect if patient declined
+  final String? outgoingSignalId;
   /// Callback when call ends (to return to chat)
   final VoidCallback? onCallEnded;
 
@@ -34,6 +38,8 @@ class VideoCall extends StatefulWidget {
     this.appointmentId,
     this.patientId,
     this.consultationId,
+    this.consultationElapsedSeconds = 0,
+    this.outgoingSignalId,
     this.onCallEnded,
   });
 
@@ -50,11 +56,118 @@ class _VideoCallMobileState extends State<VideoCall> {
   bool _camOff = false;
   bool _loading = true;
   String? _error;
+  bool _isDoctor = false;
+  bool _remoteJoined = false;
+  Timer? _noAnswerTimer;
+  Timer? _declinePoller;
 
   @override
   void initState() {
     super.initState();
+    _initRole();
     _initAgora();
+  }
+
+  Future<void> _initRole() async {
+    try {
+      final user = await SharedPref().getUserData();
+      if (mounted) {
+        setState(() => _isDoctor = user?.role?.toLowerCase() == 'doctor');
+        if (_isDoctor) {
+          _startDeclinePoller();
+          _startNoAnswerTimer();
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _startDeclinePoller() {
+    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
+    if (!_isDoctor) return;
+
+    _declinePoller = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (!mounted || _remoteJoined) {
+        _declinePoller?.cancel();
+        return;
+      }
+      try {
+        final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
+        if (status == 'rejected' || status == 'declined') {
+          _declinePoller?.cancel();
+          _noAnswerTimer?.cancel();
+          if (!mounted) return;
+          await _engine?.leaveChannel();
+          if (!mounted) return;
+          _showDeclinedDialog();
+        }
+      } catch (_) {
+        _declinePoller?.cancel();
+      }
+    });
+  }
+
+  void _startNoAnswerTimer() {
+    _noAnswerTimer = Timer(const Duration(seconds: 15), () {
+      if (!mounted || _remoteJoined) return;
+      _noAnswerTimer?.cancel();
+      _engine?.leaveChannel();
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(children: [
+            Icon(Icons.call_end_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 8),
+            Text('Call Declined / Not Answered'),
+          ]),
+          content: const Text('The patient declined your call or did not answer.'),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  void _showDeclinedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
+          SizedBox(width: 10),
+          Text('Call Declined'),
+        ]),
+        content: const Text('The patient has declined your call.'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Go Back'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _initAgora() async {
@@ -90,7 +203,14 @@ class _VideoCallMobileState extends State<VideoCall> {
           },
           onUserJoined: (connection, remoteUid, elapsed) {
             debugPrint('👤 Agora: remote user $remoteUid joined');
-            if (mounted) setState(() => _remoteUid = remoteUid);
+            if (mounted) {
+              setState(() {
+                _remoteUid = remoteUid;
+                _remoteJoined = true;
+              });
+              _noAnswerTimer?.cancel();
+              _declinePoller?.cancel();
+            }
           },
           onUserOffline: (connection, remoteUid, reason) {
             debugPrint('👤 Agora: remote user $remoteUid left');
@@ -263,6 +383,8 @@ class _VideoCallMobileState extends State<VideoCall> {
   @override
   void dispose() {
     _callTimer?.cancel();
+    _noAnswerTimer?.cancel();
+    _declinePoller?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
     super.dispose();
