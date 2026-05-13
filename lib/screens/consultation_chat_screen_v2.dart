@@ -776,9 +776,9 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
                       ),
                       elevation: 2,
                     ),
-                    child: Text(
-                      widget.isDoctor ? 'End Session' : 'Leave',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    child: const Text(
+                      'End Session',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                   ),
                 ],

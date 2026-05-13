@@ -63,7 +63,7 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
       final doctorName = (r['doctor']?['name'] ?? '').toString().toLowerCase();
       final date = r['createdAt'] != null
           ? DateFormat('MMM dd, yyyy')
-              .format(DateTime.parse(r['createdAt'].toString()))
+              .format(DateTime.parse(r['createdAt'].toString()).toLocal())
               .toLowerCase()
           : '';
       final rawId = (r['_id'] ?? r['id'] ?? '').toString();
@@ -307,7 +307,8 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
     // 30-day check: only allow ordering within 30 days of prescription
     bool isWithin30Days = false;
     try {
-      final createdAt = DateTime.parse(record['createdAt'].toString());
+      final dateStr = record['prescribedAt']?.toString() ?? record['createdAt']?.toString() ?? '';
+      final createdAt = DateTime.parse(dateStr).toLocal();
       final daysDiff = DateTime.now().difference(createdAt).inDays;
       isWithin30Days = daysDiff <= 30;
     } catch (_) {
@@ -865,13 +866,17 @@ class _PrescriptionPage extends StatelessWidget {
   List<dynamic> get _diagnoses => (record['diagnoses'] as List?) ?? (record['diagnosis'] is List ? record['diagnosis'] as List : []);
   String get _doctorNotes => record['doctorNotes']?.toString() ?? record['notes']?.toString() ?? '';
   String get _prescriptionDate {
-    final s = record['createdAt']?.toString() ?? record['prescribedAt']?.toString() ?? '';
-    if (s.isNotEmpty) { try { return DateFormat('MMMM dd, yyyy').format(DateTime.parse(s)); } catch (_) {} }
+    final s = record['prescribedAt']?.toString() ?? record['createdAt']?.toString() ?? '';
+    if (s.isNotEmpty) {
+      try { return DateFormat('MMMM dd, yyyy').format(DateTime.parse(s).toLocal()); } catch (_) {}
+    }
     return DateFormat('MMMM dd, yyyy').format(DateTime.now());
   }
   String get _prescriptionTime {
-    final s = record['createdAt']?.toString() ?? '';
-    if (s.isNotEmpty) { try { return DateFormat('hh:mm a').format(DateTime.parse(s)); } catch (_) {} }
+    final s = record['prescribedAt']?.toString() ?? record['createdAt']?.toString() ?? '';
+    if (s.isNotEmpty) {
+      try { return DateFormat('hh:mm a').format(DateTime.parse(s).toLocal()); } catch (_) {}
+    }
     return '';
   }
   String _followUpLabel() {
