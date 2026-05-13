@@ -1232,14 +1232,13 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
 
       // Use Dio with proper multipart - no Content-Type header override
       // (Dio sets it automatically with boundary for multipart)
+      // resource_type NOT in FormData — it's in the URL (/auto/upload)
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(
           file.bytes!,
           filename: '${file.name}',
         ),
         'upload_preset': uploadPreset,
-        'folder': 'icare_lessons',
-        'resource_type': 'video',
       });
 
       final dio = Dio();

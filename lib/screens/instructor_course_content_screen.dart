@@ -763,20 +763,20 @@ class _LessonDialogState extends State<_LessonDialog> {
 
       setState(() => _uploadingVideo = true);
       // Upload directly to Cloudinary
+      // resource_type is NOT sent in form — it's in the URL (/auto/upload handles all types)
       const cloudName = 'dzlcnyxgb';
       const uploadPreset = 'icare_videos';
       final dio2 = Dio();
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
         'upload_preset': uploadPreset,
-        'folder': 'icare_lessons',
-        'resource_type': 'video',
       });
       final response = await dio2.post(
         'https://api.cloudinary.com/v1_1/$cloudName/auto/upload',
         data: formData,
+        options: Options(validateStatus: (s) => s != null && s < 600),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data['secure_url'] != null) {
         final url = response.data['secure_url'] as String;
         setState(() {
           _uploadedVideoUrl = url;
@@ -784,16 +784,19 @@ class _LessonDialogState extends State<_LessonDialog> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Video uploaded successfully')),
+            const SnackBar(content: Text('✅ Video uploaded successfully!'), backgroundColor: Colors.green),
           );
         }
       } else {
-        throw Exception(response.data['message'] ?? 'Upload failed');
+        final errMsg = response.data is Map
+            ? (response.data['error']?['message'] ?? response.data['message'] ?? 'Upload failed (${response.statusCode})')
+            : 'Upload failed (${response.statusCode})';
+        throw Exception(errMsg);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e')),
+          SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
         );
       }
     } finally {
