@@ -334,11 +334,25 @@ class _VideoThumbnailCard extends StatelessWidget {
     required this.onOpenTab,
   });
 
+  /// Generate thumbnail URL from video URL
+  String? _getThumbnailUrl() {
+    if (youtubeId != null) {
+      return 'https://img.youtube.com/vi/$youtubeId/hqdefault.jpg';
+    }
+    // Cloudinary video thumbnail — replace /upload/ with /upload/w_800,h_450,c_fill,so_2/
+    // and change extension to .jpg to get a frame thumbnail
+    if (videoUrl.contains('cloudinary.com') && videoUrl.contains('/upload/')) {
+      return videoUrl
+          .replaceFirst('/upload/', '/upload/w_800,h_450,c_fill,so_2/')
+          .replaceAll(RegExp(r'\.(mp4|webm|mov|avi|mkv)(\?.*)?$'), '.jpg');
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final thumbUrl = youtubeId != null
-        ? 'https://img.youtube.com/vi/$youtubeId/hqdefault.jpg'
-        : null;
+    final thumbUrl = _getThumbnailUrl();
+    final isCloudinary = videoUrl.contains('cloudinary.com');
 
     return GestureDetector(
       onTap: onPlay,
@@ -349,16 +363,15 @@ class _VideoThumbnailCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ── background: YouTube thumbnail or solid colour ───────────
+              // ── background: thumbnail or gradient ───────────────────────
               if (thumbUrl != null)
                 Image.network(
                   thumbUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      Container(color: const Color(0xFF0F172A)),
+                  errorBuilder: (_, __, ___) => _buildVideoPlaceholder(isCloudinary),
                 )
               else
-                Container(color: const Color(0xFF0F172A)),
+                _buildVideoPlaceholder(isCloudinary),
 
               // ── dark overlay ─────────────────────────────────────────────
               Container(
@@ -451,6 +464,45 @@ class _VideoThumbnailCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPlaceholder(bool isCloudinary) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isCloudinary
+              ? [const Color(0xFF1E3A5F), const Color(0xFF0F172A)]
+              : [const Color(0xFF1A1A2E), const Color(0xFF0F172A)],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isCloudinary ? Icons.videocam_rounded : Icons.play_circle_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.7),
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isCloudinary ? 'Video Lesson' : 'Video',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+            ),
+          ],
         ),
       ),
     );
