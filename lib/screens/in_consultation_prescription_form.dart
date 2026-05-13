@@ -174,13 +174,12 @@ class _InConsultationPrescriptionFormState
     setState(() => _isSaving = true);
 
     try {
-      // Build clean JSON — remove null values that may cause backend 500
-      final rawJson = prescription.toJson();
-      final cleanJson = _cleanJson(rawJson);
+      // Build minimal payload — only send fields backend can handle
+      final payload = _buildMinimalPayload(prescription);
 
       final result = await _consultationService.completePrescription(
         consultationId: widget.consultationId,
-        prescriptionData: cleanJson,
+        prescriptionData: payload,
       );
 
       if (result['success'] == true && mounted) {
@@ -205,6 +204,110 @@ class _InConsultationPrescriptionFormState
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// Build minimal payload — only send what backend expects for /prescription/complete
+  Map<String, dynamic> _buildMinimalPayload(EnhancedPrescription rx) {
+    final payload = <String, dynamic>{
+      'patientId': rx.patientId,
+      'doctorId': rx.doctorId,
+      'consultationId': rx.consultationId,
+      'isComplete': true,
+      'status': 'active',
+      'prescribedAt': rx.prescribedAt.toIso8601String(),
+    };
+
+    // SOAP Notes — only if any content
+    if (rx.soapNotes != null) {
+      final s = rx.soapNotes!;
+      if (s.subjective.isNotEmpty || s.objective.isNotEmpty || s.assessment.isNotEmpty || s.plan.isNotEmpty) {
+        payload['soapNotes'] = {
+          'subjective': s.subjective,
+          'objective': s.objective,
+          'assessment': s.assessment,
+          'plan': s.plan,
+        };
+      }
+    }
+
+    // Doctor notes
+    if (rx.doctorNotes.trim().isNotEmpty) {
+      payload['doctorNotes'] = rx.doctorNotes.trim();
+    }
+
+    // Patient history
+    if (rx.patientHistoryId != null && rx.patientHistoryId!.isNotEmpty) {
+      payload['patientHistoryId'] = rx.patientHistoryId;
+    }
+
+    // Diagnoses — only non-empty
+    if (rx.diagnoses.isNotEmpty) {
+      payload['diagnoses'] = rx.diagnoses.map((d) => {
+        'icd10Code': d.icd10Code,
+        'diagnosis': d.diagnosis,
+      }).toList();
+    } else {
+      payload['diagnoses'] = [];
+    }
+
+    // Medicines — only non-empty
+    if (rx.medicines.isNotEmpty) {
+      payload['medicines'] = rx.medicines.map((m) => {
+        'medicineName': m.medicineName,
+        'dose': m.dose,
+        'frequency': m.frequency.toString().split('.').last,
+        'duration': m.duration,
+        if (m.notes != null && m.notes!.isNotEmpty) 'notes': m.notes,
+      }).toList();
+    } else {
+      payload['medicines'] = [];
+    }
+
+    // Lab tests
+    if (rx.labTests.isNotEmpty) {
+      payload['labTests'] = rx.labTests.map((t) => {
+        'testName': t.testName,
+        'isUrgent': t.isUrgent,
+      }).toList();
+    } else {
+      payload['labTests'] = [];
+    }
+
+    // Referral — only if not 'none'
+    if (rx.referralFollowUp != null) {
+      final ref = rx.referralFollowUp!;
+      final refType = ref.referralType?.toString().split('.').last ?? 'none';
+      final followUp = ref.followUpDuration?.toString().split('.').last ?? 'none';
+      if (refType != 'none' || followUp != 'none') {
+        payload['referralFollowUp'] = {
+          'referralType': refType,
+          if (ref.referralSpecialty?.isNotEmpty == true) 'referralSpecialty': ref.referralSpecialty,
+          if (ref.referralNotes?.isNotEmpty == true) 'referralNotes': ref.referralNotes,
+          'followUpDuration': followUp,
+          if (ref.followUpNotes?.isNotEmpty == true) 'followUpNotes': ref.followUpNotes,
+        };
+      }
+    }
+
+    // Lifestyle — only if any meaningful content exists
+    if (rx.lifestyleAdvice != null) {
+      final la = rx.lifestyleAdvice!;
+      final hasContent = (la.diet?.recommendations.isNotEmpty == true) ||
+          (la.exercise?.type.isNotEmpty == true) ||
+          (la.sleep?.recommendedHours.isNotEmpty == true) ||
+          (la.stress?.recommendations.isNotEmpty == true) ||
+          (la.otherAdvice.isNotEmpty);
+      if (hasContent) {
+        payload['lifestyleAdvice'] = _cleanJson(la.toJson());
+      }
+    }
+
+    // Assigned courses
+    if (rx.assignedCourseIds.isNotEmpty) {
+      payload['assignedCourseIds'] = rx.assignedCourseIds;
+    }
+
+    return payload;
   }
 
   /// Recursively remove null values from JSON to avoid backend validation errors
