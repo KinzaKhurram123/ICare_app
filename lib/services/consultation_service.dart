@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 import 'package:icare/utils/api_constants.dart';
 import 'package:icare/utils/shared_pref.dart';
 
@@ -252,49 +254,43 @@ class ConsultationService {
     }
   }
 
-  // Complete prescription
+  // Complete prescription — uses http package directly (bypasses Dio JSON parsing issues)
   Future<Map<String, dynamic>> completePrescription({
     required String consultationId,
     required Map<String, dynamic> prescriptionData,
   }) async {
     try {
       final token = await _sharedPref.getToken();
-      print('📋 COMPLETE PRESCRIPTION → consultationId: $consultationId');
-      print('📋 Payload keys: ${prescriptionData.keys.toList()}');
-      print('📋 Token present: ${token != null && token.isNotEmpty}');
+      final url = Uri.parse('${ApiConstants.baseUrl}/prescriptions-v2/consultations/$consultationId/prescription/complete');
+      final body = jsonEncode(prescriptionData);
 
-      final response = await _dio.post(
-        '/prescriptions-v2/consultations/$consultationId/prescription/complete',
-        data: prescriptionData,
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-          validateStatus: (status) => status != null && status < 600, // don't throw on 4xx/5xx
-        ),
-      );
+      print('📋 PRESCRIPTION COMPLETE → $url');
+      print('📋 Body: $body');
 
-      print('📋 RESPONSE STATUS: ${response.statusCode}');
-      print('📋 RESPONSE DATA: ${response.data}');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: body,
+      ).timeout(const Duration(seconds: 30));
 
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        if (data['success'] == true) return data;
-        // Server returned error JSON — show actual message
-        final msg = data['message']?.toString() ?? data['error']?.toString() ?? 'Server returned ${response.statusCode}';
-        return {'success': false, 'message': msg};
-      }
-      if (response.statusCode != null && response.statusCode! < 300) {
-        return {'success': true};
-      }
-      return {'success': false, 'message': 'Server error ${response.statusCode}: ${response.data}'};
-    } on DioException catch (e) {
-      print('❌ PRESCRIPTION COMPLETE NETWORK ERROR: ${e.message}');
-      String message = e.message ?? 'Network error';
+      print('📋 STATUS: ${response.statusCode}');
+      print('📋 BODY: ${response.body}');
+
       try {
-        final data = e.response?.data;
-        if (data is Map) message = data['message']?.toString() ?? data['error']?.toString() ?? message;
-        else if (data is String && data.length < 300) message = data;
-      } catch (_) {}
-      return {'success': false, 'message': message};
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) return data;
+        final msg = data['message']?.toString() ?? data['error']?.toString() ?? 'Server error ${response.statusCode}';
+        return {'success': false, 'message': msg};
+      } catch (_) {
+        if (response.statusCode < 300) return {'success': true};
+        return {'success': false, 'message': 'Server error ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}'};
+      }
+    } catch (e) {
+      print('❌ PRESCRIPTION COMPLETE ERROR: $e');
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
