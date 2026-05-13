@@ -48,21 +48,28 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
       if (file.bytes == null) return;
 
       setState(() => _uploadingThumbnail = true);
-      final api = ApiService();
+      // Upload directly to Cloudinary (bypasses backend size limit)
+      const cloudName = 'dzlcnyxgb';
+      const uploadPreset = 'icare_videos';
+      final dio = Dio();
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
-        'folder': 'icare/courses',
+        'upload_preset': uploadPreset,
+        'folder': 'icare_thumbnails',
       });
-      final response = await api.postMultipart('/upload/image', formData);
-      if (response.data['success'] == true) {
-        final url = response.data['url'] as String;
+      final response = await dio.post(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+        data: formData,
+      );
+      if (response.statusCode == 200) {
+        final url = response.data['secure_url'] as String;
         setState(() {
           _thumbnailUrl = url;
           _thumbnailController.text = url;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Thumbnail uploaded successfully')),
+            const SnackBar(content: Text('Thumbnail uploaded successfully'), backgroundColor: Colors.green),
           );
         }
       } else {

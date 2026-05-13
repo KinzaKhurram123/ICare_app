@@ -738,15 +738,22 @@ class _LessonDialogState extends State<_LessonDialog> {
       if (file.bytes == null) return;
 
       setState(() => _uploadingVideo = true);
-      final api = ApiService();
+      // Upload directly to Cloudinary
+      const cloudName = 'dzlcnyxgb';
+      const uploadPreset = 'icare_videos';
+      final dio2 = Dio();
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
-        'folder': 'icare/lessons',
+        'upload_preset': uploadPreset,
+        'folder': 'icare_lessons',
         'resource_type': 'video',
       });
-      final response = await api.postMultipart('/upload/image', formData);
-      if (response.data['success'] == true) {
-        final url = response.data['url'] as String;
+      final response = await dio2.post(
+        'https://api.cloudinary.com/v1_1/$cloudName/auto/upload',
+        data: formData,
+      );
+      if (response.statusCode == 200) {
+        final url = response.data['secure_url'] as String;
         setState(() {
           _uploadedVideoUrl = url;
           _videoUrlController.text = url;

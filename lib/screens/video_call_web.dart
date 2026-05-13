@@ -174,17 +174,11 @@ class _VideoCallWebState extends State<VideoCall> {
     } catch (_) {}
   }
 
-  /// Returns the display name for the remote user with proper prefix
+  /// Returns the display name for the remote user — uses exactly what was passed
   String get _remoteDisplayName {
     final name = widget.remoteUserName;
     if (name.isEmpty) return _isDoctor ? 'Patient' : 'Doctor';
-    // If patient viewing → remote is doctor → ensure "Dr." prefix
-    if (!_isDoctor) {
-      if (!name.startsWith('Dr.') && !name.startsWith('Doctor ') && !name.startsWith('Dr ')) {
-        return 'Dr. $name';
-      }
-    }
-    return name;
+    return name; // Caller is responsible for passing correct name with title
   }
 
   Future<void> _initRole() async {

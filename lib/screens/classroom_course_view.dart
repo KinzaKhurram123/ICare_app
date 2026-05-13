@@ -143,15 +143,22 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final text = _postCtrl.text.trim();
     if (text.isEmpty || _courseId.isEmpty) return;
     try {
-      await _lms.postAnnouncement(_courseId, text);
+      final result = await _lms.postAnnouncement(_courseId, text);
+      if (result['success'] == false) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.red),
+        );
+        return;
+      }
       _postCtrl.clear();
       await _loadStream();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Announcement posted!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post: $e')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to post: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 

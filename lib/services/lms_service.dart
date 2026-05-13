@@ -123,8 +123,12 @@ class LmsService {
   }
 
   Future<Map<String, dynamic>> createAnnouncement(Map<String, dynamic> data) async {
-    final response = await _api.post('/lms/announcements', data);
-    return response.data;
+    try {
+      final response = await _api.post('/lms/announcements', data);
+      return response.data ?? {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
   }
 
   Future<Map<String, dynamic>> postAnnouncement(String courseId, String content) async {

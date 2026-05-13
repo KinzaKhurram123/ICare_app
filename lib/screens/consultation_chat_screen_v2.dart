@@ -344,10 +344,14 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
     // Send ring signal to the other party via call signaling backend
     final callService = CallService();
+    // Doctor calls with "Dr. [name]" so patient sees proper title
+    final callerDisplayName = widget.isDoctor
+        ? (widget.currentUserName.startsWith('Dr.') ? widget.currentUserName : 'Dr. ${widget.currentUserName}')
+        : widget.currentUserName;
     final callResult = await callService.initiateCall(
       receiverId: receiverId,
       channelName: channelName,
-      callerName: widget.currentUserName,
+      callerName: callerDisplayName,
       callType: audioOnly ? 'audio' : 'video',
     );
 

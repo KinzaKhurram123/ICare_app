@@ -48,10 +48,8 @@ class _LessonPlayerState extends State<LessonPlayer> {
     return null;
   }
 
-  bool _isEmbeddable(String url) =>
-      url.contains('youtube.com') ||
-      url.contains('youtu.be') ||
-      url.contains('vimeo.com');
+  // ALL video URLs play in-app via VideoPlayerWidget (HTML5 for direct, iframe for YouTube)
+  bool _isEmbeddable(String url) => url.trim().isNotEmpty;
 
   Future<void> _openExternal(String url) async {
     final uri = Uri.tryParse(url);
