@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:icare/screens/certificate_templates_screen.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/video_player_widget.dart';
@@ -7,8 +9,22 @@ import 'package:url_launcher/url_launcher.dart';
 class LessonPlayer extends StatefulWidget {
   final Map<String, dynamic> lesson;
   final Map<String, dynamic>? nextLesson;
+  final String? studentName;
+  final String? courseTitle;
+  final String? instructorName;
+  final bool isLastLesson;
+  final CertificateTemplate certificateTemplate;
 
-  const LessonPlayer({super.key, required this.lesson, this.nextLesson});
+  const LessonPlayer({
+    super.key,
+    required this.lesson,
+    this.nextLesson,
+    this.studentName,
+    this.courseTitle,
+    this.instructorName,
+    this.isLastLesson = false,
+    this.certificateTemplate = CertificateTemplate.classic,
+  });
 
   @override
   State<LessonPlayer> createState() => _LessonPlayerState();
@@ -241,6 +257,57 @@ class _LessonPlayerState extends State<LessonPlayer> {
                   ),
               ],
             ),
+
+            const SizedBox(height: 32),
+
+            // ── CERTIFICATE BUTTON (last lesson + completed) ──────────────
+            if (widget.isLastLesson && _isCompleted)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [const Color(0xFFD4AF37).withValues(alpha: 0.15), const Color(0xFFD4AF37).withValues(alpha: 0.05)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 40),
+                    const SizedBox(height: 8),
+                    const Text('🎉 Congratulations!', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A))),
+                    const SizedBox(height: 4),
+                    const Text('You have completed this course. View and download your certificate below.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final user = await SharedPref().getUserData();
+                        if (!context.mounted) return;
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => LmsCertificateScreen(
+                            studentName: widget.studentName ?? user?.name ?? 'Student',
+                            courseTitle: widget.courseTitle ?? 'Course',
+                            instructorName: widget.instructorName ?? 'Instructor',
+                            template: widget.certificateTemplate,
+                            completionDate: DateTime.now(),
+                          ),
+                        ));
+                      },
+                      icon: const Icon(Icons.workspace_premium_rounded, size: 18),
+                      label: const Text('View Certificate', style: TextStyle(fontWeight: FontWeight.w800)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4AF37),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 32),
           ],

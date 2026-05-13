@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:icare/screens/certificate_templates_screen.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/services/api_service.dart';
@@ -25,6 +26,7 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
 
   Map<String, dynamic>? _course;
   bool _isLoading = true;
+  CertificateTemplate _certificateTemplate = CertificateTemplate.classic;
 
   @override
   void initState() {
@@ -232,6 +234,21 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
           ],
         ),
         actions: [
+          // Certificate template picker
+          IconButton(
+            icon: const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37)),
+            tooltip: 'Certificate Template',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => CertificateTemplateSelectorScreen(
+                  courseTitle: _course?['title'] ?? 'Course',
+                  instructorName: _course?['instructor']?['name'] ?? 'Instructor',
+                  currentTemplate: _certificateTemplate,
+                  onSelect: (t) => setState(() => _certificateTemplate = t),
+                ),
+              ));
+            },
+          ),
           // Go Live button
           ElevatedButton.icon(
             onPressed: _startLiveClass,
