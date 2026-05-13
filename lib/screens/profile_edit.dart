@@ -22,12 +22,45 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
-  final TextEditingController heightController = TextEditingController();
-  final TextEditingController weightController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController bloodGroupController = TextEditingController();
-  final TextEditingController existingConditionsController = TextEditingController();
-  final TextEditingController healthGoalsController = TextEditingController();
+
+  // Height state
+  String _heightUnit = 'cm';
+  String? _heightCm;
+  String? _heightM;
+  int _heightFt = 5;
+  int _heightIn = 7;
+
+  // Weight state
+  String _weightUnit = 'kg';
+  String? _weightKg;
+  String? _weightLbs;
+
+  // Conditions & Goals
+  final Set<String> _selectedConditions = {};
+  final Set<String> _selectedGoals = {};
+
+  static const _conditions = [
+    'Hypertension / BP',
+    'Diabetes',
+    'Heart Disease (IHD)',
+    'Asthma',
+    'Thyroid Disease',
+    'Kidney Disease',
+    'Arthritis',
+    'Obesity',
+  ];
+  static const _goals = [
+    'Weight Loss',
+    'BP Control',
+    'Blood Sugar Control',
+    'Improve Fitness',
+    'Quit Smoking',
+    'Mental Wellness',
+    'Healthy Diet',
+    'Better Sleep',
+  ];
 
   // Emergency contacts — minimum 2, can add more
   final List<Map<String, TextEditingController>> _emergencyContacts = [
@@ -125,12 +158,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     phoneController.dispose();
     cnicController.dispose();
     ageController.dispose();
-    heightController.dispose();
-    weightController.dispose();
     addressController.dispose();
     bloodGroupController.dispose();
-    existingConditionsController.dispose();
-    healthGoalsController.dispose();
     for (final c in _emergencyContacts) {
       c['name']!.dispose();
       c['phone']!.dispose();
@@ -144,16 +173,36 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     setState(() => isLoading = true);
 
     try {
+      // Build height string
+      String? heightStr;
+      if (_heightUnit == 'cm' && _heightCm != null) {
+        heightStr = '$_heightCm cm';
+      } else if (_heightUnit == 'm' && _heightM != null) {
+        heightStr = '$_heightM m';
+      } else if (_heightUnit == 'ft') {
+        heightStr = "${_heightFt}'${_heightIn}\"";
+      }
+
+      // Build weight string
+      String? weightStr;
+      if (_weightUnit == 'kg' && _weightKg != null) {
+        weightStr = '$_weightKg kg';
+      } else if (_weightUnit == 'lbs' && _weightLbs != null) {
+        weightStr = '$_weightLbs lbs';
+      }
+
       final result = await _userService.updateProfile(
         name: nameController.text.trim(),
         phoneNumber: phoneController.text.trim(),
         cnic: cnicController.text.trim().isEmpty ? null : cnicController.text.trim(),
         age: ageController.text.trim().isEmpty ? null : ageController.text.trim(),
         gender: _selectedGender,
-        height: heightController.text.trim().isEmpty ? null : heightController.text.trim(),
-        weight: weightController.text.trim().isEmpty ? null : weightController.text.trim(),
+        height: heightStr,
+        weight: weightStr,
         address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
         profileImage: _imageBytes,
+        existingConditions: _selectedConditions.isEmpty ? null : _selectedConditions.join(', '),
+        healthGoals: _selectedGoals.isEmpty ? null : _selectedGoals.join(', '),
       );
 
       if (result['success']) {
@@ -399,17 +448,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         ),
                         if (isPatient) ...[
                           const SizedBox(height: 16),
-                          CustomInputField(
-                            hintText: 'CNIC Number (e.g. 42101-1234567-1)',
-                            leadingIcon: const Icon(
-                              Icons.credit_card_outlined,
-                              color: Color(0xFF94A3B8),
-                            ),
+                          TextFormField(
                             controller: cnicController,
-                            bgColor: const Color(0xFFF8FAFC),
-                            borderRadius: 14,
-                            borderColor: const Color(0xFFE2E8F0),
-                            borderWidth: 1.5,
+                            maxLength: 13,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'ID Card Number (13 digits)',
+                              prefixIcon: const Icon(Icons.credit_card_outlined, color: Color(0xFF94A3B8)),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
+                              counterText: '',
+                            ),
                           ),
                           const SizedBox(height: 24),
                           const Text(
@@ -490,54 +541,86 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             }).toList(),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomInputField(
-                                  hintText: 'Age',
-                                  leadingIcon: const Icon(
-                                    Icons.cake_outlined,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                  controller: ageController,
-                                  bgColor: const Color(0xFFF8FAFC),
-                                  borderRadius: 14,
-                                  borderColor: const Color(0xFFE2E8F0),
-                                  borderWidth: 1.5,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: CustomInputField(
-                                  hintText: 'Height (cm)',
-                                  leadingIcon: const Icon(
-                                    Icons.height_rounded,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                  controller: heightController,
-                                  bgColor: const Color(0xFFF8FAFC),
-                                  borderRadius: 14,
-                                  borderColor: const Color(0xFFE2E8F0),
-                                  borderWidth: 1.5,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: CustomInputField(
-                                  hintText: 'Weight (kg)',
-                                  leadingIcon: const Icon(
-                                    Icons.monitor_weight_outlined,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                  controller: weightController,
-                                  bgColor: const Color(0xFFF8FAFC),
-                                  borderRadius: 14,
-                                  borderColor: const Color(0xFFE2E8F0),
-                                  borderWidth: 1.5,
-                                ),
-                              ),
-                            ],
+                          // Age
+                          CustomInputField(
+                            hintText: 'Age',
+                            leadingIcon: const Icon(Icons.cake_outlined, color: Color(0xFF94A3B8)),
+                            controller: ageController,
+                            bgColor: const Color(0xFFF8FAFC),
+                            borderRadius: 14,
+                            borderColor: const Color(0xFFE2E8F0),
+                            borderWidth: 1.5,
                           ),
+                          const SizedBox(height: 16),
+                          // Height unit selector + dropdown
+                          _buildSectionLabel('Height', Icons.height_rounded),
+                          const SizedBox(height: 8),
+                          _buildUnitSelector(
+                            options: const ['cm', 'm', 'ft'],
+                            selected: _heightUnit,
+                            onChanged: (u) => setState(() => _heightUnit = u),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_heightUnit == 'cm')
+                            _buildDropdown<String>(
+                              value: _heightCm,
+                              hint: 'Select cm',
+                              items: List.generate(71, (i) => '${140 + i}'),
+                              onChanged: (v) => setState(() => _heightCm = v),
+                              label: (v) => '$v cm',
+                            )
+                          else if (_heightUnit == 'm')
+                            _buildDropdown<String>(
+                              value: _heightM,
+                              hint: 'Select meters',
+                              items: List.generate(71, (i) => (1.40 + i * 0.01).toStringAsFixed(2)),
+                              onChanged: (v) => setState(() => _heightM = v),
+                              label: (v) => '$v m',
+                            )
+                          else
+                            Row(children: [
+                              Expanded(child: _buildDropdown<int>(
+                                value: _heightFt,
+                                hint: 'ft',
+                                items: List.generate(5, (i) => 4 + i),
+                                onChanged: (v) => setState(() => _heightFt = v!),
+                                label: (v) => "$v ft",
+                              )),
+                              const SizedBox(width: 8),
+                              Expanded(child: _buildDropdown<int>(
+                                value: _heightIn,
+                                hint: 'in',
+                                items: List.generate(12, (i) => i),
+                                onChanged: (v) => setState(() => _heightIn = v!),
+                                label: (v) => "$v in",
+                              )),
+                            ]),
+                          const SizedBox(height: 16),
+                          // Weight unit selector + dropdown
+                          _buildSectionLabel('Weight', Icons.monitor_weight_outlined),
+                          const SizedBox(height: 8),
+                          _buildUnitSelector(
+                            options: const ['kg', 'lbs'],
+                            selected: _weightUnit,
+                            onChanged: (u) => setState(() => _weightUnit = u),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_weightUnit == 'kg')
+                            _buildDropdown<String>(
+                              value: _weightKg,
+                              hint: 'Select kg',
+                              items: List.generate(171, (i) => '${30 + i}'),
+                              onChanged: (v) => setState(() => _weightKg = v),
+                              label: (v) => '$v kg',
+                            )
+                          else
+                            _buildDropdown<String>(
+                              value: _weightLbs,
+                              hint: 'Select lbs',
+                              items: List.generate(186, (i) => '${66 + i * 2}'),
+                              onChanged: (v) => setState(() => _weightLbs = v),
+                              label: (v) => '$v lbs',
+                            ),
                           const SizedBox(height: 16),
                           CustomInputField(
                             hintText: 'Address',
@@ -684,30 +767,56 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             );
                           }),
                           const SizedBox(height: 16),
-                          CustomInputField(
-                            hintText: 'Existing Conditions (e.g. Diabetes, BP)',
-                            leadingIcon: const Icon(
-                              Icons.medical_information_outlined,
-                              color: Color(0xFF94A3B8),
-                            ),
-                            controller: existingConditionsController,
-                            bgColor: const Color(0xFFF8FAFC),
-                            borderRadius: 14,
-                            borderColor: const Color(0xFFE2E8F0),
-                            borderWidth: 1.5,
+                          _buildSectionLabel('Existing Conditions', Icons.medical_information_outlined),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _conditions.map((c) {
+                              final sel = _selectedConditions.contains(c);
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  if (sel) _selectedConditions.remove(c);
+                                  else _selectedConditions.add(c);
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: sel ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: sel ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Text(c, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? Colors.white : const Color(0xFF475569))),
+                                ),
+                              );
+                            }).toList(),
                           ),
                           const SizedBox(height: 16),
-                          CustomInputField(
-                            hintText: 'Health Goals (e.g. Weight loss, BP control)',
-                            leadingIcon: const Icon(
-                              Icons.flag_outlined,
-                              color: Color(0xFF94A3B8),
-                            ),
-                            controller: healthGoalsController,
-                            bgColor: const Color(0xFFF8FAFC),
-                            borderRadius: 14,
-                            borderColor: const Color(0xFFE2E8F0),
-                            borderWidth: 1.5,
+                          _buildSectionLabel('Health Goals', Icons.flag_outlined),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _goals.map((g) {
+                              final sel = _selectedGoals.contains(g);
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  if (sel) _selectedGoals.remove(g);
+                                  else _selectedGoals.add(g);
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: sel ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: sel ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Text(g, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? Colors.white : const Color(0xFF475569))),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ],
                         const SizedBox(height: 32),
@@ -752,6 +861,67 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF64748B)),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+      ],
+    );
+  }
+
+  Widget _buildUnitSelector({
+    required List<String> options,
+    required String selected,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Row(
+      children: options.map((o) {
+        final isSel = o == selected;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () => onChanged(o),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSel ? AppColors.primaryColor : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isSel ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+              ),
+              child: Text(o, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isSel ? Colors.white : const Color(0xFF475569))),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required T? value,
+    required String hint,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) label,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+      items: items.map((i) => DropdownMenuItem<T>(value: i, child: Text(label(i)))).toList(),
+      onChanged: onChanged,
     );
   }
 }

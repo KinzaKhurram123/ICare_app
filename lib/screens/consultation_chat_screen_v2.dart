@@ -727,23 +727,24 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
                     tooltip: 'Video Call',
                   ),
                   const Spacer(),
-                  // ── End Session button ──
-                  ElevatedButton(
-                    onPressed: _endConsultation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE91E63),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  // ── End Session button (doctor only) ──
+                  if (widget.isDoctor)
+                    ElevatedButton(
+                      onPressed: _endConsultation,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE91E63),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 2,
                       ),
-                      elevation: 2,
+                      child: const Text(
+                        'End Session',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
                     ),
-                    child: const Text(
-                      'End Session',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                    ),
-                  ),
                 ],
               ),
             ),

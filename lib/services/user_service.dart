@@ -57,6 +57,8 @@ class UserService {
     String? height,
     String? weight,
     String? address,
+    String? existingConditions,
+    String? healthGoals,
   }) async {
     try {
       String? imageBase64;
@@ -75,6 +77,8 @@ class UserService {
         if (height != null) 'height': height,
         if (weight != null) 'weight': weight,
         if (address != null) 'address': address,
+        if (existingConditions != null) 'existingConditions': existingConditions,
+        if (healthGoals != null) 'healthGoals': healthGoals,
       });
 
       if (response.statusCode == 200) {

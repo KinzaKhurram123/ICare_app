@@ -69,7 +69,9 @@ class _VideoCallWebState extends State<VideoCall> {
   bool _joined = false;
   bool _micMuted = false;
   bool _camOff = false;
+  bool _isDoctor = false;
   String? _error;
+  Timer? _noAnswerTimer;
 
   // Side panel state
   bool _showChat = false;
@@ -123,6 +125,42 @@ class _VideoCallWebState extends State<VideoCall> {
     _maybeStartStatusPolling();
     // Register beforeunload handler so closing the browser marks appointment completed
     _registerBeforeUnload();
+    _initRole();
+    _startNoAnswerTimer();
+  }
+
+  Future<void> _initRole() async {
+    try {
+      final user = await SharedPref().getUserData();
+      if (mounted) setState(() => _isDoctor = user?.role?.toLowerCase() == 'doctor');
+    } catch (_) {}
+  }
+
+  void _startNoAnswerTimer() {
+    _noAnswerTimer = Timer(const Duration(seconds: 50), () {
+      if (!mounted || _joined) return;
+      try { _agoraLeave(); } catch (_) {}
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(children: [
+            Icon(Icons.call_end_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 8),
+            Text('Call Not Answered', style: TextStyle(fontWeight: FontWeight.w800)),
+          ]),
+          content: const Text('The patient declined or did not answer the call.'),
+          actions: [
+            ElevatedButton(
+              onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   void _registerBeforeUnload() {
@@ -599,13 +637,34 @@ class _VideoCallWebState extends State<VideoCall> {
         // Non-fatal: show warning but still allow video call to proceed
         // (other party may still be able to connect)
         debugPrint('⚠️ Agora join warning: $resultStr');
-        if (mounted) setState(() { _joined = true; _loading = false; });
+        if (mounted) { _noAnswerTimer?.cancel(); setState(() { _joined = true; _loading = false; }); }
       } else {
-        if (mounted) setState(() { _joined = true; _loading = false; });
+        if (mounted) { _noAnswerTimer?.cancel(); setState(() { _joined = true; _loading = false; }); }
       }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
+  }
+
+  /// Doctor: switch from audio-only call to video call
+  Future<void> _convertToVideo() async {
+    try { await _agoraLeave().toDart; } catch (_) {}
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VideoCall(
+          channelName: widget.channelName,
+          remoteUserName: widget.remoteUserName,
+          isAudioOnly: false,
+          currentUserId: widget.currentUserId,
+          currentUserName: widget.currentUserName,
+          appointmentId: widget.appointmentId,
+          patientId: widget.patientId,
+          consultationId: widget.consultationId,
+        ),
+      ),
+    );
   }
 
   /// Red button — leave video but keep consultation "in progress"
@@ -863,6 +922,7 @@ class _VideoCallWebState extends State<VideoCall> {
     _sessionTimer?.cancel();
     _chatPollTimer?.cancel();
     _statusPollTimer?.cancel();
+    _noAnswerTimer?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
     _doctorNotesController.dispose();
@@ -955,6 +1015,7 @@ class _VideoCallWebState extends State<VideoCall> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          if (_isDoctor) ...[
                           _sideBtn(
                             icon: Icons.note_alt_rounded,
                             label: "Doctor's Notes",
@@ -990,6 +1051,7 @@ class _VideoCallWebState extends State<VideoCall> {
                             },
                           ),
                           const SizedBox(width: 10),
+                          ],
                           _sideBtn(
                             icon: Icons.chat_bubble_outline_rounded,
                             label: 'Chat',
@@ -1042,20 +1104,11 @@ class _VideoCallWebState extends State<VideoCall> {
                               onTap: _toggleCam,
                               tooltip: _camOff ? 'Start Camera' : 'Stop Camera',
                             ),
-                          const SizedBox(width: 16),
-                          // End Consultation button (camera icon per client requirements)
-                          _controlBtn(
-                            icon: Icons.videocam_off_rounded,
-                            color: Colors.white,
-                            bg: const Color(0xFF7C3AED),
-                            onTap: _endConsultation,
-                            tooltip: 'End Consultation',
-                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Red = Leave Video  •  Purple = End Consultation',
+                        'Red = Leave Video',
                         style: TextStyle(color: Colors.white38, fontSize: 11),
                       ),
                     ],
@@ -2748,22 +2801,22 @@ class _VideoCallWebState extends State<VideoCall> {
                           onTap: _leaveVideo,
                           size: 72,
                         ),
-                        const SizedBox(width: 32),
-                        // Purple — end consultation
-                        if (widget.appointmentId != null &&
-                            widget.appointmentId!.isNotEmpty)
+                        if (_isDoctor) ...[
+                          const SizedBox(width: 32),
+                          // Convert to Video (doctor only)
                           _audioCallBtn(
-                            icon: Icons.videocam_off_rounded,
-                            label: 'End',
+                            icon: Icons.videocam_rounded,
+                            label: 'Video',
                             color: Colors.white,
-                            bg: const Color(0xFF7C3AED),
-                            onTap: _endConsultation,
+                            bg: const Color(0xFF10B981),
+                            onTap: _convertToVideo,
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Red = Leave Call  •  Purple = End Consultation',
+                      'Red = Leave Call  •  Green = Switch to Video',
                       style: TextStyle(color: Colors.white30, fontSize: 11),
                     ),
                   ],
