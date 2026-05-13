@@ -228,24 +228,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         ],
       ),
       actions: [
-        // Calendar icon
-        IconButton(
-          icon: const Icon(Icons.calendar_today_outlined,
-              color: Color(0xFF444746), size: 20),
-          onPressed: () {},
-        ),
-        // Settings
-        IconButton(
-          icon: const Icon(Icons.settings_outlined,
-              color: Color(0xFF444746), size: 20),
-          onPressed: () {
-            if (_courseId.isNotEmpty) {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (_) => InstructorCourseContentScreen(courseId: _courseId),
-              ));
-            }
-          },
-        ),
+        // Settings only (Edit Course content)
+        if (widget.isInstructor)
+          IconButton(
+            icon: const Icon(Icons.settings_outlined,
+                color: Color(0xFF444746), size: 20),
+            tooltip: 'Course Settings',
+            onPressed: () {
+              if (_courseId.isNotEmpty) {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => InstructorCourseContentScreen(courseId: _courseId),
+                ));
+              }
+            },
+          ),
       ],
       bottom: TabBar(
         controller: _tabs,

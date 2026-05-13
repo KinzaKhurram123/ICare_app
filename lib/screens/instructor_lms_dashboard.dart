@@ -584,14 +584,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
                     // Students count
                     _cardIconButton(Icons.people_outlined, enrolledCount > 0 ? '$enrolledCount' : null,
                         () => _openCourse(course)),
-                    // Manage button
-                    _cardIconButton(Icons.folder_outlined, null, () {
-                      final id = course['_id']?.toString() ?? '';
-                      if (id.isNotEmpty) Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => InstructorCourseContentScreen(courseId: id),
-                      )).then((_) => _loadCourses());
-                    }),
-                    // More menu
+                    // More menu (settings) — only button kept
                     _cardMoreButton(course),
                   ],
                 ),
