@@ -262,8 +262,17 @@ class ConsultationService {
       );
       return response.data;
     } on DioException catch (e) {
-      print('Error completing prescription: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      print('Error completing prescription: ${e.response?.statusCode} ${e.message}');
+      String message = e.message ?? 'Network error';
+      try {
+        final data = e.response?.data;
+        if (data is Map) {
+          message = data['message']?.toString() ?? data['error']?.toString() ?? message;
+        } else if (data is String && data.length < 500) {
+          message = data;
+        }
+      } catch (_) {}
+      return {'success': false, 'message': message};
     }
   }
 

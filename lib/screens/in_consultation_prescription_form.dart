@@ -174,35 +174,58 @@ class _InConsultationPrescriptionFormState
     setState(() => _isSaving = true);
 
     try {
+      // Build clean JSON — remove null values that may cause backend 500
+      final rawJson = prescription.toJson();
+      final cleanJson = _cleanJson(rawJson);
+
       final result = await _consultationService.completePrescription(
         consultationId: widget.consultationId,
-        prescriptionData: prescription.toJson(),
+        prescriptionData: cleanJson,
       );
 
-      if (result['success'] && mounted) {
+      if (result['success'] == true && mounted) {
         setState(() => _isComplete = true);
         widget.onPrescriptionComplete?.call(true);
-        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Prescription completed successfully'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Prescription completed successfully'), backgroundColor: Colors.green),
         );
-        
         Navigator.pop(context);
+      } else if (mounted) {
+        final msg = result['message']?.toString() ?? result['error']?.toString() ?? 'Server error — please try again';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $msg'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to complete prescription: $e')),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// Recursively remove null values from JSON to avoid backend validation errors
+  Map<String, dynamic> _cleanJson(Map<String, dynamic> json) {
+    final result = <String, dynamic>{};
+    json.forEach((key, value) {
+      if (value == null) return;
+      if (value is Map<String, dynamic>) {
+        final cleaned = _cleanJson(value);
+        if (cleaned.isNotEmpty) result[key] = cleaned;
+      } else if (value is List) {
+        final cleanedList = value.map((item) {
+          if (item is Map<String, dynamic>) return _cleanJson(item);
+          return item;
+        }).where((item) => item != null).toList();
+        result[key] = cleanedList;
+      } else {
+        result[key] = value;
+      }
+    });
+    return result;
   }
 
   EnhancedPrescription _buildPrescriptionObject({required bool isComplete}) {

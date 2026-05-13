@@ -58,6 +58,7 @@
         if (_agoraClient) { try { await _agoraClient.leave(); } catch(_){} _agoraClient = null; }
 
         _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        window._agoraRemoteJoined = false; // reset on each new call
 
         // ── Helper: play remote video with retry until div is in DOM ──────
         async function playRemoteVideo(videoTrack, retries) {
@@ -86,6 +87,7 @@
         }
 
         _agoraClient.on('user-published', async (user, mediaType) => {
+          window._agoraRemoteJoined = true;
           await _agoraClient.subscribe(user, mediaType);
           if (mediaType === 'video') {
             playRemoteVideo(user.videoTrack, 0);
@@ -104,6 +106,7 @@
 
         // ── Handle users who joined BEFORE us ─────────────────────────────
         _agoraClient.on('user-joined', async (user) => {
+          window._agoraRemoteJoined = true;
           // If remote user is already publishing, subscribe immediately
           if (user.hasVideo) {
             try {
@@ -181,6 +184,16 @@
         if (_agoraClient) await _agoraClient.leave();
         _agoraClient = null; _localAudioTrack = null; _localVideoTrack = null;
       } catch(e) { console.error('agoraLeave error:', e); }
+    };
+
+    // Returns number of remote users currently in the Agora channel
+    window.agoraGetRemoteUserCount = function() {
+      try { return _agoraClient ? _agoraClient.remoteUsers.length : 0; } catch(e) { return 0; }
+    };
+
+    // Returns true if a remote user has joined this call session
+    window.agoraIsRemoteJoined = function() {
+      return window._agoraRemoteJoined === true || (window.agoraGetRemoteUserCount() > 0);
     };
 
     window.agoraMuteMic = function(mute) {

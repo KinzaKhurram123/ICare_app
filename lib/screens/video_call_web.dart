@@ -35,6 +35,10 @@ external void _agoraMuteMic(JSBoolean mute);
 
 @JS('agoraMuteCam')
 external void _agoraMuteCam(JSBoolean mute);
+
+@JS('agoraIsRemoteJoined')
+external bool _agoraIsRemoteJoined();
+
 class VideoCall extends StatefulWidget {
   final String channelName;
   final String remoteUserName;
@@ -67,11 +71,13 @@ class VideoCall extends StatefulWidget {
 class _VideoCallWebState extends State<VideoCall> {
   bool _loading = true;
   bool _joined = false;
+  bool _remoteJoined = false; // true when remote user joins Agora
   bool _micMuted = false;
   bool _camOff = false;
   bool _isDoctor = false;
   String? _error;
   Timer? _noAnswerTimer;
+  Timer? _remoteJoinPoller;
 
   // Side panel state
   bool _showChat = false;
@@ -134,6 +140,20 @@ class _VideoCallWebState extends State<VideoCall> {
       final user = await SharedPref().getUserData();
       if (mounted) setState(() => _isDoctor = user?.role?.toLowerCase() == 'doctor');
     } catch (_) {}
+    _startRemoteJoinPoller();
+  }
+
+  void _startRemoteJoinPoller() {
+    _remoteJoinPoller = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!mounted) return;
+      try {
+        final remoteJoined = _agoraIsRemoteJoined();
+        if (remoteJoined && !_remoteJoined) {
+          _noAnswerTimer?.cancel(); // cancel "not answered" — someone joined!
+          setState(() => _remoteJoined = true);
+        }
+      } catch (_) {}
+    });
   }
 
   void _startNoAnswerTimer() {
@@ -934,6 +954,7 @@ class _VideoCallWebState extends State<VideoCall> {
     _chatPollTimer?.cancel();
     _statusPollTimer?.cancel();
     _noAnswerTimer?.cancel();
+    _remoteJoinPoller?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
     _doctorNotesController.dispose();
@@ -2700,7 +2721,8 @@ class _VideoCallWebState extends State<VideoCall> {
     final initial = widget.remoteUserName.isNotEmpty
         ? widget.remoteUserName[0].toUpperCase()
         : '?';
-    final isCalling = _loading; // still connecting / ringing
+    // Show "Calling/Ringing" until remote user actually joins Agora
+    final isCalling = !_remoteJoined;
 
     return Scaffold(
       body: Container(
