@@ -137,7 +137,7 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   void _startNoAnswerTimer() {
-    _noAnswerTimer = Timer(const Duration(seconds: 50), () {
+    _noAnswerTimer = Timer(const Duration(seconds: 30), () {
       if (!mounted || _joined) return;
       try { _agoraLeave(); } catch (_) {}
       showDialog(
@@ -648,6 +648,17 @@ class _VideoCallWebState extends State<VideoCall> {
 
   /// Doctor: switch from audio-only call to video call
   Future<void> _convertToVideo() async {
+    // Send a new video call invitation to the patient so they get the incoming call dialog
+    if (widget.patientId != null && widget.patientId!.isNotEmpty) {
+      try {
+        await CallService().initiateCall(
+          receiverId: widget.patientId!,
+          channelName: widget.channelName,
+          callerName: widget.currentUserName,
+          callType: 'video',
+        );
+      } catch (_) {}
+    }
     try { await _agoraLeave().toDart; } catch (_) {}
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -2689,6 +2700,7 @@ class _VideoCallWebState extends State<VideoCall> {
     final initial = widget.remoteUserName.isNotEmpty
         ? widget.remoteUserName[0].toUpperCase()
         : '?';
+    final isCalling = _loading; // still connecting / ringing
 
     return Scaffold(
       body: Container(
@@ -2702,19 +2714,22 @@ class _VideoCallWebState extends State<VideoCall> {
         child: SafeArea(
           child: Column(
             children: [
-              // Top bar with timer
+              // Top bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.phone_in_talk_rounded,
-                        color: Color(0xFF10B981), size: 18),
+                    Icon(
+                      isCalling ? Icons.phone_forwarded_rounded : Icons.phone_in_talk_rounded,
+                      color: isCalling ? Colors.orangeAccent : const Color(0xFF10B981),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      '$mins:$secs',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      isCalling ? 'Calling...' : '$mins:$secs',
+                      style: TextStyle(
+                        color: isCalling ? Colors.orangeAccent : Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1,
@@ -2726,32 +2741,59 @@ class _VideoCallWebState extends State<VideoCall> {
 
               const Spacer(),
 
-              // Avatar
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white12,
-                  border: Border.all(color: const Color(0xFF10B981), width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                      blurRadius: 30,
-                      spreadRadius: 5,
+              // Avatar with pulsing ring when calling
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (isCalling) ...[
+                    // Outer pulse ring
+                    Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.25), width: 2),
+                      ),
+                    ),
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4), width: 2),
+                      ),
                     ),
                   ],
-                ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontSize: 52,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white12,
+                      border: Border.all(
+                        color: isCalling ? Colors.orangeAccent : const Color(0xFF10B981),
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isCalling ? Colors.orangeAccent : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        initial,
+                        style: const TextStyle(
+                          fontSize: 52,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
 
               const SizedBox(height: 24),
@@ -2766,9 +2808,12 @@ class _VideoCallWebState extends State<VideoCall> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Audio Call',
-                style: TextStyle(color: Colors.white54, fontSize: 14),
+              Text(
+                isCalling ? 'Ringing... waiting for answer' : 'Audio Call Connected',
+                style: TextStyle(
+                  color: isCalling ? Colors.orangeAccent.withValues(alpha: 0.8) : Colors.white54,
+                  fontSize: 14,
+                ),
               ),
 
               const Spacer(),
@@ -2781,32 +2826,32 @@ class _VideoCallWebState extends State<VideoCall> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Mic toggle
-                        _audioCallBtn(
-                          icon: _micMuted
-                              ? Icons.mic_off_rounded
-                              : Icons.mic_rounded,
-                          label: _micMuted ? 'Unmute' : 'Mute',
-                          color: _micMuted ? Colors.grey : Colors.white,
-                          bg: Colors.white24,
-                          onTap: _toggleMic,
-                        ),
-                        const SizedBox(width: 32),
-                        // Red — leave call
+                        if (!isCalling) ...[
+                          // Mic toggle (only shown when connected)
+                          _audioCallBtn(
+                            icon: _micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            label: _micMuted ? 'Unmute' : 'Mute',
+                            color: _micMuted ? Colors.grey : Colors.white,
+                            bg: Colors.white24,
+                            onTap: _toggleMic,
+                          ),
+                          const SizedBox(width: 32),
+                        ],
+                        // Red — end/cancel call
                         _audioCallBtn(
                           icon: Icons.call_end_rounded,
-                          label: 'Leave',
+                          label: isCalling ? 'Cancel' : 'Leave',
                           color: Colors.white,
                           bg: Colors.red,
                           onTap: _leaveVideo,
-                          size: 72,
+                          size: isCalling ? 72 : 72,
                         ),
-                        if (_isDoctor) ...[
+                        if (!isCalling && _isDoctor) ...[
                           const SizedBox(width: 32),
-                          // Convert to Video (doctor only)
+                          // Convert to Video (doctor only, only when connected)
                           _audioCallBtn(
                             icon: Icons.videocam_rounded,
-                            label: 'Video',
+                            label: 'To Video',
                             color: Colors.white,
                             bg: const Color(0xFF10B981),
                             onTap: _convertToVideo,
@@ -2815,9 +2860,13 @@ class _VideoCallWebState extends State<VideoCall> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Red = Leave Call  •  Green = Switch to Video',
-                      style: TextStyle(color: Colors.white30, fontSize: 11),
+                    Text(
+                      isCalling
+                          ? 'Cancel to stop calling'
+                          : _isDoctor
+                              ? 'Red = Leave  •  Green = Switch to Video'
+                              : 'Red = Leave Call',
+                      style: const TextStyle(color: Colors.white30, fontSize: 11),
                     ),
                   ],
                 ),
