@@ -125,9 +125,10 @@ class _VideoCallWebState extends State<VideoCall> {
   @override
   void initState() {
     super.initState();
-    _sessionSeconds = widget.consultationElapsedSeconds; // sync from chat timer
+    _sessionSeconds = widget.consultationElapsedSeconds; // sync from chat timer (doctor)
     _registerView();
     _joinCall();
+    _syncTimerFromSharedPrefs(); // also try SharedPrefs (patient side)
     _startSessionTimer();
     _startChatPolling();
     // Only poll status on PATIENT side — doctor ends consultation themselves
@@ -137,6 +138,24 @@ class _VideoCallWebState extends State<VideoCall> {
     _registerBeforeUnload();
     _initRole();
     _startNoAnswerTimer();
+  }
+
+  Future<void> _syncTimerFromSharedPrefs() async {
+    // Only sync if no elapsed time was passed from chat screen
+    if (widget.consultationElapsedSeconds > 0) return;
+    if (widget.consultationId == null || widget.consultationId!.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'consult_start_${widget.consultationId}';
+      final startMs = prefs.getInt(key);
+      if (startMs != null && mounted) {
+        final elapsed = DateTime.now().millisecondsSinceEpoch - startMs;
+        final elapsedSec = (elapsed / 1000).round();
+        if (elapsedSec > 0 && elapsedSec < 1800) { // sanity check < 30 min
+          setState(() => _sessionSeconds = elapsedSec);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _initRole() async {
@@ -672,7 +691,12 @@ class _VideoCallWebState extends State<VideoCall> {
 
   /// Doctor: switch from audio-only call to video call
   Future<void> _convertToVideo() async {
-    // Send a new video call invitation to the patient so they get the incoming call dialog
+    // 1. Leave Agora audio channel FIRST
+    _sessionTimer?.cancel();
+    _remoteJoinPoller?.cancel();
+    try { await _agoraLeave().toDart; } catch (_) {}
+
+    // 2. Send video call invitation to patient
     if (widget.patientId != null && widget.patientId!.isNotEmpty) {
       try {
         await CallService().initiateCall(
@@ -683,7 +707,6 @@ class _VideoCallWebState extends State<VideoCall> {
         );
       } catch (_) {}
     }
-    try { await _agoraLeave().toDart; } catch (_) {}
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
@@ -981,7 +1004,7 @@ class _VideoCallWebState extends State<VideoCall> {
               children: [
                 SizedBox.expand(child: HtmlElementView(viewType: _viewId)),
 
-                // Loading overlay
+                // Loading overlay (joining Agora)
                 if (_loading)
                   Container(
                     color: const Color(0xFF0A1628),
@@ -993,6 +1016,44 @@ class _VideoCallWebState extends State<VideoCall> {
                           SizedBox(height: 20),
                           Text('Connecting...',
                               style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Ringing overlay — joined Agora but waiting for remote user
+                if (!_loading && _joined && !_remoteJoined)
+                  Container(
+                    color: const Color(0xFF0A1628).withValues(alpha: 0.92),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 100, height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white12,
+                              border: Border.all(color: Colors.orangeAccent, width: 3),
+                            ),
+                            child: Center(
+                              child: Text(
+                                widget.remoteUserName.isNotEmpty ? widget.remoteUserName[0].toUpperCase() : '?',
+                                style: const TextStyle(fontSize: 42, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(widget.remoteUserName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 8),
+                          const Text('Ringing... waiting for answer', style: TextStyle(color: Colors.orangeAccent, fontSize: 14)),
+                          const SizedBox(height: 32),
+                          ElevatedButton.icon(
+                            onPressed: _leaveVideo,
+                            icon: const Icon(Icons.call_end_rounded),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                          ),
                         ],
                       ),
                     ),

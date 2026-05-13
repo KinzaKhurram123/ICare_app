@@ -93,6 +93,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       },
     );
     _timer.start();
+    // Save consultation start time so VideoCall can sync timer on patient side
+    SharedPreferences.getInstance().then((prefs) {
+      final key = 'consult_start_${widget.consultationId ?? ""}';
+      if (!prefs.containsKey(key)) {
+        prefs.setInt(key, DateTime.now().millisecondsSinceEpoch);
+      }
+    });
   }
 
   Future<void> _initializeConsultation() async {
