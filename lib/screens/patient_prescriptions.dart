@@ -916,9 +916,9 @@ class _PrescriptionPage extends StatelessWidget {
               Row(children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                   child: Image.asset('assets/Asset 1.png', height: 28, fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Text('iCare', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900))),
+                      errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital_rounded, color: Color(0xFF0036BC), size: 24)),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1161,20 +1161,18 @@ class _PrescriptionPage extends StatelessWidget {
             pw.Row(children: [
               if (logoImage != null) ...[
                 pw.Container(
-                  width: 40, height: 40,
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.white,
-                    borderRadius: pw.BorderRadius.circular(8),
-                  ),
+                  width: 60, height: 60,
+                  decoration: pw.BoxDecoration(color: PdfColors.white, borderRadius: pw.BorderRadius.circular(8)),
                   child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                 ),
                 pw.SizedBox(width: 10),
+              ] else ...[
+                pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                  pw.Text('iCare', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                  pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
+                ]),
+                pw.SizedBox(width: 10),
               ],
-              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('iCare', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
-                pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
-              ]),
             ]),
             pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
               pw.Text(_prescriptionDate, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
