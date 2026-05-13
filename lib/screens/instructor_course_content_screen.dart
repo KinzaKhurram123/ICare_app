@@ -81,18 +81,17 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
               if (!mounted) return;
 
               // Send call signal to all enrolled students
+              // Backend returns { students: [{ _id, name, email }] }
               try {
                 final students = await _lmsService.getCourseStudents(widget.courseId);
                 final callService = CallService();
                 for (final student in students) {
-                  final studentId = (student['user'] as Map?)?['_id']?.toString()
-                      ?? student['userId']?.toString()
-                      ?? student['_id']?.toString() ?? '';
+                  final studentId = student['_id']?.toString() ?? '';
                   if (studentId.isNotEmpty) {
                     await callService.initiateCall(
                       receiverId: studentId,
                       channelName: channelName,
-                      callerName: '$instructorName (Live: $courseTitle)',
+                      callerName: '$instructorName — Live: $courseTitle',
                       callType: 'video',
                     );
                   }
