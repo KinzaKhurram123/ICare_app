@@ -13,6 +13,7 @@ import 'package:icare/models/enhanced_prescription.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/in_consultation_prescription_form.dart';
 import 'package:icare/screens/patient_history_form_screen.dart';
+import 'package:icare/screens/patient_history_view.dart';
 import 'package:icare/screens/prescription_pdf_view_screen.dart';
 import 'package:icare/services/consultation_service.dart';
 import 'package:icare/services/call_service.dart';
@@ -362,6 +363,23 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   void _startVideoCall() => _initiateCall(audioOnly: false);
   void _startVoiceCall() => _initiateCall(audioOnly: true);
 
+  void _openPastConsultations() {
+    if (!widget.isDoctor) return;
+    final patient = widget.appointment?.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Patient info not available')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => PatientHistoryView(patient: patient),
+      ),
+    );
+  }
+
   void _openHistoryForm() {
     if (!widget.isDoctor) return;
     if (_consultationId == null) {
@@ -671,8 +689,14 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
                       ],
                     ),
                   ),
-                  // Doctor action buttons (prescription + history)
+                  // Doctor action buttons (past consultations + history + prescription)
                   if (widget.isDoctor) ...[
+                    IconButton(
+                      icon: const Icon(Icons.history_rounded, size: 22),
+                      color: AppColors.primaryColor,
+                      onPressed: _openPastConsultations,
+                      tooltip: 'Past Consultations',
+                    ),
                     IconButton(
                       icon: const Icon(Icons.history_edu_rounded, size: 22),
                       color: AppColors.primaryColor,

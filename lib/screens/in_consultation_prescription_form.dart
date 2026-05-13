@@ -43,6 +43,28 @@ class _InConsultationPrescriptionFormState
   final TextEditingController _planController = TextEditingController();
   final TextEditingController _doctorNotesController = TextEditingController();
 
+  // Medicine search state
+  final TextEditingController _medSearchController = TextEditingController();
+  String? _selectedMedName;
+  final TextEditingController _medDoseCtrl = TextEditingController();
+  MedicationFrequency _medFreq = MedicationFrequency.bd;
+  String _medDurationValue = '';
+  String _medDurationUnit = 'Days';
+  final TextEditingController _medNotesCtrl = TextEditingController();
+
+  static const _commonMeds = [
+    'Paracetamol 500mg', 'Paracetamol 1g', 'Amoxicillin 250mg', 'Amoxicillin 500mg',
+    'Metformin 500mg', 'Metformin 1g', 'Amlodipine 5mg', 'Amlodipine 10mg',
+    'Atorvastatin 10mg', 'Atorvastatin 20mg', 'Atorvastatin 40mg',
+    'Omeprazole 20mg', 'Omeprazole 40mg', 'Pantoprazole 40mg',
+    'Aspirin 75mg', 'Aspirin 150mg', 'Clopidogrel 75mg',
+    'Metoprolol 25mg', 'Metoprolol 50mg', 'Lisinopril 5mg', 'Lisinopril 10mg',
+    'Losartan 50mg', 'Losartan 100mg', 'Ciprofloxacin 500mg', 'Ciprofloxacin 250mg',
+    'Azithromycin 250mg', 'Azithromycin 500mg', 'Prednisolone 5mg', 'Prednisolone 10mg',
+    'Salbutamol 2mg', 'Salbutamol 4mg', 'Cetirizine 10mg', 'Levothyroxine 50mcg',
+    'Levothyroxine 100mcg', 'Glibenclamide 5mg', 'Insulin (Regular)', 'Insulin (NPH)',
+  ];
+
   // Data
   String? _patientHistoryId;
   List<DiagnosisItem> _diagnoses = [];
@@ -413,33 +435,33 @@ class _InConsultationPrescriptionFormState
               child: _buildHistoryContent(),
             ),
 
-            // ── 2. Doctor's Notes (SOAP) ────────────────────────────────
+            // ── 2. Doctor's Notes (SOAP) — Required ────────────────────
             _accordion(
               index: 1,
               icon: Icons.edit_note_rounded,
               color: const Color(0xFF0EA5E9),
-              title: "2. Doctor's Notes",
-              subtitle: 'Subjective, Objective, Assessment, Plan',
+              title: "2. Doctor's Notes *",
+              subtitle: 'Required — SOAP notes',
               child: _buildSOAPContent(),
             ),
 
-            // ── 3. Additional Notes ─────────────────────────────────────
+            // ── 3. Additional Notes — Required ──────────────────────────
             _accordion(
               index: 2,
               icon: Icons.notes_rounded,
               color: const Color(0xFF64748B),
-              title: '3. Additional Notes',
-              subtitle: 'Free text clinical observations',
+              title: '3. Additional Notes *',
+              subtitle: 'Required — clinical observations',
               child: _buildDoctorNotesContent(),
             ),
 
-            // ── 4. Diagnosis ────────────────────────────────────────────
+            // ── 4. Diagnosis — Required ─────────────────────────────────
             _accordion(
               index: 3,
               icon: Icons.medical_information_rounded,
               color: const Color(0xFFEF4444),
-              title: '4. Diagnosis',
-              subtitle: 'ICD-10 codes and diagnosis',
+              title: '4. Diagnosis *',
+              subtitle: 'Required — ICD-10 codes and diagnosis',
               badgeCount: _diagnoses.length,
               child: _buildDiagnosisContent(),
             ),
@@ -466,12 +488,12 @@ class _InConsultationPrescriptionFormState
               child: _buildLabTestsContent(),
             ),
 
-            // ── 7. Lifestyle Advice ─────────────────────────────────────
+            // ── 7. Lifestyle Advice (Optional) ─────────────────────────
             _accordion(
               index: 6,
               icon: Icons.spa_rounded,
               color: const Color(0xFFF59E0B),
-              title: '7. Lifestyle Advice',
+              title: '7. Lifestyle Advice (Optional)',
               subtitle: 'Diet, exercise, sleep recommendations',
               child: _buildLifestyleContent(),
             ),
@@ -644,25 +666,155 @@ class _InConsultationPrescriptionFormState
 
   // ── Section 5: Medications ────────────────────────────────────────────────
   Widget _buildMedicationsContent() {
+    final searchText = _medSearchController.text.toLowerCase();
+    final suggestions = searchText.isEmpty
+        ? <String>[]
+        : _commonMeds.where((m) => m.toLowerCase().contains(searchText)).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: _addMedicine,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add Medicine'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
+        // Search bar
+        TextField(
+          controller: _medSearchController,
+          onChanged: (_) => setState(() => _selectedMedName = null),
+          decoration: InputDecoration(
+            hintText: 'Search medicine (e.g. Paracetamol, Amoxicillin)...',
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+            suffixIcon: _medSearchController.text.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear_rounded, size: 18), onPressed: () => setState(() { _medSearchController.clear(); _selectedMedName = null; }))
+                : null,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
-        const SizedBox(height: 12),
+        // Suggestions
+        if (suggestions.isNotEmpty && _selectedMedName == null) ...[
+          const SizedBox(height: 4),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
+            ),
+            child: Column(
+              children: suggestions.take(6).map((med) => InkWell(
+                onTap: () => setState(() {
+                  _selectedMedName = med;
+                  _medSearchController.text = med;
+                  _medDoseCtrl.clear();
+                  _medFreq = MedicationFrequency.bd;
+                  _medDurationValue = '';
+                  _medDurationUnit = 'Days';
+                  _medNotesCtrl.clear();
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.medication_outlined, size: 16, color: Color(0xFF10B981)),
+                      const SizedBox(width: 10),
+                      Text(med, style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
+              )).toList(),
+            ),
+          ),
+        ],
+        // Dosage form (shown when medicine selected)
+        if (_selectedMedName != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.medication_rounded, color: Color(0xFF10B981), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_selectedMedName!, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF065F46)))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _medDoseCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Dose',
+                    hintText: 'e.g. 500mg, 250mg, 1g',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    filled: true, fillColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<MedicationFrequency>(
+                  value: _medFreq,
+                  decoration: InputDecoration(labelText: 'Frequency', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), filled: true, fillColor: Colors.white),
+                  items: MedicationFrequency.values.map((f) => DropdownMenuItem(value: f, child: Text(_freqLabel(f)))).toList(),
+                  onChanged: (v) => setState(() => _medFreq = v!),
+                ),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Expanded(flex: 2, child: TextField(
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) => _medDurationValue = v,
+                    decoration: InputDecoration(labelText: 'Duration', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), filled: true, fillColor: Colors.white),
+                  )),
+                  const SizedBox(width: 8),
+                  Expanded(child: DropdownButtonFormField<String>(
+                    value: _medDurationUnit,
+                    decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), filled: true, fillColor: Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                    items: ['Days', 'Weeks', 'Months'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                    onChanged: (v) => setState(() => _medDurationUnit = v!),
+                  )),
+                ]),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _medNotesCtrl,
+                  decoration: InputDecoration(labelText: 'Notes (optional)', hintText: 'e.g. Take after meals', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), filled: true, fillColor: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                Row(children: [
+                  TextButton(onPressed: () => setState(() { _selectedMedName = null; _medSearchController.clear(); }), child: const Text('Cancel')),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (_selectedMedName != null) {
+                        setState(() {
+                          _medicines.add(PrescriptionMedicine(
+                            medicineName: _selectedMedName!,
+                            dose: _medDoseCtrl.text.trim(),
+                            frequency: _medFreq,
+                            duration: _medDurationValue.isEmpty ? '' : '$_medDurationValue $_medDurationUnit',
+                            notes: _medNotesCtrl.text.trim().isEmpty ? null : _medNotesCtrl.text.trim(),
+                          ));
+                          _selectedMedName = null;
+                          _medSearchController.clear();
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add to Prescription'),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
         if (_medicines.isEmpty)
-          _emptyState(Icons.medication_outlined, 'No medications added yet')
+          _emptyState(Icons.medication_outlined, 'Search and add medications above')
         else
           ...List.generate(_medicines.length, (index) {
             final m = _medicines[index];
@@ -701,156 +853,6 @@ class _InConsultationPrescriptionFormState
             );
           }),
       ],
-    );
-  }
-
-  void _addMedicine() {
-    final nameCtrl = TextEditingController();
-    final doseCtrl = TextEditingController();
-    final durationCtrl = TextEditingController();
-    final notesCtrl = TextEditingController();
-    MedicationFrequency selectedFreq = MedicationFrequency.bd;
-    String durationUnit = 'Days';
-
-    final commonMeds = [
-      'Paracetamol', 'Amoxicillin', 'Metformin', 'Amlodipine', 'Atorvastatin',
-      'Omeprazole', 'Aspirin', 'Metoprolol', 'Lisinopril', 'Losartan',
-      'Ciprofloxacin', 'Azithromycin', 'Prednisolone', 'Salbutamol', 'Cetirizine',
-      'Pantoprazole', 'Clopidogrel', 'Glibenclamide', 'Insulin', 'Levothyroxine',
-    ];
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.medication_outlined, color: AppColors.primaryColor),
-              SizedBox(width: 8),
-              Text('Add Medication'),
-            ],
-          ),
-          content: SizedBox(
-            width: 360,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Autocomplete<String>(
-                    optionsBuilder: (v) => v.text.isEmpty
-                        ? const []
-                        : commonMeds.where((m) => m.toLowerCase().contains(v.text.toLowerCase())),
-                    fieldViewBuilder: (ctx, ctrl, focus, onSubmit) {
-                      nameCtrl.text = ctrl.text;
-                      return TextField(
-                        controller: ctrl,
-                        focusNode: focus,
-                        decoration: InputDecoration(
-                          labelText: 'Medicine Name',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                        ),
-                        onChanged: (v) => nameCtrl.text = v,
-                      );
-                    },
-                    onSelected: (v) => nameCtrl.text = v,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: doseCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Dose',
-                      hintText: 'e.g. 500mg, 1 tablet',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<MedicationFrequency>(
-                    value: selectedFreq,
-                    decoration: InputDecoration(
-                      labelText: 'Frequency',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                    ),
-                    items: MedicationFrequency.values.map((f) => DropdownMenuItem(value: f, child: Text(_freqLabel(f)))).toList(),
-                    onChanged: (v) => setS(() => selectedFreq = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: durationCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Duration',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: durationUnit,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          ),
-                          items: ['Days', 'Weeks', 'Months'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
-                          onChanged: (v) => setS(() => durationUnit = v!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: notesCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Notes (optional)',
-                      hintText: 'e.g. Take after meals',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton.icon(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                if (name.isNotEmpty) {
-                  final dur = durationCtrl.text.trim();
-                  setState(() => _medicines.add(PrescriptionMedicine(
-                    medicineName: name,
-                    dose: doseCtrl.text.trim(),
-                    frequency: selectedFreq,
-                    duration: dur.isEmpty ? '' : '$dur $durationUnit',
-                    notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
-                  )));
-                }
-                Navigator.pop(ctx);
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add Medicine'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1266,25 +1268,51 @@ class _InConsultationPrescriptionFormState
                 ),
                 if (ref?.referralType == ReferralType.specialist) ...[
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: TextEditingController(text: ref?.referralSpecialty),
-                    decoration: InputDecoration(
-                      labelText: 'Specialty',
-                      hintText: 'e.g. Cardiologist, Endocrinologist',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                    ),
-                    onChanged: (v) => setState(() {
+                  Autocomplete<String>(
+                    initialValue: TextEditingValue(text: ref?.referralSpecialty ?? ''),
+                    optionsBuilder: (v) {
+                      const specs = [
+                        'Cardiologist', 'Endocrinologist', 'Neurologist', 'Pulmonologist',
+                        'Gastroenterologist', 'Nephrologist', 'Rheumatologist', 'Oncologist',
+                        'Hematologist', 'Dermatologist', 'Ophthalmologist', 'ENT Specialist',
+                        'Orthopedic Surgeon', 'Urologist', 'Psychiatrist', 'Pediatrician',
+                        'Gynecologist', 'Obstetrician', 'General Surgeon', 'Vascular Surgeon',
+                        'Diabetologist', 'Hepatologist', 'Immunologist', 'Pathologist',
+                      ];
+                      if (v.text.isEmpty) return specs;
+                      return specs.where((s) => s.toLowerCase().contains(v.text.toLowerCase()));
+                    },
+                    onSelected: (v) => setState(() {
                       _referralFollowUp = ReferralFollowUp(
                         referralType: ref?.referralType,
-                        referralSpecialty: v.isEmpty ? null : v,
+                        referralSpecialty: v,
                         referralNotes: ref?.referralNotes,
                         followUpDuration: ref?.followUpDuration,
                         followUpDate: ref?.followUpDate,
                         followUpNotes: ref?.followUpNotes,
                       );
                     }),
+                    fieldViewBuilder: (ctx, ctrl, focus, onSub) => TextField(
+                      controller: ctrl,
+                      focusNode: focus,
+                      decoration: InputDecoration(
+                        labelText: 'Search Specialty',
+                        hintText: 'e.g. Cardiologist, Neurologist',
+                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        filled: true, fillColor: const Color(0xFFF8FAFC),
+                      ),
+                      onChanged: (v) => setState(() {
+                        _referralFollowUp = ReferralFollowUp(
+                          referralType: ref?.referralType,
+                          referralSpecialty: v.isEmpty ? null : v,
+                          referralNotes: ref?.referralNotes,
+                          followUpDuration: ref?.followUpDuration,
+                          followUpDate: ref?.followUpDate,
+                          followUpNotes: ref?.followUpNotes,
+                        );
+                      }),
+                    ),
                   ),
                 ],
                 if ((ref?.referralType ?? ReferralType.none) != ReferralType.none) ...[
@@ -1379,44 +1407,50 @@ class _InConsultationPrescriptionFormState
 
   // ── Section 9: Course Assignment ─────────────────────────────────────────
   Widget _buildCoursesContent() {
+    const availableCourses = [
+      'Diabetes Management Basics',
+      'Hypertension & Heart Health',
+      'Healthy Diet & Nutrition',
+      'Exercise for Chronic Conditions',
+      'Mental Wellness & Stress Relief',
+      'Quit Smoking Program',
+      'Weight Loss Journey',
+      'Kidney Health Awareness',
+      'Asthma Self-Management',
+      'Thyroid Health Guide',
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Course Assignment', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-          const SizedBox(height: 8),
-          const Text('Assign health awareness videos/courses to patient',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
-          const SizedBox(height: 24),
-          if (_assignedCourses.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(Icons.school_outlined, size: 56, color: Colors.grey[400]),
-                    const SizedBox(height: 12),
-                    Text('No courses assigned', style: TextStyle(color: Colors.grey[500], fontSize: 15)),
-                    const SizedBox(height: 8),
-                    const Text('Course catalogue will be provided by client',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13), textAlign: TextAlign.center),
-                  ],
-                ),
-              ),
-            )
-          else
-            ...List.generate(_assignedCourses.length, (i) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: const Icon(Icons.play_circle_outlined, color: AppColors.primaryColor),
-                title: Text(_assignedCourses[i]),
-                trailing: IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                  onPressed: () => setState(() => _assignedCourses.removeAt(i)),
-                ),
-              ),
-            )),
+      children: [
+        const Text('Assign Health Courses to Patient',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+        const SizedBox(height: 12),
+        ...availableCourses.map((course) {
+          final isAssigned = _assignedCourses.contains(course);
+          return CheckboxListTile(
+            dense: true,
+            title: Row(children: [
+              const Icon(Icons.play_circle_outlined, size: 18, color: Color(0xFF06B6D4)),
+              const SizedBox(width: 8),
+              Expanded(child: Text(course, style: const TextStyle(fontSize: 13))),
+            ]),
+            value: isAssigned,
+            activeColor: const Color(0xFF06B6D4),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (v) => setState(() {
+              if (v == true) _assignedCourses.add(course);
+              else _assignedCourses.remove(course);
+            }),
+          );
+        }),
+        if (_assignedCourses.isNotEmpty) ...[
+          const Divider(height: 24),
+          Text('${_assignedCourses.length} course${_assignedCourses.length > 1 ? 's' : ''} assigned',
+              style: const TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.w700, fontSize: 13)),
         ],
-      );
+      ],
+    );
   }
 
   Widget _emptyState(IconData icon, String message) {

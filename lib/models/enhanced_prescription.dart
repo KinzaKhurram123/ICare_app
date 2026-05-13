@@ -380,8 +380,11 @@ enum ReferralType {
 
 enum FollowUpDuration {
   none,
+  threeDays,
   oneWeek,
+  tenDays,
   twoWeeks,
+  fifteenDays,
   oneMonth,
   twoMonths,
   threeMonths,
@@ -393,10 +396,16 @@ extension FollowUpDurationExtension on FollowUpDuration {
     switch (this) {
       case FollowUpDuration.none:
         return 'No Follow-up';
+      case FollowUpDuration.threeDays:
+        return '3 Days';
       case FollowUpDuration.oneWeek:
         return '1 Week';
+      case FollowUpDuration.tenDays:
+        return '10 Days';
       case FollowUpDuration.twoWeeks:
         return '2 Weeks';
+      case FollowUpDuration.fifteenDays:
+        return '15 Days';
       case FollowUpDuration.oneMonth:
         return '1 Month';
       case FollowUpDuration.twoMonths:
