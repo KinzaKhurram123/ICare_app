@@ -221,12 +221,16 @@ class ConsultationService {
       final response = await _dio.post(
         '/prescriptions-v2/consultations/$consultationId/prescription/draft',
         data: prescriptionData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (s) => s != null && s < 600,
+        ),
       );
-      return response.data;
+      final data = response.data;
+      if (data is Map<String, dynamic>) return data;
+      return {'success': response.statusCode != null && response.statusCode! < 300};
     } on DioException catch (e) {
-      print('Error saving prescription draft: ${e.message}');
-      return {'success': false, 'message': e.response?.data['message'] ?? e.message};
+      return {'success': false, 'message': e.message ?? 'Draft save failed'};
     }
   }
 
@@ -351,26 +355,31 @@ class ConsultationService {
       final token = await _sharedPref.getToken();
       print('  Token: ${token?.substring(0, 20)}...');
 
+      // Clean null values before sending — avoids backend 500
+      final cleanData = _removeNulls(historyData);
+
       final response = await _dio.post(
         '/patient-history/create',
-        data: historyData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: cleanData,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (s) => s != null && s < 600,
+        ),
       );
 
-      print('✅ PATIENT HISTORY SAVE RESPONSE:');
-      print('  Status: ${response.statusCode}');
+      print('✅ PATIENT HISTORY SAVE RESPONSE: ${response.statusCode}');
       print('  Data: ${response.data}');
 
       final data = response.data;
-      if (data is Map<String, dynamic>) return data;
-      return {'success': true}; // non-map success response
+      if (data is Map<String, dynamic>) {
+        if (data['success'] == true) return data;
+        final msg = data['message']?.toString() ?? data['error']?.toString() ?? 'Save failed (${response.statusCode})';
+        return {'success': false, 'message': msg};
+      }
+      if (response.statusCode != null && response.statusCode! < 300) return {'success': true};
+      return {'success': false, 'message': 'Server error ${response.statusCode}'};
     } on DioException catch (e) {
-      print('❌ ERROR SAVING PATIENT HISTORY:');
-      print('  Message: ${e.message}');
-      print('  Status: ${e.response?.statusCode}');
-      print('  Response data: ${e.response?.data}');
-
-      // Safely extract message — response.data could be String/null/Map
+      print('❌ ERROR SAVING PATIENT HISTORY: ${e.message}');
       String message = e.message ?? 'Network error';
       try {
         final data = e.response?.data;
@@ -549,5 +558,22 @@ class ConsultationService {
       print('Error uploading attachment bytes: ${e.message}');
       return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
     }
+  }
+
+  /// Recursively remove null values to prevent backend 500 errors
+  Map<String, dynamic> _removeNulls(Map<String, dynamic> map) {
+    final result = <String, dynamic>{};
+    map.forEach((key, value) {
+      if (value == null) return;
+      if (value is Map<String, dynamic>) {
+        final clean = _removeNulls(value);
+        if (clean.isNotEmpty) result[key] = clean;
+      } else if (value is List) {
+        result[key] = value.map((item) => item is Map<String, dynamic> ? _removeNulls(item) : item).toList();
+      } else {
+        result[key] = value;
+      }
+    });
+    return result;
   }
 }

@@ -127,32 +127,27 @@ class _InConsultationPrescriptionFormState
 
   Future<void> _saveDraft() async {
     setState(() => _isSaving = true);
-
     try {
       final prescription = _buildPrescriptionObject(isComplete: false);
+      // Use same minimal payload as complete — avoids 500 from complex nested objects
+      final payload = _buildMinimalPayload(prescription)
+        ..['isComplete'] = false
+        ..['status'] = 'draft';
+
       final result = await _consultationService.savePrescriptionDraft(
         consultationId: widget.consultationId,
-        prescriptionData: prescription.toJson(),
+        prescriptionData: payload,
       );
-
-      if (result['success'] && mounted) {
+      if ((result['success'] == true) && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Draft saved successfully'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Draft saved'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save draft: $e')),
-        );
-      }
+      // Silent fail for draft — don't disturb the doctor
+      debugPrint('Draft save error: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
