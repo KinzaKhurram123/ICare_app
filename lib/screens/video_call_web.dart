@@ -236,9 +236,14 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   void _startNoAnswerTimer() {
+    // Fire after 15s — if remote user (patient) has NOT joined yet
     _noAnswerTimer = Timer(const Duration(seconds: 15), () {
-      if (!mounted || _joined) return;
+      if (!mounted) return;
+      // _remoteJoined = patient joined Agora; if still false after 15s → declined/no answer
+      if (_remoteJoined) return;
+      _noAnswerTimer?.cancel();
       try { _agoraLeave(); } catch (_) {}
+      if (!mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
