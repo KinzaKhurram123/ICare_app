@@ -85,6 +85,25 @@ class CallService {
     } catch (_) {}
   }
 
+  /// Check if an outgoing call was declined by the receiver
+  Future<String?> checkOutgoingCallStatus(String signalId) async {
+    try {
+      final token = await _getToken();
+      final response = await _dio.get(
+        '${ApiConfig.baseUrl}/call/signal/$signalId',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (s) => s != null && s < 600,
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map) return data['status']?.toString() ?? data['signal']?['status']?.toString();
+      }
+      return null;
+    } catch (_) { return null; }
+  }
+
   Future<void> endCall(String channelName) async {
     try {
       final token = await _getToken();

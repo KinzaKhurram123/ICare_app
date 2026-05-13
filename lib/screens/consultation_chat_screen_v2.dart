@@ -344,12 +344,18 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
 
     // Send ring signal to the other party via call signaling backend
     final callService = CallService();
-    await callService.initiateCall(
+    final callResult = await callService.initiateCall(
       receiverId: receiverId,
       channelName: channelName,
       callerName: widget.currentUserName,
       callType: audioOnly ? 'audio' : 'video',
     );
+
+    // Extract signalId for decline detection
+    final signalId = callResult['signal']?['_id']?.toString()
+        ?? callResult['signal']?['id']?.toString()
+        ?? callResult['signalId']?.toString()
+        ?? callResult['_id']?.toString();
 
     if (!mounted) return;
 
@@ -374,7 +380,8 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           patientId: widget.appointment?.patient?.id,
           currentUserName: widget.currentUserName,
           currentUserId: widget.currentUserId,
-          consultationElapsedSeconds: _timer.elapsed.inSeconds, // sync timer
+          consultationElapsedSeconds: _timer.elapsed.inSeconds,
+          outgoingSignalId: signalId,
         ),
       ),
     );

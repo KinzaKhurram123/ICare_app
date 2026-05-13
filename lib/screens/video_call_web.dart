@@ -54,6 +54,8 @@ class VideoCall extends StatefulWidget {
   final String? consultationId;
   /// Overall consultation elapsed seconds — syncs video call timer to chat timer
   final int consultationElapsedSeconds;
+  /// Signal ID of the outgoing call — used to detect if patient declined
+  final String? outgoingSignalId;
 
   const VideoCall({
     super.key,
@@ -66,6 +68,7 @@ class VideoCall extends StatefulWidget {
     this.patientId,
     this.consultationId,
     this.consultationElapsedSeconds = 0,
+    this.outgoingSignalId,
   });
 
   @override
@@ -82,6 +85,7 @@ class _VideoCallWebState extends State<VideoCall> {
   String? _error;
   Timer? _noAnswerTimer;
   Timer? _remoteJoinPoller;
+  Timer? _declinePoller;
 
   // Side panel state
   bool _showChat = false;
@@ -185,6 +189,46 @@ class _VideoCallWebState extends State<VideoCall> {
       if (mounted) setState(() => _isDoctor = user?.role?.toLowerCase() == 'doctor');
     } catch (_) {}
     _startRemoteJoinPoller();
+    _startDeclinePoller(); // detect patient decline immediately
+  }
+
+  /// Poll every 3s to detect if patient declined the call
+  void _startDeclinePoller() {
+    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
+    _declinePoller = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (!mounted || _remoteJoined) {
+        _declinePoller?.cancel();
+        return;
+      }
+      final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
+      if (!mounted) return;
+      if (status == 'rejected' || status == 'declined') {
+        _declinePoller?.cancel();
+        _noAnswerTimer?.cancel();
+        try { await _agoraLeave().toDart; } catch (_) {}
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(children: [
+              Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
+              SizedBox(width: 10),
+              Text('Call Declined', style: TextStyle(fontWeight: FontWeight.w800)),
+            ]),
+            content: const Text('The patient has declined your call.'),
+            actions: [
+              ElevatedButton(
+                onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
   }
 
   void _startRemoteJoinPoller() {
@@ -1004,6 +1048,7 @@ class _VideoCallWebState extends State<VideoCall> {
     _statusPollTimer?.cancel();
     _noAnswerTimer?.cancel();
     _remoteJoinPoller?.cancel();
+    _declinePoller?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
     _doctorNotesController.dispose();
