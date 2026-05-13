@@ -111,24 +111,55 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
 
       if (result['success']) {
-        final token = result['data']['token'];
-        await ref.read(authProvider.notifier).setUserToken(token);
+        final rawData = result['data'] as Map<String, dynamic>? ?? {};
+        final token = rawData['token']?.toString()
+            ?? rawData['data']?['token']?.toString() ?? '';
 
-        final profileResult = await _userService.getUserProfile(token: token);
-
-        if (profileResult['success'] && mounted) {
-          final user = app_user.User.fromJson(profileResult['user']);
-          await ref.read(authProvider.notifier).setUser(user);
-
-          context.go('/dashboard');
-        } else {
-          _showError(profileResult['message']);
+        if (token.isNotEmpty) {
+          await ref.read(authProvider.notifier).setUserToken(token);
         }
+
+        // Try to get full profile; fallback to registration data
+        app_user.User? user;
+        if (token.isNotEmpty) {
+          final profileResult = await _userService.getUserProfile(token: token);
+          if (profileResult['success'] == true && profileResult['user'] != null) {
+            try { user = app_user.User.fromJson(profileResult['user'] as Map<String, dynamic>); } catch (_) {}
+          }
+        }
+
+        // Fallback: build user from registration response
+        if (user == null) {
+          final userData = rawData['user'] as Map<String, dynamic>?
+              ?? rawData['data']?['user'] as Map<String, dynamic>?;
+          if (userData != null) {
+            try { user = app_user.User.fromJson(userData); } catch (_) {}
+          }
+        }
+
+        // If we have a user object, set it; otherwise use minimal info
+        if (user != null) {
+          await ref.read(authProvider.notifier).setUser(user);
+        } else {
+          // Create minimal user from form data so dashboard loads
+          final minUser = app_user.User(
+            id: rawData['_id']?.toString() ?? rawData['id']?.toString() ?? '',
+            name: _fullName.text.trim(),
+            email: _email.text.trim(),
+            phoneNumber: _phone.text.trim(),
+            role: widget.role,
+          );
+          await ref.read(authProvider.notifier).setUser(minUser);
+        }
+
+        if (!mounted) return;
+        context.go('/dashboard');
       } else {
-        _showError(result['message']);
+        _showError(result['message'] ?? 'Registration failed. Please try again.');
       }
     } catch (e) {
-      _showError('An error occurred. Please try again.');
+      debugPrint('Signup error: $e');
+      _showError('An error occurred. Please check your connection and try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -68,7 +68,7 @@ class PublicHome extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             _NavButton(
-                              label: 'Sign Up',
+                              label: 'Patient Sign Up',
                               filled: false,
                               onTap: () => context.go('/signup'),
                             ),
