@@ -258,7 +258,7 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         unselectedLabelStyle:
             const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         tabs: [
-          const Tab(text: 'Stream'),
+          const Tab(text: 'Announcement'),
           const Tab(text: 'Classwork'),
           const Tab(text: 'People'),
           if (widget.isInstructor) const Tab(text: 'Grades'),

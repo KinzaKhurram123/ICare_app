@@ -232,8 +232,26 @@ class LmsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   Future<List<dynamic>> getCourseStudents(String courseId) async {
-    final response = await _api.get('/courses/enrolled-students/$courseId');
-    return response.data['students'] ?? [];
+    try {
+      final response = await _api.get('/courses/enrolled-students/$courseId');
+      final data = response.data;
+      if (data is Map) {
+        // Try multiple field names the backend might use
+        return (data['students'] ?? data['enrollments'] ?? data['members'] ?? data['users'] ?? data['data'] ?? []) as List;
+      }
+      if (data is List) return data;
+      return [];
+    } catch (e) {
+      debugPrint('getCourseStudents error: $e');
+      // Try alternate endpoint
+      try {
+        final alt = await _api.get('/courses/$courseId/students');
+        final data = alt.data;
+        if (data is Map) return (data['students'] ?? data['enrollments'] ?? data['data'] ?? []) as List;
+        if (data is List) return data;
+      } catch (_) {}
+      return [];
+    }
   }
 
   Future<List<dynamic>> getEnrolledStudents(String courseId) async {

@@ -647,7 +647,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
         const PopupMenuItem(value: 'analytics',
             child: _PopupItem(Icons.analytics_outlined, 'Analytics')),
         const PopupMenuItem(value: 'edit',
-            child: _PopupItem(Icons.edit_outlined, 'Edit class')),
+            child: _PopupItem(Icons.edit_outlined, 'Edit Course')),
       ],
       onSelected: (val) {
         if (val == 'open') _openCourse(course);

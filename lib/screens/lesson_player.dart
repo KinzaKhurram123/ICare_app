@@ -177,81 +177,70 @@ class _LessonPlayerState extends State<LessonPlayer> {
                 ),
               ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
 
-            // ── MARK COMPLETE ─────────────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: _isCompleted
-                    ? const Color(0xFFF0FDF4)
-                    : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _isCompleted
-                      ? const Color(0xFF86EFAC)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: CheckboxListTile(
-                value: _isCompleted,
-                onChanged: (val) {
-                  setState(() => _isCompleted = val ?? false);
-                  if (_isCompleted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Lesson marked as completed!'),
-                        backgroundColor: Color(0xFF10B981),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-                title: Text(
-                  _isCompleted ? 'Completed ✓' : 'Mark as Completed',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: _isCompleted
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFF0F172A),
-                  ),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: const Color(0xFF10B981),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── NEXT LESSON ──────────────────────────────────────────────
-            if (widget.nextLesson != null)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
+            // ── MARK COMPLETE + NEXT (side by side) ──────────────────────
+            Row(
+              children: [
+                // Mark as Completed — small button on LEFT
+                OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (ctx) =>
-                            LessonPlayer(lesson: widget.nextLesson!),
-                      ),
-                    );
+                    setState(() => _isCompleted = !_isCompleted);
+                    if (_isCompleted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Lesson marked as completed!'),
+                          backgroundColor: Color(0xFF10B981),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  label: Text(
-                    'Next: ${widget.nextLesson!['title'] ?? 'Next Lesson'}',
-                    overflow: TextOverflow.ellipsis,
+                  icon: Icon(
+                    _isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                    size: 18,
+                    color: _isCompleted ? const Color(0xFF10B981) : const Color(0xFF64748B),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+                  label: Text(
+                    _isCompleted ? 'Completed' : 'Mark as Completed',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _isCompleted ? const Color(0xFF10B981) : const Color(0xFF475569),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: _isCompleted ? const Color(0xFF10B981) : const Color(0xFFE2E8F0)),
+                    backgroundColor: _isCompleted ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
-              ),
+
+                const Spacer(),
+
+                // Next Lesson — button on RIGHT
+                if (widget.nextLesson != null)
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (ctx) => LessonPlayer(lesson: widget.nextLesson!),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: const Text('Next', style: TextStyle(fontWeight: FontWeight.w700)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                  ),
+              ],
+            ),
 
             const SizedBox(height: 32),
           ],

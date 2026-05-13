@@ -300,67 +300,6 @@ class _InstructorProfileSetupScreenState
                 ),
               ]),
 
-              const SizedBox(height: 24),
-
-              _buildSection('Availability', [
-                const Text(
-                  'Available Days:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: _weekDays
-                      .map(
-                        (day) => FilterChip(
-                          label: Text(day),
-                          selected: _availabilityDays.contains(day),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _availabilityDays.add(day);
-                              } else {
-                                _availabilityDays.remove(day);
-                              }
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Start Time'),
-                        subtitle: Text(_startTime.format(context)),
-                        onTap: () async {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: _startTime,
-                          );
-                          if (time != null) setState(() => _startTime = time);
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('End Time'),
-                        subtitle: Text(_endTime.format(context)),
-                        onTap: () async {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: _endTime,
-                          );
-                          if (time != null) setState(() => _endTime = time);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ]),
-
               const SizedBox(height: 32),
 
               CustomButton(
