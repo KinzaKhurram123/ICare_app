@@ -1165,7 +1165,6 @@ class _PrescriptionPage extends StatelessWidget {
                   decoration: pw.BoxDecoration(
                     color: PdfColors.white,
                     borderRadius: pw.BorderRadius.circular(8),
-                    border: pw.BoxBorder(all: true, color: PdfColors.blue100),
                   ),
                   child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                 ),
