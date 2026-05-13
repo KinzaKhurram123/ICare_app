@@ -51,6 +51,8 @@ class VideoCall extends StatefulWidget {
   final String? patientId;
   /// Consultation ID — used for history form and prescription during call
   final String? consultationId;
+  /// Overall consultation elapsed seconds — syncs video call timer to chat timer
+  final int consultationElapsedSeconds;
 
   const VideoCall({
     super.key,
@@ -62,6 +64,7 @@ class VideoCall extends StatefulWidget {
     this.appointmentId,
     this.patientId,
     this.consultationId,
+    this.consultationElapsedSeconds = 0,
   });
 
   @override
@@ -96,7 +99,7 @@ class _VideoCallWebState extends State<VideoCall> {
 
   // Timer for 15-min session
   Timer? _sessionTimer;
-  int _sessionSeconds = 0;
+  late int _sessionSeconds;
 
   // Poll appointment status — if doctor ends consultation, patient side closes too
   Timer? _statusPollTimer;
@@ -122,6 +125,7 @@ class _VideoCallWebState extends State<VideoCall> {
   @override
   void initState() {
     super.initState();
+    _sessionSeconds = widget.consultationElapsedSeconds; // sync from chat timer
     _registerView();
     _joinCall();
     _startSessionTimer();
@@ -693,6 +697,7 @@ class _VideoCallWebState extends State<VideoCall> {
           appointmentId: widget.appointmentId,
           patientId: widget.patientId,
           consultationId: widget.consultationId,
+          consultationElapsedSeconds: _sessionSeconds, // keep same timer
         ),
       ),
     );

@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/providers/auth_provider.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/services/laboratory_service.dart';
 import 'package:icare/services/pharmacy_service.dart';
@@ -95,40 +97,64 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
   Future<void> _loadPrescriptions() async {
     setState(() => _isLoading = true);
     try {
-      final result = await _medicalRecordService.getMyRecords();
-      debugPrint('ðŸ” PRESCRIPTION DEBUG: API result success = ${result['success']}');
+      final user = ref.read(authProvider).user;
+      final patientId = user?.id ?? '';
 
-      if (result['success'] && mounted) {
-        final records = result['records'] as List<dynamic>;
-        debugPrint('ðŸ” PRESCRIPTION DEBUG: Total records = ${records.length}');
+      final results = await Future.wait([
+        _medicalRecordService.getMyRecords(),
+        patientId.isNotEmpty
+            ? ConsultationService().getPatientPrescriptions(patientId: patientId)
+            : Future.value(<dynamic>[]),
+      ]);
 
-        // Show ALL records with any meaningful content.
-        // Old filter missed prescriptions with only diagnoses + doctor notes.
-        final prescriptions = records.where((r) {
-          if (r['_source'] == 'enhanced') return true; // always show completed prescriptions
+      final medResult = results[0] as Map<String, dynamic>;
+      final rxList = results[1] as List<dynamic>;
+      final allPrescriptions = <dynamic>[];
+
+      if (medResult['success'] == true) {
+        final records = medResult['records'] as List<dynamic>;
+        final filtered = records.where((r) {
+          if (r['_source'] == 'enhanced') return true;
           final p = r['prescription'];
           final meds = p is Map ? (p['medicines'] as List?) : null;
-          final testsInP = p is Map ? (p['labTests'] as List?) : null;
           final testsTop = r['labTests'] as List?;
+          final testsInP = p is Map ? (p['labTests'] as List?) : null;
           final tests = testsInP ?? testsTop;
-          final hasReferral = p is Map && p['referral'] != null;
           final hasDiagnosis = (r['diagnosis']?.toString() ?? '').isNotEmpty;
           final hasNotes = (r['notes']?.toString() ?? r['doctorNotes']?.toString() ?? '').isNotEmpty;
-          return (meds != null && meds.isNotEmpty) || (tests != null && tests.isNotEmpty) || hasReferral || hasDiagnosis || hasNotes;
+          return (meds != null && meds.isNotEmpty) || (tests != null && tests.isNotEmpty) || hasDiagnosis || hasNotes;
         }).toList();
+        allPrescriptions.addAll(filtered);
+      }
 
-        debugPrint('ðŸ” PRESCRIPTION DEBUG: Filtered prescriptions = ${prescriptions.length}');
+      for (final rx in rxList) {
+        if (rx['isComplete'] == true) {
+          final rxMap = Map<String, dynamic>.from(rx as Map);
+          rxMap['_source'] = 'enhanced';
+          final rxId = rxMap['_id']?.toString() ?? '';
+          final alreadyExists = allPrescriptions.any((r) {
+            final eid = (r is Map ? (r['_id'] ?? r['prescription']?['_id'] ?? '') : '').toString();
+            return eid == rxId && rxId.isNotEmpty;
+          });
+          if (!alreadyExists) allPrescriptions.add(rxMap);
+        }
+      }
 
+      allPrescriptions.sort((a, b) {
+        final aDate = (a is Map ? (a['prescribedAt'] ?? a['createdAt'] ?? '') : '').toString();
+        final bDate = (b is Map ? (b['prescribedAt'] ?? b['createdAt'] ?? '') : '').toString();
+        return bDate.compareTo(aDate);
+      });
+
+      if (mounted) {
         setState(() {
-          _prescriptions = prescriptions;
-          _filtered = List.from(prescriptions);
+          _prescriptions = allPrescriptions;
+          _filtered = List.from(allPrescriptions);
           _isLoading = false;
         });
-      } else {
-        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('âŒ Error loading prescriptions: $e');
+      debugPrint('Error loading prescriptions: ');
       if (mounted) setState(() => _isLoading = false);
     }
   }
