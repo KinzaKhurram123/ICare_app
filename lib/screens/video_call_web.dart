@@ -192,43 +192,50 @@ class _VideoCallWebState extends State<VideoCall> {
     _startDeclinePoller(); // detect patient decline immediately
   }
 
-  /// Poll every 3s to detect if patient declined the call
+  /// Poll every 5s using /call/incoming — if our outgoing call signal disappears
+  /// (patient declined), the incoming poll on doctor's side may reflect it.
+  /// Uses respond endpoint indirectly via checking active signals.
   void _startDeclinePoller() {
     if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
-    _declinePoller = Timer.periodic(const Duration(seconds: 3), (_) async {
-      if (!mounted || _remoteJoined) {
-        _declinePoller?.cancel();
-        return;
-      }
-      final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
-      if (!mounted) return;
-      if (status == 'rejected' || status == 'declined') {
-        _declinePoller?.cancel();
-        _noAnswerTimer?.cancel();
-        try { await _agoraLeave().toDart; } catch (_) {}
+    _declinePoller = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted || _remoteJoined) { _declinePoller?.cancel(); return; }
+      try {
+        final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
         if (!mounted) return;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Row(children: [
-              Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
-              SizedBox(width: 10),
-              Text('Call Declined', style: TextStyle(fontWeight: FontWeight.w800)),
-            ]),
-            content: const Text('The patient has declined your call.'),
-            actions: [
-              ElevatedButton(
-                onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: const Text('Go Back'),
-              ),
-            ],
-          ),
-        );
-      }
+        if (status == 'rejected' || status == 'declined') {
+          _declinePoller?.cancel();
+          _noAnswerTimer?.cancel();
+          try { await _agoraLeave().toDart; } catch (_) {}
+          if (!mounted) return;
+          _showDeclinedDialog();
+        }
+        // null means endpoint doesn't exist (404) — cancel poller, 30s timer covers
+        if (status == null) _declinePoller?.cancel();
+      } catch (_) { _declinePoller?.cancel(); }
     });
+  }
+
+  void _showDeclinedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
+          SizedBox(width: 10),
+          Text('Call Declined', style: TextStyle(fontWeight: FontWeight.w800)),
+        ]),
+        content: const Text('The patient has declined your call.'),
+        actions: [
+          ElevatedButton(
+            onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Go Back'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startRemoteJoinPoller() {

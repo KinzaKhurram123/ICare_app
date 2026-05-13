@@ -256,7 +256,7 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
             children: [
               Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                padding: const EdgeInsets.fromLTRB(20, 4, 12, 10),
                 child: Row(children: [
                   Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                       child: const Icon(Icons.description_rounded, color: Color(0xFF10B981), size: 20)),
@@ -265,6 +265,10 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
                     const Text('Prescription', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
                     if (date != null) Text(DateFormat('MMMM dd, yyyy • hh:mm a').format(date), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                   ])),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
                 ]),
               ),
               const Divider(height: 1),
@@ -408,7 +412,20 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
           decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
           child: Column(
             children: [
-              Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 12), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 12, 8, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: ListView(
                   controller: controller,

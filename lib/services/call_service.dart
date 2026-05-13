@@ -85,7 +85,8 @@ class CallService {
     } catch (_) {}
   }
 
-  /// Check if an outgoing call was declined by the receiver
+  /// Check if an outgoing call was declined by the receiver.
+  /// Returns 'rejected'/'declined' if declined, null if unknown/404.
   Future<String?> checkOutgoingCallStatus(String signalId) async {
     try {
       final token = await _getToken();
@@ -94,8 +95,12 @@ class CallService {
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
           validateStatus: (s) => s != null && s < 600,
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
         ),
       );
+      // 404 means endpoint doesn't exist — stop polling (caller handles this)
+      if (response.statusCode == 404) throw Exception('endpoint_not_found');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
         if (data is Map) return data['status']?.toString() ?? data['signal']?['status']?.toString();
