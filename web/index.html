@@ -59,6 +59,7 @@
 
         _agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
         window._agoraRemoteJoined = false; // reset on each new call
+        window._agoraRemoteLeft = false;
 
         // ── Helper: play remote video with retry until div is in DOM ──────
         async function playRemoteVideo(videoTrack, retries) {
@@ -85,6 +86,11 @@
             }
           }
         }
+
+        _agoraClient.on('user-left', (user) => {
+          window._agoraRemoteLeft = true;
+          console.log('📞 Remote user left the call');
+        });
 
         _agoraClient.on('user-published', async (user, mediaType) => {
           window._agoraRemoteJoined = true;
@@ -194,6 +200,11 @@
     // Returns true if a remote user has joined this call session
     window.agoraIsRemoteJoined = function() {
       return window._agoraRemoteJoined === true || (window.agoraGetRemoteUserCount() > 0);
+    };
+
+    // Returns true if the remote user LEFT mid-call (e.g. doctor converted to video)
+    window.agoraIsRemoteLeft = function() {
+      return window._agoraRemoteLeft === true && window.agoraGetRemoteUserCount() === 0;
     };
 
     window.agoraMuteMic = function(mute) {

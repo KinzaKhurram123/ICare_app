@@ -40,6 +40,9 @@ external void _agoraMuteCam(JSBoolean mute);
 @JS('agoraIsRemoteJoined')
 external bool _agoraIsRemoteJoined();
 
+@JS('agoraIsRemoteLeft')
+external bool _agoraIsRemoteLeft();
+
 class VideoCall extends StatefulWidget {
   final String channelName;
   final String remoteUserName;
@@ -86,6 +89,7 @@ class _VideoCallWebState extends State<VideoCall> {
   Timer? _noAnswerTimer;
   Timer? _remoteJoinPoller;
   Timer? _declinePoller;
+  Timer? _remoteLeftPoller;
 
   // Side panel state
   bool _showChat = false;
@@ -190,6 +194,7 @@ class _VideoCallWebState extends State<VideoCall> {
     } catch (_) {}
     _startRemoteJoinPoller();
     _startDeclinePoller(); // detect patient decline immediately
+    if (!_isDoctor) _startRemoteLeftPoller(); // patient detects when doctor leaves mid-call
   }
 
   /// Poll for decline status — if patient declines, show dialog and go back to chat
@@ -216,6 +221,30 @@ class _VideoCallWebState extends State<VideoCall> {
         // If endpoint returns 404, stop polling
         _declinePoller?.cancel();
       }
+    });
+  }
+
+  /// Patient side: detect when doctor leaves mid-call (e.g. converting to video)
+  void _startRemoteLeftPoller() {
+    _remoteLeftPoller = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (!mounted || !_remoteJoined) return; // only poll after connected
+      try {
+        final remoteLeft = _agoraIsRemoteLeft();
+        if (remoteLeft) {
+          _remoteLeftPoller?.cancel();
+          if (!mounted) return;
+          // Show brief message then auto-pop so incoming video call can appear
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Doctor is switching to video call...'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Color(0xFF10B981),
+            ),
+          );
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) Navigator.pop(context);
+        }
+      } catch (_) {}
     });
   }
 
@@ -1065,6 +1094,7 @@ class _VideoCallWebState extends State<VideoCall> {
     _noAnswerTimer?.cancel();
     _remoteJoinPoller?.cancel();
     _declinePoller?.cancel();
+    _remoteLeftPoller?.cancel();
     _chatController.dispose();
     _chatScroll.dispose();
     _doctorNotesController.dispose();
