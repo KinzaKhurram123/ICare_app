@@ -761,14 +761,24 @@ class _LessonDialogState extends State<_LessonDialog> {
       if (file.bytes == null) return;
 
       setState(() => _uploadingVideo = true);
-      // Upload directly to Cloudinary
-      // resource_type is NOT sent in form — it's in the URL (/auto/upload handles all types)
-      const cloudName = 'dzlcnyxgb';
-      const uploadPreset = 'icare_videos';
+      // Step 1: Get signed upload params from backend
+      final signRes = await ApiService().get('/upload/sign?folder=icare/lessons');
+      final signature = signRes.data['signature']?.toString() ?? '';
+      final timestamp = signRes.data['timestamp']?.toString() ?? '';
+      final apiKey = signRes.data['api_key']?.toString() ?? '';
+      final cloudName = signRes.data['cloud_name']?.toString() ?? 'dzlcnyxgb';
+      final folder = signRes.data['folder']?.toString() ?? 'icare/lessons';
+
+      if (signature.isEmpty) throw Exception('Could not get upload signature from server');
+
+      // Step 2: Upload directly to Cloudinary using signed params (bypasses Vercel 4.5MB limit)
       final dio2 = Dio();
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
-        'upload_preset': uploadPreset,
+        'signature': signature,
+        'timestamp': timestamp,
+        'api_key': apiKey,
+        'folder': folder,
       });
       final response = await dio2.post(
         'https://api.cloudinary.com/v1_1/$cloudName/auto/upload',

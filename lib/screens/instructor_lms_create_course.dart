@@ -48,20 +48,29 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
       if (file.bytes == null) return;
 
       setState(() => _uploadingThumbnail = true);
-      // Upload directly to Cloudinary (bypasses backend size limit)
-      const cloudName = 'dzlcnyxgb';
-      const uploadPreset = 'icare_videos';
+      // Get signed upload params from backend then upload directly to Cloudinary
+      final signRes = await ApiService().get('/upload/sign?folder=icare/thumbnails');
+      final signature = signRes.data['signature']?.toString() ?? '';
+      final timestamp = signRes.data['timestamp']?.toString() ?? '';
+      final apiKey = signRes.data['api_key']?.toString() ?? '';
+      final cloudName = signRes.data['cloud_name']?.toString() ?? 'dzlcnyxgb';
+      final folder = signRes.data['folder']?.toString() ?? 'icare/thumbnails';
+      if (signature.isEmpty) throw Exception('Could not get upload signature');
+
       final dio = Dio();
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(file.bytes!, filename: file.name),
-        'upload_preset': uploadPreset,
-        'folder': 'icare_thumbnails',
+        'signature': signature,
+        'timestamp': timestamp,
+        'api_key': apiKey,
+        'folder': folder,
       });
       final response = await dio.post(
         'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
         data: formData,
+        options: Options(validateStatus: (s) => s != null && s < 600),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data['secure_url'] != null) {
         final url = response.data['secure_url'] as String;
         setState(() {
           _thumbnailUrl = url;
