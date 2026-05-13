@@ -1145,16 +1145,37 @@ class _PrescriptionPage extends StatelessWidget {
 
   Future<void> _printPrescription(BuildContext context) async {
     try {
+      // Load iCare logo for PDF
+      pw.ImageProvider? logoImage;
+      try {
+        final logoBytes = await rootBundle.load('assets/Asset 1.png');
+        logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
+      } catch (_) {}
+
       final pdf = pw.Document();
       pdf.addPage(pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (ctx) => [
           pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              pw.Text('iCare', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-              pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
-              pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+            pw.Row(children: [
+              if (logoImage != null) ...[
+                pw.Container(
+                  width: 40, height: 40,
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.white,
+                    borderRadius: pw.BorderRadius.circular(8),
+                    border: pw.BoxBorder(all: true, color: PdfColors.blue100),
+                  ),
+                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                ),
+                pw.SizedBox(width: 10),
+              ],
+              pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text('iCare', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
+                pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
+              ]),
             ]),
             pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
               pw.Text(_prescriptionDate, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),

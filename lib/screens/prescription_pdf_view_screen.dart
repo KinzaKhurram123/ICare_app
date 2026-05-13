@@ -198,12 +198,15 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
                 ),
-                child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 24),
+                child: Image.asset('assets/Asset 1.png', height: 36, width: 36, fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital_rounded, color: AppColors.primaryColor, size: 24)),
               ),
               const SizedBox(width: 12),
               const Text(
