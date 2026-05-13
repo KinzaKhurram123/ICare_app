@@ -242,7 +242,8 @@ class LmsService {
       if (data is List) return data;
       return [];
     } catch (e) {
-      debugPrint('getCourseStudents error: $e');
+      // ignore: avoid_print
+      print('getCourseStudents error: $e');
       // Try alternate endpoint
       try {
         final alt = await _api.get('/courses/$courseId/students');
