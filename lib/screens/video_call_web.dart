@@ -192,27 +192,11 @@ class _VideoCallWebState extends State<VideoCall> {
     _startDeclinePoller(); // detect patient decline immediately
   }
 
-  /// Poll every 5s using /call/incoming — if our outgoing call signal disappears
-  /// (patient declined), the incoming poll on doctor's side may reflect it.
-  /// Uses respond endpoint indirectly via checking active signals.
+  /// Decline detection disabled — backend /call/signal/:id endpoint not available.
+  /// No-answer timer handles this case instead.
   void _startDeclinePoller() {
-    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
-    _declinePoller = Timer.periodic(const Duration(seconds: 5), (_) async {
-      if (!mounted || _remoteJoined) { _declinePoller?.cancel(); return; }
-      try {
-        final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
-        if (!mounted) return;
-        if (status == 'rejected' || status == 'declined') {
-          _declinePoller?.cancel();
-          _noAnswerTimer?.cancel();
-          try { await _agoraLeave().toDart; } catch (_) {}
-          if (!mounted) return;
-          _showDeclinedDialog();
-        }
-        // null means endpoint doesn't exist (404) — cancel poller, 30s timer covers
-        if (status == null) _declinePoller?.cancel();
-      } catch (_) { _declinePoller?.cancel(); }
-    });
+    // No-op: backend doesn't have /call/signal/:id endpoint
+    // The _noAnswerTimer (10s) will show "Patient Declined or Unavailable"
   }
 
   void _showDeclinedDialog() {
@@ -252,7 +236,7 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   void _startNoAnswerTimer() {
-    _noAnswerTimer = Timer(const Duration(seconds: 30), () {
+    _noAnswerTimer = Timer(const Duration(seconds: 15), () {
       if (!mounted || _joined) return;
       try { _agoraLeave(); } catch (_) {}
       showDialog(
@@ -263,9 +247,9 @@ class _VideoCallWebState extends State<VideoCall> {
           title: const Row(children: [
             Icon(Icons.call_end_rounded, color: Colors.red, size: 28),
             SizedBox(width: 8),
-            Text('Call Not Answered', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text('Call Declined / Not Answered', style: TextStyle(fontWeight: FontWeight.w800)),
           ]),
-          content: const Text('The patient declined or did not answer the call.'),
+          content: const Text('The patient declined your call or did not answer.'),
           actions: [
             ElevatedButton(
               onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
