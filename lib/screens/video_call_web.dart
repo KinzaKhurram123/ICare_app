@@ -174,11 +174,13 @@ class _VideoCallWebState extends State<VideoCall> {
     } catch (_) {}
   }
 
-  /// Returns the display name for the remote user — uses exactly what was passed
+  /// Returns the display name for the remote user.
+  /// Dr. prefix is already included by caller (consultation_chat_screen_v2)
+  /// for doctor-patient calls. LMS live classes use course title directly.
   String get _remoteDisplayName {
     final name = widget.remoteUserName;
     if (name.isEmpty) return _isDoctor ? 'Patient' : 'Doctor';
-    return name; // Caller is responsible for passing correct name with title
+    return name;
   }
 
   Future<void> _initRole() async {

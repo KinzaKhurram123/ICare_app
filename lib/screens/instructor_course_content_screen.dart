@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:icare/screens/certificate_templates_screen.dart';
 import 'package:icare/screens/video_call.dart';
+import 'package:icare/services/call_service.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -54,7 +55,7 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
     }
   }
 
-  /// Instructor starts a live class for this course
+  /// Instructor starts a live class — sends call signal to ALL enrolled students
   Future<void> _startLiveClass() async {
     final courseTitle = _course?['title']?.toString() ?? 'Live Class';
     final channelName = 'live_class_${widget.courseId}';
@@ -71,16 +72,39 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
           SizedBox(width: 10),
           Text('Start Live Class', style: TextStyle(fontWeight: FontWeight.w800)),
         ]),
-        content: Text('Start a live class for "$courseTitle"?\n\nStudents enrolled in this course will be able to join.'),
+        content: Text('Start a live class for "$courseTitle"?\n\nAll enrolled students will receive a join request.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
+              if (!mounted) return;
+
+              // Send call signal to all enrolled students
+              try {
+                final students = await _lmsService.getCourseStudents(widget.courseId);
+                final callService = CallService();
+                for (final student in students) {
+                  final studentId = (student['user'] as Map?)?['_id']?.toString()
+                      ?? student['userId']?.toString()
+                      ?? student['_id']?.toString() ?? '';
+                  if (studentId.isNotEmpty) {
+                    await callService.initiateCall(
+                      receiverId: studentId,
+                      channelName: channelName,
+                      callerName: '$instructorName (Live: $courseTitle)',
+                      callType: 'video',
+                    );
+                  }
+                }
+              } catch (_) {}
+
+              if (!mounted) return;
+              // Open instructor's VideoCall
               Navigator.push(context, MaterialPageRoute(
                 builder: (_) => VideoCall(
                   channelName: channelName,
-                  remoteUserName: 'Students',
+                  remoteUserName: courseTitle, // show course name not "Students"
                   isAudioOnly: false,
                   currentUserName: instructorName,
                   currentUserId: user?.id ?? '',

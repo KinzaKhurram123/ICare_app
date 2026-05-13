@@ -32,32 +32,42 @@ class LmsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   Future<List<dynamic>> getCourseSessions(String courseId) async {
-    final response = await _api.get('/live-sessions/course/$courseId');
-    return response.data['sessions'] ?? [];
+    try {
+      final response = await _api.get('/live-sessions/course/$courseId');
+      return response.data['sessions'] ?? [];
+    } catch (_) { return []; }
   }
 
   Future<List<dynamic>> getUpcomingSessions() async {
-    final response = await _api.get('/live-sessions/upcoming');
-    return response.data['sessions'] ?? [];
+    try {
+      final response = await _api.get('/live-sessions/upcoming');
+      return response.data['sessions'] ?? [];
+    } catch (_) { return []; }
   }
 
   Future<Map<String, dynamic>> joinSession(String sessionId) async {
-    final response = await _api.post('/live-sessions/$sessionId/join', {});
-    return response.data;
+    try {
+      final response = await _api.post('/live-sessions/$sessionId/join', {});
+      return response.data ?? {};
+    } catch (e) { return {'success': false, 'message': e.toString()}; }
   }
 
   Future<Map<String, dynamic>> createSession(Map<String, dynamic> sessionData) async {
-    final response = await _api.post('/live-sessions', sessionData);
-    return response.data;
+    try {
+      final response = await _api.post('/live-sessions', sessionData);
+      return response.data ?? {};
+    } catch (e) { return {'success': false, 'message': e.toString()}; }
   }
 
   Future<Map<String, dynamic>> updateSession(String sessionId, Map<String, dynamic> data) async {
-    final response = await _api.put('/live-sessions/$sessionId', data);
-    return response.data;
+    try {
+      final response = await _api.put('/live-sessions/$sessionId', data);
+      return response.data ?? {};
+    } catch (e) { return {'success': false}; }
   }
 
   Future<void> cancelSession(String sessionId) async {
-    await _api.post('/live-sessions/$sessionId/cancel', {});
+    try { await _api.post('/live-sessions/$sessionId/cancel', {}); } catch (_) {}
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -65,13 +75,17 @@ class LmsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   Future<List<dynamic>> getCourseQuizzes(String courseId) async {
-    final response = await _api.get('/quizzes/course/$courseId');
-    return response.data['quizzes'] ?? [];
+    try {
+      final response = await _api.get('/quizzes/course/$courseId');
+      return response.data['quizzes'] ?? [];
+    } catch (_) { return []; }
   }
 
   Future<Map<String, dynamic>> getQuiz(String quizId) async {
-    final response = await _api.get('/quizzes/$quizId');
-    return response.data;
+    try {
+      final response = await _api.get('/quizzes/$quizId');
+      return response.data ?? {};
+    } catch (_) { return {}; }
   }
 
   Future<Map<String, dynamic>> submitQuiz({
@@ -79,26 +93,34 @@ class LmsService {
     required List<Map<String, dynamic>> answers,
     required int timeSpent,
   }) async {
-    final response = await _api.post('/quizzes/$quizId/submit', {
-      'answers': answers,
-      'timeSpent': timeSpent,
-    });
-    return response.data;
+    try {
+      final response = await _api.post('/quizzes/$quizId/submit', {
+        'answers': answers,
+        'timeSpent': timeSpent,
+      });
+      return response.data ?? {};
+    } catch (e) { return {'success': false, 'message': e.toString()}; }
   }
 
   Future<List<dynamic>> getMyQuizAttempts(String quizId) async {
-    final response = await _api.get('/quizzes/$quizId/my-attempts');
-    return response.data['attempts'] ?? [];
+    try {
+      final response = await _api.get('/quizzes/$quizId/my-attempts');
+      return response.data['attempts'] ?? [];
+    } catch (_) { return []; }
   }
 
   Future<Map<String, dynamic>> createQuiz(Map<String, dynamic> quizData) async {
-    final response = await _api.post('/quizzes', quizData);
-    return response.data;
+    try {
+      final response = await _api.post('/quizzes', quizData);
+      return response.data ?? {};
+    } catch (e) { return {'success': false, 'message': e.toString()}; }
   }
 
   Future<Map<String, dynamic>> updateQuiz(String quizId, Map<String, dynamic> data) async {
-    final response = await _api.put('/quizzes/$quizId', data);
-    return response.data;
+    try {
+      final response = await _api.put('/quizzes/$quizId', data);
+      return response.data ?? {};
+    } catch (_) { return {}; }
   }
 
   Future<void> deleteQuiz(String quizId) async {
