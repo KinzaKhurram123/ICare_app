@@ -171,6 +171,14 @@ class _InConsultationPrescriptionFormState
       return;
     }
 
+    // Guard: consultationId must be valid
+    if (widget.consultationId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Consultation ID missing — cannot complete prescription'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {

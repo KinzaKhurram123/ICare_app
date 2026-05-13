@@ -255,22 +255,40 @@ class ConsultationService {
   }) async {
     try {
       final token = await _sharedPref.getToken();
+      print('📋 COMPLETE PRESCRIPTION → consultationId: $consultationId');
+      print('📋 Payload keys: ${prescriptionData.keys.toList()}');
+      print('📋 Token present: ${token != null && token.isNotEmpty}');
+
       final response = await _dio.post(
         '/prescriptions-v2/consultations/$consultationId/prescription/complete',
         data: prescriptionData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status != null && status < 600, // don't throw on 4xx/5xx
+        ),
       );
-      return response.data;
+
+      print('📋 RESPONSE STATUS: ${response.statusCode}');
+      print('📋 RESPONSE DATA: ${response.data}');
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['success'] == true) return data;
+        // Server returned error JSON — show actual message
+        final msg = data['message']?.toString() ?? data['error']?.toString() ?? 'Server returned ${response.statusCode}';
+        return {'success': false, 'message': msg};
+      }
+      if (response.statusCode != null && response.statusCode! < 300) {
+        return {'success': true};
+      }
+      return {'success': false, 'message': 'Server error ${response.statusCode}: ${response.data}'};
     } on DioException catch (e) {
-      print('Error completing prescription: ${e.response?.statusCode} ${e.message}');
+      print('❌ PRESCRIPTION COMPLETE NETWORK ERROR: ${e.message}');
       String message = e.message ?? 'Network error';
       try {
         final data = e.response?.data;
-        if (data is Map) {
-          message = data['message']?.toString() ?? data['error']?.toString() ?? message;
-        } else if (data is String && data.length < 500) {
-          message = data;
-        }
+        if (data is Map) message = data['message']?.toString() ?? data['error']?.toString() ?? message;
+        else if (data is String && data.length < 300) message = data;
       } catch (_) {}
       return {'success': false, 'message': message};
     }
