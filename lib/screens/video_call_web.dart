@@ -142,21 +142,41 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   Future<void> _syncTimerFromSharedPrefs() async {
-    // Only sync if no elapsed time was passed from chat screen
+    // Only sync if no elapsed time was passed from chat screen (patient side)
     if (widget.consultationElapsedSeconds > 0) return;
-    if (widget.consultationId == null || widget.consultationId!.isEmpty) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = 'consult_start_${widget.consultationId}';
-      final startMs = prefs.getInt(key);
-      if (startMs != null && mounted) {
-        final elapsed = DateTime.now().millisecondsSinceEpoch - startMs;
-        final elapsedSec = (elapsed / 1000).round();
-        if (elapsedSec > 0 && elapsedSec < 1800) { // sanity check < 30 min
-          setState(() => _sessionSeconds = elapsedSec);
+      // Try consultationId key first, then channelName key
+      final keys = [
+        if (widget.consultationId != null && widget.consultationId!.isNotEmpty)
+          'consult_start_${widget.consultationId}',
+        'consult_start_${widget.channelName}',
+      ];
+      for (final key in keys) {
+        final startMs = prefs.getInt(key);
+        if (startMs != null) {
+          final elapsed = DateTime.now().millisecondsSinceEpoch - startMs;
+          final elapsedSec = (elapsed / 1000).round();
+          if (elapsedSec > 0 && elapsedSec < 1800) {
+            if (mounted) setState(() => _sessionSeconds = elapsedSec);
+          }
+          return;
         }
       }
     } catch (_) {}
+  }
+
+  /// Returns the display name for the remote user with proper prefix
+  String get _remoteDisplayName {
+    final name = widget.remoteUserName;
+    if (name.isEmpty) return _isDoctor ? 'Patient' : 'Doctor';
+    // If patient viewing → remote is doctor → ensure "Dr." prefix
+    if (!_isDoctor) {
+      if (!name.startsWith('Dr.') && !name.startsWith('Doctor ') && !name.startsWith('Dr ')) {
+        return 'Dr. $name';
+      }
+    }
+    return name;
   }
 
   Future<void> _initRole() async {
@@ -1045,7 +1065,7 @@ class _VideoCallWebState extends State<VideoCall> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Text(widget.remoteUserName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                          Text(_remoteDisplayName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 8),
                           const Text('Ringing... waiting for answer', style: TextStyle(color: Colors.orangeAccent, fontSize: 14)),
                           const SizedBox(height: 32),
@@ -1074,7 +1094,7 @@ class _VideoCallWebState extends State<VideoCall> {
                             color: Colors.black54,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(widget.remoteUserName,
+                          child: Text(_remoteDisplayName,
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 14)),
                         ),
@@ -2889,7 +2909,7 @@ class _VideoCallWebState extends State<VideoCall> {
 
               // Name
               Text(
-                widget.remoteUserName,
+                _remoteDisplayName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 26,

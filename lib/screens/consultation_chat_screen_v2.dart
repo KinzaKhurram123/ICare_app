@@ -93,12 +93,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       },
     );
     _timer.start();
-    // Save consultation start time so VideoCall can sync timer on patient side
+    // Save consultation start time so VideoCall can sync timer (both doctor & patient)
     SharedPreferences.getInstance().then((prefs) {
-      final key = 'consult_start_${widget.consultationId ?? ""}';
-      if (!prefs.containsKey(key)) {
-        prefs.setInt(key, DateTime.now().millisecondsSinceEpoch);
-      }
+      final consultKey = 'consult_start_${widget.consultationId ?? ""}';
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (!prefs.containsKey(consultKey)) prefs.setInt(consultKey, now);
     });
   }
 
@@ -353,6 +352,14 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
 
     if (!mounted) return;
+
+    // Save start time keyed by channelName so patient VideoCall can sync
+    SharedPreferences.getInstance().then((prefs) {
+      final key = 'consult_start_$channelName';
+      if (!prefs.containsKey(key)) {
+        prefs.setInt(key, DateTime.now().millisecondsSinceEpoch);
+      }
+    });
 
     // Open call screen for the caller immediately
     Navigator.push(

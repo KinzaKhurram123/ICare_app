@@ -305,10 +305,9 @@ class _InConsultationPrescriptionFormState
       }
     }
 
-    // Assigned courses
-    if (rx.assignedCourseIds.isNotEmpty) {
-      payload['assignedCourseIds'] = rx.assignedCourseIds;
-    }
+    // assignedCourseIds: backend expects MongoDB ObjectIds, not string names
+    // Send empty array to avoid CastError
+    payload['assignedCourseIds'] = [];
 
     return payload;
   }
@@ -702,17 +701,25 @@ class _InConsultationPrescriptionFormState
   }
 
   void _openHistoryForm() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => PatientHistoryFormScreen(
-          appointment: widget.appointment,
-          consultationId: widget.consultationId,
-          onHistoryComplete: (historyId) {
-            setState(() => _patientHistoryId = historyId);
-          },
-        ),
+    // Show history form as full-screen overlay — no navigation away from prescription form
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      pageBuilder: (ctx, _, __) => PatientHistoryFormScreen(
+        appointment: widget.appointment,
+        consultationId: widget.consultationId,
+        onHistoryComplete: (historyId) {
+          setState(() => _patientHistoryId = historyId);
+        },
       ),
+      transitionBuilder: (ctx, anim, _, child) => SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+          CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+        ),
+        child: child,
+      ),
+      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 
