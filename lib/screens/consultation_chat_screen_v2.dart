@@ -55,6 +55,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   bool _isLoading = true;
   bool _isSending = false;
   bool _prescriptionComplete = false;
+  bool _timerSynced = false;
   String? _consultationId;
 
   @override
@@ -196,7 +197,11 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           _messages = newList;
           if (!silent) _isLoading = false;
         });
-        // Only auto-scroll when there are new messages (don't interrupt manual scrolling)
+        // Sync timer from first message timestamp (ensures doctor & patient show same time)
+        if (newList.isNotEmpty && !_timerSynced) {
+          _timerSynced = true;
+          _timer.syncFromStartTime(newList.first.timestamp);
+        }
         if (hadNewMessages) {
           print('📥 New messages detected, scrolling to bottom');
           _scrollToBottom();

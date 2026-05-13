@@ -9,7 +9,7 @@ import 'package:icare/screens/patient_history_form_screen.dart';
 import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/widgets/icd_code_selector.dart';
+import 'package:icare/services/icd_service.dart';
 
 class InConsultationPrescriptionForm extends StatefulWidget {
   final AppointmentDetail appointment;
@@ -42,6 +42,14 @@ class _InConsultationPrescriptionFormState
   final TextEditingController _assessmentController = TextEditingController();
   final TextEditingController _planController = TextEditingController();
   final TextEditingController _doctorNotesController = TextEditingController();
+
+  // Diagnosis inline search state
+  final TextEditingController _diagSearchController = TextEditingController();
+  List<Map<String, dynamic>> _diagSearchResults = [];
+  bool _diagSearching = false;
+
+  // Lab test search filter
+  final TextEditingController _labSearchController = TextEditingController();
 
   // Medicine search state
   final TextEditingController _medSearchController = TextEditingController();
@@ -600,22 +608,69 @@ class _InConsultationPrescriptionFormState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: _addDiagnosis,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add Diagnosis'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
+        // Inline ICD-10 search bar
+        TextField(
+          controller: _diagSearchController,
+          onChanged: _searchICD,
+          decoration: InputDecoration(
+            hintText: 'Search ICD-10 code or diagnosis name...',
+            prefixIcon: _diagSearching
+                ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
+                : const Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+            suffixIcon: _diagSearchController.text.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear_rounded, size: 18), onPressed: () => setState(() { _diagSearchController.clear(); _diagSearchResults = []; }))
+                : null,
+            filled: true,
+            fillColor: const Color(0xFFFEF2F2),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFCA5A5))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFCA5A5))),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
+        // Search results
+        if (_diagSearchResults.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 3))],
+            ),
+            child: Column(
+              children: _diagSearchResults.take(6).map((code) => InkWell(
+                onTap: () {
+                  final desc = code['description']?.toString() ?? '';
+                  final icd = code['code']?.toString() ?? '';
+                  if (desc.isNotEmpty) {
+                    setState(() {
+                      _diagnoses.add(DiagnosisItem(diagnosis: desc, icd10Code: icd));
+                      _diagSearchController.clear();
+                      _diagSearchResults = [];
+                    });
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(color: const Color(0xFFEF4444).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
+                        child: Text(code['code']?.toString() ?? '', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFEF4444))),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(code['description']?.toString() ?? '', style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ),
+              )).toList(),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         if (_diagnoses.isEmpty)
-          _emptyState(Icons.medical_information_outlined, 'No diagnoses added yet')
+          _emptyState(Icons.medical_information_outlined, 'Search and add diagnoses above')
         else
           ...List.generate(_diagnoses.length, (index) {
             final d = _diagnoses[index];
@@ -648,20 +703,18 @@ class _InConsultationPrescriptionFormState
     );
   }
 
-  void _addDiagnosis() {
-    showDialog(
-      context: context,
-      builder: (ctx) => ICDCodeSelector(
-        onCodeSelected: (codeMap) {
-          setState(() {
-            _diagnoses.add(DiagnosisItem(
-              diagnosis: codeMap['description']?.toString() ?? '',
-              icd10Code: codeMap['code']?.toString() ?? '',
-            ));
-          });
-        },
-      ),
-    );
+  Future<void> _searchICD(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() { _diagSearchResults = []; _diagSearching = false; });
+      return;
+    }
+    setState(() => _diagSearching = true);
+    try {
+      final results = await ICDService.searchICDCodes(query);
+      if (mounted) setState(() { _diagSearchResults = List<Map<String, dynamic>>.from(results); _diagSearching = false; });
+    } catch (_) {
+      if (mounted) setState(() => _diagSearching = false);
+    }
   }
 
   // ── Section 5: Medications ────────────────────────────────────────────────
@@ -871,12 +924,58 @@ class _InConsultationPrescriptionFormState
 
   // ── Section 6: Lab Tests ──────────────────────────────────────────────────
   Widget _buildLabTestsContent() {
+    final filterText = _labSearchController.text.toLowerCase();
+    final filteredTests = filterText.isEmpty
+        ? CommonLabTests.tests
+        : CommonLabTests.tests.where((t) => t.toLowerCase().contains(filterText)).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Common Tests', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+        // Search bar
+        TextField(
+          controller: _labSearchController,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: 'Search lab test...',
+            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+            suffixIcon: _labSearchController.text.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear_rounded, size: 18), onPressed: () => setState(() => _labSearchController.clear()))
+                : null,
+            filled: true,
+            fillColor: const Color(0xFFF5F3FF),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDDD6FE))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDDD6FE))),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
         const SizedBox(height: 8),
-        ...CommonLabTests.tests.map((test) {
+        if (_labTests.isNotEmpty) ...[
+          Wrap(
+            spacing: 6, runSpacing: 6,
+            children: _labTests.map((t) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(color: const Color(0xFF8B5CF6), borderRadius: BorderRadius.circular(20)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(t.testName, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => setState(() => _labTests.removeWhere((x) => x.testName == t.testName)),
+                    child: const Icon(Icons.close_rounded, color: Colors.white70, size: 14),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 8),
+          const Divider(),
+          const SizedBox(height: 4),
+        ],
+        if (filteredTests.isEmpty)
+          const Padding(padding: EdgeInsets.all(12), child: Text('No tests match', style: TextStyle(color: Color(0xFF94A3B8)))),
+        ...filteredTests.map((test) {
           final isSelected = _labTests.any((t) => t.testName == test);
           return CheckboxListTile(
             dense: true,

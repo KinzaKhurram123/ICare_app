@@ -53,6 +53,16 @@ class ConsultationTimer {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  /// Sync timer to a known start time (e.g. from backend / first message)
+  void syncFromStartTime(DateTime startTime) {
+    final now = DateTime.now();
+    final serverElapsed = now.difference(startTime);
+    if (serverElapsed > Duration.zero && serverElapsed < maxDuration) {
+      _elapsed = serverElapsed;
+      _minimumReached = _elapsed >= minDuration;
+    }
+  }
+
   void start() {
     if (_isRunning) return;
     
