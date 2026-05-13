@@ -874,9 +874,9 @@ class _InConsultationPrescriptionFormState
           ),
         ),
 
-        // ── Suggestions — tap to instantly add as line ──────────────────
+        // ── Suggestions dropdown ─────────────────────────────────────────
         if (suggestions.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -887,221 +887,232 @@ class _InConsultationPrescriptionFormState
             child: Column(
               children: suggestions.take(6).map((med) => InkWell(
                 onTap: () {
+                  final idx = _medicines.length;
                   setState(() {
-                    // Instantly add to list — dose fields blank, will be filled inline
-                    _medicines.add(PrescriptionMedicine(
-                      medicineName: med,
-                      dose: '',
-                      frequency: MedicationFrequency.bd,
-                      duration: '',
-                    ));
-                    _expandedMedIndex = _medicines.length - 1;
-                    _medSearchController.clear();
-                    // Init controllers for this new entry
-                    final idx = _medicines.length - 1;
+                    _medicines.add(PrescriptionMedicine(medicineName: med, dose: '', frequency: MedicationFrequency.bd, duration: ''));
                     _medDoseControllers[idx] = TextEditingController();
                     _medNotesControllers[idx] = TextEditingController();
                     _medDurationControllers[idx] = TextEditingController();
+                    _medSearchController.clear();
                   });
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.medication_outlined, size: 16, color: Color(0xFF10B981)),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(med, style: const TextStyle(fontSize: 14))),
-                      const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFF10B981)),
-                    ],
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  child: Row(children: [
+                    const Icon(Icons.medication_outlined, size: 15, color: Color(0xFF10B981)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(med, style: const TextStyle(fontSize: 13))),
+                    const Icon(Icons.add_rounded, size: 15, color: Color(0xFF10B981)),
+                  ]),
                 ),
               )).toList(),
             ),
           ),
         ],
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // ── Medicines list — expandable inline lines ─────────────────────
+        // ── Column headers ───────────────────────────────────────────────
+        if (_medicines.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(children: [
+              const SizedBox(width: 28),
+              const Expanded(flex: 3, child: Text('Medicine', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 4),
+              const Expanded(flex: 2, child: Text('Dose', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 4),
+              const Expanded(flex: 2, child: Text('Freq', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 4),
+              const Expanded(flex: 2, child: Text('Duration', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 4),
+              const Expanded(flex: 2, child: Text('Note', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 32),
+            ]),
+          ),
+          const SizedBox(height: 4),
+        ],
+
+        // ── Single-line medicine rows ────────────────────────────────────
         if (_medicines.isEmpty)
           _emptyState(Icons.medication_outlined, 'Search above and tap a medicine to add it')
         else
           ...List.generate(_medicines.length, (index) {
-            final isExpanded = _expandedMedIndex == index;
             final m = _medicines[index];
-
-            // Ensure controllers exist
             _medDoseControllers.putIfAbsent(index, () => TextEditingController(text: m.dose));
             _medNotesControllers.putIfAbsent(index, () => TextEditingController(text: m.notes ?? ''));
             _medDurationControllers.putIfAbsent(index, () => TextEditingController(text: m.duration));
 
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(bottom: 8),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: isExpanded ? const Color(0xFFF0FDF4) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isExpanded ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
-                  width: isExpanded ? 1.5 : 1,
-                ),
-                boxShadow: isExpanded ? [BoxShadow(color: const Color(0xFF10B981).withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))] : [],
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFD1FAE5), width: 1.5),
               ),
-              child: Column(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // ── Collapsed line — tap to expand ──────────────────
-                  InkWell(
-                    borderRadius: isExpanded
-                        ? const BorderRadius.vertical(top: Radius.circular(12))
-                        : BorderRadius.circular(12),
-                    onTap: () => setState(() => _expandedMedIndex = isExpanded ? null : index),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 26, height: 26,
-                            decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(6)),
-                            child: Center(child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900))),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(m.medicineName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF0F172A))),
-                                if (!isExpanded)
-                                  Text(
-                                    [if (m.dose.isNotEmpty) m.dose, m.frequencyDisplay, if (m.duration.isNotEmpty) m.duration].where((s) => s.isNotEmpty).join(' · '),
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                  )
-                                else
-                                  const Text('Tap fields below to fill details', style: TextStyle(fontSize: 11, color: Color(0xFF10B981))),
-                              ],
-                            ),
-                          ),
-                          Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                              color: isExpanded ? const Color(0xFF10B981) : const Color(0xFF94A3B8)),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => setState(() {
-                              _medicines.removeAt(index);
-                              _medDoseControllers.remove(index);
-                              _medNotesControllers.remove(index);
-                              _medDurationControllers.remove(index);
-                              if (_expandedMedIndex == index) _expandedMedIndex = null;
-                            }),
-                          ),
-                        ],
-                      ),
+                  // Index badge
+                  Container(
+                    width: 22, height: 22,
+                    decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(5)),
+                    child: Center(child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900))),
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Medicine name (fixed, not editable — already selected)
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      m.medicineName,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 4),
 
-                  // ── Expanded inline fields ──────────────────────────
-                  if (isExpanded) ...[
-                    const Divider(height: 1, color: Color(0xFFD1FAE5)),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                      child: Column(
-                        children: [
-                          // Row 1: Dose + Frequency
-                          Row(children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _medDoseControllers[index],
-                                onChanged: (v) {
-                                  final updated = PrescriptionMedicine(
-                                    medicineName: m.medicineName, dose: v,
-                                    frequency: m.frequency, duration: m.duration, notes: m.notes,
-                                  );
-                                  setState(() => _medicines[index] = updated);
-                                },
-                                decoration: InputDecoration(
-                                  labelText: 'Dose',
-                                  hintText: '500mg / 1g',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  filled: true, fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: DropdownButtonFormField<MedicationFrequency>(
-                                value: m.frequency,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  labelText: 'Frequency',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  filled: true, fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                ),
-                                items: MedicationFrequency.values.map((f) => DropdownMenuItem(value: f, child: Text(_freqLabel(f), overflow: TextOverflow.ellipsis))).toList(),
-                                onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                                  medicineName: m.medicineName, dose: m.dose,
-                                  frequency: v!, duration: m.duration, notes: m.notes,
-                                )),
-                              ),
-                            ),
-                          ]),
-                          const SizedBox(height: 8),
-                          // Row 2: Duration + Notes
-                          Row(children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _medDurationControllers[index],
-                                onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                                  medicineName: m.medicineName, dose: m.dose,
-                                  frequency: m.frequency, duration: v, notes: m.notes,
-                                )),
-                                decoration: InputDecoration(
-                                  labelText: 'Duration',
-                                  hintText: 'e.g. 5 Days',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  filled: true, fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _medNotesControllers[index],
-                                onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                                  medicineName: m.medicineName, dose: m.dose,
-                                  frequency: m.frequency, duration: m.duration,
-                                  notes: v.isEmpty ? null : v,
-                                )),
-                                decoration: InputDecoration(
-                                  labelText: 'Note (optional)',
-                                  hintText: 'After meals',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                  filled: true, fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                ),
-                              ),
-                            ),
-                          ]),
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () => setState(() => _expandedMedIndex = null),
-                              icon: const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF10B981)),
-                              label: const Text('Done', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // Dose
+                  Expanded(
+                    flex: 2,
+                    child: _compactField(
+                      controller: _medDoseControllers[index]!,
+                      hint: '500mg',
+                      onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
+                        medicineName: m.medicineName, dose: v,
+                        frequency: m.frequency, duration: m.duration, notes: m.notes,
+                      )),
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Frequency dropdown
+                  Expanded(
+                    flex: 2,
+                    child: _compactDropdown<MedicationFrequency>(
+                      value: m.frequency,
+                      items: MedicationFrequency.values,
+                      label: (f) => _freqShort(f),
+                      onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
+                        medicineName: m.medicineName, dose: m.dose,
+                        frequency: v!, duration: m.duration, notes: m.notes,
+                      )),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Duration
+                  Expanded(
+                    flex: 2,
+                    child: _compactField(
+                      controller: _medDurationControllers[index]!,
+                      hint: '5 Days',
+                      onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
+                        medicineName: m.medicineName, dose: m.dose,
+                        frequency: m.frequency, duration: v, notes: m.notes,
+                      )),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Notes
+                  Expanded(
+                    flex: 2,
+                    child: _compactField(
+                      controller: _medNotesControllers[index]!,
+                      hint: 'Note',
+                      onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
+                        medicineName: m.medicineName, dose: m.dose,
+                        frequency: m.frequency, duration: m.duration,
+                        notes: v.isEmpty ? null : v,
+                      )),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+
+                  // Delete
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _medicines.removeAt(index);
+                      _medDoseControllers.remove(index);
+                      _medNotesControllers.remove(index);
+                      _medDurationControllers.remove(index);
+                    }),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close_rounded, size: 16, color: Colors.red),
+                    ),
+                  ),
                 ],
               ),
             );
           }),
       ],
     );
+  }
+
+  Widget _compactField({
+    required TextEditingController controller,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 11),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+    );
+  }
+
+  Widget _compactDropdown<T>({
+    required T value,
+    required List<T> items,
+    required String Function(T) label,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      isDense: true,
+      style: const TextStyle(fontSize: 11, color: Color(0xFF0F172A)),
+      decoration: const InputDecoration(
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        filled: true,
+        fillColor: Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(6)), borderSide: BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(6)), borderSide: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      items: items.map((i) => DropdownMenuItem<T>(value: i, child: Text(label(i), style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  String _freqShort(MedicationFrequency f) {
+    switch (f) {
+      case MedicationFrequency.od: return 'OD';
+      case MedicationFrequency.bd: return 'BD';
+      case MedicationFrequency.tds: return 'TDS';
+      case MedicationFrequency.qid: return 'QID';
+      case MedicationFrequency.sos: return 'SOS';
+      case MedicationFrequency.stat: return 'STAT';
+      case MedicationFrequency.weekly: return 'Weekly';
+      case MedicationFrequency.monthly: return 'Monthly';
+    }
   }
 
   String _freqLabel(MedicationFrequency f) {
