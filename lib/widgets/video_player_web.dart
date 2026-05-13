@@ -15,62 +15,60 @@ class VideoPlayerWidget extends StatefulWidget {
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late final String _viewType;
 
+  static bool _isDirectVideo(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('cloudinary.com') ||
+        lower.endsWith('.mp4') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.ogg') ||
+        lower.endsWith('.m3u8') ||
+        (lower.contains('/video/upload/') && !lower.contains('youtube'));
+  }
+
   @override
   void initState() {
     super.initState();
-    final embedUrl = _toEmbedUrl(widget.videoUrl);
-    // Unique view type per widget instance so re-opening lessons works
     _viewType = 'video-${widget.videoUrl.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int id) {
-      return html.IFrameElement()
-        ..src = embedUrl
-        ..style.border = '0'
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..setAttribute('allowfullscreen', 'true')
-        ..setAttribute(
-          'allow',
-          'accelerometer; autoplay; clipboard-write; '
-          'encrypted-media; gyroscope; picture-in-picture; web-share',
-        );
+      if (_isDirectVideo(widget.videoUrl)) {
+        // HTML5 native video player for Cloudinary/direct URLs
+        return html.VideoElement()
+          ..src = widget.videoUrl
+          ..controls = true
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..style.borderRadius = '8px'
+          ..style.backgroundColor = '#000'
+          ..setAttribute('playsinline', 'true')
+          ..setAttribute('preload', 'metadata');
+      } else {
+        // iframe for YouTube/Vimeo embeds
+        return html.IFrameElement()
+          ..src = _toEmbedUrl(widget.videoUrl)
+          ..style.border = '0'
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..setAttribute('allowfullscreen', 'true')
+          ..setAttribute('allow',
+              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+      }
     });
   }
 
-  /// Convert any YouTube URL variant to an embed URL.
   static String _toEmbedUrl(String url) {
-    // Already embed
     if (url.contains('youtube.com/embed/')) return url;
-
-    // youtu.be/ID or youtu.be/ID?t=30
     final short = RegExp(r'youtu\.be/([^?&\s]+)').firstMatch(url);
-    if (short != null) {
-      return 'https://www.youtube.com/embed/${short.group(1)}';
-    }
-
-    // youtube.com/watch?v=ID
+    if (short != null) return 'https://www.youtube.com/embed/${short.group(1)}';
     final watch = RegExp(r'[?&]v=([^&\s]+)').firstMatch(url);
-    if (watch != null) {
-      return 'https://www.youtube.com/embed/${watch.group(1)}';
-    }
-
-    // youtube.com/shorts/ID
+    if (watch != null) return 'https://www.youtube.com/embed/${watch.group(1)}';
     final shorts = RegExp(r'shorts/([^?&\s]+)').firstMatch(url);
-    if (shorts != null) {
-      return 'https://www.youtube.com/embed/${shorts.group(1)}';
-    }
-
-    // Vimeo: vimeo.com/ID
+    if (shorts != null) return 'https://www.youtube.com/embed/${shorts.group(1)}';
     final vimeo = RegExp(r'vimeo\.com/(\d+)').firstMatch(url);
-    if (vimeo != null) {
-      return 'https://player.vimeo.com/video/${vimeo.group(1)}';
-    }
-
-    // Direct video URL or anything else — return as-is (browser handles it)
+    if (vimeo != null) return 'https://player.vimeo.com/video/${vimeo.group(1)}';
     return url;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return HtmlElementView(viewType: _viewType);
-  }
+  Widget build(BuildContext context) => HtmlElementView(viewType: _viewType);
 }

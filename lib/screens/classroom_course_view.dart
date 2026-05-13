@@ -9,7 +9,9 @@ import 'package:icare/screens/instructor_grading_screen.dart';
 import 'package:icare/screens/instructor_course_content_screen.dart';
 import 'package:icare/screens/instructor_student_progress_screen.dart';
 import 'package:icare/screens/instructor_course_analytics_screen.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/lms_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:intl/intl.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -267,6 +269,22 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   // STREAM TAB — banner + upcoming + feed
   // ════════════════════════════════════════════════
 
+  Future<void> _joinLiveClass() async {
+    final courseId = _courseId;
+    final channelName = 'live_class_$courseId';
+    final user = await SharedPref().getUserData();
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => VideoCall(
+        channelName: channelName,
+        remoteUserName: 'Instructor',
+        isAudioOnly: false,
+        currentUserName: user?.name ?? 'Student',
+        currentUserId: user?.id ?? '',
+      ),
+    ));
+  }
+
   Widget _buildStreamTab(bool isWide) {
     return RefreshIndicator(
       onRefresh: _loadStream,
@@ -274,6 +292,50 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         children: [
           // ── Large banner ──────────────────────────────────
           _buildBanner(),
+
+          // ── Join Live Class button (students only) ────────
+          if (!widget.isInstructor)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10, height: 10,
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Live Class Available', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.red)),
+                          Text('Your instructor may be live. Tap to join.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _joinLiveClass,
+                      icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                      label: const Text('Join', style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           const SizedBox(height: 16),
 

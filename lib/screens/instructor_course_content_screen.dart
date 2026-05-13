@@ -1,8 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:icare/screens/video_call.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/services/api_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 
 /// Course Content Management - Moodle/Udemy style
@@ -48,6 +50,48 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
         );
       }
     }
+  }
+
+  /// Instructor starts a live class for this course
+  Future<void> _startLiveClass() async {
+    final courseTitle = _course?['title']?.toString() ?? 'Live Class';
+    final channelName = 'live_class_${widget.courseId}';
+    final user = await SharedPref().getUserData();
+    final instructorName = user?.name ?? 'Instructor';
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.live_tv_rounded, color: Colors.red, size: 26),
+          SizedBox(width: 10),
+          Text('Start Live Class', style: TextStyle(fontWeight: FontWeight.w800)),
+        ]),
+        content: Text('Start a live class for "$courseTitle"?\n\nStudents enrolled in this course will be able to join.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => VideoCall(
+                  channelName: channelName,
+                  remoteUserName: 'Students',
+                  isAudioOnly: false,
+                  currentUserName: instructorName,
+                  currentUserId: user?.id ?? '',
+                ),
+              ));
+            },
+            icon: const Icon(Icons.live_tv_rounded, size: 18),
+            label: const Text('Go Live Now'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _addModule() async {
@@ -188,6 +232,20 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
           ],
         ),
         actions: [
+          // Go Live button
+          ElevatedButton.icon(
+            onPressed: _startLiveClass,
+            icon: const Icon(Icons.live_tv_rounded, size: 16),
+            label: const Text('Go Live', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryColor),
             tooltip: 'Add Module',
