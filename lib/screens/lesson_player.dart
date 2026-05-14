@@ -14,6 +14,8 @@ class LessonPlayer extends StatefulWidget {
   final String? instructorName;
   final bool isLastLesson;
   final CertificateTemplate certificateTemplate;
+  final bool certificateReleased; // instructor must release before student can download
+  final String? enrollmentId;
 
   const LessonPlayer({
     super.key,
@@ -24,6 +26,8 @@ class LessonPlayer extends StatefulWidget {
     this.instructorName,
     this.isLastLesson = false,
     this.certificateTemplate = CertificateTemplate.classic,
+    this.certificateReleased = false,
+    this.enrollmentId,
   });
 
   @override
@@ -258,27 +262,44 @@ class _LessonPlayerState extends State<LessonPlayer> {
 
             const SizedBox(height: 32),
 
-            // ── CERTIFICATE BUTTON (last lesson + completed) ──────────────
+            // ── CERTIFICATE CARD (last lesson + completed) ──────────────
             if (widget.isLastLesson && _isCompleted)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [const Color(0xFFD4AF37).withValues(alpha: 0.15), const Color(0xFFD4AF37).withValues(alpha: 0.05)],
+                    colors: widget.certificateReleased
+                        ? [const Color(0xFFD4AF37).withValues(alpha: 0.15), const Color(0xFFD4AF37).withValues(alpha: 0.05)]
+                        : [const Color(0xFF64748B).withValues(alpha: 0.08), const Color(0xFF64748B).withValues(alpha: 0.04)],
                   ),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                  border: Border.all(color: widget.certificateReleased
+                      ? const Color(0xFFD4AF37).withValues(alpha: 0.4)
+                      : const Color(0xFF94A3B8).withValues(alpha: 0.4)),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 40),
+                    Icon(
+                      widget.certificateReleased ? Icons.workspace_premium_rounded : Icons.lock_clock_rounded,
+                      color: widget.certificateReleased ? const Color(0xFFD4AF37) : const Color(0xFF94A3B8),
+                      size: 40,
+                    ),
                     const SizedBox(height: 8),
-                    const Text('🎉 Congratulations!', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A))),
+                    Text(
+                      widget.certificateReleased ? '🎉 Congratulations!' : 'Course Completed!',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A)),
+                    ),
                     const SizedBox(height: 4),
-                    const Text('You have completed this course. View and download your certificate below.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+                    Text(
+                      widget.certificateReleased
+                          ? 'Your certificate is ready. View and download it below.'
+                          : 'Your instructor has not yet released the certificate for this course. Check back soon.',
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 12),
+                    if (widget.certificateReleased)
                     ElevatedButton.icon(
                       onPressed: () async {
                         final user = await SharedPref().getUserData();
@@ -290,6 +311,7 @@ class _LessonPlayerState extends State<LessonPlayer> {
                             instructorName: widget.instructorName ?? 'Instructor',
                             template: widget.certificateTemplate,
                             completionDate: DateTime.now(),
+                            enrollmentId: widget.enrollmentId,
                           ),
                         ));
                       },

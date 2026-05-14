@@ -266,7 +266,9 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
                 builder: (_) => CertificateTemplateSelectorScreen(
                   courseTitle: _course?['title'] ?? 'Course',
                   instructorName: _course?['instructor']?['name'] ?? 'Instructor',
+                  courseId: widget.courseId,
                   currentTemplate: _certificateTemplate,
+                  certificateReleased: _course?['certificateReleased'] == true,
                   onSelect: (t) => setState(() => _certificateTemplate = t),
                 ),
               ));

@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 
 /// 4 Pre-designed certificate templates
@@ -63,14 +64,18 @@ extension CertificateTemplateExt on CertificateTemplate {
 class CertificateTemplateSelectorScreen extends StatefulWidget {
   final String courseTitle;
   final String instructorName;
+  final String? courseId;
   final CertificateTemplate? currentTemplate;
+  final bool certificateReleased;
   final Function(CertificateTemplate) onSelect;
 
   const CertificateTemplateSelectorScreen({
     super.key,
     required this.courseTitle,
     required this.instructorName,
+    this.courseId,
     this.currentTemplate,
+    this.certificateReleased = false,
     required this.onSelect,
   });
 
@@ -80,11 +85,27 @@ class CertificateTemplateSelectorScreen extends StatefulWidget {
 
 class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateSelectorScreen> {
   CertificateTemplate _selected = CertificateTemplate.classic;
+  bool _released = false;
+  bool _savingRelease = false;
 
   @override
   void initState() {
     super.initState();
     _selected = widget.currentTemplate ?? CertificateTemplate.classic;
+    _released = widget.certificateReleased;
+  }
+
+  Future<void> _toggleRelease(bool value) async {
+    setState(() { _released = value; _savingRelease = true; });
+    try {
+      if (widget.courseId != null) {
+        await ApiService().put('/courses/${widget.courseId}/certificate/release', {
+          'released': value,
+          'template': _selected.name,
+        });
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _savingRelease = false);
   }
 
   @override
@@ -116,6 +137,49 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
           children: [
             const Text('Choose a design for your course certificate. Students will receive this design with their name when they complete the course.',
                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 16),
+
+            // ── Certificate Release Toggle ────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _released ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _released ? const Color(0xFF10B981) : const Color(0xFFF59E0B), width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(_released ? Icons.lock_open_rounded : Icons.lock_rounded,
+                      color: _released ? const Color(0xFF10B981) : const Color(0xFFF59E0B), size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _released ? 'Certificate Released' : 'Certificate Locked',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14,
+                              color: _released ? const Color(0xFF065F46) : const Color(0xFF92400E)),
+                        ),
+                        Text(
+                          _released
+                              ? 'Students who complete this course can download their certificate.'
+                              : 'Students cannot download certificate until you release it.',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _savingRelease
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Switch(
+                          value: _released,
+                          onChanged: _toggleRelease,
+                          activeColor: const Color(0xFF10B981),
+                        ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             ...CertificateTemplate.values.map((t) => _templateCard(t)),
           ],
@@ -190,6 +254,8 @@ class LmsCertificateScreen extends StatelessWidget {
   final String instructorName;
   final CertificateTemplate template;
   final DateTime? completionDate;
+  final String? enrollmentId; // to mark as completed in backend
+  final String? courseId;
 
   const LmsCertificateScreen({
     super.key,
@@ -198,6 +264,8 @@ class LmsCertificateScreen extends StatelessWidget {
     required this.instructorName,
     this.template = CertificateTemplate.classic,
     this.completionDate,
+    this.enrollmentId,
+    this.courseId,
   });
 
   @override
@@ -245,6 +313,12 @@ class LmsCertificateScreen extends StatelessWidget {
     try {
       final bytes = await _generatePdf();
       await Printing.sharePdf(bytes: bytes, filename: 'certificate_${courseTitle.replaceAll(' ', '_')}.pdf');
+      // Mark enrollment as completed in backend (saves to My Certificates)
+      if (enrollmentId != null && enrollmentId!.isNotEmpty) {
+        try {
+          await ApiService().put('/students/courses/enrollments/$enrollmentId/complete', {});
+        } catch (_) {}
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
