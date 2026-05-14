@@ -34,6 +34,18 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
 
+  // Conditions treated — doctor selects what conditions they handle
+  final List<String> _conditionsTreated = [];
+  final TextEditingController _conditionInputCtrl = TextEditingController();
+
+  static const _commonConditions = [
+    'Hypertension', 'Diabetes', 'Heart Disease', 'Asthma', 'Back Pain',
+    'Headache / Migraine', 'Fever', 'Allergy', 'Anxiety', 'Depression',
+    'Obesity', 'Arthritis', 'Kidney Disease', 'Thyroid Disorders',
+    'Skin Conditions', 'Eye Problems', 'Dental Issues', 'Pregnancy Care',
+    'Child Health', 'Bone & Joint Pain',
+  ];
+
   Future<void> _pickProfileImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
     if (picked != null) {
@@ -63,6 +75,7 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
     clinicAddressController.dispose();
     startTimeController.dispose();
     endTimeController.dispose();
+    _conditionInputCtrl.dispose();
     super.dispose();
   }
 
@@ -115,6 +128,15 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       endTime: endTimeController.text,
       profileImage: _imageBytes,
     );
+
+    // Save conditions treated separately
+    if (_conditionsTreated.isNotEmpty) {
+      try {
+        await ApiService().post('/doctors/add_doctor_details', {
+          'conditionsTreated': _conditionsTreated,
+        });
+      } catch (_) {}
+    }
 
     setState(() => _isLoading = false);
 
@@ -317,6 +339,15 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                   icon: Icons.badge_outlined,
                   hint: "Medical license number",
                 ),
+                const SizedBox(height: 24),
+                _buildSectionTitle("Conditions You Treat"),
+                const SizedBox(height: 8),
+                Text(
+                  'Select or add conditions you commonly treat. Patients will find you when searching these conditions.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 12),
+                _buildConditionsTreated(),
                 const SizedBox(height: 32),
                 _buildSectionTitle("Availability"),
                 const SizedBox(height: 16),
@@ -614,6 +645,72 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
         fontWeight: FontWeight.w700,
         color: Color(0xFF1E293B),
       ),
+    );
+  }
+
+  Widget _buildConditionsTreated() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Common conditions chips
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _commonConditions.map((c) {
+            final isSelected = _conditionsTreated.contains(c);
+            return FilterChip(
+              label: Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : const Color(0xFF475569))),
+              selected: isSelected,
+              onSelected: (v) => setState(() {
+                if (v) _conditionsTreated.add(c);
+                else _conditionsTreated.remove(c);
+              }),
+              selectedColor: AppColors.primaryColor,
+              backgroundColor: const Color(0xFFF1F5F9),
+              checkmarkColor: Colors.white,
+              side: BorderSide(color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        // Custom condition input
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _conditionInputCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Add custom condition...',
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  filled: true, fillColor: const Color(0xFFF8FAFC),
+                ),
+                onSubmitted: (v) {
+                  if (v.trim().isNotEmpty && !_conditionsTreated.contains(v.trim())) {
+                    setState(() { _conditionsTreated.add(v.trim()); _conditionInputCtrl.clear(); });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.add_circle_rounded, color: AppColors.primaryColor),
+              onPressed: () {
+                final v = _conditionInputCtrl.text.trim();
+                if (v.isNotEmpty && !_conditionsTreated.contains(v)) {
+                  setState(() { _conditionsTreated.add(v); _conditionInputCtrl.clear(); });
+                }
+              },
+            ),
+          ],
+        ),
+        if (_conditionsTreated.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text('${_conditionsTreated.length} condition(s) selected', style: const TextStyle(fontSize: 12, color: AppColors.primaryColor, fontWeight: FontWeight.w600)),
+        ],
+      ],
     );
   }
 
