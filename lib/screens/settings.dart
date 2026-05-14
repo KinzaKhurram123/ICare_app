@@ -524,6 +524,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         onComingSoon: _comingSoon,
         onReportIssue: _showReportIssueDialog,
         onDeleteAccount: _showDeleteAccountDialog,
+        onShowFeeDialog: _showFeeDialog,
       );
     }
 
@@ -548,6 +549,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onComingSoon: _comingSoon,
       onReportIssue: _showReportIssueDialog,
       onDeleteAccount: _showDeleteAccountDialog,
+      onShowFeeDialog: _showFeeDialog,
     );
   }
 }
@@ -614,6 +616,7 @@ mixin _SettingsSectionBuilder {
     required void Function(BuildContext, String) onComingSoon,
     required void Function(BuildContext) onReportIssue,
     required void Function(BuildContext) onDeleteAccount,
+    void Function(BuildContext)? onShowFeeDialog,
   }) {
     final sections = <_SettingsSection>[];
 
@@ -1098,7 +1101,7 @@ mixin _SettingsSectionBuilder {
           _SettingsItem(
             title: 'Consultation Fees',
             icon: Icons.attach_money_rounded,
-            onTap: () => _showFeeDialog(context),
+            onTap: () => onShowFeeDialog?.call(context) ?? onComingSoon(context, 'Consultation Fees'),
           ),
           _SettingsItem(
             title: 'Availability & Schedule',
