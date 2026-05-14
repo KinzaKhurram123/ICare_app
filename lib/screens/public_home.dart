@@ -829,21 +829,13 @@ class _CourseCardState extends State<_CourseCard> {
   @override
   Widget build(BuildContext context) {
     final color = Color(widget.course['color'] as int);
-    return Tooltip(
-      message: 'Coming Soon',
-      child: GestureDetector(
+    return GestureDetector(
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('LMS coming soon — stay tuned!'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          final audience = widget.course['audience'] as String? ?? 'patient';
+          context.push('/lms/catalog', extra: {'audienceFilter': audience});
         },
-        child: Opacity(
-          opacity: 0.75,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.basic,
+        child: MouseRegion(
+            cursor: SystemMouseCursors.click,
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -878,22 +870,6 @@ class _CourseCardState extends State<_CourseCard> {
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF0F172A),
                                   fontFamily: 'Gilroy-Bold',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF59E0B).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'Coming Soon',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFF59E0B),
                                 ),
                               ),
                             ),

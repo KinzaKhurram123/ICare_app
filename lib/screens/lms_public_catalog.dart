@@ -7,7 +7,9 @@ import 'package:icare/widgets/back_button.dart';
 /// Public LMS Course Catalog - Browse courses without login
 /// Inspired by Moodle & Coursera course marketplace
 class LmsPublicCatalog extends StatefulWidget {
-  const LmsPublicCatalog({super.key});
+  /// Optional audience filter: 'patient' or 'doctor'/'professional'
+  final String? audienceFilter;
+  const LmsPublicCatalog({super.key, this.audienceFilter});
 
   @override
   State<LmsPublicCatalog> createState() => _LmsPublicCatalogState();
@@ -16,7 +18,7 @@ class LmsPublicCatalog extends StatefulWidget {
 class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
   final ApiService _api = ApiService();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<dynamic> _courses = [];
   List<dynamic> _filteredCourses = [];
   bool _isLoading = true;
@@ -72,16 +74,27 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
   void _applyFilters() {
     setState(() {
       _filteredCourses = _courses.where((course) {
+        // Audience filter from navigation param
+        if (widget.audienceFilter != null && widget.audienceFilter!.isNotEmpty) {
+          final courseAudience = (course['targetAudience'] ?? 'Patient').toString().toLowerCase();
+          final filterAudience = widget.audienceFilter!.toLowerCase();
+          // 'patient' → show only patient courses
+          // 'doctor' or 'professional' → show doctor/professional courses
+          if (filterAudience == 'patient' && !courseAudience.contains('patient')) return false;
+          if ((filterAudience == 'doctor' || filterAudience == 'professional') &&
+              courseAudience.contains('patient')) return false;
+        }
+
         // Category filter
         if (_selectedCategory != 'All' && course['category'] != _selectedCategory) {
           return false;
         }
-        
+
         // Difficulty filter
         if (_selectedDifficulty != 'All' && course['difficulty'] != _selectedDifficulty) {
           return false;
         }
-        
+
         // Search filter
         final searchQuery = _searchController.text.toLowerCase();
         if (searchQuery.isNotEmpty) {
@@ -91,7 +104,7 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
             return false;
           }
         }
-        
+
         return true;
       }).toList();
     });

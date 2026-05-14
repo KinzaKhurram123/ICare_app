@@ -95,7 +95,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
       GoRoute(path: '/work-with-us', builder: (_, __) => const WorkWithUsSignup()),
       GoRoute(path: '/dashboard', builder: (_, __) => const TabsScreen()),
-      GoRoute(path: '/lms/catalog', builder: (_, __) => const LmsPublicCatalog()),
+      GoRoute(
+        path: '/lms/catalog',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return LmsPublicCatalog(audienceFilter: extra?['audienceFilter'] as String?);
+        },
+      ),
       GoRoute(path: '/admin/verifications', builder: (_, __) => const AdminVerificationPanel()),
       
       // Instructor LMS Routes
