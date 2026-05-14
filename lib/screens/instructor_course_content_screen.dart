@@ -271,7 +271,7 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
                   certificateReleased: _course?['certificateReleased'] == true,
                   onSelect: (t) => setState(() => _certificateTemplate = t),
                 ),
-              ));
+              )).then((_) => _loadCourse()); // reload course to get updated certificateReleased
             },
           ),
           // Go Live button

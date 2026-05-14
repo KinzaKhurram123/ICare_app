@@ -99,12 +99,30 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
     setState(() { _released = value; _savingRelease = true; });
     try {
       if (widget.courseId != null) {
-        await ApiService().put('/courses/${widget.courseId}/certificate/release', {
+        final res = await ApiService().put('/courses/${widget.courseId}/certificate/release', {
           'released': value,
           'template': _selected.name,
         });
+        // Update state from server response to keep in sync
+        if (res.data is Map && res.data['course'] != null) {
+          final serverReleased = res.data['course']['certificateReleased'] == true;
+          if (mounted) setState(() => _released = serverReleased);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(value ? '✅ Certificate released to students' : '🔒 Certificate locked'),
+            backgroundColor: value ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 2),
+          ));
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      // Revert on error
+      if (mounted) setState(() => _released = !value);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+      );
+    }
     if (mounted) setState(() => _savingRelease = false);
   }
 

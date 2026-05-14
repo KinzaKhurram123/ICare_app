@@ -828,6 +828,8 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                                 isLastLesson: isLast,
                                 courseTitle: courseTitle,
                                 instructorName: instructorName,
+                                // Check if instructor has released the certificate
+                                certificateReleased: widget.courseData?['certificateReleased'] == true,
                               ),
                             ),
                           );
