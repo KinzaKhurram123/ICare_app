@@ -203,10 +203,13 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
           _messages = newList;
           if (!silent) _isLoading = false;
         });
-        // Sync timer from first message timestamp (ensures doctor & patient show same time)
+        // Sync timer from EARLIEST message timestamp (both doctor & patient show same time)
         if (newList.isNotEmpty && !_timerSynced) {
           _timerSynced = true;
-          _timer.syncFromStartTime(newList.first.timestamp);
+          // Use min timestamp — messages may not be sorted oldest-first
+          final earliest = newList.reduce((a, b) =>
+              a.timestamp.isBefore(b.timestamp) ? a : b);
+          _timer.syncFromStartTime(earliest.timestamp);
         }
         if (hadNewMessages) {
           print('📥 New messages detected, scrolling to bottom');
