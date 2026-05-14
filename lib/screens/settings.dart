@@ -1278,6 +1278,7 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
   final void Function(BuildContext, String) onComingSoon;
   final void Function(BuildContext) onReportIssue;
   final void Function(BuildContext) onDeleteAccount;
+  final void Function(BuildContext)? onShowFeeDialog;
 
   const _MobileSettingsLayout({
     required this.role,
@@ -1300,6 +1301,7 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
     required this.onComingSoon,
     required this.onReportIssue,
     required this.onDeleteAccount,
+    this.onShowFeeDialog,
   });
 
   @override
@@ -1321,6 +1323,7 @@ class _MobileSettingsLayout extends StatelessWidget with _SettingsSectionBuilder
       onComingSoon: onComingSoon,
       onReportIssue: onReportIssue,
       onDeleteAccount: onDeleteAccount,
+      onShowFeeDialog: onShowFeeDialog,
     );
 
     return Scaffold(
@@ -1920,6 +1923,7 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
   final void Function(BuildContext, String) onComingSoon;
   final void Function(BuildContext) onReportIssue;
   final void Function(BuildContext) onDeleteAccount;
+  final void Function(BuildContext)? onShowFeeDialog;
 
   const _WebSettingsLayout({
     required this.role,
@@ -1942,6 +1946,7 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
     required this.onComingSoon,
     required this.onReportIssue,
     required this.onDeleteAccount,
+    this.onShowFeeDialog,
   });
 
   String get _settingsSubtitle {
@@ -1982,6 +1987,7 @@ class _WebSettingsLayout extends StatelessWidget with _SettingsSectionBuilder {
       onComingSoon: onComingSoon,
       onReportIssue: onReportIssue,
       onDeleteAccount: onDeleteAccount,
+      onShowFeeDialog: onShowFeeDialog,
     );
 
     return Scaffold(
