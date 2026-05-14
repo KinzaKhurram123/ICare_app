@@ -19,6 +19,7 @@ class Doctor {
   final List<double> ratings;
   final List<String> reviews;
   final double? consultationFee;
+  final List<String> conditionsTreated;
 
   Doctor({
     required this.id,
@@ -39,6 +40,7 @@ class Doctor {
     this.ratings = const [],
     this.reviews = const [],
     this.consultationFee,
+    this.conditionsTreated = const [],
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
@@ -123,6 +125,7 @@ class Doctor {
       ratings: parseRatings(json['ratings']),
       reviews: parseStringList(json['reviews']),
       consultationFee: (json['consultationFee'] ?? json['consultation_fee'])?.toDouble(),
+      conditionsTreated: parseStringList(json['conditionsTreated'] ?? json['conditions_treated']),
     );
   }
 

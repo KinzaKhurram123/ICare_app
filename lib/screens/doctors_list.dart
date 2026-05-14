@@ -9,7 +9,9 @@ import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
 class DoctorsList extends StatefulWidget {
-  const DoctorsList({super.key});
+  final String? initialSpecialty;
+  final String? initialCondition;
+  const DoctorsList({super.key, this.initialSpecialty, this.initialCondition});
 
   @override
   State<DoctorsList> createState() => _DoctorsListState();
@@ -32,11 +34,26 @@ class _DoctorsListState extends State<DoctorsList> {
   String? _languageFilter;
   Set<String> _languages = {};
   String _sortBy = 'rating'; // rating, experience, fees
+  late final TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialSpecialty != null) {
+      _searchQuery = widget.initialSpecialty!;
+      _searchMode = 'specialty';
+    } else if (widget.initialCondition != null) {
+      _searchQuery = widget.initialCondition!;
+      _searchMode = 'condition';
+    }
+    _searchController = TextEditingController(text: _searchQuery);
     _loadDoctors();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDoctors() async {
@@ -105,10 +122,10 @@ class _DoctorsListState extends State<DoctorsList> {
                 _searchQuery.toLowerCase(),
               ) ?? false);
         } else if (_searchMode == 'condition') {
-          matchesSearch = _searchQuery.isEmpty ||
-              (doctor.specialization?.toLowerCase().contains(
-                _searchQuery.toLowerCase(),
-              ) ?? false);
+          final q = _searchQuery.toLowerCase();
+          final inSpec = doctor.specialization?.toLowerCase().contains(q) ?? false;
+          final inConditions = doctor.conditionsTreated.any((c) => c.toLowerCase().contains(q));
+          matchesSearch = _searchQuery.isEmpty || inSpec || inConditions;
         }
 
         final matchesSpecialization =

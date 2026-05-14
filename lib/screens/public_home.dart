@@ -183,6 +183,17 @@ class PublicHome extends StatelessWidget {
                         const SizedBox(height: 14),
                         _ConditionGrid(),
                         const SizedBox(height: 16),
+                        // View All Conditions button
+                        Center(
+                          child: _GlowingViewAllButton(
+                            label: 'View All Conditions',
+                            color: const Color(0xFF0891B2),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const DoctorsList()),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
@@ -353,10 +364,14 @@ class _SpecialtySearchBar extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 15),
           ),
+          onChanged: (value) {
+            // Real-time: navigate on type with debounce not feasible without state,
+            // so show results on submit
+          },
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                MaterialPageRoute(builder: (ctx) => DoctorsList(initialSpecialty: value.trim())),
               );
             }
           },
@@ -394,7 +409,7 @@ class _ConditionOnlySearchBar extends StatelessWidget {
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const DoctorsList()),
+                MaterialPageRoute(builder: (ctx) => DoctorsList(initialCondition: value.trim())),
               );
             }
           },
@@ -405,6 +420,50 @@ class _ConditionOnlySearchBar extends StatelessWidget {
 }
 
 // ── Flashing Book Lab Button ──────────────────────────────────────────────────
+// ── Glowing View All Button ───────────────────────────────────────────────────
+class _GlowingViewAllButton extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _GlowingViewAllButton({required this.label, required this.color, required this.onTap});
+  @override
+  State<_GlowingViewAllButton> createState() => _GlowingViewAllButtonState();
+}
+
+class _GlowingViewAllButtonState extends State<_GlowingViewAllButton> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _glow;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _glow = Tween<double>(begin: 4.0, end: 16.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _glow,
+      builder: (_, __) => GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [widget.color, widget.color.withValues(alpha: 0.8)]),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.4), blurRadius: _glow.value, spreadRadius: 1)],
+          ),
+          child: Text(widget.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+        ),
+      ),
+    );
+  }
+}
+
 class _FlashingBookLabButton extends StatefulWidget {
   @override
   State<_FlashingBookLabButton> createState() => _FlashingBookLabButtonState();
@@ -602,8 +661,13 @@ class _MedicineSearchBarState extends State<_MedicineSearchBar> {
                 ),
                 onSubmitted: (value) {
                   if (value.trim().isNotEmpty) {
+                    // Navigate to pharmacies with the medicine pre-searched
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const PharmaciesScreen()),
+                      MaterialPageRoute(
+                        builder: (ctx) => PharmaciesScreen(
+                          prescribedMedicines: [value.trim()],
+                        ),
+                      ),
                     );
                   }
                 },
@@ -1819,7 +1883,7 @@ class _SpecialtyCardState extends State<_SpecialtyCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const DoctorsList()),
+          MaterialPageRoute(builder: (_) => DoctorsList(initialSpecialty: widget.name)),
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1947,7 +2011,7 @@ class _ConditionCardState extends State<_ConditionCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const DoctorsList()),
+          MaterialPageRoute(builder: (_) => DoctorsList(initialCondition: widget.name)),
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -2914,26 +2978,11 @@ class PublicHomeBody extends StatelessWidget {
               _SpecialtyGrid(),
               const SizedBox(height: 24),
               Center(
-                child: GestureDetector(
+                child: _GlowingViewAllButton(
+                  label: 'View All Specialties',
+                  color: const Color(0xFF7C3AED),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const DoctorsList()),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF7C3AED), width: 1.5),
-                    ),
-                    child: const Text(
-                      'See All Speciality',
-                      style: TextStyle(
-                        color: Color(0xFF7C3AED),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        fontFamily: 'Gilroy-Bold',
-                      ),
-                    ),
                   ),
                 ),
               ),
