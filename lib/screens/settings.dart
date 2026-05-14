@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/services/doctor_service.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/providers/auth_provider.dart';
@@ -410,6 +411,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Consultation Fee Dialog ─────────────────────────────────────────────
+  void _showFeeDialog(BuildContext ctx) {
+    final ctrl = TextEditingController();
+    bool saving = false;
+    // Load current fee first
+    DoctorService().getDoctorStats().then((stats) {
+      final currentFee = stats['consultationFee'];
+      if (currentFee != null && currentFee > 0) {
+        ctrl.text = currentFee.toInt().toString();
+      }
+    }).catchError((_) {});
+
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(children: [
+            Icon(Icons.attach_money_rounded, color: Color(0xFF10B981), size: 24),
+            SizedBox(width: 10),
+            Text('Consultation Fee', style: TextStyle(fontWeight: FontWeight.w800)),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Set your consultation fee (Rs.)', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'e.g. 2000',
+                  prefixText: 'Rs. ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: saving ? null : () async {
+                final fee = double.tryParse(ctrl.text.trim());
+                if (fee == null || fee < 0) return;
+                setS(() => saving = true);
+                try {
+                  // Update only consultation fee via doctor profile endpoint
+                  final svc = DoctorService();
+                  await svc.updateConsultationFee(fee);
+                  if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('Consultation fee set to Rs. ${fee.toInt()}'), backgroundColor: Colors.green),
+                  );
+                } catch (e) {
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+                  );
+                }
+                setS(() => saving = false);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1024,7 +1098,7 @@ mixin _SettingsSectionBuilder {
           _SettingsItem(
             title: 'Consultation Fees',
             icon: Icons.attach_money_rounded,
-            onTap: () => onComingSoon(context, 'Consultation Fees'),
+            onTap: () => _showFeeDialog(context),
           ),
           _SettingsItem(
             title: 'Availability & Schedule',

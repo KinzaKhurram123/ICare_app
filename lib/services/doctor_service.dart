@@ -242,6 +242,28 @@ class DoctorService {
     }
   }
 
+  /// Get doctor stats including current consultation fee
+  Future<Map<String, dynamic>> getDoctorStats() async {
+    try {
+      final response = await _apiService.get('/doctors/stats');
+      final data = response.data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return {};
+    } catch (_) { return {}; }
+  }
+
+  /// Update only the consultation fee
+  Future<void> updateConsultationFee(double fee) async {
+    try {
+      await _apiService.post('/doctors/add_doctor_details', {
+        'consultationFee': fee,
+      });
+    } catch (e) {
+      debugPrint('Error updating consultation fee: $e');
+      rethrow;
+    }
+  }
+
   /// Set doctor online/offline status
   Future<void> setOnlineStatus(bool isOnline) async {
     try {
