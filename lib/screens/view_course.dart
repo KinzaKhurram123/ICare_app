@@ -751,6 +751,20 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
         ),
       );
     }
+
+    // Flatten all lessons to detect the last one for certificate
+    final allLessons = modules.expand((m) => (m['lessons'] as List? ?? [])).toList();
+    final lastLessonId = allLessons.isNotEmpty
+        ? (allLessons.last['_id'] ?? allLessons.last['id'])?.toString()
+        : null;
+    // Get course meta for certificate
+    final dynamic titleVal2 = widget.courseData?['title'] ?? widget.courseData?['name'];
+    final courseTitle = (titleVal2 is String) ? titleVal2 : 'Course';
+    String instructorName = 'Instructor';
+    final dynamic instrVal2 = widget.courseData?['instructor'];
+    if (instrVal2 is Map) instructorName = instrVal2['name']?.toString() ?? instructorName;
+    else if (instrVal2 is String) instructorName = instrVal2;
+
     return Column(
       children: modules.asMap().entries.map((mEntry) {
         final mIndex = mEntry.key;
@@ -805,9 +819,16 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                         ),
                   onTap: isPurchased
                       ? () {
+                          final lessonId = (lesson['_id'] ?? lesson['id'])?.toString();
+                          final isLast = lastLessonId != null && lessonId == lastLessonId;
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (ctx) => LessonPlayer(lesson: lesson),
+                              builder: (ctx) => LessonPlayer(
+                                lesson: lesson,
+                                isLastLesson: isLast,
+                                courseTitle: courseTitle,
+                                instructorName: instructorName,
+                              ),
                             ),
                           );
                         }

@@ -856,10 +856,129 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                         value: 'copy',
                         child: Text('Copy link', style: TextStyle(fontSize: 14))),
                   ],
-                  onSelected: (_) {},
+                  onSelected: (val) {
+                    if (!isAnnouncement) return;
+                    final postId = item.data['_id']?.toString() ?? '';
+                    if (val == 'edit') _editAnnouncement(postId, content);
+                    if (val == 'delete') _deleteAnnouncement(postId);
+                  },
                 ),
               ],
             ),
+          ),
+          // Content text
+          if (content.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(content, style: const TextStyle(fontSize: 14, color: Color(0xFF202124))),
+            ),
+          // Comments section
+          if (isAnnouncement) _buildCommentSection(item),
+        ],
+      ),
+    );
+  }
+
+  void _editAnnouncement(String postId, String currentContent) {
+    final ctrl = TextEditingController(text: currentContent);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Announcement', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: TextField(controller: ctrl, maxLines: 4, decoration: const InputDecoration(border: OutlineInputBorder())),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _lms.updateAnnouncement(postId, ctrl.text.trim());
+                await _loadStream();
+              } catch (_) {}
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteAnnouncement(String postId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Announcement?', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: const Text('This will permanently remove the announcement.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _lms.deleteAnnouncement(postId);
+                await _loadStream();
+              } catch (_) {}
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentSection(dynamic item) {
+    final comments = (item.data['comments'] as List?) ?? [];
+    final ctrl = TextEditingController();
+    final postId = item.data['_id']?.toString() ?? '';
+
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Color(0xFFDADCE0))),
+        color: Color(0xFFF8FAFC),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Existing comments
+          ...comments.take(3).map((c) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(children: [
+              CircleAvatar(radius: 12, backgroundColor: const Color(0xFF1A73E8),
+                  child: Text((c['authorName'] ?? 'U')[0].toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.white))),
+              const SizedBox(width: 8),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(c['authorName'] ?? 'User', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                Text(c['text'] ?? '', style: const TextStyle(fontSize: 13)),
+              ])),
+            ]),
+          )),
+          // Add comment input
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+            child: Row(children: [
+              CircleAvatar(radius: 14, backgroundColor: const Color(0xFFE8F0FE),
+                  child: const Icon(Icons.person_rounded, size: 16, color: Color(0xFF1A73E8))),
+              const SizedBox(width: 8),
+              Expanded(child: TextField(
+                controller: ctrl,
+                decoration: InputDecoration(
+                  hintText: 'Add class comment...',
+                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF70757A)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Color(0xFFDADCE0))),
+                  filled: true, fillColor: Colors.white,
+                ),
+                onSubmitted: (text) async {
+                  if (text.trim().isEmpty || postId.isEmpty) return;
+                  try {
+                    await _lms.addComment(postId, text.trim());
+                    ctrl.clear();
+                    await _loadStream();
+                  } catch (_) {}
+                },
+              )),
+            ]),
           ),
         ],
       ),

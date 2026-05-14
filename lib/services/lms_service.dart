@@ -149,6 +149,10 @@ class LmsService {
     return getCourseAnnouncements(courseId);
   }
 
+  Future<void> updateAnnouncement(String postId, String content) async {
+    try { await _api.put('/lms/announcements/$postId', {'content': content}); } catch (_) {}
+  }
+
   Future<Map<String, dynamic>> createAnnouncement(Map<String, dynamic> data) async {
     try {
       final response = await _api.post('/lms/announcements', data);
