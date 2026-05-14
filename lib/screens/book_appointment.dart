@@ -4,6 +4,7 @@ import 'package:icare/models/doctor.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/add_card.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/services/doctor_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -38,6 +39,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   final _genderController = TextEditingController();
   final _ageController = TextEditingController();
   bool _certifyChecked = false; // "I certify all details are correct"
+  double? _actualFee; // fetched from doctor profile if not in doctor model
 
   // Morning slots 9:00 AM - 11:45 AM (15 min intervals)
   List<String> _morningSlots = [
@@ -72,6 +74,29 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     _generateSlotsFromDoctorHours();
     // Auto-fill user details for "Myself"
     WidgetsBinding.instance.addPostFrameCallback((_) => _fillMyselfDetails());
+    // Fetch actual consultation fee from doctor profile
+    _fetchActualFee();
+  }
+
+  Future<void> _fetchActualFee() async {
+    // If fee already set in doctor model, use it
+    if ((widget.doctor.consultationFee ?? 0) > 0) {
+      setState(() => _actualFee = widget.doctor.consultationFee);
+      return;
+    }
+    // Otherwise fetch from doctor profile endpoint
+    try {
+      final doctorId = widget.doctor.user.id.isNotEmpty
+          ? widget.doctor.user.id
+          : widget.doctor.id ?? '';
+      if (doctorId.isEmpty) return;
+      final response = await DoctorService().getDoctorById(doctorId);
+      final doctor = response['doctor'];
+      final fee = doctor?['consultationFee'] ?? doctor?['consultation_fee'];
+      if (fee != null && (fee is num) && fee > 0 && mounted) {
+        setState(() => _actualFee = fee.toDouble());
+      }
+    } catch (_) {}
   }
 
   /// Parse time string like "9:00 AM", "09:00 AM", "9:00", "21:00" → TimeOfDay
@@ -196,7 +221,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     if (!mounted) return;
 
     if (result['success']) {
-      final fee = widget.doctor.consultationFee ?? 0;
+      final fee = _actualFee ?? widget.doctor.consultationFee ?? 0;
       // Show Pay Now bottom sheet popup
       if (mounted) _showPayNowPopup(fee.toDouble());
     } else {
@@ -499,7 +524,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
 
   // ── STEP 0: Date + Slot Selection ─────────────────────────────────────────
   Widget _buildSlotSelection() {
-    final fee = widget.doctor.consultationFee;
+    final fee = _actualFee ?? widget.doctor.consultationFee;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -838,7 +863,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
 
   // ── STEP 2: Checkout ───────────────────────────────────────────────────────
   Widget _buildCheckout() {
-    final fee = widget.doctor.consultationFee ?? 0;
+    final fee = _actualFee ?? widget.doctor.consultationFee ?? 0;
     final dateStr = DateFormat('MMM dd').format(_selectedDate);
     final bool isDesktop = Utils.windowWidth(context) > 700;
 
@@ -900,11 +925,11 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
             children: [
               const Text('Consultation Fee', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
               Text(
-                fee > 0 ? 'Rs. ${fee.toInt()}' : 'To be confirmed',
+                fee > 0 ? 'Rs. ${fee.toInt()}' : 'Free / As per clinic',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: fee > 0 ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                  color: fee > 0 ? const Color(0xFF0F172A) : const Color(0xFF10B981),
                 ),
               ),
             ],
