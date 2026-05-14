@@ -54,6 +54,23 @@ router.post('/:postId/comment', authMiddleware, async (req, res) => {
   }
 });
 
+// ── Edit a post ───────────────────────────────────────────────────────────────
+router.put('/:postId', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { content } = req.body;
+    const post = await Announcement.findByIdAndUpdate(
+      toId(req.params.postId),
+      { content },
+      { new: true }
+    );
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+    res.json({ success: true, post });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ── Delete a post ─────────────────────────────────────────────────────────────
 router.delete('/:postId', authMiddleware, async (req, res) => {
   try {
