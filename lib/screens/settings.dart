@@ -1101,7 +1101,13 @@ mixin _SettingsSectionBuilder {
           _SettingsItem(
             title: 'Consultation Fees',
             icon: Icons.attach_money_rounded,
-            onTap: () => onShowFeeDialog?.call(context) ?? onComingSoon(context, 'Consultation Fees'),
+            onTap: () {
+              if (onShowFeeDialog != null) {
+                onShowFeeDialog!(context);
+              } else {
+                onComingSoon(context, 'Consultation Fees');
+              }
+            },
           ),
           _SettingsItem(
             title: 'Availability & Schedule',
