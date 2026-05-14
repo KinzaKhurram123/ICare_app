@@ -890,7 +890,6 @@ class _CourseCardState extends State<_CourseCard> {
             ),
           ),
         ),
-      ),
     );
   }
 }
