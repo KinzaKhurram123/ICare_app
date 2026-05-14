@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/screens/doctor_profile_setup.dart';
 import 'package:icare/services/doctor_service.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:go_router/go_router.dart';
@@ -419,13 +420,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showFeeDialog(BuildContext ctx) {
     final ctrl = TextEditingController();
     bool saving = false;
-    // Load current fee first
-    DoctorService().getDoctorStats().then((stats) {
-      final currentFee = stats['consultationFee'];
-      if (currentFee != null && currentFee > 0) {
-        ctrl.text = currentFee.toInt().toString();
-      }
-    }).catchError((_) {});
 
     showDialog(
       context: ctx,
@@ -1117,12 +1111,16 @@ mixin _SettingsSectionBuilder {
           _SettingsItem(
             title: 'Specialization & Qualifications',
             icon: Icons.school_outlined,
-            onTap: () => onComingSoon(context, 'Specialization & Qualifications'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DoctorProfileSetup()),
+            ),
           ),
           _SettingsItem(
             title: 'Clinic Details',
             icon: Icons.local_hospital_outlined,
-            onTap: () => onComingSoon(context, 'Clinic Details'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DoctorProfileSetup()),
+            ),
           ),
           _SettingsItem(
             title: 'Prescription Templates',
