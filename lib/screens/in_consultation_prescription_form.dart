@@ -335,8 +335,8 @@ class _InConsultationPrescriptionFormState
 
   EnhancedPrescription _buildPrescriptionObject({required bool isComplete}) {
     return EnhancedPrescription(
-      patientId: widget.appointment.patient!.id,
-      doctorId: widget.appointment.doctor!.id,
+      patientId: widget.appointment.patient?.id ?? '',
+      doctorId: widget.appointment.doctor?.id ?? '',
       consultationId: widget.consultationId,
       patientHistoryId: _patientHistoryId,
       soapNotes: SOAPNotes(
