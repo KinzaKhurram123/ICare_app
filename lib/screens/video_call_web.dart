@@ -245,6 +245,9 @@ class _VideoCallWebState extends State<VideoCall> {
   }
 
   void _showDeclinedDialog() {
+    if (!mounted) return;
+    // Capture navigator BEFORE dialog opens — ensures both pops work correctly
+    final nav = Navigator.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -258,7 +261,10 @@ class _VideoCallWebState extends State<VideoCall> {
         content: const Text('The patient has declined your call.'),
         actions: [
           ElevatedButton(
-            onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+            onPressed: () {
+              nav.pop(); // close dialog
+              nav.pop(); // go back to chat interface
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             child: const Text('Go Back'),
           ),
@@ -289,6 +295,8 @@ class _VideoCallWebState extends State<VideoCall> {
       _noAnswerTimer?.cancel();
       try { _agoraLeave(); } catch (_) {}
       if (!mounted) return;
+      // Capture navigator BEFORE dialog opens
+      final nav = Navigator.of(context);
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -302,7 +310,10 @@ class _VideoCallWebState extends State<VideoCall> {
           content: const Text('The patient declined your call or did not answer.'),
           actions: [
             ElevatedButton(
-              onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+              onPressed: () {
+                nav.pop(); // close dialog
+                nav.pop(); // go back to chat interface
+              },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               child: const Text('Go Back'),
             ),
