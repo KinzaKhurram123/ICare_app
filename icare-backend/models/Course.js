@@ -54,6 +54,9 @@ const courseSchema = new mongoose.Schema({
   is_active: { type: Boolean, default: true },
   rating: { type: Number, default: 0 },
   total_reviews: { type: Number, default: 0 },
+  // Instructor must explicitly release certificate before students can download
+  certificateReleased: { type: Boolean, default: false },
+  certificateTemplate: { type: String, default: 'classic' },
 }, { timestamps: true });
 
 // No pre-save hooks — sync logic is handled in route handlers

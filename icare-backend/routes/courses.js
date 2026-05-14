@@ -160,6 +160,33 @@ router.get('/certificates/my', authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /enrollments/:id/complete — mark enrollment as completed
+router.put('/enrollments/:id/complete', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const enrollment = await Enrollment.findByIdAndUpdate(
+      toId(req.params.id),
+      { 'progress.completed': true, 'progress.completedAt': new Date() },
+      { new: true }
+    );
+    if (!enrollment) return res.status(404).json({ success: false, message: 'Enrollment not found' });
+    res.json({ success: true, enrollment });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// PUT /courses/:courseId/certificate/release — instructor releases certificate
+router.put('/:courseId/certificate/release', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { released, template } = req.body;
+    const update = { certificateReleased: released !== false };
+    if (template) update.certificateTemplate = template;
+    const course = await Course.findByIdAndUpdate(toId(req.params.courseId), update, { new: true });
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    res.json({ success: true, course, message: released !== false ? 'Certificate released to students' : 'Certificate revoked' });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // GET /api/courses/:id — get single course
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
