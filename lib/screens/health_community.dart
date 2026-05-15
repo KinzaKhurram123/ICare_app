@@ -67,15 +67,22 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
         automaticallyImplyLeading: false,
         leading: const CustomBackButton(),
         centerTitle: true,
-        title: const Text(
-          'Health Community',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
-            fontFamily: 'Gilroy-Bold',
-            letterSpacing: -0.3,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset('assets/images/icare-Logo.svg', height: 24),
+            const SizedBox(width: 8),
+            const Text(
+              'Health Community',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                fontFamily: 'Gilroy-Bold',
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
         shape: const Border(
           bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),

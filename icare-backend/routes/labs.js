@@ -220,17 +220,19 @@ router.get('/stats', authMiddleware, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [total, pending, completed, todayCount] = await Promise.all([
+    const [total, pending, completed, todayCount, completedDocs] = await Promise.all([
       LabTestRequest.countDocuments({ lab_id: userId }),
       LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['pending'] } }),
       LabTestRequest.countDocuments({ lab_id: userId, status: { $in: ['completed', 'reporting_done', 'reporting-done'] } }),
       LabTestRequest.countDocuments({ lab_id: userId, createdAt: { $gte: today } }),
+      LabTestRequest.find({ lab_id: userId, status: { $in: ['completed', 'reporting_done', 'reporting-done'] } }, { total_amount: 1, price: 1 }).lean(),
     ]);
 
-    res.json({ success: true, stats: { todayRequests: todayCount, totalRequests: total, pendingRequests: pending, completedRequests: completed } });
+    const revenue = completedDocs.reduce((sum, r) => sum + (r.total_amount || r.price || 0), 0);
+    res.json({ success: true, stats: { todayRequests: todayCount, totalRequests: total, pendingRequests: pending, completedRequests: completed, revenue: Math.round(revenue) } });
   } catch (error) {
     console.error(error);
-    res.json({ success: true, stats: { todayRequests: 0, totalRequests: 0, pendingRequests: 0, completedRequests: 0 } });
+    res.json({ success: true, stats: { todayRequests: 0, totalRequests: 0, pendingRequests: 0, completedRequests: 0, revenue: 0 } });
   }
 });
 

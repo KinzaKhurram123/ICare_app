@@ -180,7 +180,11 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildPendingAppointmentsCard(),
                         const SizedBox(height: 24),
 
-                        // 5. Clinical Flags (SOAP notes alerts)
+                        // 5. Revenue Card
+                        _buildRevenueCard(),
+                        const SizedBox(height: 24),
+
+                        // 6. Clinical Flags (SOAP notes alerts)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
@@ -1240,6 +1244,72 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         ],
       ),
     );
+  }
+
+  Widget _buildRevenueCard() {
+    final revenue = _stats['revenue'] ?? 0;
+    final consultationFee = _stats['consultationFee'] ?? _stats['fee'] ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.payments_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rs. ${_formatRevenue(revenue)}',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Total Revenue${consultationFee > 0 ? '  •  Fee: Rs. $consultationFee' : ''}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRevenue(dynamic val) {
+    final n = (val is num) ? val.toInt() : int.tryParse('$val') ?? 0;
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return '$n';
   }
 
   Widget _buildClinicalFlags() {

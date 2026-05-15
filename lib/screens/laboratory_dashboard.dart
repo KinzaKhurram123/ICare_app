@@ -262,6 +262,8 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                               const SizedBox(height: 24),
                             ],
                             _buildStatsGrid(isMobile),
+                            const SizedBox(height: 16),
+                            _buildLabRevenueCard(),
                             const SizedBox(height: 32),
                             _buildQuickActions(isMobile),
                             const SizedBox(height: 32),
@@ -279,6 +281,8 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                             const SizedBox(height: 24),
                           ],
                           _buildStatsGrid(isMobile),
+                          const SizedBox(height: 16),
+                          _buildLabRevenueCard(),
                           const SizedBox(height: 32),
                           _buildQuickActions(isMobile),
                           const SizedBox(height: 32),
@@ -483,6 +487,64 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLabRevenueCard() {
+    final revenue = (_stats?['revenue'] as num?)?.toInt() ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0B2D6E), Color(0xFF1565C0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B2D6E).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.payments_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rs. $revenue',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Total Revenue',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
