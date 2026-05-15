@@ -4,6 +4,7 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/services/health_tracker_service.dart';
+import 'package:intl/intl.dart';
 
 class LifestyleTrackerScreen extends StatefulWidget {
   const LifestyleTrackerScreen({super.key});
@@ -62,12 +63,67 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
 
   double get _dailyGoalProgress => (_loggedToday / _totalVitals).clamp(0.0, 1.0);
 
+  // All logs timeline (for My Logs sheet)
+  List<Map<String, dynamic>> _allLogs = [];
+  bool _logsLoading = false;
+  String _logFilter = 'all';
+
+  // Weekly / monthly goal progress (derived from _allLogs)
+  double get _weeklyGoalProgress {
+    final now    = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final start  = DateTime(monday.year, monday.month, monday.day);
+    final cnt = _allLogs.where((l) {
+      final ts = DateTime.tryParse(l['timestamp'] as String? ?? '');
+      return ts != null && !ts.isBefore(start);
+    }).length;
+    return (cnt / (_totalVitals * 7)).clamp(0.0, 1.0);
+  }
+
+  double get _monthlyGoalProgress {
+    final now   = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
+    final days  = DateTime(now.year, now.month + 1, 0).day;
+    final cnt = _allLogs.where((l) {
+      final ts = DateTime.tryParse(l['timestamp'] as String? ?? '');
+      return ts != null && !ts.isBefore(start);
+    }).length;
+    return (cnt / (_totalVitals * days)).clamp(0.0, 1.0);
+  }
+
+  String _weekLabel() {
+    final now    = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    return '${DateFormat('EEE, MMM d').format(monday)} – ${DateFormat('EEE, MMM d').format(sunday)}';
+  }
+  String _monthLabel() => DateFormat('MMMM').format(DateTime.now());
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
     _loadUserName();
     _loadLatestVitals();
+    _loadAllLogs();
+  }
+
+  Future<void> _loadAllLogs() async {
+    setState(() => _logsLoading = true);
+    try {
+      final result = await _healthTrackerService.getEntries(limit: 500);
+      if (result['success'] == true && mounted) {
+        final list = (result['entries'] as List? ?? []).cast<Map<String, dynamic>>();
+        list.sort((a, b) {
+          final ta = DateTime.tryParse(a['timestamp'] as String? ?? '') ?? DateTime(2000);
+          final tb = DateTime.tryParse(b['timestamp'] as String? ?? '') ?? DateTime(2000);
+          return tb.compareTo(ta);
+        });
+        setState(() => _allLogs = list);
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _logsLoading = false);
+    }
   }
 
   Future<void> _loadLatestVitals() async {
@@ -133,6 +189,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
     );
     // Reload to reflect updated values and progress
     await _loadLatestVitals();
+    _loadAllLogs();
   }
 
   Future<void> _loadUserName() async {
@@ -180,6 +237,269 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
           Navigator.pop(ctx);
         },
       ),
+    );
+  }
+
+  // ── Log Selection Sheet ────────────────────────────────────────────────
+  void _showLogSelectionSheet() {
+    const vitals = [
+      {'id': 'Blood Pressure',   'emoji': '💓', 'unit': 'mmHg',   'isBP': true},
+      {'id': 'Blood Sugar',      'emoji': '🩸', 'unit': 'mg/dL',  'isBP': false},
+      {'id': 'Weight',           'emoji': '⚖️',  'unit': 'kg',     'isBP': false},
+      {'id': 'Heart Rate',       'emoji': '❤️',  'unit': 'bpm',    'isBP': false},
+      {'id': 'SpO2',             'emoji': '🫁', 'unit': '%',      'isBP': false},
+      {'id': 'Steps',            'emoji': '🚶', 'unit': 'steps',  'isBP': false},
+      {'id': 'Water Intake',     'emoji': '💧', 'unit': 'glasses','isBP': false},
+      {'id': 'Sleep',            'emoji': '😴', 'unit': 'hours',  'isBP': false},
+      {'id': 'Calories',         'emoji': '🔥', 'unit': 'kcal',   'isBP': false},
+      {'id': 'Mood & Wellness',  'emoji': '😊', 'unit': '',       'isBP': false},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.65, maxChildSize: 0.9, minChildSize: 0.4,
+        builder: (_, scroll) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(children: [
+            Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2))),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, 12),
+              child: Align(alignment: Alignment.centerLeft,
+                child: Text('What do you want to log?',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)))),
+            ),
+            Expanded(child: GridView.count(
+              controller: scroll,
+              crossAxisCount: 2,
+              crossAxisSpacing: 12, mainAxisSpacing: 12,
+              childAspectRatio: 2.4,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              children: vitals.map((v) {
+                return InkWell(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    if (v['id'] == 'Mood & Wellness') {
+                      _showMoodPicker();
+                    } else if (v['isBP'] == true) {
+                      _showBPDialog();
+                    } else {
+                      final ctrl = TextEditingController();
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => _LogBottomSheet(
+                          title: v['id'] as String,
+                          subtitle: 'Enter your ${(v['id'] as String).toLowerCase()} reading',
+                          unit: v['unit'] as String,
+                          controller: ctrl,
+                          earnPoints: 5,
+                          onSave: () {
+                            final val = ctrl.text.trim();
+                            if (val.isNotEmpty) {
+                              Navigator.pop(context);
+                              final type = v['id'] as String;
+                              // Map to backend vitalType keys
+                              final typeMap = {
+                                'Blood Sugar': 'Blood Glucose',
+                                'SpO2': 'Oxygen Level',
+                                'Water Intake': 'Water Intake',
+                              };
+                              _saveVital(typeMap[type] ?? type, val, v['unit'] as String);
+                            }
+                          },
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(children: [
+                      Text(v['emoji'] as String, style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(v['id'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        if ((v['unit'] as String).isNotEmpty)
+                          Text(v['unit'] as String, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                      ])),
+                    ]),
+                  ),
+                );
+              }).toList(),
+            )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── My Logs Sheet ─────────────────────────────────────────────────────
+  void _showMyLogs() {
+    const vitalTypes = ['all', 'Blood Pressure', 'Blood Glucose', 'Weight',
+      'Heart Rate', 'Oxygen Level', 'Steps', 'Water Intake', 'Sleep', 'Calories'];
+    const vitalLabels = {'all': 'All Vitals', 'Blood Pressure': 'BP', 'Blood Glucose': 'Sugar',
+      'Weight': 'Weight', 'Heart Rate': 'Heart Rate', 'Oxygen Level': 'SpO2',
+      'Steps': 'Steps', 'Water Intake': 'Water', 'Sleep': 'Sleep', 'Calories': 'Calories'};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(builder: (ctx, setModal) {
+        final filtered = _logFilter == 'all'
+            ? _allLogs
+            : _allLogs.where((l) => (l['vitalType'] ?? '') == _logFilter).toList();
+
+        // Group by date key (yyyy-MM-dd)
+        final grouped = <String, List<Map<String, dynamic>>>{};
+        for (final log in filtered) {
+          final ts = DateTime.tryParse(log['timestamp'] as String? ?? '');
+          if (ts == null) continue;
+          final key = DateFormat('yyyy-MM-dd').format(ts);
+          grouped.putIfAbsent(key, () => []).add(log);
+        }
+        final dateKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+        String dateHeader(String key) {
+          final dt  = DateTime.parse(key);
+          final now = DateTime.now();
+          final todayKey     = DateFormat('yyyy-MM-dd').format(now);
+          final yesterdayKey = DateFormat('yyyy-MM-dd').format(now.subtract(const Duration(days: 1)));
+          if (key == todayKey)     return 'Today  •  ${DateFormat('MMMM d, yyyy').format(dt)}';
+          if (key == yesterdayKey) return 'Yesterday  •  ${DateFormat('MMMM d, yyyy').format(dt)}';
+          return DateFormat('EEEE  •  MMMM d, yyyy').format(dt);
+        }
+
+        return DraggableScrollableSheet(
+          initialChildSize: 0.88, maxChildSize: 0.95, minChildSize: 0.4,
+          builder: (_, scroll) => Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(children: [
+              Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                child: Row(children: [
+                  const Text('My Logs', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                  const Spacer(),
+                  Text('${filtered.length} entries', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ]),
+              ),
+              // Log By dropdown
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                child: Row(children: [
+                  const Text('Log By:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                  const SizedBox(width: 10),
+                  Expanded(child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+                    child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+                      value: _logFilter,
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                      items: vitalTypes.map((t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(vitalLabels[t] ?? t, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      )).toList(),
+                      onChanged: (val) { setState(() => _logFilter = val ?? 'all'); setModal(() {}); },
+                    )),
+                  )),
+                ]),
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Expanded(
+                child: _logsLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filtered.isEmpty
+                    ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.history_rounded, size: 56, color: Color(0xFFCBD5E1)),
+                        const SizedBox(height: 12),
+                        const Text('No entries yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
+                        const SizedBox(height: 4),
+                        const Text('Tap "Log More" to record your first entry.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                      ]))
+                    : ListView.builder(
+                        controller: scroll,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                        itemCount: dateKeys.length,
+                        itemBuilder: (_, gi) {
+                          final key     = dateKeys[gi];
+                          final entries = grouped[key]!;
+                          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            // Date header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  decoration: BoxDecoration(color: AppColors.primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(20)),
+                                  child: Text(dateHeader(key), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryColor)),
+                                ),
+                                const SizedBox(width: 8),
+                                Text('${entries.length} ${entries.length == 1 ? 'entry' : 'entries'}',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                              ]),
+                            ),
+                            // Log entries
+                            ...entries.map((log) {
+                              final ts  = DateTime.tryParse(log['timestamp'] as String? ?? '');
+                              final time = ts != null ? DateFormat('hh:mm a').format(ts) : '';
+                              final type = log['vitalType'] as String? ?? '';
+                              final val  = log['value']    as String? ?? '';
+                              final unit = log['unit']     as String? ?? '';
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryColor.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.monitor_heart_outlined, color: AppColors.primaryColor, size: 16),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Text(type, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                                    Text('$val${unit.isNotEmpty ? ' $unit' : ''}',
+                                      style: TextStyle(fontSize: 12, color: AppColors.primaryColor, fontWeight: FontWeight.w600)),
+                                  ])),
+                                  Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                                ]),
+                              );
+                            }),
+                            const SizedBox(height: 4),
+                          ]);
+                        },
+                      ),
+              ),
+            ]),
+          ),
+        );
+      }),
     );
   }
 
@@ -269,9 +589,15 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
           ),
         ),
         actions: [
+          TextButton.icon(
+            onPressed: _showMyLogs,
+            icon: const Icon(Icons.history_rounded, size: 16),
+            label: const Text('My Logs', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+          ),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(20),
@@ -280,15 +606,11 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('⭐', style: TextStyle(fontSize: 14)),
+                const Text('⭐', style: TextStyle(fontSize: 13)),
                 const SizedBox(width: 4),
                 Text(
-                  '$_pointsToday pts today',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFB45309),
-                  ),
+                  '$_pointsToday pts',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
                 ),
               ],
             ),
@@ -315,7 +637,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _tabController.animateTo(0),
+        onPressed: _showLogSelectionSheet,
         backgroundColor: AppColors.primaryColor,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text('Log More',
@@ -385,6 +707,46 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
                         valueColor:
                             AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
                         minHeight: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // ── Weekly Goal ─────────────────────────────────────────
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Row(children: [
+                        const Icon(Icons.calendar_view_week_rounded, size: 11, color: Color(0xFF10B981)),
+                        const SizedBox(width: 4),
+                        const Text('Weekly', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      ]),
+                      Text(_weekLabel(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                    ]),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _weeklyGoalProgress,
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                        minHeight: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // ── Monthly Goal ─────────────────────────────────────────
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Row(children: [
+                        const Icon(Icons.calendar_month_rounded, size: 11, color: Color(0xFF8B5CF6)),
+                        const SizedBox(width: 4),
+                        const Text('Monthly', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      ]),
+                      Text(_monthLabel(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6))),
+                    ]),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _monthlyGoalProgress,
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                        minHeight: 6,
                       ),
                     ),
                   ],
