@@ -775,8 +775,11 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
                                 if (!context.mounted) return;
                                 Navigator.pop(context);
                                 if (res['success'] == true && res['consultation'] != null) {
-                                  final prescriptionId = (res['consultation'] as Map)['prescriptionId']?.toString();
-                                  if (prescriptionId != null && prescriptionId.isNotEmpty) {
+                                  final rawPrescId = (res['consultation'] as Map)['prescriptionId'];
+                                  final prescriptionId = rawPrescId is Map
+                                      ? rawPrescId['_id']?.toString() ?? ''
+                                      : rawPrescId?.toString() ?? '';
+                                  if (prescriptionId.isNotEmpty) {
                                     final prescription = await svc.getPrescription(prescriptionId);
                                     if (!context.mounted) return;
                                     if (prescription != null) {

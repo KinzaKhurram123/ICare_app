@@ -447,9 +447,13 @@ class _WebBookingCardState extends State<_WebBookingCard> {
 
       if (result['success'] == true && result['consultation'] != null) {
         final consultation = result['consultation'] as Map<String, dynamic>;
-        final prescriptionId = consultation['prescriptionId']?.toString();
+        // prescriptionId may be a String (ObjectId) or a Map (if populated)
+        final rawPrescId = consultation['prescriptionId'];
+        final prescriptionId = rawPrescId is Map
+            ? rawPrescId['_id']?.toString() ?? ''
+            : rawPrescId?.toString() ?? '';
 
-        if (prescriptionId != null && prescriptionId.isNotEmpty) {
+        if (prescriptionId.isNotEmpty) {
           final prescription = await consultationService.getPrescription(prescriptionId);
           if (!mounted) return;
           if (prescription != null) {

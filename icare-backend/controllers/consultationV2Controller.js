@@ -311,25 +311,32 @@ exports.getConsultationByAppointment = async (req, res) => {
       });
     }
 
-    const consultation = await Consultation.findOne({
-      appointmentId,
-      status: { $in: ['pending', 'active'] }
-    })
+    // Search across all statuses so completed appointments also return their consultation
+    const consultation = await Consultation.findOne({ appointmentId })
+      .sort({ createdAt: -1 }) // newest first in case multiple exist
       .populate('patientId', 'name email phone')
       .populate('doctorId', 'name email phone specialization')
-      .populate('prescriptionId');
+      .lean(); // return plain object — prescriptionId stays as ObjectId string
 
     if (!consultation) {
       return res.status(404).json({
         success: false,
-        message: 'No active consultation found for this appointment'
+        message: 'No consultation found for this appointment'
       });
     }
+
+    // Ensure prescriptionId is always returned as a plain string, not a populated object
+    const consultationObj = {
+      ...consultation,
+      prescriptionId: consultation.prescriptionId
+        ? consultation.prescriptionId.toString()
+        : null,
+    };
 
     res.json({
       success: true,
       consultationId: consultation._id,
-      consultation
+      consultation: consultationObj
     });
   } catch (error) {
     console.error('Error getting consultation by appointment:', error);
