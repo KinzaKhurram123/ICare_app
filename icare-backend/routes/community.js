@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { connectMongoDB } = require('../config/mongodb');
 const CommunityPost = require('../models/CommunityPost');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/auth');
 const cloudinary = require('../config/cloudinary');
 
 // GET /api/community/posts — fetch posts (public)
