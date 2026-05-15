@@ -636,13 +636,6 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showLogSelectionSheet,
-        backgroundColor: AppColors.primaryColor,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Log More',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-      ),
     );
   }
 
@@ -796,30 +789,63 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen>
 
     return Container(
       color: Colors.white,
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        labelColor: AppColors.primaryColor,
-        unselectedLabelColor: const Color(0xFF94A3B8),
-        indicatorColor: AppColors.primaryColor,
-        indicatorWeight: 2.5,
-        labelStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        tabs: tabs
-            .map((t) => Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(t.icon, size: 16),
-                      const SizedBox(width: 6),
-                      Text(t.label),
-                    ],
-                  ),
-                ))
-            .toList(),
+      child: Row(
+        children: [
+          Expanded(
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelColor: AppColors.primaryColor,
+              unselectedLabelColor: const Color(0xFF94A3B8),
+              indicatorColor: AppColors.primaryColor,
+              indicatorWeight: 2,
+              labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              unselectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+              tabs: tabs
+                  .map((t) => Tab(
+                        height: 38,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(t.icon, size: 13),
+                            const SizedBox(width: 4),
+                            Text(t.label),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          // ── Log More button in tab row ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: GestureDetector(
+              onTap: _showLogSelectionSheet,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('Log More',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        )),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
