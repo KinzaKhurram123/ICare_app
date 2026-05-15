@@ -14,6 +14,7 @@ import 'package:icare/screens/terms_and_conditions.dart' show TermsAndConditions
 import 'package:icare/utils/theme.dart';
 import 'package:icare/services/security_service.dart';
 import 'package:icare/services/health_settings_service.dart';
+import 'package:icare/services/api_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SETTINGS SCREEN
@@ -481,7 +482,7 @@ class _WebSettingsLayout extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), centerTitle: true, backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Center(child: Container(constraints: const BoxConstraints(maxWidth: 800), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _profileCard(context), const SizedBox(height: 24),
+        _ProfileEditCard(p: p), const SizedBox(height: 24),
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 24)],
         _notificationsCard(context), const SizedBox(height: 24),
         if (p.isPatient) ...[_waterReminderCard(context), const SizedBox(height: 24)],
@@ -750,7 +751,7 @@ class _MobileSettingsLayout extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), centerTitle: true, backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _profileCard(context), const SizedBox(height: 16),
+        _ProfileEditCard(p: p), const SizedBox(height: 16),
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 16)],
         _notificationsCard(context), const SizedBox(height: 16),
         if (p.isPatient) ...[_waterReminderCard(context), const SizedBox(height: 16)],
@@ -965,5 +966,280 @@ class _MobileSettingsLayout extends StatelessWidget {
 
   Widget _mobileComingSoon(String feature, IconData icon) {
     return Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFFEFCE8), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFFEF08A))), child: Row(children: [Icon(icon, size: 20, color: const Color(0xFFCA8A04)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(feature, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF854D0E))), const SizedBox(height: 2), const Text('Coming soon', style: TextStyle(fontSize: 12, color: Color(0xFFA16207)))])), const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFCA8A04))]));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFILE EDIT CARD — Approach 2: Global Toggle (View ↔ Edit)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _ProfileEditCard extends StatefulWidget {
+  final _SettingsLayoutParams p;
+  const _ProfileEditCard({required this.p, super.key});
+  @override
+  State<_ProfileEditCard> createState() => _ProfileEditCardState();
+}
+
+class _ProfileEditCardState extends State<_ProfileEditCard> {
+  bool _editMode = false;
+  bool _saving = false;
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _phoneCtrl;
+  late final TextEditingController _ageCtrl;
+  String? _gender;
+
+  @override
+  void initState() {
+    super.initState();
+    final u = widget.p.user;
+    _nameCtrl  = TextEditingController(text: u?.name ?? '');
+    _phoneCtrl = TextEditingController(text: u?.phoneNumber ?? '');
+    _ageCtrl   = TextEditingController(text: u?.age ?? '');
+    _gender    = (u?.gender?.isNotEmpty == true) ? u!.gender : null;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _ageCtrl.dispose();
+    super.dispose();
+  }
+
+  void _cancelEdit() {
+    final u = widget.p.user;
+    setState(() {
+      _editMode      = false;
+      _nameCtrl.text  = u?.name ?? '';
+      _phoneCtrl.text = u?.phoneNumber ?? '';
+      _ageCtrl.text   = u?.age ?? '';
+      _gender         = (u?.gender?.isNotEmpty == true) ? u!.gender : null;
+    });
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await ApiService().put('/users/profile', {
+        'name': _nameCtrl.text.trim(),
+        'phoneNumber': _phoneCtrl.text.trim(),
+        'age': _ageCtrl.text.trim(),
+        if (_gender != null) 'gender': _gender,
+      });
+      setState(() { _editMode = false; _saving = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      setState(() => _saving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Update failed. Please try again.'),
+          backgroundColor: const Color(0xFFEF4444),
+        ));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = widget.p.user;
+    final name   = _nameCtrl.text.isNotEmpty  ? _nameCtrl.text  : (u?.name ?? 'Not set');
+    final phone  = _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : (u?.phoneNumber ?? 'Not set');
+    final age    = _ageCtrl.text.isNotEmpty   ? _ageCtrl.text   : (u?.age ?? 'Not set');
+    final gender = _gender ?? u?.gender ?? 'Not set';
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Avatar + name + email ───────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                    backgroundImage: u?.profilePicture != null ? NetworkImage(u!.profilePicture!) : null,
+                    child: u?.profilePicture == null
+                        ? Text((u?.name ?? 'U').substring(0, 1).toUpperCase(),
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.primaryColor))
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                        const SizedBox(height: 3),
+                        Text(u?.email ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  // Edit toggle button (only visible in view mode)
+                  if (!_editMode)
+                    TextButton.icon(
+                      onPressed: () => setState(() => _editMode = true),
+                      icon: const Icon(Icons.edit_rounded, size: 15),
+                      label: const Text('Edit', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryColor,
+                        backgroundColor: AppColors.primaryColor.withValues(alpha: 0.07),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+              const Divider(color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 16),
+
+              // ── VIEW MODE ────────────────────────────────────────────────
+              if (!_editMode) ...[
+                _viewRow(Icons.person_outline_rounded,       'Full Name',    name),
+                _viewRow(Icons.phone_outlined,               'Phone',        phone),
+                _viewRow(Icons.cake_rounded,                 'Age',          age),
+                _viewRow(Icons.wc_rounded,                   'Gender',       gender),
+                _viewRow(Icons.email_outlined,               'Email',        u?.email ?? 'Not set'),
+              ],
+
+              // ── EDIT MODE ────────────────────────────────────────────────
+              if (_editMode) ...[
+                _editField('Full Name',    _nameCtrl,  Icons.person_outline_rounded, hint: 'Your full name'),
+                const SizedBox(height: 14),
+                _editField('Phone Number', _phoneCtrl, Icons.phone_outlined,         hint: '+92 300 0000000', type: TextInputType.phone),
+                const SizedBox(height: 14),
+                _editField('Age',          _ageCtrl,   Icons.cake_rounded,           hint: 'e.g. 30',         type: TextInputType.number),
+                const SizedBox(height: 14),
+
+                // Gender dropdown
+                _fieldLabel('Gender'),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: _gender,
+                  hint: const Text('Select gender', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                  decoration: _inputDeco(Icons.wc_rounded),
+                  items: ['Male', 'Female', 'Other']
+                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _gender = v),
+                ),
+
+                const SizedBox(height: 24),
+
+                // ── Action buttons ─────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _saving ? null : _cancelEdit,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _saving ? null : _save,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _saving
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Update Profile', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  Widget _viewRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, size: 16, color: const Color(0xFF64748B)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _editField(String label, TextEditingController ctrl, IconData icon, {String? hint, TextInputType? type}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel(label),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: ctrl,
+          keyboardType: type,
+          decoration: _inputDeco(icon, hint: hint),
+        ),
+      ],
+    );
+  }
+
+  Widget _fieldLabel(String label) {
+    return Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569)));
+  }
+
+  InputDecoration _inputDeco(IconData icon, {String? hint}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+      prefixIcon: Icon(icon, size: 18, color: const Color(0xFF64748B)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5)),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    );
   }
 }
