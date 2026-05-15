@@ -407,7 +407,7 @@ class _LifestyleTrackerScreenState extends State<LifestyleTrackerScreen> {
                                   final vConfig = (_vitals as List).cast<Map<String, dynamic>>()
                                       .firstWhere((v) => v['id'] == log['type'], orElse: () => {'icon': Icons.circle, 'color': 0xFF64748B});
                                   final color = Color(vConfig['color'] as int);
-                                  final dt = DateTime.tryParse(log['ts'] as String ?? '');
+                                  final dt = DateTime.tryParse((log['ts'] as String?) ?? '');
                                   final timeStr = dt != null ? DateFormat('hh:mm a').format(dt) : '';
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
