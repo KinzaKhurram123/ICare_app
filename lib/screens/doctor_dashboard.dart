@@ -180,11 +180,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildPendingAppointmentsCard(),
                         const SizedBox(height: 24),
 
-                        // 5. Revenue Card
-                        _buildRevenueCard(),
-                        const SizedBox(height: 24),
-
-                        // 6. Clinical Flags (SOAP notes alerts)
+                        // 5. Clinical Flags (SOAP notes alerts)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
