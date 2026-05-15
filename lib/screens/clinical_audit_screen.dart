@@ -13,16 +13,6 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _auditLogs = [
     {
-      'message': 'Missing SOAP notes for Appointment #821',
-      'status': 'Critical',
-      'color': Colors.red,
-    },
-    {
-      'message': 'Follow-up date not specified for Record #45',
-      'status': 'Warning',
-      'color': Colors.orange,
-    },
-    {
       'message': 'Record #21 approved by Senior Medical Officer',
       'status': 'Verified',
       'color': Colors.green,
@@ -36,9 +26,9 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
 
     setState(() {
       _auditLogs.insert(0, {
-        'message': 'New: Found 2 incomplete SOAP notes from yesterday.',
-        'status': 'System Flag',
-        'color': Colors.redAccent,
+        'message': 'System: No critical clinical flags found.',
+        'status': 'Clear',
+        'color': Colors.green,
       });
       _isLoading = false;
     });
@@ -46,8 +36,8 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('QA Scan Complete: 2 new issues flagged.'),
-          backgroundColor: Colors.redAccent,
+          content: Text('QA Scan Complete: No critical issues found.'),
+          backgroundColor: Colors.green,
         ),
       );
     }
