@@ -25,7 +25,7 @@ class PrescriptionsScreen extends StatelessWidget {
       {
         "id": "PR-8802",
         "doctor": "Dr. Sarah Johnson",
-        "specialty": "General Physician",
+        "specialty": "General Practitioner",
         "date": "15 Sep 2025",
         "medicines": ["Amoxicillin (500mg)", "Paracetamol", "Vitamin C"],
         "status": "Verified",

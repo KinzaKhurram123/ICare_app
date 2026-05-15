@@ -9,7 +9,40 @@ import 'package:icare/screens/lab_list.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/doctor_search_bar.dart';
+
+// ── Auth guard — show sign-in/sign-up dialog if not logged in ─────────────────
+Future<bool> _requireAuth(BuildContext context) async {
+  final token = await SharedPref().getToken();
+  if (token != null && token.isNotEmpty) return true; // already logged in
+  if (!context.mounted) return false;
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(children: [
+        Icon(Icons.lock_rounded, color: Color(0xFF0036BC), size: 24),
+        SizedBox(width: 10),
+        Text('Sign In Required', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+      ]),
+      content: const Text('Please sign in to continue. New here? You can also create an account.', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+      actions: [
+        OutlinedButton(
+          onPressed: () { Navigator.pop(ctx); ctx.go('/signup'); },
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF0036BC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0036BC))),
+        ),
+        ElevatedButton(
+          onPressed: () { Navigator.pop(ctx); ctx.go('/login'); },
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0036BC), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
+      ],
+    ),
+  );
+  return false;
+}
 
 class PublicHome extends StatelessWidget {
   const PublicHome({super.key});
@@ -1140,9 +1173,13 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                             );
                           },
                           child: ElevatedButton(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const ConsultationDetailsScreen()),
-                            ),
+                            onPressed: () async {
+                              if (await _requireAuth(context)) {
+                                if (context.mounted) Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const ConsultationDetailsScreen()),
+                                );
+                              }
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: const Color(0xFF0036BC),
@@ -1163,9 +1200,13 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
                         ),
                         // Book Appointment button (outlined)
                         OutlinedButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const DoctorsList()),
-                          ),
+                          onPressed: () async {
+                            if (await _requireAuth(context)) {
+                              if (context.mounted) Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const DoctorsList()),
+                              );
+                            }
+                          },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white, width: 2),

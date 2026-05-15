@@ -290,7 +290,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     _buildInfoRow('Name', 'Dr. ${doctorData?['name'] ?? 'N/A'}'),
                     _buildInfoRow('PMDC License', doctorData?['pmdcLicense'] ?? doctorData?['licenseNumber'] ?? 'N/A'),
-                    _buildInfoRow('Specialization', doctorData?['specialization'] ?? 'General Physician'),
+                    _buildInfoRow('Specialization', doctorData?['specialization'] ?? 'General Practitioner'),
                     _buildInfoRow('Phone', doctorData?['phone'] ?? 'N/A'),
                   ],
                 ),

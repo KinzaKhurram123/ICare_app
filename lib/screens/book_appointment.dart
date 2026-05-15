@@ -556,7 +556,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                     children: [
                       Text('Dr. ${widget.doctor.user.name}',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                      Text(widget.doctor.specialization ?? 'General Physician',
+                      Text(widget.doctor.specialization ?? 'General Practitioner',
                           style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                       if (fee != null && fee > 0)
                         Text('Fee: Rs. ${fee.toInt()}',
@@ -897,7 +897,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
                   children: [
                     Text('Dr. ${widget.doctor.user.name}',
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                    Text(widget.doctor.specialization ?? 'General Physician',
+                    Text(widget.doctor.specialization ?? 'General Practitioner',
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                   ],
                 ),

@@ -623,7 +623,7 @@ class _VideoCallWebState extends State<VideoCall> {
                 'timeSlot': a.timeSlot ?? '',
                 'type': isVideo ? 'video' : 'in-person',
                 'appointmentId': a.id ?? '',
-                'doctorSpecialization': 'General Physician',
+                'doctorSpecialization': 'General Practitioner',
               };
             })
             .toList();
@@ -1925,7 +1925,7 @@ class _VideoCallWebState extends State<VideoCall> {
                         final doctor = c['doctor'] as String? ?? '';
                         final patient = c['patient'] as String? ?? '';
                         final timeSlot = c['timeSlot'] as String? ?? '';
-                        final specialization = c['doctorSpecialization'] as String? ?? 'General Physician';
+                        final specialization = c['doctorSpecialization'] as String? ?? 'General Practitioner';
 
                         // Format time nicely
                         String timeLabel = '';

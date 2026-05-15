@@ -566,7 +566,7 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
             hint: 'e.g., MBBS, MD'),
         const SizedBox(height: 12),
         _inputField(_specializationCtrl, 'Specialization', Icons.psychology_outlined,
-            hint: 'e.g., Cardiologist, General Physician'),
+            hint: 'e.g., Cardiologist, General Practitioner'),
         const SizedBox(height: 12),
         _inputField(_pmdcCtrl, 'PMDC Registration Number', Icons.numbers_rounded),
         const SizedBox(height: 12),
