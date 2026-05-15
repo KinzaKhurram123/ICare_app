@@ -389,9 +389,9 @@ extension TargetAudienceExtension on TargetAudience {
   String get displayName {
     switch (this) {
       case TargetAudience.patient:
-        return 'Patients';
+        return 'For Patients (Diet Plan & Health Courses)';
       case TargetAudience.doctor:
-        return 'Doctors';
+        return 'For Healthcare Professionals (Training Programs)';
       case TargetAudience.laboratory:
         return 'Laboratories';
       case TargetAudience.pharmacy:
@@ -401,9 +401,9 @@ extension TargetAudienceExtension on TargetAudience {
       case TargetAudience.instructor:
         return 'Instructors';
       case TargetAudience.both:
-        return 'Both';
+        return 'Both Patients & Professionals';
       case TargetAudience.all:
-        return 'All';
+        return 'All Users';
     }
   }
 
