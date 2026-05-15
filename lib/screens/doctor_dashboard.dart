@@ -176,15 +176,11 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildTodayAppointments(),
                         const SizedBox(height: 24),
 
-                        // 4. Earnings Display
-                        _buildEarningsCard(),
+                        // 4. Pending Appointments Count Card
+                        _buildPendingAppointmentsCard(),
                         const SizedBox(height: 24),
 
-                        // 5. Consultations Count Card
-                        _buildConsultationsCard(),
-                        const SizedBox(height: 24),
-
-                        // 6. Clinical Flags (SOAP notes alerts)
+                        // 5. Clinical Flags (SOAP notes alerts)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
@@ -664,20 +660,40 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     );
   }
 
+  /// Today's appointments sorted: pending first, then completed
+  List<AppointmentDetail> get _todayAppointmentsSorted {
+    final today = _todayAppointments;
+    final pending = today.where((a) => a.status == 'pending').toList();
+    final others = today.where((a) => a.status != 'pending').toList();
+    return [...pending, ...others];
+  }
+
   Widget _buildTodayAppointments() {
+    final sorted = _todayAppointmentsSorted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "today_appointments".tr(),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "today_appointments".tr(),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            if (sorted.isNotEmpty)
+              TextButton(
+                onPressed: () => _showAllTodayAppointments(),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+                child: const Text('View All', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+          ],
         ),
         const SizedBox(height: 16),
-        _todayAppointments.isEmpty
+        sorted.isEmpty
             ? Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
@@ -712,11 +728,215 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.0,
-                children: _todayAppointments.take(6).map((appointment) {
+                children: sorted.take(6).map((appointment) {
                   return _buildTodayAppointmentCard(appointment);
                 }).toList(),
               ),
       ],
+    );
+  }
+
+  void _showAllTodayAppointments() {
+    final sorted = _todayAppointmentsSorted;
+    final pendingCount = sorted.where((a) => a.status == 'pending').length;
+    final completedCount = sorted.where((a) => a.status == 'completed').length;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (_, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      "Today's Appointments",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (pendingCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$pendingCount Pending',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    if (completedCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$completedCount Done',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF166534)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // List
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: sorted.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) {
+                    final appt = sorted[i];
+                    final statusColor = _getStatusColor(appt.status);
+                    final initials = (appt.patient?.name ?? 'P')
+                        .split(' ')
+                        .take(2)
+                        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+                        .join();
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: statusColor.withValues(alpha: 0.15),
+                                child: Text(
+                                  initials.isEmpty ? 'P' : initials,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      appt.patient?.name ?? 'Patient',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${appt.timeSlot}  •  ${DateFormat('dd MMM yyyy').format(appt.date)}',
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  appt.status.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Accept/Reject for pending appointments
+                          if (appt.status == 'pending') ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      _updateAppointmentStatus(appt.id, 'cancelled');
+                                    },
+                                    icon: const Icon(Icons.close_rounded, size: 16),
+                                    label: const Text('Reject', style: TextStyle(fontWeight: FontWeight.w700)),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFFEF4444),
+                                      side: const BorderSide(color: Color(0xFFEF4444)),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      _updateAppointmentStatus(appt.id, 'confirmed');
+                                    },
+                                    icon: const Icon(Icons.check_rounded, size: 16),
+                                    label: const Text('Accept', style: TextStyle(fontWeight: FontWeight.w700)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF059669),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -727,6 +947,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         .take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
         .join();
+    final isPending = appointment.status == 'pending';
 
     return GestureDetector(
       onTap: () {
@@ -737,11 +958,14 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(
+            color: isPending ? const Color(0xFFF59E0B).withValues(alpha: 0.4) : const Color(0xFFE2E8F0),
+            width: isPending ? 1.5 : 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -756,7 +980,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           children: [
             // Time chip at top
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
@@ -764,13 +988,13 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.access_time_rounded, size: 11, color: statusColor),
-                  const SizedBox(width: 4),
+                  Icon(Icons.access_time_rounded, size: 10, color: statusColor),
+                  const SizedBox(width: 3),
                   Flexible(
                     child: Text(
                       appointment.timeSlot,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: statusColor,
                       ),
@@ -783,8 +1007,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             // Avatar
             Center(
               child: Container(
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [statusColor, statusColor.withValues(alpha: 0.7)],
@@ -795,7 +1019,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   child: Text(
                     initials.isEmpty ? 'P' : initials,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
@@ -807,145 +1031,153 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             Text(
               appointment.patient?.name ?? 'Patient',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            // Status badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-            ),
-              child: Text(
-                appointment.status.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: statusColor,
+            // For pending: accept/reject mini buttons; for others: status badge
+            if (isPending)
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _updateAppointmentStatus(appointment.id, 'cancelled'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.close_rounded, size: 12, color: Color(0xFFEF4444)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _updateAppointmentStatus(appointment.id, 'confirmed'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF059669).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.check_rounded, size: 12, color: Color(0xFF059669)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  appointment.status.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEarningsCard() {
-    // Mock data - backend se aayega
-    final previousMonthEarnings = _stats['previousMonthEarnings'] ?? 45000;
-    final totalNetEarnings = _stats['totalNetEarnings'] ?? 180000;
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+  Widget _buildPendingAppointmentsCard() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => const DoctorAppointmentsScreen(initialFilter: 'pending'),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0036BC), Color(0xFF3B82F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0036BC).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Earnings Overview',
+              child: const Icon(
+                Icons.pending_actions_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _pendingCount.toString(),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Pending Appointments',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'View All',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Previous Month',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'PKR ${previousMonthEarnings.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.white.withValues(alpha: 0.3),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total Net Earnings',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'PKR ${totalNetEarnings.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1462,18 +1694,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (ctx) => const DoctorAvailability(),
-                  ),
-                );
-              },
-            ),
-            _buildFeatureCard(
-              'Revenue & Analytics',
-              Icons.bar_chart_rounded,
-              const Color(0xFF10B981),
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorAnalytics(),
                   ),
                 );
               },

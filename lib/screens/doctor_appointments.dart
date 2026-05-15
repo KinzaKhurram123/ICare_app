@@ -14,7 +14,8 @@ import 'package:icare/widgets/custom_text.dart';
 import 'package:intl/intl.dart';
 
 class DoctorAppointmentsScreen extends StatefulWidget {
-  const DoctorAppointmentsScreen({super.key});
+  final String initialFilter;
+  const DoctorAppointmentsScreen({super.key, this.initialFilter = 'all'});
 
   @override
   State<DoctorAppointmentsScreen> createState() =>
@@ -25,11 +26,12 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
   final AppointmentService _appointmentService = AppointmentService();
   List<AppointmentDetail> _appointments = [];
   bool _isLoading = true;
-  String _selectedFilter = 'all';
+  late String _selectedFilter;
 
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter;
     _loadAppointments();
   }
 
