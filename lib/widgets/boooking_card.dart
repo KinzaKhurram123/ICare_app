@@ -7,6 +7,7 @@ import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/chat_screen.dart';
 import 'package:icare/screens/consultation_workflow.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call.dart';
 import 'package:icare/screens/consultation_chat_screen_v2.dart';
@@ -427,6 +428,56 @@ class _WebBookingCard extends StatefulWidget {
 class _WebBookingCardState extends State<_WebBookingCard> {
   bool _isHovered = false;
   bool _remindMe = true;
+  bool _isCollapsed = false;
+
+  Future<void> _viewPrescription() async {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final consultationService = ConsultationService();
+      final result = await consultationService.getConsultationByAppointmentId(
+        widget.appointment.id,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (result['success'] == true && result['consultation'] != null) {
+        final consultation = result['consultation'] as Map<String, dynamic>;
+        final prescriptionId = consultation['prescriptionId']?.toString();
+
+        if (prescriptionId != null && prescriptionId.isNotEmpty) {
+          final prescription = await consultationService.getPrescription(prescriptionId);
+          if (!mounted) return;
+          if (prescription != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PrescriptionDetailScreen(prescription: prescription),
+              ),
+            );
+            return;
+          }
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No prescription found for this appointment'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -443,6 +494,8 @@ class _WebBookingCardState extends State<_WebBookingCard> {
     String statusLabel = widget.appointment.status.toLowerCase() == 'in_progress'
         ? 'CONSULTATION IN PROGRESS'
         : widget.appointment.status.toUpperCase();
+
+    final isCompleted = widget.appointment.status.toLowerCase() == 'completed';
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -473,7 +526,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
           ),
           child: Column(
             children: [
-              // Top Bar: Date and Status
+              // Top Bar: Date, Status, Collapse button
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Row(
@@ -560,10 +613,34 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    // Collapse / expand toggle (X / chevron)
+                    GestureDetector(
+                      onTap: () => setState(() => _isCollapsed = !_isCollapsed),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _isCollapsed
+                              ? const Color(0xFFF1F5F9)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          _isCollapsed
+                              ? Icons.keyboard_arrow_down_rounded
+                              : Icons.close_rounded,
+                          size: 18,
+                          color: _isCollapsed
+                              ? const Color(0xFF64748B)
+                              : const Color(0xFFEF4444),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
 
+              if (!_isCollapsed) ...[
               const Divider(
                 height: 1,
                 color: Color(0xFFF1F5F9),
@@ -934,6 +1011,28 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                             );
                           },
                         ),
+                      ] else if (isCompleted) ...[
+                        // Completed: View Prescription + View Details
+                        _buildWebButton(
+                          "View Prescription",
+                          onPressed: _viewPrescription,
+                          icon: Icons.description_outlined,
+                          color: const Color(0xFF10B981),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildWebButton(
+                          "View Details",
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    ProfileOrAppointmentViewScreen(
+                                      appointment: widget.appointment,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
                       ] else ...[
                         _buildWebButton(
                           "Send Message",
@@ -973,6 +1072,7 @@ class _WebBookingCardState extends State<_WebBookingCard> {
                     ],
                   ),
                 ),
+              ], // end if (!_isCollapsed)
             ],
           ),
         ),
@@ -985,12 +1085,14 @@ class _WebBookingCardState extends State<_WebBookingCard> {
     required VoidCallback onPressed,
     bool isOutlined = false,
     IconData? icon,
+    Color? color,
   }) {
+    final bgColor = color ?? AppColors.primaryColor;
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: isOutlined ? Colors.white : AppColors.primaryColor,
+        backgroundColor: isOutlined ? Colors.white : bgColor,
         foregroundColor: isOutlined ? const Color(0xFF64748B) : Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         shape: RoundedRectangleBorder(

@@ -57,9 +57,10 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
       if (response.data['success'] == true) {
         setState(() {
           _courses = response.data['courses'] ?? [];
-          _filteredCourses = _courses;
           _isLoading = false;
         });
+        // Apply audience filter immediately after loading
+        _applyFilters();
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -145,17 +146,25 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Text(
-                      'iCare Academy',
-                      style: TextStyle(
+                    Text(
+                      widget.audienceFilter == 'patient'
+                          ? 'Diet Plan & Health Courses'
+                          : widget.audienceFilter == 'doctor'
+                              ? 'Healthcare Professional Training'
+                              : 'iCare Academy',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Learn health, wellness, and medical skills online',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    Text(
+                      widget.audienceFilter == 'patient'
+                          ? 'Courses for patients — manage your health'
+                          : widget.audienceFilter == 'doctor'
+                              ? 'Training programs for healthcare professionals'
+                              : 'Learn health, wellness, and medical skills online',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                     const SizedBox(height: 14),
                     // Search bar inline in banner

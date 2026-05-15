@@ -11,6 +11,8 @@ import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/video_call_web.dart';
 import 'package:icare/screens/view_course.dart';
 import 'package:icare/services/appointment_service.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -519,7 +521,7 @@ class Tests extends StatelessWidget {
   }
 }
 
-class _WebPatientProfileView extends StatelessWidget {
+class _WebPatientProfileView extends StatefulWidget {
   final String selectedRole;
   final AppointmentDetail appointment;
 
@@ -529,7 +531,37 @@ class _WebPatientProfileView extends StatelessWidget {
   });
 
   @override
+  State<_WebPatientProfileView> createState() => _WebPatientProfileViewState();
+}
+
+class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
+  Map<String, dynamic>? _doctorProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch doctor profile for completed patient-view appointments
+    if (widget.selectedRole == 'Patient' &&
+        widget.appointment.status.toLowerCase() == 'completed' &&
+        widget.appointment.doctor?.id.isNotEmpty == true) {
+      _fetchDoctorProfile();
+    }
+  }
+
+  Future<void> _fetchDoctorProfile() async {
+    try {
+      final apiService = AppointmentService();
+      final result = await apiService.getDoctorProfile(widget.appointment.doctor!.id);
+      if (mounted && result != null) {
+        setState(() => _doctorProfile = result);
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final selectedRole = widget.selectedRole;
+    final appointment = widget.appointment;
     final otherPerson = selectedRole == 'Doctor'
         ? appointment.patient
         : appointment.doctor;
@@ -680,8 +712,10 @@ class _WebPatientProfileView extends StatelessWidget {
                           "Date": formattedDate,
                           "Time": appointment.timeSlot,
                           "Status": appointment.status.toUpperCase(),
-                          "Type": appointment.channelName?.isNotEmpty == true
-                              ? "Video Consultation"
+                          "Type": (appointment.channelName?.isNotEmpty == true ||
+                                  appointment.consultationType?.toLowerCase().contains('video') == true ||
+                                  appointment.consultationType?.toLowerCase().contains('online') == true)
+                              ? "Video / Online"
                               : "In-Person",
                         },
                       ),
@@ -696,6 +730,17 @@ class _WebPatientProfileView extends StatelessWidget {
                         selectedRole == 'Patient'
                             ? {
                                 "Name": otherPerson?.name ?? 'N/A',
+                                if (_doctorProfile != null) ...{
+                                  if (_doctorProfile!['specialization'] != null)
+                                    "Specialization": _doctorProfile!['specialization'].toString(),
+                                  if (_doctorProfile!['licenseNumber'] != null &&
+                                      _doctorProfile!['licenseNumber'].toString().isNotEmpty)
+                                    "License No.": _doctorProfile!['licenseNumber'].toString(),
+                                  if (_doctorProfile!['rating'] != null)
+                                    "Rating": "${_doctorProfile!['rating']} ★ (${_doctorProfile!['totalReviews'] ?? 0} reviews)",
+                                  if (_doctorProfile!['experience'] != null)
+                                    "Experience": "${_doctorProfile!['experience']} years",
+                                },
                                 if (appointment.reason != null &&
                                     appointment.reason!.isNotEmpty &&
                                     !appointment.reason!.contains('Channel:'))
@@ -711,6 +756,72 @@ class _WebPatientProfileView extends StatelessWidget {
                                   "Reason": appointment.reason!,
                               },
                       ),
+                      // Patient viewing completed appointment → show prescription button
+                      if (selectedRole == 'Patient' &&
+                          appointment.status.toLowerCase() == 'completed') ...[
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(child: CircularProgressIndicator()),
+                              );
+                              try {
+                                final svc = ConsultationService();
+                                final res = await svc.getConsultationByAppointmentId(appointment.id);
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                if (res['success'] == true && res['consultation'] != null) {
+                                  final prescriptionId = (res['consultation'] as Map)['prescriptionId']?.toString();
+                                  if (prescriptionId != null && prescriptionId.isNotEmpty) {
+                                    final prescription = await svc.getPrescription(prescriptionId);
+                                    if (!context.mounted) return;
+                                    if (prescription != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => PrescriptionDetailScreen(prescription: prescription),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                  }
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('No prescription found for this appointment'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.description_outlined, size: 20),
+                            label: const Text("View Prescription"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (selectedRole == "lab_technician") ...[
                         const SizedBox(height: 24),
                         _buildWebDetailsCard(

@@ -58,19 +58,13 @@ class _BookingCategoriesState extends State<BookingCategories>
           indicatorColor: AppColors.themeBlack,
           tabs: [
             CustomText(
-              text: "In Progress",
-              padding: EdgeInsets.only(bottom: 5),
-              width: Utils.windowWidth(context) * 0.25,
-              textAlign: TextAlign.center,
-            ),
-            CustomText(
               text: "Upcoming",
               padding: EdgeInsets.only(bottom: 5),
               width: Utils.windowWidth(context) * 0.25,
               textAlign: TextAlign.center,
             ),
             CustomText(
-              text: "Cancelled",
+              text: "Pending",
               padding: EdgeInsets.only(bottom: 5),
               width: Utils.windowWidth(context) * 0.25,
               textAlign: TextAlign.center,
@@ -81,38 +75,44 @@ class _BookingCategoriesState extends State<BookingCategories>
               textAlign: TextAlign.center,
               text: "Completed",
             ),
+            CustomText(
+              text: "Cancelled",
+              padding: EdgeInsets.only(bottom: 5),
+              width: Utils.windowWidth(context) * 0.25,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
       body: TabBarView(
         controller: controller,
         children: [
+          // Tab 0: Upcoming (confirmed)
           UpcomingBOokingsList(
             status: BookingStatus.upcoming,
             data: widget.appointments
-                .where((a) => a.status.toLowerCase() == 'in_progress')
+                .where((a) => a.status.toLowerCase() == 'confirmed')
                 .toList(),
           ),
+          // Tab 1: Pending
           UpcomingBOokingsList(
             status: BookingStatus.upcoming,
             data: widget.appointments
-                .where(
-                  (a) =>
-                      a.status.toLowerCase() == 'pending' ||
-                      a.status.toLowerCase() == 'confirmed',
-                )
+                .where((a) => a.status.toLowerCase() == 'pending')
                 .toList(),
           ),
-          UpcomingBOokingsList(
-            status: BookingStatus.cancelled,
-            data: widget.appointments
-                .where((a) => a.status.toLowerCase() == 'cancelled')
-                .toList(),
-          ),
+          // Tab 2: Completed
           UpcomingBOokingsList(
             status: BookingStatus.completed,
             data: widget.appointments
                 .where((a) => a.status.toLowerCase() == 'completed')
+                .toList(),
+          ),
+          // Tab 3: Cancelled
+          UpcomingBOokingsList(
+            status: BookingStatus.cancelled,
+            data: widget.appointments
+                .where((a) => a.status.toLowerCase() == 'cancelled')
                 .toList(),
           ),
         ],
@@ -244,28 +244,28 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
 
   static const List<Map<String, dynamic>> _tabs = [
     {
-      "label": "In Progress",
-      "icon": Icons.video_call_rounded,
-      "color": Color(0xFF8B5CF6),
-      "status": BookingStatus.upcoming,
-    },
-    {
       "label": "Upcoming",
       "icon": Icons.schedule_rounded,
       "color": Color(0xFF3B82F6),
       "status": BookingStatus.upcoming,
     },
     {
-      "label": "Cancelled",
-      "icon": Icons.cancel_outlined,
-      "color": Color(0xFFEF4444),
-      "status": BookingStatus.cancelled,
+      "label": "Pending",
+      "icon": Icons.hourglass_empty_rounded,
+      "color": Color(0xFFF59E0B),
+      "status": BookingStatus.upcoming,
     },
     {
       "label": "Completed",
       "icon": Icons.check_circle_outline_rounded,
       "color": Color(0xFF22C55E),
       "status": BookingStatus.completed,
+    },
+    {
+      "label": "Cancelled",
+      "icon": Icons.cancel_outlined,
+      "color": Color(0xFFEF4444),
+      "status": BookingStatus.cancelled,
     },
   ];
 
@@ -420,19 +420,12 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                           widget.appointments
                                               .where((a) {
                                                 if (index == 0)
-                                                  return a.status.toLowerCase() == 'in_progress';
+                                                  return a.status.toLowerCase() == 'confirmed';
                                                 if (index == 1)
-                                                  return a.status
-                                                              .toLowerCase() ==
-                                                          'pending' ||
-                                                      a.status.toLowerCase() ==
-                                                          'confirmed';
+                                                  return a.status.toLowerCase() == 'pending';
                                                 if (index == 2)
-                                                  return a.status
-                                                          .toLowerCase() ==
-                                                      'cancelled';
-                                                return a.status.toLowerCase() ==
-                                                    'completed';
+                                                  return a.status.toLowerCase() == 'completed';
+                                                return a.status.toLowerCase() == 'cancelled';
                                               })
                                               .length
                                               .toString(),
@@ -590,10 +583,10 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                                 ),
                                 child: Text(
                                   "${widget.appointments.where((a) {
-                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'in_progress';
-                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'pending' || a.status.toLowerCase() == 'confirmed';
-                                    if (_selectedTab == 2) return a.status.toLowerCase() == 'cancelled';
-                                    return a.status.toLowerCase() == 'completed';
+                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'confirmed';
+                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'pending';
+                                    if (_selectedTab == 2) return a.status.toLowerCase() == 'completed';
+                                    return a.status.toLowerCase() == 'cancelled';
                                   }).length} bookings",
                                   style: TextStyle(
                                     fontSize: 13,
@@ -622,13 +615,12 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
                             status: _tabs[_selectedTab]["status"],
                             data: widget.appointments.where((a) {
                               if (_selectedTab == 0)
-                                return a.status.toLowerCase() == 'in_progress';
+                                return a.status.toLowerCase() == 'confirmed';
                               if (_selectedTab == 1)
-                                return a.status.toLowerCase() == 'pending' ||
-                                    a.status.toLowerCase() == 'confirmed';
+                                return a.status.toLowerCase() == 'pending';
                               if (_selectedTab == 2)
-                                return a.status.toLowerCase() == 'cancelled';
-                              return a.status.toLowerCase() == 'completed';
+                                return a.status.toLowerCase() == 'completed';
+                              return a.status.toLowerCase() == 'cancelled';
                             }).toList(),
                           ),
                         ),

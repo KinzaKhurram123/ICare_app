@@ -234,17 +234,38 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     .toList(),
               ),
             ),
-          ).then((_) => _loadAppointments());        },
+          ).then((_) => _loadAppointments());
+        },
       },
       {
         "id": 2,
         "title": "Upcoming Bookings",
-        "subtitle": "Scheduled for later",
+        "subtitle": "Confirmed & scheduled",
         "icon": Icons.schedule_rounded,
         "color": const Color(0xFF14B1FF),
         "bgColor": const Color(0xFF14B1FF).withOpacity(0.08),
-        "count": _getCount('Upcoming').toString(),
+        "count": _appointments.where((a) => a.status.toLowerCase() == 'confirmed').length.toString(),
         "image": ImagePaths.upcoming,
+        "onPressed": () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => BookingCategories(
+                appointments: _appointments,
+                initialTabIndex: 0,
+              ),
+            ),
+          ).then((_) => _loadAppointments());
+        },
+      },
+      {
+        "id": 3,
+        "title": "Pending Bookings",
+        "subtitle": "Awaiting confirmation",
+        "icon": Icons.hourglass_empty_rounded,
+        "color": const Color(0xFFF59E0B),
+        "bgColor": const Color(0xFFF59E0B).withOpacity(0.08),
+        "count": _appointments.where((a) => a.status.toLowerCase() == 'pending').length.toString(),
+        "image": ImagePaths.pending,
         "onPressed": () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -254,26 +275,6 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               ),
             ),
           ).then((_) => _loadAppointments());
-        },
-      },
-      {
-        "id": 3,
-        "title": "Cancelled Bookings",
-        "subtitle": "Appointments you cancelled",
-        "icon": Icons.cancel_outlined,
-        "color": const Color(0xFFEF4444),
-        "bgColor": const Color(0xFFEF4444).withOpacity(0.08),
-        "count": _getCount('Cancelled').toString(),
-        "image": ImagePaths.cancelled,
-        "onPressed": () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => BookingCategories(
-                appointments: _appointments,
-                initialTabIndex: 2,
-              ),
-            ),
-          );
         },
       },
       {
@@ -290,30 +291,30 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 3,
+                initialTabIndex: 2,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
       {
         "id": 5,
-        "title": "Pending Bookings",
-        "subtitle": "Awaiting confirmation",
-        "icon": Icons.hourglass_empty_rounded,
-        "color": const Color(0xFFF59E0B),
-        "bgColor": const Color(0xFFF59E0B).withOpacity(0.08),
-        "count": _getCount('Pending').toString(),
-        "image": ImagePaths.pending,
+        "title": "Cancelled Bookings",
+        "subtitle": "Appointments you cancelled",
+        "icon": Icons.cancel_outlined,
+        "color": const Color(0xFFEF4444),
+        "bgColor": const Color(0xFFEF4444).withOpacity(0.08),
+        "count": _getCount('Cancelled').toString(),
+        "image": ImagePaths.cancelled,
         "onPressed": () {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (ctx) => BookingCategories(
                 appointments: _appointments,
-                initialTabIndex: 1,
+                initialTabIndex: 3,
               ),
             ),
-          );
+          ).then((_) => _loadAppointments());
         },
       },
     ];

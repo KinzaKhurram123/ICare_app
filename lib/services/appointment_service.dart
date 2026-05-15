@@ -155,4 +155,16 @@ class AppointmentService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>?> getDoctorProfile(String doctorId) async {
+    try {
+      final response = await _apiService.get('/doctors/$doctorId');
+      final data = response.data as Map<String, dynamic>;
+      if (data['success'] == true) return data['doctor'] as Map<String, dynamic>?;
+      return null;
+    } catch (e) {
+      debugPrint('❌ Get doctor profile error: $e');
+      return null;
+    }
+  }
 }
