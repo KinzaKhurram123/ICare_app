@@ -34,11 +34,41 @@ class _ReminderListState extends State<ReminderList> {
     _loadReminders();
   }
 
+  /// Helper: parse scheduledFor into a display-friendly Map
+  Map<String, String> _parseScheduled(String? scheduledFor) {
+    if (scheduledFor == null || scheduledFor.isEmpty) {
+      return {'date': 'N/A', 'time': 'N/A'};
+    }
+    try {
+      final dt = DateTime.parse(scheduledFor);
+      return {
+        'date': DateFormat('MMMM, dd, yyyy').format(dt),
+        'time': DateFormat('hh:mm a').format(dt),
+      };
+    } catch (_) {
+      return {'date': 'N/A', 'time': 'N/A'};
+    }
+  }
+
+  /// Remap backend reminder object to match UI field names
+  Map<String, dynamic> _remapReminder(dynamic r) {
+    final parsed = _parseScheduled(r['scheduledFor']);
+    return {
+      'title': r['title'] ?? 'Reminder',
+      'patientName': 'Self',
+      'date': parsed['date'],
+      'time': parsed['time'],
+      'instructions': r['message'] ?? '',
+      'disease': r['type'] == 'doctor_assigned' ? 'Doctor-Assigned' : null,
+      'doctor': r['type'] == 'doctor_assigned' ? true : null,
+    };
+  }
+
   Future<void> _loadReminders() async {
     final data = await _reminderService.getMyReminders();
     if (mounted) {
       setState(() {
-        _remindersList = data;
+        _remindersList = data.map((r) => _remapReminder(r)).toList();
         _isLoading = false;
       });
     }

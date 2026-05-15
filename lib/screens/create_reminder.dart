@@ -56,16 +56,41 @@ class _CreateReminderState extends State<CreateReminder> {
 
     setState(() => _isSubmitting = true);
 
-    final data = {
-      "patientEmail": _emailController.text,
-      "patientName": _nameController.text,
-      "title": _titleController.text,
-      "disease": _selectedDisease,
-      "tablets": [_tabletController.text],
-      "instructions": _instructionsController.text,
-      "time": _selectedTime,
-      "date": _selectedDate,
+    // Build scheduled datetime from date + time
+    String? scheduledFor;
+    if (_selectedDate.isNotEmpty && _selectedTime.isNotEmpty) {
+      try {
+        final parsedDate = DateFormat("yyyy/MM/dd").parse(_selectedDate);
+        final timeParts = _selectedTime.split(RegExp(r'[\s:]'));
+        int hour = int.tryParse(timeParts[0]) ?? 0;
+        final minute = int.tryParse(timeParts[1]) ?? 0;
+        final isPM = _selectedTime.toLowerCase().contains('pm');
+        if (isPM && hour < 12) hour += 12;
+        if (!isPM && hour == 12) hour = 0;
+        scheduledFor = DateTime(
+          parsedDate.year, parsedDate.month, parsedDate.day, hour, minute
+        ).toIso8601String();
+      } catch (_) {
+        scheduledFor = null;
+      }
+    }
+
+    final data = <String, dynamic>{
+      'title': _titleController.text,
+      'message': _instructionsController.text,
+      'type': 'self_created',
+      'scheduledFor': scheduledFor,
+      'remindBeforeMinutes': 15,
+      'recurrence': 'none',
     };
+
+    // If tablet info exists, add it to message
+    if (_tabletController.text.isNotEmpty) {
+      data['message'] = '${_tabletController.text}: ${_instructionsController.text}';
+    }
+    if (_selectedDisease != null) {
+      data['message'] = '$_selectedDisease - ${data['message']}';
+    }
 
     final result = await _reminderService.createReminder(data);
 
