@@ -1,3 +1,4 @@
+import 'dart:convert' show base64Encode;
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -309,7 +310,8 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
               children: [
                 _buildInteractionButton(
                   Icons.favorite_rounded,
-                  (post['likes'] ?? 0).toString(),
+                  // Backend returns 'likeCount', also fallback to array length or 'likes'
+                  ((post['likeCount'] ?? (post['likes'] is List ? (post['likes'] as List).length : post['likes'])) ?? 0).toString(),
                   const Color(0xFFEF4444),
                   () async {
                     await _courseService.likeForumPost(postId);
@@ -319,7 +321,8 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 const SizedBox(width: 24),
                 _buildInteractionButton(
                   Icons.chat_bubble_rounded,
-                  (post['replies'] ?? 0).toString(),
+                  // Backend returns 'commentCount', also fallback to 'replies' or array length
+                  ((post['commentCount'] ?? (post['comments'] is List ? (post['comments'] as List).length : post['replies'])) ?? 0).toString(),
                   AppColors.primaryColor,
                   () {
                     setState(() {
@@ -799,12 +802,23 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     if (_contentController.text.trim().isEmpty) return;
     setState(() => _isPosting = true);
     try {
-      await _courseService.createForumPost({
+      final data = <String, dynamic>{
         'content': _contentController.text,
         'category': _selectedCategory,
-        // In a real app, you'd upload the image to a storage bucket first
-        'image': _imageFile?.path,
-      });
+      };
+
+      // If an image is selected, convert to base64 before sending
+      if (_imageFile != null) {
+        try {
+          final bytes = await _imageFile!.readAsBytes();
+          final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+          data['image'] = base64Image;
+        } catch (e) {
+          debugPrint('Error converting image to base64: $e');
+        }
+      }
+
+      await _courseService.createForumPost(data);
       widget.onPostSuccess();
       if (mounted) Navigator.pop(context);
     } catch (e) {

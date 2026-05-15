@@ -43,6 +43,8 @@ const verificationRoutes = require('./routes/verification');
 const liveSessionsRoutes = require('./routes/live-sessions');
 const quizzesRoutes = require('./routes/quizzes');
 const communityRoutes = require('./routes/community');
+const notificationRoutes = require('./routes/notifications');
+const reminderRoutes = require('./routes/reminders');
 
 const app = express();
 
@@ -147,6 +149,8 @@ app.use('/api/lms/announcements', announcementsRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/live-sessions', liveSessionsRoutes);
 app.use('/api/quizzes', quizzesRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Serve uploaded files (only in non-serverless environments)
 if (!process.env.VERCEL) {
