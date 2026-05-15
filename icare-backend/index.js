@@ -42,6 +42,7 @@ const announcementsRoutes = require('./routes/announcements');
 const verificationRoutes = require('./routes/verification');
 const liveSessionsRoutes = require('./routes/live-sessions');
 const quizzesRoutes = require('./routes/quizzes');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 
@@ -139,6 +140,7 @@ app.use('/api/prescriptions-v2', prescriptionV2Routes);
 app.use('/api/patient-history', patientHistoryRoutes);
 app.use('/api/lifestyle-advice', lifestyleAdviceRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/community', communityRoutes);
 app.use('/api/lms/assignments',   assignmentsRoutes);
 app.use('/api/lms/attendance',    attendanceRoutes);
 app.use('/api/lms/announcements', announcementsRoutes);

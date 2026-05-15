@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/doctors_list.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
 import 'package:icare/screens/video_call_web.dart';
 import 'package:icare/screens/consultation_chat_screen_v2.dart';
@@ -304,22 +305,24 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
         const SizedBox(height: 12),
       ],
 
-      // Categories
+      // Categories: Upcoming → Pending → Completed → Cancelled
       _categoryTile('Upcoming', 'Confirmed & scheduled',
           _upcoming.length, const Color(0xFF0EA5E9),
           Icons.access_time_rounded, _upcoming),
       const SizedBox(height: 10),
-      _categoryTile('Cancelled', 'Appointments you cancelled',
-          _count('cancelled'), const Color(0xFFEF4444),
-          Icons.cancel_outlined, _byStatus('cancelled')),
-      const SizedBox(height: 10),
-      _categoryTile('Completed', 'Past successful visits',
-          _count('completed'), const Color(0xFF10B981),
-          Icons.check_circle_outline_rounded, _byStatus('completed')),
-      const SizedBox(height: 10),
       _categoryTile('Pending', 'Awaiting confirmation',
           _count('pending'), const Color(0xFFF59E0B),
           Icons.hourglass_empty_rounded, _byStatus('pending')),
+      const SizedBox(height: 10),
+      _categoryTile('Completed', 'Past successful visits',
+          _count('completed'), const Color(0xFF10B981),
+          Icons.check_circle_outline_rounded,
+          // Sort completed newest first
+          (_byStatus('completed')..sort((a, b) => b.date.compareTo(a.date)))),
+      const SizedBox(height: 10),
+      _categoryTile('Cancelled', 'Appointments you cancelled',
+          _count('cancelled'), const Color(0xFFEF4444),
+          Icons.cancel_outlined, _byStatus('cancelled')),
 
       if (_appointments.isEmpty) ...[
         const SizedBox(height: 40),
@@ -718,9 +721,78 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   }
 
   Widget _apptCard(AppointmentDetail appt, Color color) {
+    return _ApptCard(appt: appt, color: color);
+  }
+}
+
+// ─── Appointment card with collapse + prescription ───────────────────────────
+class _ApptCard extends StatefulWidget {
+  final AppointmentDetail appt;
+  final Color color;
+  const _ApptCard({required this.appt, required this.color});
+  @override
+  State<_ApptCard> createState() => _ApptCardState();
+}
+
+class _ApptCardState extends State<_ApptCard> {
+  bool _collapsed = false;
+
+  Future<void> _viewPrescription() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final svc = ConsultationService();
+      final res = await svc.getConsultationByAppointmentId(widget.appt.id);
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (res['success'] == true && res['consultation'] != null) {
+        final rawPrescId = (res['consultation'] as Map)['prescriptionId'];
+        final prescriptionId = rawPrescId is Map
+            ? rawPrescId['_id']?.toString() ?? ''
+            : rawPrescId?.toString() ?? '';
+
+        if (prescriptionId.isNotEmpty) {
+          final prescription = await svc.getPrescription(prescriptionId);
+          if (!mounted) return;
+          if (prescription != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PrescriptionDetailScreen(prescription: prescription),
+              ),
+            );
+            return;
+          }
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No prescription found for this appointment'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appt = widget.appt;
+    final color = widget.color;
+    final isCompleted = appt.status.toLowerCase() == 'completed';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -732,84 +804,126 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
               offset: const Offset(0, 2)),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  colors: [color, color.withValues(alpha: 0.65)]),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                appt.doctor?.name.substring(0, 1).toUpperCase() ?? 'D',
-                style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Header row — always visible
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               children: [
-                Text(appt.doctor?.name ?? 'Doctor',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A))),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today_rounded,
-                        size: 11, color: color),
-                    const SizedBox(width: 4),
-                    Text(DateFormat('MMM dd, yyyy').format(appt.date),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: color,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 8),
-                    Icon(Icons.access_time_rounded,
-                        size: 11, color: color),
-                    const SizedBox(width: 4),
-                    Text(appt.timeSlot,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: color,
-                            fontWeight: FontWeight.w600)),
-                  ],
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.65)]),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      appt.doctor?.name.isNotEmpty == true
+                          ? appt.doctor!.name[0].toUpperCase()
+                          : 'D',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(appt.doctor?.name ?? 'Doctor',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded, size: 10, color: color),
+                          const SizedBox(width: 4),
+                          Text(DateFormat('MMM dd, yyyy').format(appt.date),
+                              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 6),
+                          Icon(Icons.access_time_rounded, size: 10, color: color),
+                          const SizedBox(width: 4),
+                          Text(appt.timeSlot,
+                              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Collapse / expand toggle
+                GestureDetector(
+                  onTap: () => setState(() => _collapsed = !_collapsed),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _collapsed ? const Color(0xFFF1F5F9) : const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _collapsed ? Icons.keyboard_arrow_down_rounded : Icons.close_rounded,
+                      size: 16,
+                      color: _collapsed ? const Color(0xFF64748B) : const Color(0xFFEF4444),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          if (appt.status == 'completed')
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ProfileOrAppointmentViewScreen(appointment: appt),
-                ),
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text('Details',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: color)),
+
+          // Detail section — hidden when collapsed
+          if (!_collapsed) ...[
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // View Prescription (only for completed)
+                  if (isCompleted) ...[
+                    GestureDetector(
+                      onTap: _viewPrescription,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.description_outlined, size: 12, color: Color(0xFF10B981)),
+                            SizedBox(width: 4),
+                            Text('Prescription', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  // Details button
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProfileOrAppointmentViewScreen(appointment: appt),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('Details',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );

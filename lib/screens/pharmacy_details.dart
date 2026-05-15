@@ -46,7 +46,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
   Future<void> _addToCart(dynamic med, {int quantity = 1}) async {
     final id = med['_id']?.toString() ?? '';
-    if (_addingToCart.contains(id)) return;
+    // Do NOT guard here — caller manages _addingToCart state
 
     // Check if user is logged in
     final token = await SharedPref().getToken();
@@ -1235,13 +1235,13 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () {
+                              onPressed: () async {
                                 Navigator.pop(ctx);
                                 final id = med['_id']?.toString() ?? '';
-                                setState(() {
-                                  _quantities[id] = (_quantities[id] ?? 0) + 1;
-                                  _qtyControllers[id]?.text = _quantities[id].toString();
-                                });
+                                if (_addingToCart.contains(id)) return;
+                                setState(() => _addingToCart.add(id));
+                                await _addToCart(med, quantity: 1);
+                                if (mounted) setState(() => _addingToCart.remove(id));
                               },
                               icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
                               label: const Text('Add to Cart'),
