@@ -54,6 +54,7 @@ class _ReminderListState extends State<ReminderList> {
   Map<String, dynamic> _remapReminder(dynamic r) {
     final parsed = _parseScheduled(r['scheduledFor']);
     return {
+      '_id': r['_id'] ?? '',
       'title': r['title'] ?? 'Reminder',
       'patientName': 'Self',
       'date': parsed['date'],
@@ -62,6 +63,31 @@ class _ReminderListState extends State<ReminderList> {
       'disease': r['type'] == 'doctor_assigned' ? 'Doctor-Assigned' : null,
       'doctor': r['type'] == 'doctor_assigned' ? true : null,
     };
+  }
+
+  Future<void> _deleteReminder(String id) async {
+    await _reminderService.deleteReminder(id);
+    _loadReminders();
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String id, String title) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Reminder', style: TextStyle(fontWeight: FontWeight.w700)),
+        content: Text('Delete "$title"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) _deleteReminder(id);
   }
 
   Future<void> _loadReminders() async {
