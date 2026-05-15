@@ -303,6 +303,20 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 color: Color(0xFF334155),
               ),
             ),
+            // Display post image if available
+            if (post['imageUrl'] != null && post['imageUrl'].toString().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  post['imageUrl'].toString(),
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
             const SizedBox(height: 16),
