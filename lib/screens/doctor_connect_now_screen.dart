@@ -117,21 +117,27 @@ class _DoctorConnectNowScreenState extends State<DoctorConnectNowScreen>
         final doctorId = userData?.id ?? '';
         final doctorName = userData?.name ?? 'Doctor';
         final appointmentId = result['appointmentId']?.toString() ?? '';
+        final patientId = result['patientId']?.toString() ?? '';
         
         // Start consultation with chat-first approach
         final consultResult = await consultationService.startConsultationV2(
           appointmentId: appointmentId.isNotEmpty ? appointmentId : '',
-          patientId: '', // Will be filled by backend from appointment
+          patientId: patientId,
           doctorId: doctorId,
         );
 
         if (!mounted) return;
 
         if (consultResult['success'] == true) {
+          // Extract patientId from consultation if not already available
+          final resolvedPatientId = patientId.isNotEmpty
+              ? patientId
+              : (consultResult['consultation']?['patientId']?.toString() ?? '');
+
           // Create minimal appointment detail object for Connect Now
           final appointment = AppointmentDetail(
             id: appointmentId.isNotEmpty ? appointmentId : '',
-            patient: User(id: '', name: widget.patientName, email: '', phoneNumber: '', role: 'patient'),
+            patient: User(id: resolvedPatientId, name: widget.patientName, email: '', phoneNumber: '', role: 'patient'),
             doctor: User(id: doctorId, name: doctorName, email: '', phoneNumber: '', role: 'doctor'),
             status: 'confirmed',
             timeSlot: 'Now',

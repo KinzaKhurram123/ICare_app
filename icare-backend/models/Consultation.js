@@ -40,7 +40,7 @@ const consultationSchema = new mongoose.Schema({
   channelName: String,
   prescriptionId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Prescription'
+    ref: 'EnhancedPrescription'
   },
   hasPrescription: {
     type: Boolean,

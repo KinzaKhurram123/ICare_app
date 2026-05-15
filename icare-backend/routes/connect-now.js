@@ -84,6 +84,7 @@ router.post('/accept', authMiddleware, async (req, res) => {
         success: true,
         channelName: request.channelName,
         patientName: request.patientName,
+        patientId: request.patientId?.toString() || '',
         appointmentId: request.appointmentId?.toString() || '',
       });
     }
@@ -138,6 +139,7 @@ router.post('/accept', authMiddleware, async (req, res) => {
       success: true,
       channelName: request.channelName,
       patientName: request.patientName,
+      patientId: request.patientId?.toString() || '',
       appointmentId,
     });
   } catch (err) {

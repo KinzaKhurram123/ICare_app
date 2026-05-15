@@ -170,9 +170,11 @@ exports.completePrescription = async (req, res) => {
     await prescription.save();
 
     // Update consultation with prescription reference
-    consultation.prescriptionId = prescription._id;
-    consultation.hasPrescription = true;
-    await consultation.save();
+    await Consultation.findByIdAndUpdate(
+      consultationId,
+      { prescriptionId: prescription._id, hasPrescription: true },
+      { new: true }
+    );
 
     res.json({
       success: true,
