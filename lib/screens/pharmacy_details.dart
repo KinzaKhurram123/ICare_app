@@ -35,6 +35,8 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   String _searchQuery = '';
   XFile? _selectedPrescription;
   final Set<String> _addingToCart = {};
+  final Map<String, int> _quantities = {}; // quantity per medicine id
+  final Map<String, TextEditingController> _qtyControllers = {};
 
   @override
   void initState() {
@@ -42,7 +44,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
     _fetchMedicines();
   }
 
-  Future<void> _addToCart(dynamic med) async {
+  Future<void> _addToCart(dynamic med, {int quantity = 1}) async {
     final id = med['_id']?.toString() ?? '';
     if (_addingToCart.contains(id)) return;
 
@@ -90,7 +92,7 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
     setState(() => _addingToCart.add(id));
     try {
-      await _cartService.addItem(id, 1);
+      await _cartService.addItem(id, quantity);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${med['productName'] ?? med['name'] ?? 'Item'} added to cart'),
@@ -341,21 +343,6 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'cart',
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const MyCartScreen()),
-          );
-        },
-        backgroundColor: const Color(0xFF95BF47),
-        icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
-        label: const Text('View Cart',
-            style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 13)),
-      ),
       body: Stack(
         children: [
           CustomScrollView(
@@ -422,11 +409,48 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
               const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
-          // Upload Rx button at bottom right
+          // View Cart (top) + Upload Rx (bottom) — stacked at bottom right
           Positioned(
-            bottom: 30,
+            bottom: 24,
             right: 20,
-            child: _buildUploadRxButton(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // View Cart — on top
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MyCartScreen()),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF95BF47),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF95BF47).withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 10),
+                        Text('View Cart',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Upload Rx — below
+                _buildUploadRxButton(),
+              ],
+            ),
           ),
         ],
       ),
@@ -944,89 +968,313 @@ class _PharmacyDetailsScreenState extends State<PharmacyDetailsScreen> {
   Widget _buildMedicineCard(dynamic med) {
     final id = med['_id']?.toString() ?? '';
     final isAdding = _addingToCart.contains(id);
-    final isMock = id.startsWith('mock_');
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: _buildMedicineImage(med),
+    _quantities.putIfAbsent(id, () => 0);
+    _qtyControllers.putIfAbsent(id, () => TextEditingController(text: _quantities[id].toString()));
+    final qty = _quantities[id] ?? 0;
+
+    return GestureDetector(
+      // Tap card body → open details dialog
+      onTap: () => _showMedicineDetails(med),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(height: 12),
-          CustomText(
-            text: med['productName'] ?? med['name'] ?? 'Medicine Name',
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            med['brand'] ?? med['manufacturer'] ?? 'Pharma Co.',
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CustomText(
-                text: "Rs ${med['price'] ?? 0.0}",
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: _buildMedicineImage(med),
               ),
-              GestureDetector(
-                onTap: isAdding ? null : () => _addToCart(med),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isAdding
-                        ? Colors.grey[300]
-                        : AppColors.primaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: isAdding ? [] : [
-                      BoxShadow(
-                        color: AppColors.primaryColor.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+            ),
+            const SizedBox(height: 8),
+            CustomText(
+              text: med['productName'] ?? med['name'] ?? 'Medicine Name',
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              med['brand'] ?? med['manufacturer'] ?? 'Pharma Co.',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            const SizedBox(height: 4),
+            CustomText(
+              text: "Rs ${med['price'] ?? 0.0}",
+              color: AppColors.primaryColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+            ),
+            const SizedBox(height: 6),
+            // Quantity controls: - | qty (typeable) | +
+            GestureDetector(
+              onTap: () {}, // absorb tap so card tap doesn't trigger
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  // Minus
+                  GestureDetector(
+                    onTap: () {
+                      final current = _quantities[id] ?? 0;
+                      if (current > 0) {
+                        setState(() {
+                          _quantities[id] = current - 1;
+                          _qtyControllers[id]?.text = (current - 1).toString();
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: 28, height: 28,
+                      decoration: BoxDecoration(
+                        color: (qty > 0) ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
+                      child: Icon(Icons.remove_rounded, size: 16,
+                          color: (qty > 0) ? Colors.white : const Color(0xFF94A3B8)),
+                    ),
                   ),
-                  child: isAdding
-                      ? const Padding(
-                          padding: EdgeInsets.all(6),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  // Qty textfield
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        width: 36,
+                        child: TextField(
+                          controller: _qtyControllers[id],
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 4),
                           ),
-                        )
-                      : const Icon(
-                          Icons.add_rounded,
-                          color: Colors.white,
-                          size: 22,
+                          onChanged: (v) {
+                            final parsed = int.tryParse(v);
+                            if (parsed != null && parsed >= 0) {
+                              setState(() => _quantities[id] = parsed);
+                            }
+                          },
                         ),
+                      ),
+                    ),
+                  ),
+                  // Plus
+                  GestureDetector(
+                    onTap: () {
+                      final current = _quantities[id] ?? 0;
+                      setState(() {
+                        _quantities[id] = current + 1;
+                        _qtyControllers[id]?.text = (current + 1).toString();
+                      });
+                    },
+                    child: Container(
+                      width: 28, height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(color: AppColors.primaryColor.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Add to Cart button — shows when qty > 0
+            if (qty > 0) ...[
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: isAdding ? null : () async {
+                  setState(() => _addingToCart.add(id));
+                  // Add qty times to cart
+                  await _addToCart(med, quantity: qty);
+                  if (mounted) {
+                    setState(() {
+                      _addingToCart.remove(id);
+                      _quantities[id] = 0;
+                      _qtyControllers[id]?.text = '0';
+                    });
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isAdding ? Colors.grey[300] : AppColors.primaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: isAdding
+                        ? const SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text('Add $qty to Cart',
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                  ),
                 ),
               ),
             ],
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showMedicineDetails(dynamic med) {
+    final name = (med['productName'] ?? med['name'] ?? 'Medicine').toString();
+    final price = med['price'] ?? 0;
+    final brand = (med['brand'] ?? med['manufacturer'] ?? '').toString();
+    final description = (med['description'] ?? med['details'] ?? '').toString();
+    final category = (med['category'] ?? '').toString();
+    final inStock = (med['inStock'] ?? med['stock_quantity'] ?? 0);
+    final dosage = (med['dosage'] ?? '').toString();
+    final requires_prescription = med['requiresPrescription'] == true || med['requires_prescription'] == true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image header
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: SizedBox(
+                    height: 180,
+                    width: double.infinity,
+                    child: _buildMedicineImage(med),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                                if (brand.isNotEmpty)
+                                  Text(brand, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('Rs $price',
+                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primaryColor)),
+                              if (requires_prescription)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(6)),
+                                  child: const Text('Rx Required', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFF59E0B))),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (category.isNotEmpty) ...[
+                        _detailChip(Icons.category_rounded, category),
+                        const SizedBox(height: 6),
+                      ],
+                      if (dosage.isNotEmpty) ...[
+                        _detailChip(Icons.medication_rounded, dosage),
+                        const SizedBox(height: 6),
+                      ],
+                      _detailChip(
+                        inStock is int && inStock > 0 ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        inStock is int && inStock > 0 ? 'In Stock ($inStock units)' : 'Out of Stock',
+                        color: inStock is int && inStock > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      ),
+                      if (description.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const Text('Description', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                        const SizedBox(height: 6),
+                        Text(description, style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5)),
+                      ],
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                final id = med['_id']?.toString() ?? '';
+                                setState(() {
+                                  _quantities[id] = (_quantities[id] ?? 0) + 1;
+                                  _qtyControllers[id]?.text = _quantities[id].toString();
+                                });
+                              },
+                              icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
+                              label: const Text('Add to Cart'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailChip(IconData icon, String label, {Color? color}) {
+    final c = color ?? const Color(0xFF64748B);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: c),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 13, color: c)),
+      ],
     );
   }
 

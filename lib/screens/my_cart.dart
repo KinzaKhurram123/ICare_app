@@ -978,7 +978,11 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
   }
 
   Widget _buildPaymentMethod() {
-    final methods = ['Cash on Delivery', 'JazzCash', 'EasyPaisa', 'Bank Transfer'];
+    // Only Cash on Delivery and Credit/Debit Card
+    final methods = [
+      {'label': 'Cash on Delivery', 'icon': Icons.money_rounded, 'color': const Color(0xFF10B981)},
+      {'label': 'Credit / Debit Card', 'icon': Icons.credit_card_rounded, 'color': const Color(0xFF3B82F6)},
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -994,7 +998,9 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
           child: Column(
             children: methods.asMap().entries.map((entry) {
               final i = entry.key;
-              final method = entry.value;
+              final method = entry.value['label'] as String;
+              final icon = entry.value['icon'] as IconData;
+              final color = entry.value['color'] as Color;
               final isSelected = _paymentMethod == method;
               return Column(
                 children: [
@@ -1038,16 +1044,7 @@ class _CheckoutScreenState extends State<_CheckoutScreen> {
                             ),
                           ),
                           const Spacer(),
-                          if (method == 'Cash on Delivery')
-                            const Icon(Icons.money_rounded, color: Color(0xFF10B981), size: 20),
-                          if (method == 'JazzCash')
-                            const Icon(Icons.phone_android_rounded, color: Color(0xFFEF4444), size: 20),
-                          if (method == 'EasyPaisa')
-                            const Icon(Icons.account_balance_wallet_rounded,
-                                color: Color(0xFF10B981), size: 20),
-                          if (method == 'Bank Transfer')
-                            const Icon(Icons.account_balance_rounded,
-                                color: Color(0xFF3B82F6), size: 20),
+                          Icon(icon, color: color, size: 20),
                         ],
                       ),
                     ),
