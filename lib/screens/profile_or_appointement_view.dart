@@ -775,10 +775,23 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
                                 if (!context.mounted) return;
                                 Navigator.pop(context);
                                 if (res['success'] == true && res['consultation'] != null) {
-                                  final rawPrescId = (res['consultation'] as Map)['prescriptionId'];
-                                  final prescriptionId = rawPrescId is Map
-                                      ? rawPrescId['_id']?.toString() ?? ''
-                                      : rawPrescId?.toString() ?? '';
+                                  final consultation = res['consultation'] as Map;
+                                  // Try prescriptionId — string or populated object
+                                  dynamic rawPrescId = consultation['prescriptionId'];
+                                  String prescriptionId = '';
+
+                                  if (rawPrescId is Map) {
+                                    prescriptionId = rawPrescId['_id']?.toString() ?? '';
+                                  } else if (rawPrescId is String) {
+                                    prescriptionId = rawPrescId;
+                                  }
+
+                                  // Fallback: check 'prescription' field (nested object)
+                                  if (prescriptionId.isEmpty && consultation['prescription'] is Map) {
+                                    final prescMap = consultation['prescription'] as Map;
+                                    prescriptionId = prescMap['_id']?.toString() ?? prescMap['id']?.toString() ?? '';
+                                  }
+
                                   if (prescriptionId.isNotEmpty) {
                                     final prescription = await svc.getPrescription(prescriptionId);
                                     if (!context.mounted) return;

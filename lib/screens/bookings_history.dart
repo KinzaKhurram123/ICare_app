@@ -664,7 +664,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                   ],
                 ),
                 child: Column(
-                  children: [
+              children: [
                     Container(
                       width: 36,
                       height: 4,
@@ -684,21 +684,39 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
                               color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(title,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(title,
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A))),
+                              Text(
+                                '${list.length} appointment${list.length != 1 ? 's' : ''}',
                                 style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A))),
-                            Text(
-                              '${list.length} appointment${list.length != 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF94A3B8)),
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Global Close (X) button — dismisses the entire list view
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ],
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -725,7 +743,7 @@ class _BookingsHistoryScreenState extends State<BookingsHistoryScreen> {
   }
 }
 
-// ─── Appointment card with collapse + prescription ───────────────────────────
+// ─── Appointment card (always expanded) ───────────────────────────────────
 class _ApptCard extends StatefulWidget {
   final AppointmentDetail appt;
   final Color color;
@@ -735,8 +753,6 @@ class _ApptCard extends StatefulWidget {
 }
 
 class _ApptCardState extends State<_ApptCard> {
-  bool _collapsed = false;
-
   Future<void> _viewPrescription() async {
     showDialog(
       context: context,
@@ -750,10 +766,27 @@ class _ApptCardState extends State<_ApptCard> {
       Navigator.pop(context);
 
       if (res['success'] == true && res['consultation'] != null) {
-        final rawPrescId = (res['consultation'] as Map)['prescriptionId'];
-        final prescriptionId = rawPrescId is Map
-            ? rawPrescId['_id']?.toString() ?? ''
-            : rawPrescId?.toString() ?? '';
+        final consultation = res['consultation'] as Map;
+        // Try prescriptionId field — could be a string or a populated object
+        dynamic rawPrescId = consultation['prescriptionId'];
+        String prescriptionId = '';
+
+        if (rawPrescId is Map) {
+          // Populated (nested) — extract _id
+          prescriptionId = rawPrescId['_id']?.toString() ?? '';
+        } else if (rawPrescId is String) {
+          prescriptionId = rawPrescId;
+        }
+
+        // Fallback: check prescription field (sometimes stored as 'prescription' object)
+        if (prescriptionId.isEmpty && consultation['prescription'] is Map) {
+          final prescMap = consultation['prescription'] as Map;
+          if (prescMap['_id'] != null) {
+            prescriptionId = prescMap['_id'].toString();
+          } else if (prescMap['id'] != null) {
+            prescriptionId = prescMap['id'].toString();
+          }
+        }
 
         if (prescriptionId.isNotEmpty) {
           final prescription = await svc.getPrescription(prescriptionId);
@@ -806,7 +839,7 @@ class _ApptCardState extends State<_ApptCard> {
       ),
       child: Column(
         children: [
-          // Header row — always visible
+          // Header row
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -851,79 +884,61 @@ class _ApptCardState extends State<_ApptCard> {
                     ],
                   ),
                 ),
-                // Collapse / expand toggle
+              ],
+            ),
+          ),
+
+          // Detail section — always visible (removed per-row delete/collapse toggle)
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // View Prescription (only for completed)
+                if (isCompleted) ...[
+                  GestureDetector(
+                    onTap: _viewPrescription,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.description_outlined, size: 12, color: Color(0xFF10B981)),
+                          SizedBox(width: 4),
+                          Text('Prescription', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                // Details button
                 GestureDetector(
-                  onTap: () => setState(() => _collapsed = !_collapsed),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileOrAppointmentViewScreen(appointment: appt),
+                    ),
+                  ),
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: _collapsed ? const Color(0xFFF1F5F9) : const Color(0xFFFEE2E2),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      _collapsed ? Icons.keyboard_arrow_down_rounded : Icons.close_rounded,
-                      size: 16,
-                      color: _collapsed ? const Color(0xFF64748B) : const Color(0xFFEF4444),
-                    ),
+                    child: Text('Details',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
                   ),
                 ),
               ],
             ),
           ),
-
-          // Detail section — hidden when collapsed
-          if (!_collapsed) ...[
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // View Prescription (only for completed)
-                  if (isCompleted) ...[
-                    GestureDetector(
-                      onTap: _viewPrescription,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.description_outlined, size: 12, color: Color(0xFF10B981)),
-                            SizedBox(width: 4),
-                            Text('Prescription', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  // Details button
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfileOrAppointmentViewScreen(appointment: appt),
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('Details',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
