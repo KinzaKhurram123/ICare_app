@@ -91,12 +91,17 @@ class _ReminderListState extends State<ReminderList> {
   }
 
   Future<void> _loadReminders() async {
-    final data = await _reminderService.getMyReminders();
-    if (mounted) {
-      setState(() {
-        _remindersList = data.map((r) => _remapReminder(r)).toList();
-        _isLoading = false;
-      });
+    if (mounted) setState(() => _isLoading = true);
+    try {
+      final data = await _reminderService.getMyReminders();
+      if (mounted) {
+        setState(() {
+          _remindersList = data.map((r) => _remapReminder(r)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -173,7 +178,7 @@ class _ReminderListState extends State<ReminderList> {
                                     ..._doctorAssigned.map((item) => WebReminderWidget(
                                       title: item["title"],
                                       patientName: item["patientName"] ?? item["patient"]?["name"],
-                                      date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                                      date: item["date"] ?? "N/A",
                                       time: item["time"] ?? "N/A",
                                       description: item["instructions"],
                                       description2: item["disease"],
@@ -192,7 +197,7 @@ class _ReminderListState extends State<ReminderList> {
                                     ..._selfCreated.map((item) => WebReminderWidget(
                                       title: item["title"],
                                       patientName: item["patientName"] ?? item["patient"]?["name"],
-                                      date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                                      date: item["date"] ?? "N/A",
                                       time: item["time"] ?? "N/A",
                                       description: item["instructions"],
                                       description2: item["disease"],
@@ -283,7 +288,7 @@ class _ReminderListState extends State<ReminderList> {
                           ..._doctorAssigned.map((item) => ReminderWidget(
                             title: item["title"],
                             patientName: item["patientName"] ?? item["patient"]?["name"],
-                            date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                            date: item["date"] ?? "N/A",
                             time: item["time"] ?? "N/A",
                             description2: item["disease"],
                             description: item["instructions"],
@@ -301,7 +306,7 @@ class _ReminderListState extends State<ReminderList> {
                           ..._selfCreated.map((item) => ReminderWidget(
                             title: item["title"],
                             patientName: item["patientName"] ?? item["patient"]?["name"],
-                            date: item["date"] != null ? DateFormat('MMMM, dd, yyyy').format(DateTime.parse(item["date"])) : "N/A",
+                            date: item["date"] ?? "N/A",
                             time: item["time"] ?? "N/A",
                             description2: item["disease"],
                             description: item["instructions"],
