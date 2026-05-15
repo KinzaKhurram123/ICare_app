@@ -219,9 +219,34 @@ class DiagnosisItem {
 }
 
 // Prescription Medicine
+enum MedicineFormType { tablet, capsule, liquid, injection, cream, drops, inhaler, other }
+
+extension MedicineFormTypeExtension on MedicineFormType {
+  String get value => toString().split('.').last;
+  String get displayName {
+    switch (this) {
+      case MedicineFormType.tablet: return 'Tablet';
+      case MedicineFormType.capsule: return 'Capsule';
+      case MedicineFormType.liquid: return 'Liquid / Syrup';
+      case MedicineFormType.injection: return 'Injection';
+      case MedicineFormType.cream: return 'Cream / Ointment';
+      case MedicineFormType.drops: return 'Drops';
+      case MedicineFormType.inhaler: return 'Inhaler';
+      case MedicineFormType.other: return 'Other';
+    }
+  }
+  static MedicineFormType fromString(String? val) {
+    return MedicineFormType.values.firstWhere(
+      (e) => e.value == (val ?? '').toLowerCase(),
+      orElse: () => MedicineFormType.tablet,
+    );
+  }
+}
+
 class PrescriptionMedicine {
   final String medicineName;
   final String dose;
+  final MedicineFormType formType;
   final MedicationFrequency frequency;
   final String duration;
   final String? notes;
@@ -229,6 +254,7 @@ class PrescriptionMedicine {
   PrescriptionMedicine({
     required this.medicineName,
     required this.dose,
+    this.formType = MedicineFormType.tablet,
     required this.frequency,
     required this.duration,
     this.notes,
@@ -238,6 +264,7 @@ class PrescriptionMedicine {
     return PrescriptionMedicine(
       medicineName: json['medicineName'] ?? '',
       dose: json['dose'] ?? '',
+      formType: MedicineFormTypeExtension.fromString(json['formType']?.toString()),
       frequency: MedicationFrequency.values.firstWhere(
         (e) => e.toString().split('.').last == json['frequency'],
         orElse: () => MedicationFrequency.od,
@@ -251,6 +278,7 @@ class PrescriptionMedicine {
     return {
       'medicineName': medicineName,
       'dose': dose,
+      'formType': formType.value,
       'frequency': frequency.toString().split('.').last,
       'duration': duration,
       'notes': notes,

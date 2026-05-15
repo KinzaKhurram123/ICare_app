@@ -933,6 +933,8 @@ class _InConsultationPrescriptionFormState
               const SizedBox(width: 4),
               const Expanded(flex: 2, child: Text('Dose', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
               const SizedBox(width: 4),
+              const Expanded(flex: 2, child: Text('Form', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
+              const SizedBox(width: 4),
               const Expanded(flex: 2, child: Text('Freq', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
               const SizedBox(width: 4),
               const Expanded(flex: 2, child: Text('Duration', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF065F46)))),
@@ -991,7 +993,33 @@ class _InConsultationPrescriptionFormState
                       controller: _medDoseControllers[index]!,
                       hint: '500mg',
                       onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                        medicineName: m.medicineName, dose: v,
+                        medicineName: m.medicineName, dose: v, formType: m.formType,
+                        frequency: m.frequency, duration: m.duration, notes: m.notes,
+                      )),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Form type dropdown (Tablet / Capsule / Liquid / …)
+                  Expanded(
+                    flex: 2,
+                    child: _compactDropdown<MedicineFormType>(
+                      value: m.formType,
+                      items: [MedicineFormType.tablet, MedicineFormType.capsule, MedicineFormType.liquid, MedicineFormType.drops, MedicineFormType.injection, MedicineFormType.cream, MedicineFormType.inhaler],
+                      label: (f) {
+                        switch (f) {
+                          case MedicineFormType.tablet: return 'Tab';
+                          case MedicineFormType.capsule: return 'Cap';
+                          case MedicineFormType.liquid: return 'Syrup';
+                          case MedicineFormType.drops: return 'Drops';
+                          case MedicineFormType.injection: return 'Inj';
+                          case MedicineFormType.cream: return 'Cream';
+                          case MedicineFormType.inhaler: return 'Inhaler';
+                          default: return 'Other';
+                        }
+                      },
+                      onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
+                        medicineName: m.medicineName, dose: m.dose, formType: v!,
                         frequency: m.frequency, duration: m.duration, notes: m.notes,
                       )),
                     ),
@@ -1006,7 +1034,7 @@ class _InConsultationPrescriptionFormState
                       items: MedicationFrequency.values,
                       label: (f) => _freqShort(f),
                       onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                        medicineName: m.medicineName, dose: m.dose,
+                        medicineName: m.medicineName, dose: m.dose, formType: m.formType,
                         frequency: v!, duration: m.duration, notes: m.notes,
                       )),
                     ),
@@ -1020,7 +1048,7 @@ class _InConsultationPrescriptionFormState
                       controller: _medDurationControllers[index]!,
                       hint: '5 Days',
                       onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                        medicineName: m.medicineName, dose: m.dose,
+                        medicineName: m.medicineName, dose: m.dose, formType: m.formType,
                         frequency: m.frequency, duration: v, notes: m.notes,
                       )),
                     ),
@@ -1034,7 +1062,7 @@ class _InConsultationPrescriptionFormState
                       controller: _medNotesControllers[index]!,
                       hint: 'Note',
                       onChanged: (v) => setState(() => _medicines[index] = PrescriptionMedicine(
-                        medicineName: m.medicineName, dose: m.dose,
+                        medicineName: m.medicineName, dose: m.dose, formType: m.formType,
                         frequency: m.frequency, duration: m.duration,
                         notes: v.isEmpty ? null : v,
                       )),

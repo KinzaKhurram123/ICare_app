@@ -578,11 +578,19 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMedicineRow(Map m, int index) {
-    final name = m['name']?.toString() ?? m['medicine']?.toString() ?? 'Medicine';
+    final name = m['name']?.toString() ?? m['medicineName']?.toString() ?? m['medicine']?.toString() ?? 'Medicine';
     final dosage = m['dosage']?.toString() ?? m['dose']?.toString() ?? '';
+    final rawFormType = (m['formType'] ?? '').toString().toLowerCase();
+    final formTypeLabel = rawFormType == 'capsule' ? 'Capsule' :
+                          rawFormType == 'liquid' ? 'Liquid/Syrup' :
+                          rawFormType == 'drops' ? 'Drops' :
+                          rawFormType == 'injection' ? 'Injection' :
+                          rawFormType == 'cream' ? 'Cream' :
+                          rawFormType == 'inhaler' ? 'Inhaler' :
+                          rawFormType == 'tablet' ? 'Tablet' : '';
     final frequency = m['frequency']?.toString() ?? '';
     final duration = m['duration']?.toString() ?? '';
-    final instructions = m['instructions']?.toString() ?? m['note']?.toString() ?? '';
+    final instructions = m['instructions']?.toString() ?? m['notes']?.toString() ?? m['note']?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -629,6 +637,7 @@ class PrescriptionDetailScreen extends StatelessWidget {
               runSpacing: 6,
               children: [
                 if (dosage.isNotEmpty) _rxPill('Dose', dosage),
+                if (formTypeLabel.isNotEmpty) _rxPill('Form', formTypeLabel),
                 if (frequency.isNotEmpty) _rxPill('Frequency', frequency),
                 if (duration.isNotEmpty) _rxPill('Duration', duration),
               ],
@@ -716,17 +725,15 @@ class PrescriptionDetailScreen extends StatelessWidget {
             : 'routine';
         final notes = t is Map ? (t['notes'] ?? '').toString() : '';
 
-        Color urgencyColor;
-        String urgencyLabel;
+        // Only show badge for STAT or Urgent — not for routine
+        Color? urgencyColor;
+        String? urgencyLabel;
         if (urgency == 'stat') {
           urgencyColor = const Color(0xFFEF4444);
           urgencyLabel = 'STAT';
         } else if (urgency == 'urgent') {
           urgencyColor = const Color(0xFFF59E0B);
           urgencyLabel = 'Urgent';
-        } else {
-          urgencyColor = const Color(0xFF8B5CF6);
-          urgencyLabel = 'Routine';
         }
 
         return Container(
@@ -756,19 +763,20 @@ class PrescriptionDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: urgencyColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: urgencyColor.withOpacity(0.4)),
+              if (urgencyLabel != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: urgencyColor!.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: urgencyColor.withOpacity(0.4)),
+                  ),
+                  child: Text(urgencyLabel,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: urgencyColor)),
                 ),
-                child: Text(urgencyLabel,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: urgencyColor)),
-              ),
             ],
           ),
         );

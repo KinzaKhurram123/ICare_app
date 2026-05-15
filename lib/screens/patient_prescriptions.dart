@@ -699,11 +699,17 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
         ? (test['urgency'] ?? 'Routine').toString().toLowerCase()
         : 'routine';
     final testNotes = test is Map ? (test['notes'] ?? '').toString() : '';
-    final urgencyColor = urgency == 'stat'
+    // Only show badge for STAT / Urgent — not Routine
+    final Color? urgencyColor = urgency == 'stat'
         ? const Color(0xFFEF4444)
         : urgency == 'urgent'
             ? const Color(0xFFF59E0B)
-            : const Color(0xFF8B5CF6);
+            : null;
+    final String? urgencyLabel = urgency == 'stat'
+        ? 'STAT'
+        : urgency == 'urgent'
+            ? 'Urgent'
+            : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -736,22 +742,22 @@ class _PatientPrescriptionsState extends ConsumerState<PatientPrescriptions> {
               ],
             ),
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: urgencyColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
+          if (urgencyLabel != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: urgencyColor!.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                urgencyLabel,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: urgencyColor),
+              ),
             ),
-            child: Text(
-              urgency == 'stat' ? 'STAT' : urgency == 'urgent' ? 'Urgent' : 'Routine',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: urgencyColor),
-            ),
-          ),
         ],
       ),
     );
@@ -976,8 +982,9 @@ class _PrescriptionPage extends StatelessWidget {
                 const SizedBox(height: 10),
                 ...labTests.map((t) {
                   final name = t is Map ? (t['name'] ?? t['testName'] ?? 'Lab Test').toString() : t.toString();
-                  final urgency = t is Map ? (t['urgency'] ?? 'routine').toString().toLowerCase() : 'routine';
-                  final uc = urgency == 'stat' ? const Color(0xFFEF4444) : urgency == 'urgent' ? const Color(0xFFF59E0B) : const Color(0xFF8B5CF6);
+                  final urgency = t is Map ? (t['urgency'] ?? '').toString().toLowerCase() : '';
+                  final Color? uc = urgency == 'stat' ? const Color(0xFFEF4444) : urgency == 'urgent' ? const Color(0xFFF59E0B) : null;
+                  final String? ul = urgency == 'stat' ? 'STAT' : urgency == 'urgent' ? 'Urgent' : null;
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -986,11 +993,12 @@ class _PrescriptionPage extends StatelessWidget {
                       const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 15),
                       const SizedBox(width: 8),
                       Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)))),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: uc.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: uc.withValues(alpha: 0.4))),
-                        child: Text(urgency == 'stat' ? 'STAT' : urgency == 'urgent' ? 'Urgent' : 'Routine', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: uc)),
-                      ),
+                      if (ul != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: uc!.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: uc.withValues(alpha: 0.4))),
+                          child: Text(ul, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: uc)),
+                        ),
                     ]),
                   );
                 }),
@@ -1883,9 +1891,12 @@ class _FindPharmaciesSheet extends StatefulWidget {
 
 class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
   final PharmacyService _pharmacyService = PharmacyService();
+  final MedicalRecordService _medService = MedicalRecordService();
   List<dynamic> _pharmacies = [];
   List<dynamic> _filteredPharmacies = [];
+  List<dynamic> _advisedPrescriptions = [];
   bool _isLoading = true;
+  bool _showAdvised = false;
   double? _userLat;
   double? _userLng;
 
@@ -1898,6 +1909,22 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
     super.initState();
     _fetchPharmacies();
     _getUserLocation();
+    _fetchAdvisedPrescriptions();
+  }
+
+  Future<void> _fetchAdvisedPrescriptions() async {
+    try {
+      final result = await _medService.getMyRecords();
+      if (result['success'] == true && mounted) {
+        final records = result['records'] as List<dynamic>;
+        final withMeds = records.where((r) {
+          final meds = (r['medicines'] as List?) ??
+              (r['prescription'] is Map ? (r['prescription']['medicines'] as List?) : null) ?? [];
+          return meds.isNotEmpty;
+        }).toList();
+        setState(() => _advisedPrescriptions = withMeds);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -2054,12 +2081,41 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
                   ),
                   const SizedBox(height: 14),
 
-                  // â”€â”€ Mode toggle: Nearest | Search by Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                  // â”€â”€ Mode toggle: Nearest | Search | Advised â”€â”€â”€â”€â”€â”€â”€â”€
                   Row(
                     children: [
                       _modeBtn('nearest', Icons.near_me_rounded, 'Nearest', const Color(0xFF3B82F6)),
                       const SizedBox(width: 10),
-                      _modeBtn('search', Icons.location_searching_rounded, 'Search by Location', const Color(0xFF3B82F6)),
+                      _modeBtn('search', Icons.location_searching_rounded, 'Search', const Color(0xFF3B82F6)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _showAdvised = !_showAdvised),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _showAdvised ? const Color(0xFF10B981) : const Color(0xFF10B981).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.description_outlined, size: 14,
+                                    color: _showAdvised ? Colors.white : const Color(0xFF10B981)),
+                                const SizedBox(width: 6),
+                                Text('Advised',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: _showAdvised ? Colors.white : const Color(0xFF10B981))),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -2151,28 +2207,30 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
               ),
             ),
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredPharmacies.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.local_pharmacy_outlined, size: 48, color: Colors.grey[300]),
-                              const SizedBox(height: 12),
-                              Text(
-                                _mode == 'search' ? 'No pharmacies found in this area' : 'No pharmacies found',
-                                style: const TextStyle(color: Color(0xFF64748B)),
+              child: _showAdvised
+                  ? _buildAdvisedMedicinesView(scrollCtrl)
+                  : _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filteredPharmacies.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.local_pharmacy_outlined, size: 48, color: Colors.grey[300]),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _mode == 'search' ? 'No pharmacies found in this area' : 'No pharmacies found',
+                                    style: const TextStyle(color: Color(0xFF64748B)),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          itemCount: _filteredPharmacies.length,
-                          itemBuilder: (ctx, i) => _pharmacyTile(_filteredPharmacies[i]),
-                        ),
+                            )
+                          : ListView.builder(
+                              controller: scrollCtrl,
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                              itemCount: _filteredPharmacies.length,
+                              itemBuilder: (ctx, i) => _pharmacyTile(_filteredPharmacies[i]),
+                            ),
             ),
           ],
         ),
@@ -2217,6 +2275,101 @@ class _FindPharmaciesSheetState extends State<_FindPharmaciesSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAdvisedMedicinesView(ScrollController scrollCtrl) {
+    if (_advisedPrescriptions.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.medication_outlined, size: 48, color: Color(0xFF94A3B8)),
+              SizedBox(height: 12),
+              Text('No advised medicines',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+              SizedBox(height: 6),
+              Text('Medicines your doctor has prescribed will appear here',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: scrollCtrl,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      itemCount: _advisedPrescriptions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        final rx = _advisedPrescriptions[i] as Map<String, dynamic>;
+        final doctorName = (rx['doctor']?['name'] ?? rx['doctorName'] ?? 'Doctor').toString();
+        final dateStr = rx['createdAt'] != null
+            ? DateFormat('MMM dd, yyyy').format(DateTime.parse(rx['createdAt'].toString()).toLocal())
+            : '';
+        final meds = (rx['medicines'] as List?) ??
+            (rx['prescription'] is Map ? (rx['prescription']['medicines'] as List?) : null) ?? [];
+        final diagnoses = rx['diagnoses'] as List?;
+        final diagnosis = (rx['diagnosis'] ?? (diagnoses != null && diagnoses.isNotEmpty ? diagnoses[0]['diagnosis'] : '') ?? '').toString();
+
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+            boxShadow: [
+              BoxShadow(color: const Color(0xFF3B82F6).withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF3B82F6)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text('$doctorName${dateStr.isNotEmpty ? " • $dateStr" : ""}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(10)),
+                  child: Text('${meds.length} med${meds.length == 1 ? "" : "s"}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8))),
+                ),
+              ]),
+              if (diagnosis.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text('Diagnosis: $diagnosis',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
+              ],
+              const SizedBox(height: 10),
+              ...meds.map((m) {
+                final name = m is Map ? (m['medicineName'] ?? m['name'] ?? '').toString() : m.toString();
+                final dose = m is Map ? (m['dose'] ?? m['dosage'] ?? '').toString() : '';
+                final formType = m is Map ? (m['formType'] ?? '').toString() : '';
+                final freq = m is Map ? (m['frequency'] ?? '').toString().toUpperCase() : '';
+                final dur = m is Map ? (m['duration'] ?? '').toString() : '';
+                final parts = <String>[if (dose.isNotEmpty) dose, if (formType.isNotEmpty) formType, if (freq.isNotEmpty) freq, if (dur.isNotEmpty) dur];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    const Icon(Icons.medication_rounded, size: 14, color: Color(0xFF3B82F6)),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)))),
+                    Text(parts.join(' • '), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  ]),
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -18,6 +18,11 @@ const diagnosisItemSchema = new mongoose.Schema({
 const prescriptionMedicineSchema = new mongoose.Schema({
   medicineName: { type: String, required: true },
   dose: { type: String, required: true },
+  formType: {
+    type: String,
+    enum: ['tablet', 'capsule', 'liquid', 'injection', 'cream', 'drops', 'inhaler', 'other'],
+    default: 'tablet'
+  },
   frequency: {
     type: String,
     enum: ['od', 'bd', 'tds', 'qid', 'sos', 'stat', 'weekly', 'monthly'],

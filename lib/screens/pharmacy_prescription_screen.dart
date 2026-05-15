@@ -51,20 +51,24 @@ class _PharmacyPrescriptionScreenState
       final noon = m is Map ? (m['noon'] ?? '').toString() : '';
       final night = m is Map ? (m['night'] ?? '').toString() : '';
       final duration = m is Map ? (m['duration'] ?? '').toString() : '';
-      final dosage = m is Map ? (m['dosage'] ?? '').toString() : '';
+      final dosage = m is Map ? (m['dosage'] ?? m['dose'] ?? '').toString() : '';
       final frequency = m is Map ? (m['frequency'] ?? '').toString() : '';
+      final formType = m is Map ? (m['formType'] ?? 'tablet').toString() : 'tablet';
 
-      final qty = _calcQty(day, noon, night, duration);
+      // For liquid, qty defaults to 1 bottle; for tablets/capsules, calculate from schedule
+      final isLiquid = formType.toLowerCase() == 'liquid' || formType.toLowerCase() == 'syrup';
+      final calculatedQty = isLiquid ? 1 : _calcQty(day, noon, night, duration);
 
       return {
         'name': name,
-        'qty': qty > 0 ? qty : 1,
+        'qty': calculatedQty > 0 ? calculatedQty : 1,
         'day': day,
         'noon': noon,
         'night': night,
         'duration': duration,
         'dosage': dosage,
         'frequency': frequency,
+        'formType': formType,
         'isPrescribed': true,
       };
     }).where((m) => (m['name'] as String).isNotEmpty).toList();
@@ -420,7 +424,7 @@ class _PharmacyPrescriptionScreenState
 
     return ListView(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
         // Prescribed medicines
@@ -463,11 +467,26 @@ class _PharmacyPrescriptionScreenState
   // ── PRESCRIBED MEDICINE TILE ──────────────────────────────────────────────
   Widget _prescribedMedTile(Map<String, dynamic> m) {
     final name = m['name'] as String;
-    final day = m['day'] as String? ?? '';
-    final noon = m['noon'] as String? ?? '';
-    final night = m['night'] as String? ?? '';
-    final duration = m['duration'] as String? ?? '';
-    final qty = m['qty'] as int? ?? 1;
+    final dosage = (m['dosage'] ?? '').toString();
+    final formType = (m['formType'] ?? '').toString().toLowerCase();
+    final frequency = (m['frequency'] ?? '').toString().toUpperCase();
+    final duration = (m['duration'] ?? '').toString();
+    int qty = m['qty'] as int? ?? 1;
+
+    // form label
+    final formLabel = formType == 'liquid' || formType == 'syrup'
+        ? 'Liquid/Syrup'
+        : formType == 'capsule'
+            ? 'Capsule'
+            : formType == 'drops'
+                ? 'Drops'
+                : formType == 'injection'
+                    ? 'Injection'
+                    : formType == 'cream'
+                        ? 'Cream'
+                        : formType == 'inhaler'
+                            ? 'Inhaler'
+                            : 'Tablet';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -477,85 +496,80 @@ class _PharmacyPrescriptionScreenState
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _primary.withOpacity(0.3), width: 1.5),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Checkbox — always checked, can't uncheck prescribed
-          Container(
-            width: 22,
-            height: 22,
-            margin: const EdgeInsets.only(top: 2),
-            decoration: BoxDecoration(
-              color: _primary,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(Icons.check_rounded,
-                color: Colors.white, size: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 22, height: 22,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 14),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                    const SizedBox(height: 4),
+                    // Dosage info line: "500mg • Tablet • BD • 5 Days"
+                    Wrap(spacing: 6, runSpacing: 4, children: [
+                      if (dosage.isNotEmpty) _chip(dosage, const Color(0xFF64748B)),
+                      _chip(formLabel, _primary),
+                      if (frequency.isNotEmpty) _chip(frequency, const Color(0xFF10B981)),
+                      if (duration.isNotEmpty) _chip('📅 $duration', const Color(0xFF94A3B8)),
+                    ]),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(name,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A))),
+          const SizedBox(height: 10),
+          // Quantity row: label + minus + value + plus
+          Row(
+            children: [
+              const Text('Quantity:',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  if (qty > 1) {
+                    setState(() => m['qty'] = qty - 1);
+                  }
+                },
+                child: Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _primary,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text('Prescribed',
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white)),
+                  child: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFF475569)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text('$qty',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: _primary)),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() => m['qty'] = qty + 1);
+                },
+                child: Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: _primary,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ]),
-                const SizedBox(height: 6),
-                // Dosage chips
-                Wrap(spacing: 6, runSpacing: 4, children: [
-                  if (day.isNotEmpty && day != '0')
-                    _chip('☀️ Day: $day', const Color(0xFFF59E0B)),
-                  if (noon.isNotEmpty && noon != '0')
-                    _chip('🌤️ Noon: $noon', const Color(0xFFEF4444)),
-                  if (night.isNotEmpty && night != '0')
-                    _chip('🌙 Night: $night', const Color(0xFF6366F1)),
-                  if (duration.isNotEmpty)
-                    _chip('📅 $duration', const Color(0xFF64748B)),
-                ]),
-                if (qty > 1) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    _qtyText(day, noon, night, duration, qty),
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: _primary,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          // Qty badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text('Qty: $qty',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: _primary)),
+                  child: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                ),
+              ),
+            ],
           ),
         ],
       ),
