@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:icare/services/api_service.dart';
+import 'package:icare/services/api_config.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -183,10 +189,27 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     );
   }
 
+  Future<String?> _uploadFileToBackend(Uint8List bytes, String fileName) async {
+    try {
+      final token = await SharedPref().getToken();
+      final uri = Uri.parse('${ApiConfig.baseUrl}/upload/prescription');
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+      final streamed = await request.send();
+      final body = await streamed.stream.bytesToString();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      if (json['success'] == true) return json['url'] as String?;
+      return null;
+    } catch (_) { return null; }
+  }
+
   void _showUploadDialog() {
     final titleController = TextEditingController();
     String type = 'Medical License';
     bool isUploading = false;
+    String? pickedFileName;
+    Uint8List? pickedBytes;
 
     showModalBottomSheet(
       context: context,
@@ -290,16 +313,28 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
               ),
               const SizedBox(height: 24),
               InkWell(
-                onTap: () {}, // File Picker
+                onTap: () async {
+                  final result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                    withData: true,
+                  );
+                  if (result != null && result.files.single.bytes != null) {
+                    setModalState(() {
+                      pickedFileName = result.files.single.name;
+                      pickedBytes   = result.files.single.bytes;
+                    });
+                  }
+                },
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: pickedFileName != null ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.primaryColor.withOpacity(0.2),
-                      style: BorderStyle.solid,
+                      color: pickedFileName != null ? AppColors.primaryColor : AppColors.primaryColor.withOpacity(0.2),
                       width: 2,
                     ),
                   ),
@@ -312,27 +347,25 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                           color: AppColors.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.cloud_upload_rounded,
-                          color: AppColors.primaryColor,
+                        child: Icon(
+                          pickedFileName != null ? Icons.check_circle_rounded : Icons.cloud_upload_rounded,
+                          color: pickedFileName != null ? Colors.green : AppColors.primaryColor,
                           size: 32,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Tap to select PDF or Image',
+                      Text(
+                        pickedFileName ?? 'Tap to select PDF or Image',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF475569),
+                          color: pickedFileName != null ? AppColors.primaryColor : const Color(0xFF475569),
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
-                        'Max file size: 10MB',
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 11,
-                        ),
+                      Text(
+                        pickedFileName != null ? 'Tap to change file' : 'PDF, JPG, PNG  •  Max 10MB',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                       ),
                     ],
                   ),
@@ -348,18 +381,28 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                   onPressed: isUploading
                       ? null
                       : () async {
-                          if (titleController.text.isEmpty) return;
+                          if (titleController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+                            return;
+                          }
+                          if (pickedBytes == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a file')));
+                            return;
+                          }
                           setModalState(() => isUploading = true);
                           try {
+                            // Upload file to Cloudinary via backend
+                            final url = await _uploadFileToBackend(pickedBytes!, pickedFileName ?? 'document.pdf');
                             await _apiService.post('/credentials', {
                               'type': type,
-                              'title': titleController.text,
-                              'documentUrl': 'https://example.com/mock-doc.pdf',
+                              'title': titleController.text.trim(),
+                              'documentUrl': url ?? '',
                             });
-                            Navigator.pop(ctx);
+                            if (ctx.mounted) Navigator.pop(ctx);
                             _fetchCredentials();
                           } catch (e) {
                             setModalState(() => isUploading = false);
+                            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
                           }
                         },
                 ),

@@ -313,7 +313,7 @@ router.get('/leave-requests', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // PATCH /admin/leave-requests/:doctorId/:requestId — approve or reject a leave request
-router.patch('/leave-requests/:doctorId/:requestId', authMiddleware, adminOnly, async (req, res) => {
+router.put('/leave-requests/:doctorId/:requestId', authMiddleware, adminOnly, async (req, res) => {
   try {
     await connectMongoDB();
     const { status } = req.body; // 'approved' | 'rejected'
@@ -368,7 +368,7 @@ router.get('/credentials', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // PATCH /admin/credentials/:doctorId/:credId — verify or reject a credential
-router.patch('/credentials/:doctorId/:credId', authMiddleware, adminOnly, async (req, res) => {
+router.put('/credentials/:doctorId/:credId', authMiddleware, adminOnly, async (req, res) => {
   try {
     await connectMongoDB();
     const { status } = req.body; // 'verified' | 'rejected'
