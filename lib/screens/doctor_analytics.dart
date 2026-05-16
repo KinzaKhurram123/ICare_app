@@ -36,24 +36,33 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     setState(() => _isLoading = true);
 
     try {
-      final appointmentsResult = await _appointmentService.getMyAppointmentsDetailed();
-      final statsResult = await _doctorService.getStats();
-      final reviewsResult = await _doctorService.getMyPatientReviews();
+      // Each call is independent — one failure won't block the others
+      final results = await Future.wait([
+        _appointmentService.getMyAppointmentsDetailed()
+            .catchError((_) => <String, dynamic>{'success': false}),
+        _doctorService.getStats()
+            .catchError((_) => <String, dynamic>{'success': false, 'stats': {}}),
+        _doctorService.getMyPatientReviews()
+            .catchError((_) => <String, dynamic>{'success': false, 'reviews': []}),
+      ]);
 
       if (!mounted) return;
 
       setState(() {
+        final appointmentsResult = results[0];
+        final statsResult       = results[1];
+        final reviewsResult     = results[2];
+
         if (appointmentsResult['success'] == true) {
           _appointments = appointmentsResult['appointments'] as List<AppointmentDetail>;
         }
         if (statsResult['success'] == true) {
           _stats = statsResult['stats'] ?? {};
         }
-        if (reviewsResult['success'] == true) {
-          _patientReviews = List<Map<String, dynamic>>.from(reviewsResult['reviews'] ?? []);
-        } else {
-          _patientReviews = [];
-        }
+        _patientReviews = reviewsResult['success'] == true
+            ? List<Map<String, dynamic>>.from(reviewsResult['reviews'] ?? [])
+            : [];
+
         _isLoading = false;
       });
     } catch (e) {
