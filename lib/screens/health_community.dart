@@ -23,6 +23,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   final CourseService _courseService = CourseService();
   final List<String> _categories = [
     'All',
+    'General',
     'Diabetes',
     'Heart Health',
     'Mental Wellness',
@@ -738,7 +739,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                               'Nutrition',
                               'Pregnancy',
                               'COVID-19',
-                            ]
+                            ] // General first, then alphabetical health topics
                             .map(
                               (String val) => DropdownMenuItem(
                                 value: val,
