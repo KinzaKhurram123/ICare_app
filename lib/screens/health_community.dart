@@ -313,37 +313,45 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 color: Color(0xFF334155),
               ),
             ),
-            // Display post image if available
+            // Display post image if available — tap to open full-screen preview
             if (post['imageUrl'] != null && post['imageUrl'].toString().isNotEmpty) ...[
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  post['imageUrl'].toString(),
-                  height: 240,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      height: 240,
-                      color: const Color(0xFFF1F5F9),
-                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                    );
-                  },
-                  errorBuilder: (_, error, __) {
-                    debugPrint('Image load failed: $error — url: ${post['imageUrl']}');
-                    return Container(
-                      height: 100,
-                      color: const Color(0xFFFEE2E2),
-                      child: const Center(
-                        child: Text(
-                          'Image failed to load',
-                          style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
-                        ),
-                      ),
-                    );
-                  },
+              GestureDetector(
+                onTap: () => _showImagePreview(post['imageUrl'].toString()),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    color: const Color(0xFFF1F5F9),
+                    constraints: const BoxConstraints(
+                      minHeight: 200,
+                      maxHeight: 420,
+                    ),
+                    width: double.infinity,
+                    child: Image.network(
+                      post['imageUrl'].toString(),
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const SizedBox(
+                          height: 240,
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        );
+                      },
+                      errorBuilder: (_, error, __) {
+                        debugPrint('Image load failed: $error — url: ${post['imageUrl']}');
+                        return Container(
+                          height: 100,
+                          color: const Color(0xFFFEE2E2),
+                          child: const Center(
+                            child: Text(
+                              'Image failed to load',
+                              style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -583,6 +591,62 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
           fontSize: 10,
           fontWeight: FontWeight.w900,
           color: Color(0xFF64748B),
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreview(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            // Tap outside image to dismiss
+            GestureDetector(
+              onTap: () => Navigator.of(ctx).pop(),
+              child: Container(color: Colors.transparent),
+            ),
+            // Zoomable image
+            Center(
+              child: InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text(
+                      'Image failed to load',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Close button (top-right)
+            Positioned(
+              top: 40,
+              right: 16,
+              child: Material(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
