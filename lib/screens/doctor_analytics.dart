@@ -168,7 +168,6 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
-    final stats = _statistics;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -185,35 +184,73 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
             color: Color(0xFF0F172A),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
+            onPressed: _loadData,
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(isDesktop ? 40 : 20),
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: isDesktop ? 1200 : double.infinity,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPeriodSelector(),
-                      const SizedBox(height: 24),
-                      _buildRevenueAnalytics(stats),
-                      const SizedBox(height: 24),
-                      _buildOverviewCards(stats, isDesktop),
-                      const SizedBox(height: 16),
-                      _buildReviewsPreview(),
-                      const SizedBox(height: 24),
-                      _buildPerformanceMetrics(stats),
-                      const SizedBox(height: 24),
-                      _buildAppointmentBreakdown(stats),
-                    ],
-                  ),
-                ),
+          : _buildBody(isDesktop),
+    );
+  }
+
+  Widget _buildBody(bool isDesktop) {
+    // Compute stats safely — if _statistics throws, show error instead of crashing
+    Map<String, dynamic> stats;
+    try {
+      stats = _statistics;
+    } catch (e) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFF94A3B8)),
+            const SizedBox(height: 16),
+            const Text('Could not compute analytics.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isDesktop ? 40 : 20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isDesktop ? 1100 : double.infinity),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPeriodSelector(),
+              const SizedBox(height: 24),
+              _buildRevenueAnalytics(stats),
+              const SizedBox(height: 24),
+              _buildOverviewCards(stats, isDesktop),
+              const SizedBox(height: 16),
+              _buildReviewsPreview(),
+              const SizedBox(height: 24),
+              _buildPerformanceMetrics(stats),
+              const SizedBox(height: 24),
+              _buildAppointmentBreakdown(stats),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -495,11 +532,11 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
         children: [
           Row(
             children: [
-              Expanded(child: _buildStatCard('Total Appointments', stats['total']!, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
+              Expanded(child: _buildStatCard('Total Appointments', stats['total'] ?? 0, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Completed', stats['completed']!, Icons.check_circle_rounded, const Color(0xFF10B981))),
+              Expanded(child: _buildStatCard('Completed', stats['completed'] ?? 0, Icons.check_circle_rounded, const Color(0xFF10B981))),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Missed', stats['missed']!, Icons.warning_rounded, const Color(0xFF64748B))),
+              Expanded(child: _buildStatCard('Missed', stats['missed'] ?? 0, Icons.warning_rounded, const Color(0xFF64748B))),
             ],
           ),
           const SizedBox(height: 16),
@@ -508,9 +545,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
               Expanded(child: _buildStatCard('Reviews', reviewCount, Icons.rate_review_rounded, const Color(0xFF8B5CF6),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DoctorReviews())))),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Patient Satisfaction', stats['satisfaction'], Icons.sentiment_very_satisfied_rounded, const Color(0xFF6366F1))),
+              Expanded(child: _buildStatCard('Patient Satisfaction', stats['satisfaction'] ?? '0%', Icons.sentiment_very_satisfied_rounded, const Color(0xFF6366F1))),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Avg. Rating', stats['avgRating'], Icons.star_rounded, const Color(0xFFF59E0B))),
+              Expanded(child: _buildStatCard('Avg. Rating', stats['avgRating'] ?? '0.0', Icons.star_rounded, const Color(0xFFF59E0B))),
             ],
           ),
         ],
@@ -521,15 +558,15 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildStatCard('Total', stats['total']!, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
+            Expanded(child: _buildStatCard('Total', stats['total'] ?? 0, Icons.calendar_month_rounded, const Color(0xFF3B82F6))),
             const SizedBox(width: 12),
-            Expanded(child: _buildStatCard('Completed', stats['completed']!, Icons.check_circle_rounded, const Color(0xFF10B981))),
+            Expanded(child: _buildStatCard('Completed', stats['completed'] ?? 0, Icons.check_circle_rounded, const Color(0xFF10B981))),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildStatCard('Missed', stats['missed']!, Icons.warning_rounded, const Color(0xFF64748B))),
+            Expanded(child: _buildStatCard('Missed', stats['missed'] ?? 0, Icons.warning_rounded, const Color(0xFF64748B))),
             const SizedBox(width: 12),
             Expanded(child: _buildStatCard('Reviews', reviewCount, Icons.rate_review_rounded, const Color(0xFF8B5CF6),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DoctorReviews())))),
@@ -538,9 +575,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildStatCard('Satisfaction', stats['satisfaction'], Icons.sentiment_very_satisfied_rounded, const Color(0xFF6366F1))),
+            Expanded(child: _buildStatCard('Satisfaction', stats['satisfaction'] ?? '0%', Icons.sentiment_very_satisfied_rounded, const Color(0xFF6366F1))),
             const SizedBox(width: 12),
-            Expanded(child: _buildStatCard('Avg. Rating', stats['avgRating'], Icons.star_rounded, const Color(0xFFF59E0B))),
+            Expanded(child: _buildStatCard('Avg. Rating', stats['avgRating'] ?? '0.0', Icons.star_rounded, const Color(0xFFF59E0B))),
           ],
         ),
       ],
@@ -728,10 +765,10 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
   }
 
   Widget _buildPerformanceMetrics(Map<String, dynamic> stats) {
-    final int total = stats['total'] ?? 0;
-    final int completed = stats['completed'] ?? 0;
-    final int cancelled = stats['cancelled'] ?? 0;
-    final int missed = stats['missed'] ?? 0;
+    final int total     = (stats['total']     as int?) ?? 0;
+    final int completed = (stats['completed'] as int?) ?? 0;
+    final int cancelled = (stats['cancelled'] as int?) ?? 0;
+    final int missed    = (stats['missed']    as int?) ?? 0;
 
     final double completionValue = total > 0 ? (completed / total) * 100 : 0.0;
     final double cancellationValue = total > 0 ? (cancelled / total) * 100 : 0.0;
@@ -838,33 +875,17 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildBreakdownItem(
-            'Completed',
-            stats['completed'] as int,
-            const Color(0xFF10B981),
-          ),
-          _buildBreakdownItem(
-            'Pending',
-            stats['pending'] as int,
-            const Color(0xFFF59E0B),
-          ),
-          _buildBreakdownItem(
-            'Cancelled',
-            stats['cancelled'] as int,
-            const Color(0xFFEF4444),
-          ),
-          _buildBreakdownItem(
-            'Missed',
-            stats['missed'] as int,
-            const Color(0xFF64748B),
-          ),
+          _buildBreakdownItem('Completed', (stats['completed'] as int?) ?? 0, const Color(0xFF10B981)),
+          _buildBreakdownItem('Pending',   (stats['pending']   as int?) ?? 0, const Color(0xFFF59E0B)),
+          _buildBreakdownItem('Cancelled', (stats['cancelled'] as int?) ?? 0, const Color(0xFFEF4444)),
+          _buildBreakdownItem('Missed',    (stats['missed']    as int?) ?? 0, const Color(0xFF64748B)),
         ],
       ),
     );
   }
 
   Widget _buildBreakdownItem(String label, int count, Color color) {
-    final total = _statistics['total'] as int;
+    final total = (_statistics['total'] as int?) ?? 0;
     final percentage = total > 0 ? (count / total) : 0.0;
 
     return Padding(
