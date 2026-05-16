@@ -15,7 +15,19 @@ class CommunityForumScreen extends StatefulWidget {
 class _CommunityForumScreenState extends State<CommunityForumScreen> {
   final CommunityService _communityService = CommunityService();
   bool _isLoading = true;
-  List<String> _categories = CommunityService.defaultCategories;
+
+  // Exact order as required — hardcoded so deployment always shows this order
+  List<String> _categories = const [
+    'All',
+    'General',
+    'Diabetes',
+    'Heart Health',
+    'Mental Wellness',
+    'Nutrition',
+    'Pregnancy',
+    'COVID-19',
+  ];
+
   String _selectedCategory = 'All';
   List<dynamic> _posts = [];
   String? _currentUserId;
@@ -39,8 +51,12 @@ class _CommunityForumScreenState extends State<CommunityForumScreen> {
   }
 
   Future<void> _loadCategories() async {
+    // Only append admin-added custom topics — never change the fixed default order
     final cats = await _communityService.getCategories();
-    if (mounted) setState(() => _categories = cats);
+    final customOnly = cats.where((c) => !_categories.contains(c)).toList();
+    if (mounted && customOnly.isNotEmpty) {
+      setState(() => _categories = [..._categories, ...customOnly]);
+    }
   }
 
   Future<void> _loadPosts() async {
