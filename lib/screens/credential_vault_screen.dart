@@ -9,6 +9,7 @@ import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CredentialVaultScreen extends StatefulWidget {
   const CredentialVaultScreen({super.key});
@@ -43,151 +44,127 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     }
   }
 
+  Future<void> _openDocUrl(String url) async {
+    if (url.isEmpty) return;
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot open: $e')));
+    }
+  }
+
   void _viewDocument(dynamic cred) {
+    final docUrl = cred['documentUrl'] as String? ?? '';
+    final title  = cred['title']?.toString() ?? 'Document';
+    final type   = cred['type']?.toString() ?? '';
+    final isImage = docUrl.isNotEmpty &&
+        RegExp(r'\.(jpg|jpeg|png|gif|webp)(\?|$)', caseSensitive: false).hasMatch(docUrl);
+
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
+          constraints: const BoxConstraints(maxWidth: 700, maxHeight: 750),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Header
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 12, 20),
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            cred['title'],
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            cred['type'],
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
+                child: Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    Text(type, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  ])),
+                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded)),
+                ]),
               ),
+
+              // Document preview
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  color: Colors.white,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.description_rounded,
-                            size: 64,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Document Preview',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                child: docUrl.isEmpty
+                    ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.description_outlined, size: 64, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        const Text('No document uploaded yet', style: TextStyle(color: Color(0xFF94A3B8))),
+                      ]))
+                    : isImage
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            docUrl,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (_, child, prog) => prog == null ? child
+                                : const Center(child: CircularProgressIndicator()),
+                            errorBuilder: (_, __, ___) => _docFallback(docUrl),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          cred['documentUrl'] ?? 'No document URL',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(color: AppColors.primaryColor.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(16)),
+                            child: Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.primaryColor),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Document download started'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.download_rounded),
-                    label: const Text(
-                      'Download Document',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 16),
+                          const Text('PDF Document', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                          const SizedBox(height: 8),
+                          const Text('Tap "Open in Browser" to view the full document', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            onPressed: () { Navigator.pop(ctx); _openDocUrl(docUrl); },
+                            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                            label: const Text('Open in Browser', style: TextStyle(fontWeight: FontWeight.w700)),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                          ),
+                        ]),
                       ),
+              ),
+
+              // Download button
+              if (docUrl.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE2E8F0)))),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () { Navigator.pop(ctx); _openDocUrl(docUrl); },
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text('Open / Download Document', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _docFallback(String url) {
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey.shade300),
+      const SizedBox(height: 8),
+      const Text('Could not load image', style: TextStyle(color: Color(0xFF94A3B8))),
+    ]);
+  }
+
 
   Future<String?> _uploadFileToBackend(Uint8List bytes, String fileName) async {
     try {

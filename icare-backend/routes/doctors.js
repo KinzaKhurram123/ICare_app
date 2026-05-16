@@ -314,7 +314,7 @@ router.post('/leave-requests', authMiddleware, async (req, res) => {
     const from = new Date(fromDate); const to = new Date(toDate);
     if (isNaN(from) || isNaN(to) || from > to) return res.status(400).json({ success: false, message: 'Invalid date range' });
     const conflicting = await Appointment.countDocuments({ doctor_id: doctorId, status: { $in: ['pending','confirmed'] }, appointmentDate: { $gte: from, $lte: to } });
-    await DoctorProfile.findOneAndUpdate({ user_id: doctorId }, { $push: { leaveRequests: { fromDate: from, toDate: to, reason: reason||'', status:'pending', conflictingAppointments: conflicting, createdAt: new Date() } } }, { upsert: true });
+    await DoctorProfile.findOneAndUpdate({ user_id: doctorId }, { $push: { leaveRequests: { _id: new mongoose.Types.ObjectId(), fromDate: from, toDate: to, reason: reason||'', status:'pending', conflictingAppointments: conflicting, createdAt: new Date() } } }, { upsert: true });
     res.json({ success: true, message: 'Leave request submitted. Pending admin approval.', conflictingAppointments: conflicting });
   } catch (e) { console.error('leave-requests POST error:', e); res.status(500).json({ success: false, message: e.message }); }
 });

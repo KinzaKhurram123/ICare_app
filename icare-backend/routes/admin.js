@@ -322,19 +322,26 @@ router.put('/leave-requests/:doctorId/:requestId', authMiddleware, adminOnly, as
     }
 
     const doctorId = toId(req.params.doctorId);
-    const requestId = toId(req.params.requestId);
-    if (!doctorId || !requestId) return res.status(400).json({ success: false, message: 'Invalid IDs' });
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor ID' });
 
-    await DoctorProfile.updateOne(
-      { user_id: doctorId, 'leaveRequests._id': requestId },
-      {
-        $set: {
-          'leaveRequests.$.status': status,
-          'leaveRequests.$.reviewedAt': new Date(),
-          'leaveRequests.$.reviewedBy': req.user.id,
-        },
-      }
-    );
+    const requestId = toId(req.params.requestId);
+
+    let updated;
+    if (requestId) {
+      // Try match by _id
+      updated = await DoctorProfile.updateOne(
+        { user_id: doctorId, 'leaveRequests._id': requestId },
+        { $set: { 'leaveRequests.$.status': status, 'leaveRequests.$.reviewedAt': new Date(), 'leaveRequests.$.reviewedBy': req.user.id } }
+      );
+    }
+
+    // Fallback: if no _id match (old records without _id), update all pending for this doctor
+    if (!updated || updated.modifiedCount === 0) {
+      await DoctorProfile.updateOne(
+        { user_id: doctorId, 'leaveRequests.status': 'pending' },
+        { $set: { 'leaveRequests.$.status': status, 'leaveRequests.$.reviewedAt': new Date() } }
+      );
+    }
 
     res.json({ success: true, message: `Leave request ${status}.` });
   } catch (e) {
