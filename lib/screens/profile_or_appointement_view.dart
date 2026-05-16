@@ -84,7 +84,8 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
           children: [
             ProfileInfoWidget(
               name: otherPerson?.name ?? 'User',
-              email: otherPerson?.email ?? 'N/A',
+              // Doctors do not see patient contact details
+              email: selectedRole == 'Doctor' ? '' : (otherPerson?.email ?? 'N/A'),
               appointmentId: appointment.id,
               patient: appointment.patient,
             ),
@@ -126,9 +127,8 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                       "Reason": appointment.reason ?? 'N/A',
                     }
                   : {
+                      // Contact details hidden from doctor — only name + reason visible
                       "Name": otherPerson?.name ?? 'N/A',
-                      "Email": otherPerson?.email ?? 'N/A',
-                      "Phone": otherPerson?.phoneNumber ?? 'N/A',
                       "Reason": appointment.reason ?? 'N/A',
                     },
             ),
@@ -649,16 +649,11 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (selectedRole == 'Doctor') ...[
-                          _buildInfoRow(
-                            Icons.email_outlined,
-                            otherPerson?.email ?? 'N/A',
-                          ),
+                        // Patient contact details are NOT shown to doctors
+                        if (selectedRole != 'Doctor') ...[
+                          _buildInfoRow(Icons.email_outlined, otherPerson?.email ?? 'N/A'),
                           const SizedBox(height: 8),
-                          _buildInfoRow(
-                            Icons.phone_outlined,
-                            otherPerson?.phoneNumber ?? 'N/A',
-                          ),
+                          _buildInfoRow(Icons.phone_outlined, otherPerson?.phoneNumber ?? 'N/A'),
                           const SizedBox(height: 8),
                         ],
                         _buildInfoRow(
@@ -747,9 +742,8 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
                                   "Reason": appointment.reason!,
                               }
                             : {
+                                // Only name shown to doctor — no contact details
                                 "Name": otherPerson?.name ?? 'N/A',
-                                "Email": otherPerson?.email ?? 'N/A',
-                                "Phone": otherPerson?.phoneNumber ?? 'N/A',
                                 if (appointment.reason != null &&
                                     appointment.reason!.isNotEmpty &&
                                     !appointment.reason!.contains('Channel:'))

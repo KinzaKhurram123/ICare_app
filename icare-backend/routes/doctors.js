@@ -228,6 +228,28 @@ router.get('/me/patient-reviews', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── GET MY AVAILABILITY ─────────────────────────────────────────────────────
+router.get('/availability/me', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.json({ success: true, availability: {} });
+
+    const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
+    const availability = {
+      availableDays: profile?.available_days || ['Monday','Tuesday','Wednesday','Thursday','Friday'],
+      availableTime: { start: profile?.available_hours?.start || '09:00', end: profile?.available_hours?.end || '17:00' },
+      unavailableDates: profile?.unavailableDates || [],
+      bufferTime: profile?.bufferTime || 15,
+      leaveRequests: (profile?.leaveRequests || []).filter(r => r.status === 'approved'),
+    };
+    res.json({ success: true, availability });
+  } catch (e) {
+    console.error('availability/me error:', e);
+    res.json({ success: true, availability: {} });
+  }
+});
+
 // ─── GET DOCTOR BY ID ─────────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
@@ -367,11 +389,11 @@ router.get('/clinical-rejection-flags', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     if (req.user.role?.toLowerCase() !== 'doctor') {
-      return res.status(403).json({ success: false, message: 'Only doctors can access clinical rejection flags' });
+      return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    const doctorId = toId(req.user.id);
-    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.json({ success: true, flags: [], totalRejections: 0 }); // graceful empty
 
     const [medRecords, epRows] = await Promise.all([
       MedicalRecord.find({ doctor: doctorId }).select('_id').lean(),
@@ -448,8 +470,8 @@ router.get('/clinical-rejection-flags', authMiddleware, async (req, res) => {
 router.post('/leave-requests', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const doctorId = toId(req.user.id);
-    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id — check JWT payload' });
 
     const { fromDate, toDate, reason } = req.body;
     if (!fromDate || !toDate) return res.status(400).json({ success: false, message: 'fromDate and toDate are required' });
@@ -496,8 +518,8 @@ router.post('/leave-requests', authMiddleware, async (req, res) => {
 router.get('/leave-requests', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const doctorId = toId(req.user.id);
-    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.json({ success: true, leaveRequests: [] });
 
     const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
     const requests = profile?.leaveRequests || [];

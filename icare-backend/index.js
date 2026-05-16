@@ -151,6 +151,7 @@ app.use('/api/live-sessions', liveSessionsRoutes);
 app.use('/api/quizzes', quizzesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/credentials', require('./routes/credentials'));
 
 // Serve uploaded files (only in non-serverless environments)
 if (!process.env.VERCEL) {
