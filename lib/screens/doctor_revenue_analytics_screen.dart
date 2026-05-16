@@ -49,8 +49,6 @@ class _DoctorRevenueAnalyticsScreenState
           children: [
             _buildPeriodSelector(),
             const SizedBox(height: 24),
-            _buildTotalEarningsCard(),
-            const SizedBox(height: 24),
             _buildUsageStats(),
             const SizedBox(height: 32),
             Row(
@@ -191,69 +189,6 @@ class _DoctorRevenueAnalyticsScreenState
         fontSize: 18,
         fontWeight: FontWeight.w800,
         color: Color(0xFF0F172A),
-      ),
-    );
-  }
-
-  Widget _buildTotalEarningsCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.primaryColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Total Net Earnings',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'PKR 452,800',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.trending_up_rounded,
-                  color: Colors.greenAccent,
-                  size: 16,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  '+12.5% from last month',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
