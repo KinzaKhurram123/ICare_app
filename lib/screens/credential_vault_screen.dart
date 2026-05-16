@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:js' as js;
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class CredentialVaultScreen extends StatefulWidget {
   const CredentialVaultScreen({super.key});
@@ -60,15 +61,18 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     }
   }
 
-  Future<void> _openDocUrl(String url) async {
+  // Opens URL in a new browser tab using JS window.open — works on Flutter Web.
+  void _openDocUrl(String url) {
     if (url.isEmpty) return;
     try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      js.context.callMethod('open', [url, '_blank']);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot open: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: SelectableText(url), duration: const Duration(seconds: 10),
+            action: SnackBarAction(label: 'Copy URL', onPressed: () {})),
+        );
+      }
     }
   }
 
