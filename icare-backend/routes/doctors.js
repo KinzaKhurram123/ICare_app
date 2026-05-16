@@ -251,7 +251,8 @@ router.get('/availability/me', authMiddleware, async (req, res) => {
 });
 
 // ─── GET DOCTOR BY ID ─────────────────────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+// Restrict to valid MongoDB ObjectIds so named routes below are not swallowed.
+router.get('/:id([0-9a-fA-F]{24})', async (req, res) => {
   try {
     await connectMongoDB();
     const id = toId(req.params.id);

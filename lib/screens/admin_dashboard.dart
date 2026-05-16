@@ -30,6 +30,12 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
   String? _selectedDoctorFilter;
   List<String> _doctorNames = [];
 
+  // Leave Requests & Certificates state
+  List<Map<String, dynamic>> _leaveRequests = [];
+  List<Map<String, dynamic>> _certificates = [];
+  bool _isLoadingLeaves = false;
+  bool _isLoadingCerts = false;
+
   @override
   void initState() {
     super.initState();
@@ -92,8 +98,60 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     });
     if (tab == 'PatientRecords') {
       _fetchPatientRecords();
+    } else if (tab == 'LeaveRequests') {
+      _fetchLeaveRequests();
+    } else if (tab == 'Certificates') {
+      _fetchCertificates();
     } else {
       _fetchUsers();
+    }
+  }
+
+  Future<void> _fetchLeaveRequests() async {
+    setState(() => _isLoadingLeaves = true);
+    try {
+      final r = await _apiService.get('/admin/leave-requests');
+      if (mounted) setState(() => _leaveRequests = List<Map<String, dynamic>>.from(r.data['leaveRequests'] ?? []));
+    } catch (_) {}
+    if (mounted) setState(() => _isLoadingLeaves = false);
+  }
+
+  Future<void> _updateLeaveStatus(String doctorId, String requestId, String status) async {
+    try {
+      await _apiService.put('/admin/leave-requests/$doctorId/$requestId', {'status': status});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Leave request $status'),
+          backgroundColor: status == 'approved' ? Colors.green : Colors.red,
+        ));
+        _fetchLeaveRequests();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _fetchCertificates() async {
+    setState(() => _isLoadingCerts = true);
+    try {
+      final r = await _apiService.get('/admin/credentials');
+      if (mounted) setState(() => _certificates = List<Map<String, dynamic>>.from(r.data['credentials'] ?? []));
+    } catch (_) {}
+    if (mounted) setState(() => _isLoadingCerts = false);
+  }
+
+  Future<void> _updateCredentialStatus(String doctorId, String credId, String status) async {
+    try {
+      await _apiService.put('/admin/credentials/$doctorId/$credId', {'status': status});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Certificate $status'),
+          backgroundColor: status == 'verified' ? Colors.green : Colors.red,
+        ));
+        _fetchCertificates();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -209,12 +267,17 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 _buildTabItem('Laboratory', Icons.science_rounded),
                 _buildTabItem('Instructor', Icons.person_add_rounded),
                 _buildTabItem('PatientRecords', Icons.folder_shared_rounded),
+                _buildTabItemBadge('LeaveRequests', Icons.event_busy_rounded,
+                    _leaveRequests.where((r) => r['status'] == 'pending').length),
+                _buildTabItemBadge('Certificates', Icons.workspace_premium_rounded,
+                    _certificates.where((c) => c['status'] == 'pending').length),
               ],
             ),
           ),
         ),
       ),
       floatingActionButton: _currentTab != 'Pending' && _currentTab != 'PatientRecords'
+          && _currentTab != 'LeaveRequests' && _currentTab != 'Certificates'
           ? FloatingActionButton.extended(
               onPressed: () => _showAddUserDialog(),
               backgroundColor: AppColors.primaryColor,
@@ -228,7 +291,11 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
               ),
             )
           : null,
-      body: _currentTab == 'PatientRecords'
+      body: _currentTab == 'LeaveRequests'
+          ? _buildLeaveRequestsTab()
+          : _currentTab == 'Certificates'
+          ? _buildCertificatesTab()
+          : _currentTab == 'PatientRecords'
           ? _buildPatientRecordsTab()
           : _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -750,12 +817,192 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
         children: [
           Icon(icon, size: 16, color: AppColors.primary500),
           const SizedBox(width: 8),
-          Text(
-            "$label: ",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
+          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
         ],
+      ),
+    );
+  }
+
+  // ── Tab with pending badge ──────────────────────────────────────────────────
+
+  Widget _buildTabItemBadge(String title, IconData icon, int badgeCount) {
+    final isActive = _currentTab == title;
+    final displayTitle = title == 'LeaveRequests' ? 'Leave Requests' : 'Certificates';
+    return GestureDetector(
+      onTap: () => _onTabChanged(title),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: isActive ? AppColors.primaryColor : Colors.white),
+            const SizedBox(width: 6),
+            Text(displayTitle, style: TextStyle(color: isActive ? AppColors.primaryColor : Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+            if (badgeCount > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(10)),
+                child: Text('$badgeCount', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Leave Requests Tab ─────────────────────────────────────────────────────
+
+  Widget _buildLeaveRequestsTab() {
+    if (_isLoadingLeaves) return const Center(child: CircularProgressIndicator());
+    if (_leaveRequests.isEmpty) {
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.event_busy_rounded, size: 64, color: Colors.grey.shade300),
+        const SizedBox(height: 16),
+        const Text('No leave requests yet.', style: TextStyle(fontSize: 16, color: Color(0xFF64748B))),
+        TextButton.icon(onPressed: _fetchLeaveRequests, icon: const Icon(Icons.refresh_rounded), label: const Text('Refresh')),
+      ]));
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchLeaveRequests,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _leaveRequests.length,
+        itemBuilder: (_, i) {
+          final r = _leaveRequests[i];
+          final status = r['status']?.toString() ?? 'pending';
+          final from = r['fromDate'] != null ? DateTime.tryParse(r['fromDate'].toString()) : null;
+          final to   = r['toDate']   != null ? DateTime.tryParse(r['toDate'].toString())   : null;
+          final conflicts = r['conflictingAppointments'] as int? ?? 0;
+          final Color statusColor = status == 'approved' ? Colors.green : status == 'rejected' ? Colors.red : const Color(0xFFF59E0B);
+          final fmt = DateFormat('dd MMM yyyy');
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 14),
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(r['doctorName']?.toString() ?? 'Doctor', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    if (r['doctorEmail'] != null) Text(r['doctorEmail'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ])),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                    child: Text(status.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: statusColor)),
+                  ),
+                ]),
+                const SizedBox(height: 10),
+                Row(children: [
+                  const Icon(Icons.date_range_rounded, size: 14, color: Color(0xFF64748B)),
+                  const SizedBox(width: 6),
+                  Text(from != null && to != null ? '${fmt.format(from)}  →  ${fmt.format(to)}' : 'Date TBD',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                ]),
+                if (r['reason']?.toString().isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  Text('Reason: ${r['reason']}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ],
+                if (conflicts > 0) ...[
+                  const SizedBox(height: 4),
+                  Text('⚠️ $conflicts conflicting appointment(s)', style: const TextStyle(fontSize: 12, color: Color(0xFFB45309), fontWeight: FontWeight.w600)),
+                ],
+                if (status == 'pending') ...[
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(child: OutlinedButton.icon(
+                      onPressed: () => _updateLeaveStatus(r['doctorId'].toString(), r['_id'].toString(), 'rejected'),
+                      icon: const Icon(Icons.close_rounded, size: 16), label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    )),
+                    const SizedBox(width: 10),
+                    Expanded(child: ElevatedButton.icon(
+                      onPressed: () => _updateLeaveStatus(r['doctorId'].toString(), r['_id'].toString(), 'approved'),
+                      icon: const Icon(Icons.check_rounded, size: 16), label: const Text('Approve'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    )),
+                  ]),
+                ],
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Certificates Tab ───────────────────────────────────────────────────────
+
+  Widget _buildCertificatesTab() {
+    if (_isLoadingCerts) return const Center(child: CircularProgressIndicator());
+    if (_certificates.isEmpty) {
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.workspace_premium_rounded, size: 64, color: Colors.grey.shade300),
+        const SizedBox(height: 16),
+        const Text('No certificate submissions yet.', style: TextStyle(fontSize: 16, color: Color(0xFF64748B))),
+        TextButton.icon(onPressed: _fetchCertificates, icon: const Icon(Icons.refresh_rounded), label: const Text('Refresh')),
+      ]));
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchCertificates,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _certificates.length,
+        itemBuilder: (_, i) {
+          final c = _certificates[i];
+          final status = c['status']?.toString() ?? 'pending';
+          final Color statusColor = status == 'verified' ? Colors.green : status == 'rejected' ? Colors.red : const Color(0xFFF59E0B);
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 14),
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF3B82F6).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF3B82F6), size: 22)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(c['title']?.toString() ?? 'Certificate', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text('Dr. ${c['doctorName'] ?? ''}  •  ${c['type'] ?? ''}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ])),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                    child: Text(status == 'pending' ? 'UNVERIFIED' : status.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: statusColor)),
+                  ),
+                ]),
+                if (status == 'pending') ...[
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(child: OutlinedButton.icon(
+                      onPressed: () => _updateCredentialStatus(c['doctorId'].toString(), c['_id'].toString(), 'rejected'),
+                      icon: const Icon(Icons.close_rounded, size: 16), label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    )),
+                    const SizedBox(width: 10),
+                    Expanded(child: ElevatedButton.icon(
+                      onPressed: () => _updateCredentialStatus(c['doctorId'].toString(), c['_id'].toString(), 'verified'),
+                      icon: const Icon(Icons.verified_rounded, size: 16), label: const Text('Verify'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    )),
+                  ]),
+                ],
+              ]),
+            ),
+          );
+        },
       ),
     );
   }
