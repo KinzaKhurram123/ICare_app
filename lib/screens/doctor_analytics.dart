@@ -70,25 +70,26 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
     }
   }
 
-  (DateTime start, DateTime endExclusive) _rangeBounds() {
+  /// Returns [start, endExclusive] as a 2-element list (avoids Dart record syntax for web compat).
+  List<DateTime> _rangeBounds() {
     final now = DateTime.now();
     if (_customRange != null) {
       final s = DateTime(_customRange!.start.year, _customRange!.start.month, _customRange!.start.day);
       final e = DateTime(_customRange!.end.year, _customRange!.end.month, _customRange!.end.day);
-      return (s, e.add(const Duration(days: 1)));
+      return [s, e.add(const Duration(days: 1))];
     }
     switch (_selectedPeriod) {
       case 'This Week':
         final wd = now.weekday;
         final start = DateTime(now.year, now.month, now.day).subtract(Duration(days: wd - 1));
-        return (start, start.add(const Duration(days: 7)));
+        return [start, start.add(const Duration(days: 7))];
       case 'This Year':
         final s = DateTime(now.year, 1, 1);
-        return (s, DateTime(now.year + 1, 1, 1));
+        return [s, DateTime(now.year + 1, 1, 1)];
       case 'This Month':
       default:
         final s = DateTime(now.year, now.month, 1);
-        return (s, DateTime(now.year, now.month + 1, 1));
+        return [s, DateTime(now.year, now.month + 1, 1)];
     }
   }
 
@@ -120,7 +121,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
   }
 
   Map<String, dynamic> get _statistics {
-    final (start, endEx) = _rangeBounds();
+    final bounds = _rangeBounds();
+    final start = bounds[0];
+    final endEx = bounds[1];
     final filtered = _appointments.where((a) => _dateInRange(a.date, start, endEx)).toList();
 
     final fee = (_stats['consultationFee'] is num)
@@ -397,7 +400,9 @@ class _DoctorAnalyticsState extends ConsumerState<DoctorAnalytics> {
 
   /// Returns a human-readable date range label for the current selection.
   String _rangeLabel() {
-    final (start, endEx) = _rangeBounds();
+    final bounds = _rangeBounds();
+    final start = bounds[0];
+    final endEx = bounds[1];
     final end = endEx.subtract(const Duration(days: 1));
     final fmt = DateFormat('d MMM yyyy');
     if (_selectedPeriod == 'Custom' && _customRange != null) {
