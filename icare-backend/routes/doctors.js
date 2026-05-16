@@ -27,12 +27,13 @@ router.get('/stats', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const doctorId = toId(req.user.id);
-    const [total, pending, confirmed, completed, cancelled, profile] = await Promise.all([
+    const [total, pending, confirmed, completed, cancelled, missed, profile] = await Promise.all([
       Appointment.countDocuments({ doctor_id: doctorId }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'pending' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'confirmed' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'completed' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'cancelled' }),
+      Appointment.countDocuments({ doctor_id: doctorId, status: 'missed' }),
       DoctorProfile.findOne({ user_id: doctorId }).lean(),
     ]);
 
@@ -54,6 +55,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
         confirmedAppointments: confirmed,
         completedAppointments: completed,
         cancelledAppointments: cancelled,
+        missedAppointments: missed,
         rating: avgRating,
         totalReviews: profile?.total_reviews || 0,
         revenue,
@@ -185,6 +187,44 @@ router.post('/add_doctor_details', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Update doctor profile error:', error);
     res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+});
+
+// ─── MY PATIENT REVIEWS (rated appointments) ──────────────────────────────────
+router.get('/me/patient-reviews', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    if (req.user.role?.toLowerCase() !== 'doctor') {
+      return res.status(403).json({ success: false, message: 'Only doctors can view patient reviews' });
+    }
+    const doctorId = toId(req.user.id);
+    const rows = await Appointment.find({
+      doctor_id: doctorId,
+      rating: { $gte: 1, $lte: 5 },
+    })
+      .populate('patient_id', 'name username')
+      .sort({ ratedAt: -1, createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    const reviews = rows.map((a) => {
+      const p = a.patient_id;
+      const patientName = (p && typeof p === 'object')
+        ? (p.username || p.name || 'Patient')
+        : 'Patient';
+      return {
+        appointmentId: a._id.toString(),
+        patientName,
+        rating: a.rating,
+        comment: a.ratingComment || '',
+        ratedAt: a.ratedAt || a.updatedAt || a.createdAt,
+      };
+    });
+
+    res.json({ success: true, reviews, count: reviews.length });
+  } catch (e) {
+    console.error('me/patient-reviews error:', e);
+    res.status(500).json({ success: false, message: e.message || 'Failed to load reviews' });
   }
 });
 

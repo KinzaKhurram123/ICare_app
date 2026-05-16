@@ -400,7 +400,7 @@ class _WebHelpAndSupport extends StatelessWidget {
                         _WebFaqCard(
                           question: "Where can I view my earnings and patient analytics?",
                           answer:
-                              "Go to 'Revenue & Analytics' in your sidebar to see total earnings, appointment trends, patient demographics, and consultation breakdown by type.",
+                              "Go to 'Revenue & Analytics' in your sidebar for consultation revenue summaries, appointment metrics, patient reviews, and activity trends.",
                         ),
                         _WebFaqCard(
                           question: "How do I access patient medical history?",

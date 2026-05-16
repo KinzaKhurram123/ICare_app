@@ -259,6 +259,22 @@ class DoctorService {
     }
   }
 
+  /// Appointment ratings left by patients (patient name + rating + comment per row).
+  Future<Map<String, dynamic>> getMyPatientReviews() async {
+    try {
+      final response = await _apiService.get('/doctors/me/patient-reviews');
+      if (response.statusCode == 200 && response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return {'success': false, 'reviews': <dynamic>[]};
+    } on DioException catch (e) {
+      debugPrint('patient-reviews: ${e.message}');
+      return {'success': false, 'reviews': <dynamic>[]};
+    } catch (e) {
+      return {'success': false, 'reviews': <dynamic>[]};
+    }
+  }
+
   /// Get doctor stats including current consultation fee
   Future<Map<String, dynamic>> getDoctorStats() async {
     try {

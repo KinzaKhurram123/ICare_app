@@ -488,16 +488,8 @@ class _LabAnalyticsState extends State<LabAnalytics>
 
   Widget _buildRevenueCard() {
     final totalRevenue = (_analytics?['revenue'] ?? 0).toDouble();
-    final platformFeePercent = 0.20;
-    final platformFee = totalRevenue * platformFeePercent;
-    final remaining = totalRevenue - platformFee;
-    // Estimate: 40% of revenue is cash (held with lab), 60% by card
     final revenueByCard = totalRevenue * 0.60;
     final revenueByCash = totalRevenue * 0.40;
-    final amountPayable = remaining - revenueByCash;
-    // If negative → lab owes iCare; if positive → iCare owes lab
-    final isPayableToICare = amountPayable < 0;
-    final payableLabel = isPayableToICare ? 'Amount Payable to iCare' : 'Amount Payable to Lab';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -539,14 +531,9 @@ class _LabAnalyticsState extends State<LabAnalytics>
               children: [
                 _buildCalcRow('Total Revenue', totalRevenue, false),
                 const Divider(height: 16, thickness: 0.5),
-                _buildCalcRow('Platform Fee (20%)', -platformFee, false, color: Colors.red[600]),
-                const Divider(height: 16, thickness: 0.5),
-                _buildCalcRow('Remaining Balance', remaining, false, isBold: true),
-                const Divider(height: 16, thickness: 0.5),
-                _buildCalcRow('Cash Held with Lab', -revenueByCash, false, color: Colors.orange[700]),
+                _buildCalcRow('Revenue by Card', revenueByCard, false),
                 const Divider(height: 16, thickness: 1.5),
-                _buildCalcRow(payableLabel, amountPayable.abs(), true,
-                    color: isPayableToICare ? Colors.red[700] : null),
+                _buildCalcRow('Cash Held with Lab', revenueByCash, true),
               ],
             ),
           ),

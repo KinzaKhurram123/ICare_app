@@ -159,7 +159,7 @@ router.put('/update_status', authMiddleware, async (req, res) => {
     const { appointmentId, status } = req.body;
     const userId = toId(req.user.id);
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'];
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress', 'missed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
@@ -219,7 +219,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const userId = toId(req.user.id);
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'];
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress', 'missed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
@@ -277,6 +277,17 @@ router.post('/:id/rate', authMiddleware, async (req, res) => {
     appt.ratingComment = comment || '';
     appt.ratedAt = new Date();
     await appt.save();
+
+    const ratedList = await Appointment.find({
+      doctor_id: appt.doctor_id,
+      rating: { $gte: 1, $lte: 5 },
+    }).lean();
+    const totalR = ratedList.length;
+    const avgR = totalR > 0 ? ratedList.reduce((s, x) => s + x.rating, 0) / totalR : 0;
+    await DoctorProfile.findOneAndUpdate(
+      { user_id: appt.doctor_id },
+      { $set: { rating: Math.round(avgR * 10) / 10, total_reviews: totalR } },
+    ).catch(() => {});
 
     res.json({ success: true, message: 'Rating submitted successfully' });
   } catch (error) {

@@ -97,6 +97,8 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
         return const Color(0xFFEF4444);
       case 'completed':
         return const Color(0xFF3B82F6);
+      case 'missed':
+        return const Color(0xFF64748B);
       case 'in_progress':
       case 'in-progress':
         return const Color(0xFF8B5CF6);
@@ -110,6 +112,8 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
       case 'in_progress':
       case 'in-progress':
         return 'IN PROGRESS';
+      case 'missed':
+        return 'MISSED';
       default:
         return status.toUpperCase();
     }
@@ -204,6 +208,12 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                     'Completed',
                     'completed',
                     _appointments.where((a) => a.status == 'completed').length,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    'Missed',
+                    'missed',
+                    _appointments.where((a) => a.status.toLowerCase() == 'missed').length,
                   ),
                 ],
               ),
@@ -302,6 +312,34 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
   }
 
   Widget _buildAppointmentCard(AppointmentDetail appointment) {
+    if (_selectedFilter == 'missed') {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.person_outline_rounded, color: Color(0xFF64748B), size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                appointment.patientName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final statusColor = _getStatusColor(appointment.status);
     final isPending = appointment.status.toLowerCase() == 'pending';
     final isConfirmed = appointment.status.toLowerCase() == 'confirmed';

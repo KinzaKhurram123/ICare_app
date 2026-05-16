@@ -37,8 +37,6 @@ class ConfirmDetails extends StatelessWidget {
               color: AppColors.primary500,
             ),
             SizedBox(height: Utils.windowHeight(context) * 0.015),
-            _buildMobileSummaryItem("Platform Fee", "100"),
-            SizedBox(height: Utils.windowHeight(context) * 0.01),
             _buildMobileSummaryItem("Coure Amount", "2000"),
             SizedBox(height: Utils.windowHeight(context) * 0.01),
             _buildMobileSummaryItem("Discounted Offer", "5%"),
@@ -150,7 +148,6 @@ class ConfirmDetails extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 48),
-                    _buildWebSummaryItem("Platform Fee", "\$100.00"),
                     _buildWebSummaryItem("Course Amount", "\$2,000.00"),
                     _buildWebSummaryItem(
                       "Discount Offer",

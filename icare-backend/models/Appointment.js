@@ -10,9 +10,13 @@ const appointmentSchema = new mongoose.Schema({
   channel_name: { type: String }, // for video consultations
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress'],
+    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'in_progress', 'missed'],
     default: 'pending',
   },
+  // Patient rating after completed consultation (optional)
+  rating: { type: Number, min: 1, max: 5 },
+  ratingComment: { type: String, default: '' },
+  ratedAt: { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.models.Appointment || mongoose.model('Appointment', appointmentSchema);
