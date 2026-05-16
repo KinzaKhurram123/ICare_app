@@ -1498,7 +1498,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         ],
                       ),
                     ),
-                    ...flagged.asMap().entries.map((entry) {
+                    ...flagged.asMap().entries.map<Widget>((entry) {
                       final i = entry.key;
                       final item = entry.value;
                       final patientName = item['patientName']?.toString() ?? 'Patient';
@@ -1607,7 +1607,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     ],
                   ),
                 ),
-                ...missed.take(5).asMap().entries.map((entry) {
+                ...missed.take(5).toList().asMap().entries.map<Widget>((entry) {
                   final i = entry.key;
                   final appt = entry.value;
                   return Column(
