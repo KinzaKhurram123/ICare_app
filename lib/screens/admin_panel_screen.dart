@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
+import 'package:intl/intl.dart';
 
 /// Admin Panel
 ///
@@ -21,20 +23,22 @@ class AdminPanelScreen extends ConsumerStatefulWidget {
 
 class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
     with SingleTickerProviderStateMixin {
+  final ApiService _api = ApiService();
   late TabController _tabController;
   bool _isLoading = false;
 
-  // Mock data
   List<Map<String, dynamic>> _pendingDoctors = [];
   List<Map<String, dynamic>> _laboratories = [];
   List<Map<String, dynamic>> _pharmacies = [];
   List<Map<String, dynamic>> _instructors = [];
   List<Map<String, dynamic>> _students = [];
+  List<Map<String, dynamic>> _leaveRequests = [];
+  List<Map<String, dynamic>> _credentials = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadData();
   }
 
@@ -46,9 +50,49 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    // In real implementation, fetch from backend
-    setState(() => _isLoading = false);
+    try {
+      final lr = await _api.get('/admin/leave-requests');
+      if (mounted) setState(() => _leaveRequests = List<Map<String, dynamic>>.from(lr.data['leaveRequests'] ?? []));
+    } catch (_) {}
+    try {
+      final cr = await _api.get('/admin/credentials');
+      if (mounted) setState(() => _credentials = List<Map<String, dynamic>>.from(cr.data['credentials'] ?? []));
+    } catch (_) {}
+    try {
+      final pd = await _api.get('/admin/pending-users');
+      if (mounted) setState(() => _pendingDoctors = List<Map<String, dynamic>>.from(pd.data['users'] ?? []));
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _updateLeaveStatus(String doctorId, String requestId, String status) async {
+    try {
+      await _api.put('/admin/leave-requests/$doctorId/$requestId', {'status': status});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Leave request $status.'),
+          backgroundColor: status == 'approved' ? Colors.green : Colors.red,
+        ));
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _updateCredentialStatus(String doctorId, String credId, String status) async {
+    try {
+      await _api.put('/admin/credentials/$doctorId/$credId', {'status': status});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Credential $status.'),
+          backgroundColor: status == 'verified' ? Colors.green : Colors.red,
+        ));
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 
   @override
@@ -113,6 +157,38 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                 Tab(text: 'PHARMACIES (${_pharmacies.length})'),
                 Tab(text: 'INSTRUCTORS (${_instructors.length})'),
                 Tab(text: 'STUDENTS (${_students.length})'),
+                Tab(
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Text('LEAVE REQUESTS'),
+                    if (_leaveRequests.where((r) => r['status'] == 'pending').isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(10)),
+                        child: Text(
+                          '${_leaveRequests.where((r) => r['status'] == 'pending').length}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ]),
+                ),
+                Tab(
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Text('CERTIFICATES'),
+                    if (_credentials.where((c) => c['status'] == 'pending').isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(10)),
+                        child: Text(
+                          '${_credentials.where((c) => c['status'] == 'pending').length}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ]),
+                ),
               ],
             ),
           ),
@@ -128,6 +204,8 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
                 _buildPharmaciesTab(),
                 _buildInstructorsTab(),
                 _buildStudentsTab(),
+                _buildLeaveRequestsTab(),
+                _buildCredentialsTab(),
               ],
             ),
     );
@@ -438,6 +516,156 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen>
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  // ── Leave Requests Tab ────────────────────────────────────────────────────
+
+  Widget _buildLeaveRequestsTab() {
+    final fmt = DateFormat('dd MMM yyyy');
+    if (_leaveRequests.isEmpty) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(40),
+        child: Text('No leave requests yet.', style: TextStyle(fontSize: 15, color: Color(0xFF64748B))),
+      ));
+    }
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: _leaveRequests.length,
+        itemBuilder: (_, i) {
+          final r = _leaveRequests[i];
+          final status = r['status']?.toString() ?? 'pending';
+          final from = DateTime.tryParse(r['fromDate']?.toString() ?? '');
+          final to   = DateTime.tryParse(r['toDate']?.toString() ?? '');
+          final conflicts = r['conflictingAppointments'] as int? ?? 0;
+          final Color statusColor = status == 'approved' ? Colors.green : status == 'rejected' ? Colors.red : const Color(0xFFF59E0B);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: statusColor.withOpacity(0.2)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(r['doctorName']?.toString() ?? 'Doctor', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  if (r['doctorEmail'] != null) Text(r['doctorEmail'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Text(status.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: statusColor)),
+                ),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                const Icon(Icons.date_range_rounded, size: 15, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                Text(from != null && to != null ? '${fmt.format(from)}  →  ${fmt.format(to)}' : 'Date TBD',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              ]),
+              if (r['reason']?.toString().isNotEmpty == true) ...[
+                const SizedBox(height: 4),
+                Text('Reason: ${r['reason']}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              ],
+              if (conflicts > 0) ...[
+                const SizedBox(height: 4),
+                Text('⚠️ $conflicts conflicting appointment(s)', style: const TextStyle(fontSize: 12, color: Color(0xFFB45309), fontWeight: FontWeight.w600)),
+              ],
+              if (status == 'pending') ...[
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(child: OutlinedButton.icon(
+                    onPressed: () => _updateLeaveStatus(r['doctorId'].toString(), r['_id'].toString(), 'rejected'),
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    label: const Text('Reject'),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: ElevatedButton.icon(
+                    onPressed: () => _updateLeaveStatus(r['doctorId'].toString(), r['_id'].toString(), 'approved'),
+                    icon: const Icon(Icons.check_rounded, size: 16),
+                    label: const Text('Approve'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  )),
+                ]),
+              ],
+            ]),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Credentials / Certificates Tab ───────────────────────────────────────
+
+  Widget _buildCredentialsTab() {
+    if (_credentials.isEmpty) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(40),
+        child: Text('No certificate submissions yet.', style: TextStyle(fontSize: 15, color: Color(0xFF64748B))),
+      ));
+    }
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: _credentials.length,
+        itemBuilder: (_, i) {
+          final c = _credentials[i];
+          final status = c['status']?.toString() ?? 'pending';
+          final Color statusColor = status == 'verified' ? Colors.green : status == 'rejected' ? Colors.red : const Color(0xFFF59E0B);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: statusColor.withOpacity(0.2)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF3B82F6).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF3B82F6), size: 22)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(c['title']?.toString() ?? 'Certificate', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  Text('Dr. ${c['doctorName'] ?? ''}  •  ${c['type'] ?? ''}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Text(status == 'pending' ? 'UNVERIFIED' : status.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: statusColor)),
+                ),
+              ]),
+              if (status == 'pending') ...[
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(child: OutlinedButton.icon(
+                    onPressed: () => _updateCredentialStatus(c['doctorId'].toString(), c['_id'].toString(), 'rejected'),
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    label: const Text('Reject'),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: ElevatedButton.icon(
+                    onPressed: () => _updateCredentialStatus(c['doctorId'].toString(), c['_id'].toString(), 'verified'),
+                    icon: const Icon(Icons.verified_rounded, size: 16),
+                    label: const Text('Verify'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  )),
+                ]),
+              ],
+            ]),
+          );
+        },
+      ),
+    );
   }
 }
 

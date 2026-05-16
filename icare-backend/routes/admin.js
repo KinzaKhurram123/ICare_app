@@ -272,6 +272,123 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // ─── FALLBACK — catch any other /api/admin/* calls ───────────────────────────
+// ─── LEAVE REQUESTS (Admin) ───────────────────────────────────────────────────
+const DoctorProfile = require('../models/DoctorProfile');
+
+// GET /admin/leave-requests — list all pending leave requests from all doctors
+router.get('/leave-requests', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const profiles = await DoctorProfile.find(
+      { 'leaveRequests.0': { $exists: true } },
+      { user_id: 1, leaveRequests: 1 }
+    ).populate('user_id', 'name username email').lean();
+
+    const all = [];
+    for (const p of profiles) {
+      const doctorName = p.user_id?.username || p.user_id?.name || 'Doctor';
+      const doctorEmail = p.user_id?.email || '';
+      for (const r of p.leaveRequests || []) {
+        all.push({
+          ...r,
+          _id: r._id?.toString(),
+          doctorId: p.user_id?._id?.toString(),
+          doctorName,
+          doctorEmail,
+        });
+      }
+    }
+    // Sort pending first, then by date desc
+    all.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.json({ success: true, leaveRequests: all });
+  } catch (e) {
+    console.error('admin/leave-requests GET error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// PATCH /admin/leave-requests/:doctorId/:requestId — approve or reject a leave request
+router.patch('/leave-requests/:doctorId/:requestId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { status } = req.body; // 'approved' | 'rejected'
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'status must be approved or rejected' });
+    }
+
+    const doctorId = toId(req.params.doctorId);
+    const requestId = toId(req.params.requestId);
+    if (!doctorId || !requestId) return res.status(400).json({ success: false, message: 'Invalid IDs' });
+
+    await DoctorProfile.updateOne(
+      { user_id: doctorId, 'leaveRequests._id': requestId },
+      {
+        $set: {
+          'leaveRequests.$.status': status,
+          'leaveRequests.$.reviewedAt': new Date(),
+          'leaveRequests.$.reviewedBy': req.user.id,
+        },
+      }
+    );
+
+    res.json({ success: true, message: `Leave request ${status}.` });
+  } catch (e) {
+    console.error('admin/leave-requests PATCH error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ─── CREDENTIAL VERIFICATION (Admin) ─────────────────────────────────────────
+
+// GET /admin/credentials — list all pending credentials
+router.get('/credentials', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const profiles = await DoctorProfile.find(
+      { 'credentials.0': { $exists: true } },
+      { user_id: 1, credentials: 1 }
+    ).populate('user_id', 'name username email').lean();
+
+    const all = [];
+    for (const p of profiles) {
+      const doctorName = p.user_id?.username || p.user_id?.name || 'Doctor';
+      for (const c of p.credentials || []) {
+        all.push({ ...c, _id: c._id?.toString(), doctorId: p.user_id?._id?.toString(), doctorName });
+      }
+    }
+    res.json({ success: true, credentials: all });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// PATCH /admin/credentials/:doctorId/:credId — verify or reject a credential
+router.patch('/credentials/:doctorId/:credId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { status } = req.body; // 'verified' | 'rejected'
+    if (!['verified', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'status must be verified or rejected' });
+    }
+    const doctorId = toId(req.params.doctorId);
+    const credId   = toId(req.params.credId);
+    if (!doctorId || !credId) return res.status(400).json({ success: false, message: 'Invalid IDs' });
+
+    await DoctorProfile.updateOne(
+      { user_id: doctorId, 'credentials._id': credId },
+      { $set: { 'credentials.$.status': status, 'credentials.$.updatedAt': new Date() } }
+    );
+    res.json({ success: true, message: `Credential ${status}.` });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 router.all('/{*path}', (req, res) => {
   res.json({ success: true, users: [], data: [], count: 0 });
 });
