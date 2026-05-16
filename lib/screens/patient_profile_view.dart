@@ -152,24 +152,8 @@ class _PatientProfileViewState extends State<PatientProfileView> {
                 ),
                 const SizedBox(height: 24),
 
-                // Contact Information Card
-                _buildInfoCard(
-                  'Contact Information',
-                  Icons.contact_mail_rounded,
-                  const Color(0xFF3B82F6),
-                  [
-                    _buildInfoRow(
-                      Icons.email_outlined,
-                      'Email',
-                      widget.patient.email,
-                    ),
-                    _buildInfoRow(
-                      Icons.phone_outlined,
-                      'Phone',
-                      widget.patient.phoneNumber ?? 'Not provided',
-                    ),
-                  ],
-                ),
+                // Contact Information Card — hidden from doctors per privacy policy
+                // Only patient themselves or admin should see contact details.
                 const SizedBox(height: 16),
 
                 // Account Information Card

@@ -531,27 +531,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                   color: Color(0xFF0F172A),
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.email_outlined,
-                                    size: 14,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      appointment.patient?.email ?? 'N/A',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF64748B),
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              // Patient contact details hidden from doctor
                             ],
                           ),
                         ),
