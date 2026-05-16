@@ -1,9 +1,56 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { connectMongoDB } = require('../config/mongodb');
 const CommunityPost = require('../models/CommunityPost');
+const CommunityTopic = require('../models/CommunityTopic');
 const { authMiddleware } = require('../middleware/auth');
 const cloudinary = require('../config/cloudinary');
+
+const DEFAULT_CATEGORIES = [
+  'General', 'Diabetes', 'Heart Health', 'Mental Wellness',
+  'Nutrition', 'Pregnancy', 'COVID-19',
+];
+
+function isAdmin(user) {
+  return user?.role?.toLowerCase() === 'admin';
+}
+
+// GET /api/community/categories
+router.get('/categories', async (req, res) => {
+  try {
+    await connectMongoDB();
+    const custom = await CommunityTopic.find().sort({ createdAt: 1 }).lean();
+    const customNames = custom.map(t => t.name);
+    const all = [...new Set([...DEFAULT_CATEGORIES, ...customNames])];
+    res.json({ success: true, categories: all });
+  } catch (err) {
+    res.json({ success: true, categories: DEFAULT_CATEGORIES });
+  }
+});
+
+// POST /api/community/categories — admin only
+router.post('/categories', authMiddleware, async (req, res) => {
+  try {
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ success: false, message: 'Admin only' });
+    }
+    await connectMongoDB();
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Topic name required' });
+    }
+    const topic = await CommunityTopic.findOneAndUpdate(
+      { name: name.trim() },
+      { name: name.trim() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, topic });
+  } catch (err) {
+    console.error('POST /community/categories error:', err);
+    res.status(500).json({ success: false, message: 'Failed to add topic' });
+  }
+});
 
 // GET /api/community/posts — fetch posts (public)
 router.get('/posts', async (req, res) => {
@@ -17,7 +64,6 @@ router.get('/posts', async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(Number(limit))
       .skip(Number(skip))
-      .populate('userId', 'name role profilePicture')
       .lean();
 
     const formatted = posts.map(p => ({
@@ -46,7 +92,6 @@ router.post('/posts', authMiddleware, async (req, res) => {
 
     let finalImageUrl = imageUrl || null;
 
-    // If a base64 image is provided, upload to Cloudinary
     if (image && image.startsWith('data:')) {
       try {
         const uploadResult = await cloudinary.uploader.upload(image, {
@@ -57,7 +102,6 @@ router.post('/posts', authMiddleware, async (req, res) => {
         finalImageUrl = uploadResult.secure_url;
       } catch (uploadErr) {
         console.error('Cloudinary upload error:', uploadErr);
-        // Continue without image if upload fails
       }
     }
 
@@ -72,12 +116,7 @@ router.post('/posts', authMiddleware, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      post: {
-        ...post.toObject(),
-        id: post._id.toString(),
-        likeCount: 0,
-        commentCount: 0,
-      },
+      post: { ...post.toObject(), id: post._id.toString(), likeCount: 0, commentCount: 0 },
     });
   } catch (err) {
     console.error('POST /community/posts error:', err);
@@ -85,7 +124,7 @@ router.post('/posts', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/community/posts/:id/like — toggle like (auth required)
+// POST /api/community/posts/:id/like — toggle like
 router.post('/posts/:id/like', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
@@ -107,7 +146,7 @@ router.post('/posts/:id/like', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/community/posts/:id/comment — add comment (auth required)
+// POST /api/community/posts/:id/comment — add comment
 router.post('/posts/:id/comment', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
@@ -131,25 +170,48 @@ router.post('/posts/:id/comment', authMiddleware, async (req, res) => {
     );
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
-    res.json({ success: true, commentCount: post.comments.length });
+    const newComment = post.comments[post.comments.length - 1];
+    res.json({ success: true, comment: newComment, commentCount: post.comments.length });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to add comment' });
   }
 });
 
-// DELETE /api/community/posts/:id — delete own post (auth required)
+// DELETE /api/community/posts/:id — owner or admin can delete
 router.delete('/posts/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const post = await CommunityPost.findById(req.params.id);
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
-    if (post.userId.toString() !== req.user.id.toString()) {
+    if (!isAdmin(req.user) && post.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     await post.deleteOne();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to delete post' });
+  }
+});
+
+// DELETE /api/community/posts/:id/comments/:commentId — admin or comment owner
+router.delete('/posts/:id/comments/:commentId', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const post = await CommunityPost.findById(req.params.id);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+
+    if (!isAdmin(req.user) && comment.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    post.comments.pull(req.params.commentId);
+    await post.save();
+    res.json({ success: true, commentCount: post.comments.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete comment' });
   }
 });
 
