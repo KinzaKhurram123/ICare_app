@@ -335,4 +335,36 @@ class DoctorService {
       rethrow;
     }
   }
+
+  /// Submit a leave / unavailability request
+  Future<Map<String, dynamic>> requestLeave({
+    required DateTime from,
+    required DateTime to,
+    String reason = '',
+  }) async {
+    try {
+      final response = await _apiService.post('/doctors/leave-requests', {
+        'fromDate': from.toIso8601String(),
+        'toDate': to.toIso8601String(),
+        'reason': reason,
+      });
+      if (response.data is Map) return Map<String, dynamic>.from(response.data as Map);
+      return {'success': false};
+    } on DioException catch (e) {
+      return {'success': false, 'message': e.response?.data?['message'] ?? e.message};
+    } catch (_) {
+      return {'success': false};
+    }
+  }
+
+  /// Get the doctor's own leave requests
+  Future<Map<String, dynamic>> getLeaveRequests() async {
+    try {
+      final response = await _apiService.get('/doctors/leave-requests');
+      if (response.data is Map) return Map<String, dynamic>.from(response.data as Map);
+      return {'success': false, 'leaveRequests': []};
+    } catch (_) {
+      return {'success': false, 'leaveRequests': []};
+    }
+  }
 }

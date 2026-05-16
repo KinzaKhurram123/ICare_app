@@ -442,4 +442,73 @@ router.get('/clinical-rejection-flags', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── LEAVE REQUESTS ───────────────────────────────────────────────────────────
+
+// POST /doctors/leave-requests — doctor submits a leave/unavailability request
+router.post('/leave-requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id);
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+
+    const { fromDate, toDate, reason } = req.body;
+    if (!fromDate || !toDate) return res.status(400).json({ success: false, message: 'fromDate and toDate are required' });
+
+    const from = new Date(fromDate);
+    const to   = new Date(toDate);
+    if (isNaN(from) || isNaN(to) || from > to) {
+      return res.status(400).json({ success: false, message: 'Invalid date range' });
+    }
+
+    // Check if any confirmed appointments exist in that range
+    const conflicting = await Appointment.countDocuments({
+      doctor_id: doctorId,
+      status: { $in: ['pending', 'confirmed'] },
+      appointmentDate: { $gte: from, $lte: to },
+    });
+
+    // Store in DoctorProfile.leaveRequests array
+    await DoctorProfile.findOneAndUpdate(
+      { user_id: doctorId },
+      {
+        $push: {
+          leaveRequests: {
+            fromDate: from,
+            toDate: to,
+            reason: reason || '',
+            status: 'pending',
+            conflictingAppointments: conflicting,
+            createdAt: new Date(),
+          },
+        },
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true, message: 'Leave request submitted. Pending admin approval.', conflictingAppointments: conflicting });
+  } catch (e) {
+    console.error('leave-requests POST error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// GET /doctors/leave-requests — doctor views their own leave requests
+router.get('/leave-requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id);
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+
+    const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
+    const requests = profile?.leaveRequests || [];
+    // Sort newest first
+    requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ success: true, leaveRequests: requests });
+  } catch (e) {
+    console.error('leave-requests GET error:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 module.exports = router;

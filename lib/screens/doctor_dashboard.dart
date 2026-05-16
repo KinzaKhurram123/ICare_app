@@ -1378,9 +1378,14 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     }
   }
 
+  // Missed consultations (for clinical flags)
+  List<AppointmentDetail> get _missedConsultations =>
+      _appointments.where((a) => a.status.toLowerCase() == 'missed').toList();
+
   Widget _buildClinicalFlags() {
     final totalRejections = _clinicalRejectionFlags.length;
     final flagged = _clinicalRejectionFlags.take(5).toList();
+    final missed = _missedConsultations;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1407,13 +1412,23 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 ),
                 child: Text(
                   '$totalRejections rejection${totalRejections == 1 ? '' : 's'}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFDC2626),
-                  ),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
                 ),
               ),
+            if (missed.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${missed.length} missed',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
@@ -1560,6 +1575,91 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   ],
                 ),
         ),
+
+        // ── Missed Consultations ──────────────────────────────────────────
+        if (missed.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.event_busy_rounded, color: Color(0xFFB45309), size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Missed consultations — patients who did not show up.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFFB45309), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...missed.take(5).asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final appt = entry.value;
+                  return Column(
+                    children: [
+                      if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.person_off_rounded, color: Color(0xFFB45309), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    appt.patient?.name ?? 'Patient',
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${appt.timeSlot}  ·  ${DateFormat('dd MMM yyyy').format(appt.date)}',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('MISSED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB45309))),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

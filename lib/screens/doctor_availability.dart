@@ -32,11 +32,75 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
 
   bool _is24x7 = false;
 
+  // Leave request state
+  DateTime? _leaveFrom;
+  DateTime? _leaveTo;
+  final _leaveReasonCtrl = TextEditingController();
+  bool _isSubmittingLeave = false;
+  List<Map<String, dynamic>> _leaveRequests = [];
+
   @override
   void initState() {
     super.initState();
     _initDefaultSlots();
     _loadAvailability();
+    _loadLeaveRequests();
+  }
+
+  @override
+  void dispose() {
+    _leaveReasonCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadLeaveRequests() async {
+    try {
+      final result = await _doctorService.getLeaveRequests();
+      if (result['success'] == true && mounted) {
+        setState(() {
+          _leaveRequests = List<Map<String, dynamic>>.from(result['leaveRequests'] ?? []);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _submitLeaveRequest() async {
+    if (_leaveFrom == null || _leaveTo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select both From and To dates.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    setState(() => _isSubmittingLeave = true);
+    try {
+      final result = await _doctorService.requestLeave(
+        from: _leaveFrom!,
+        to: _leaveTo!,
+        reason: _leaveReasonCtrl.text.trim(),
+      );
+      if (mounted) {
+        if (result['success'] == true) {
+          final conflicts = result['conflictingAppointments'] ?? 0;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(conflicts > 0
+                ? 'Request submitted. Note: $conflicts appointment(s) exist in this period — admin will review.'
+                : 'Leave request submitted. Pending admin approval.'),
+            backgroundColor: conflicts > 0 ? Colors.orange : Colors.green,
+          ));
+          setState(() { _leaveFrom = null; _leaveTo = null; });
+          _leaveReasonCtrl.clear();
+          _loadLeaveRequests();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message'] ?? 'Failed to submit request.'),
+            backgroundColor: Colors.red,
+          ));
+        }
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Something went wrong.'), backgroundColor: Colors.red));
+    }
+    if (mounted) setState(() => _isSubmittingLeave = false);
   }
 
   void _initDefaultSlots() {
@@ -267,6 +331,8 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
                       _buildUnavailableDates(),
                       const SizedBox(height: 24),
                       _buildEmergencyAppointmentSection(),
+                      const SizedBox(height: 24),
+                      _buildLeaveRequestSection(),
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
@@ -1038,6 +1104,227 @@ class _DoctorAvailabilityState extends State<DoctorAvailability> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Schedule Unavailability / Request for Leave ───────────────────────────
+
+  Widget _buildLeaveRequestSection() {
+    final fmt = DateFormat('dd MMM yyyy');
+
+    Color _statusColor(String s) {
+      switch (s) {
+        case 'approved': return const Color(0xFF10B981);
+        case 'rejected': return const Color(0xFFEF4444);
+        default:         return const Color(0xFFF59E0B);
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 16, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.event_busy_rounded, color: Color(0xFFB45309), size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Schedule Unavailability / Leave', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                    Text('Request leave — admin will review & approve.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Divider(color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 16),
+
+          // Date pickers
+          Row(
+            children: [
+              Expanded(child: _datePicker(
+                label: 'From Date',
+                date: _leaveFrom,
+                icon: Icons.calendar_today_rounded,
+                color: const Color(0xFF3B82F6),
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (d != null) setState(() => _leaveFrom = d);
+                },
+                fmt: fmt,
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: _datePicker(
+                label: 'To Date',
+                date: _leaveTo,
+                icon: Icons.calendar_month_rounded,
+                color: const Color(0xFF8B5CF6),
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: _leaveFrom ?? DateTime.now(),
+                    firstDate: _leaveFrom ?? DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (d != null) setState(() => _leaveTo = d);
+                },
+                fmt: fmt,
+              )),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Reason
+          TextField(
+            controller: _leaveReasonCtrl,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Reason (optional, e.g. Medical conference)',
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5)),
+              contentPadding: const EdgeInsets.all(14),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Submit button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isSubmittingLeave ? null : _submitLeaveRequest,
+              icon: _isSubmittingLeave
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.send_rounded, size: 18),
+              label: Text(_isSubmittingLeave ? 'Submitting...' : 'Submit Leave Request', style: const TextStyle(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+
+          // Past requests
+          if (_leaveRequests.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Divider(color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 12),
+            const Text('My Leave Requests', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            const SizedBox(height: 10),
+            ..._leaveRequests.map((req) {
+              final from   = DateTime.tryParse(req['fromDate']?.toString() ?? '');
+              final to     = DateTime.tryParse(req['toDate']?.toString() ?? '');
+              final status = req['status']?.toString() ?? 'pending';
+              final reason = req['reason']?.toString() ?? '';
+              final conflicts = req['conflictingAppointments'] as int? ?? 0;
+              final color  = _statusColor(status);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            from != null && to != null
+                                ? '${fmt.format(from)}  →  ${fmt.format(to)}'
+                                : 'Date range',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                          ),
+                          if (reason.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(reason, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          ],
+                          if (conflicts > 0) ...[
+                            const SizedBox(height: 2),
+                            Text('⚠️ $conflicts conflicting appointment(s)', style: TextStyle(fontSize: 11, color: Colors.orange[700], fontWeight: FontWeight.w600)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+                      child: Text(status.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: color)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _datePicker({
+    required String label,
+    required DateTime? date,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required DateFormat fmt,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: date != null ? color.withValues(alpha: 0.06) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: date != null ? color.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(icon, color: date != null ? color : const Color(0xFF94A3B8), size: 16),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: date != null ? color : const Color(0xFF94A3B8))),
+            ]),
+            const SizedBox(height: 6),
+            Text(
+              date != null ? fmt.format(date) : 'Select date',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: date != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
+            ),
+          ],
+        ),
       ),
     );
   }

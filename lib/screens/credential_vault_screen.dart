@@ -453,11 +453,11 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              _buildVaultStat('Total', '03', Colors.blue),
+              _buildVaultStat('Total', '${_credentials.length}', Colors.blue),
               const SizedBox(width: 12),
-              _buildVaultStat('Verified', '02', Colors.green),
+              _buildVaultStat('Verified', '${_credentials.where((c) => c['status'] == 'verified').length}', Colors.green),
               const SizedBox(width: 12),
-              _buildVaultStat('Pending', '01', Colors.orange),
+              _buildVaultStat('Unverified', '${_credentials.where((c) => c['status'] != 'verified').length}', Colors.orange),
             ],
           ),
         ],
@@ -562,9 +562,9 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
         statusIcon = Icons.warning_rounded;
         break;
       default:
-        statusColor = Colors.blue;
-        statusText = 'UNDER REVIEW';
-        statusIcon = Icons.history_rounded;
+        statusColor = const Color(0xFFF59E0B);
+        statusText = 'UNVERIFIED';
+        statusIcon = Icons.pending_rounded;
     }
 
     return Container(
@@ -617,22 +617,40 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(statusIcon, color: statusColor, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
+                const SizedBox(height: 10),
+                // Prominent verified / unverified badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 13),
+                      const SizedBox(width: 5),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.4,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                if (statusText == 'UNVERIFIED')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Pending admin review',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ),
               ],
             ),
           ),
