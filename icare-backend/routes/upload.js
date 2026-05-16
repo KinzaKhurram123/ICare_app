@@ -43,14 +43,18 @@ router.post('/image', protect, upload.single('file'), async (req, res) => {
   }
 });
 
-// POST /api/upload/prescription  — prescription image (patient/doctor side)
+// POST /api/upload/prescription  — prescription image OR PDF (patient/doctor side)
 router.post('/prescription', protect, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file provided' });
     }
-    const result = await uploadToCloudinary(req.file.buffer, 'icare/prescriptions');
-    res.json({ success: true, url: result.secure_url, publicId: result.public_id });
+    // PDFs must use resource_type:'raw' so Cloudinary stores them as documents,
+    // not images. Images use the default 'image' resource type.
+    const isPdf = req.file.mimetype === 'application/pdf';
+    const resourceType = isPdf ? 'raw' : 'image';
+    const result = await uploadToCloudinary(req.file.buffer, 'icare/prescriptions', resourceType);
+    res.json({ success: true, url: result.secure_url, publicId: result.public_id, resourceType });
   } catch (err) {
     console.error('Prescription upload error:', err);
     res.status(500).json({ success: false, message: err.message });

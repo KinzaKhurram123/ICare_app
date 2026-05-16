@@ -41,6 +41,25 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     }
   }
 
+  /// Converts a Cloudinary PDF URL to a page-1 JPEG thumbnail URL.
+  /// Works for both /image/upload/ and /raw/upload/ Cloudinary URLs.
+  String _cloudinaryPdfThumbnail(String pdfUrl) {
+    // Strategy: insert transformation f_jpg,pg_1 into the upload path
+    // /image/upload/ → /image/upload/f_jpg,pg_1/
+    // /raw/upload/   → /image/upload/f_jpg,pg_1/  (switch to image delivery)
+    try {
+      var url = pdfUrl
+          .replaceFirst('/raw/upload/', '/image/upload/f_jpg,pg_1/')
+          .replaceFirstMapped(
+            RegExp(r'/image/upload/(?!f_jpg,pg_1/)'),
+            (_) => '/image/upload/f_jpg,pg_1/',
+          );
+      return url;
+    } catch (_) {
+      return pdfUrl;
+    }
+  }
+
   Future<void> _openDocUrl(String url) async {
     if (url.isEmpty) return;
     try {
@@ -60,16 +79,15 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     final title  = cred['title']?.toString() ?? 'Document';
     final type   = cred['type']?.toString() ?? '';
 
-    // Cloudinary image URLs contain /image/upload/ OR end in known image exts
-    final isImage = docUrl.isNotEmpty && (
-      docUrl.contains('/image/upload/') ||
-      RegExp(r'\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$', caseSensitive: false).hasMatch(docUrl)
-    );
-    // Cloudinary raw/PDF URLs contain /raw/upload/ OR end in .pdf
-    final isPdf = docUrl.isNotEmpty && (
-      docUrl.contains('/raw/upload/') ||
-      RegExp(r'\.pdf(\?.*)?$', caseSensitive: false).hasMatch(docUrl)
-    );
+    // PDF check FIRST — a Cloudinary PDF may have /image/upload/ in its path
+    // if it was uploaded with wrong resource_type. Extension is the ground truth.
+    final isPdf = docUrl.isNotEmpty &&
+        RegExp(r'\.pdf(\?.*)?$', caseSensitive: false).hasMatch(docUrl);
+
+    // Image only when NOT a PDF
+    final isImage = !isPdf && docUrl.isNotEmpty &&
+        RegExp(r'\.(jpg|jpeg|png|gif|webp|svg|png)(\?.*)?$', caseSensitive: false)
+            .hasMatch(docUrl);
 
     showDialog(
       context: context,
@@ -125,53 +143,13 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                           ),
                         ),
                       )
-                    // ── PDF or other (open in browser) ────────────────────────
-                    : Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: isPdf
-                                  ? const Color(0xFFEF4444).withValues(alpha: 0.08)
-                                  : AppColors.primaryColor.withValues(alpha: 0.07),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Icon(
-                              isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
-                              size: 64,
-                              color: isPdf ? const Color(0xFFEF4444) : AppColors.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            isPdf ? 'PDF Document' : 'Document File',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Tap the button below to open it in your browser.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton.icon(
-                            onPressed: () { Navigator.pop(ctx); _openDocUrl(docUrl); },
-                            icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                            label: const Text('Open in Browser', style: TextStyle(fontWeight: FontWeight.w700)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ]),
-                      ),
+                    // ── PDF — show Cloudinary page-1 thumbnail ────────────────
+                    : _buildPdfPreview(ctx, docUrl),
               ),
 
               // Download button
-              if (docUrl.isNotEmpty)
+              // Bottom download button only for images (PDFs have their own buttons above)
+              if (docUrl.isNotEmpty && isImage)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE2E8F0)))),
@@ -180,7 +158,7 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () { Navigator.pop(ctx); _openDocUrl(docUrl); },
                       icon: const Icon(Icons.download_rounded),
-                      label: const Text('Open / Download Document', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text('Open / Download', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     ),
                   ),
@@ -190,6 +168,91 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
         ),
       ),
     );
+  }
+
+  // Renders page-1 of a Cloudinary PDF as an image, with open/download button
+  Widget _buildPdfPreview(BuildContext ctx, String pdfUrl) {
+    final thumbUrl = _cloudinaryPdfThumbnail(pdfUrl);
+    return Column(
+      children: [
+        // Page-1 thumbnail
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                thumbUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (_, child, prog) => prog == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator()),
+                errorBuilder: (_, __, ___) => Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.picture_as_pdf_rounded, size: 64, color: Color(0xFFEF4444)),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('PDF — tap below to open', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Open + Download row
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () { Navigator.pop(ctx); _openDocUrl(pdfUrl); },
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Open PDF', style: TextStyle(fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryColor,
+                  side: BorderSide(color: AppColors.primaryColor),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryDownloadUrl(pdfUrl)); },
+                icon: const Icon(Icons.download_rounded, size: 16),
+                label: const Text('Download', style: TextStyle(fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  /// Adds fl_attachment to force download via Cloudinary CDN
+  String _cloudinaryDownloadUrl(String url) {
+    try {
+      return url
+          .replaceFirst('/image/upload/', '/image/upload/fl_attachment/')
+          .replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
+    } catch (_) {
+      return url;
+    }
   }
 
   // Shown when Image.network fails — still gives user a way to open the file
