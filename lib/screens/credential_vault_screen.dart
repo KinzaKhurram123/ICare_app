@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
+import 'dart:html' as html;
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -56,34 +56,53 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     }
   }
 
-  /// Inline URL — browser opens PDF in its built-in PDF viewer (new tab)
-  String _cloudinaryInlineUrl(String pdfUrl) {
+  /// Ensures Cloudinary PDF URL has no transformation flags that cause 400.
+  /// Just returns the clean URL — browsers open PDFs inline by default.
+  String _cloudinaryCleanUrl(String url) {
+    // Strip any existing flags we may have inserted
     try {
-      // fl_inline → Content-Disposition: inline → browser shows PDF viewer
-      if (pdfUrl.contains('/raw/upload/')) {
-        return pdfUrl.replaceFirst('/raw/upload/', '/raw/upload/fl_inline/');
-      }
-      return pdfUrl.replaceFirstMapped(
-        RegExp(r'/image/upload/(?!fl_)'),
-        (_) => '/image/upload/fl_inline/',
-      );
+      return url
+          .replaceFirst('/fl_inline/', '/')
+          .replaceFirst('/fl_attachment/', '/');
     } catch (_) {
-      return pdfUrl;
+      return url;
     }
   }
 
-  // Opens URL in a new browser tab using JS window.open — works on Flutter Web.
+  /// Opens a URL in a new browser tab via an anchor element click.
+  /// More reliable than window.open() and not blocked by popup blockers.
   void _openDocUrl(String url) {
     if (url.isEmpty) return;
     try {
-      js.context.callMethod('open', [url, '_blank']);
+      final a = html.AnchorElement()
+        ..href = url
+        ..target = '_blank'
+        ..rel = 'noopener noreferrer';
+      html.document.body!.append(a);
+      a.click();
+      a.remove();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: SelectableText(url), duration: const Duration(seconds: 10),
-            action: SnackBarAction(label: 'Copy URL', onPressed: () {})),
-        );
-      }
+      debugPrint('Cannot open URL: $e');
+    }
+  }
+
+  /// Downloads a file with proper .pdf extension.
+  void _downloadDocUrl(String url) {
+    if (url.isEmpty) return;
+    try {
+      // Ensure the filename ends with .pdf so the browser saves it correctly
+      final filename = url.split('/').last.split('?').first;
+      final downloadName = filename.endsWith('.pdf') ? filename : '$filename.pdf';
+      final a = html.AnchorElement()
+        ..href = url
+        ..download = downloadName
+        ..target = '_blank';
+      html.document.body!.append(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      // Fallback: just open the URL
+      _openDocUrl(url);
     }
   }
 
@@ -221,14 +240,14 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
             ),
           ),
         ),
-        // Open (inline viewer) + Download row
+        // Open in browser tab + Download as .pdf
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(children: [
             Expanded(
               child: OutlinedButton.icon(
-                // fl_inline → browser opens PDF in built-in PDF viewer tab
-                onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryInlineUrl(pdfUrl)); },
+                // Clean URL → browser opens PDF in its built-in viewer
+                onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryCleanUrl(pdfUrl)); },
                 icon: const Icon(Icons.open_in_new_rounded, size: 16),
                 label: const Text('Open PDF', style: TextStyle(fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
@@ -242,8 +261,8 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton.icon(
-                // fl_attachment → forces browser to download the file
-                onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryDownloadUrl(pdfUrl)); },
+                // anchor download attr → saves as filename.pdf
+                onPressed: () { Navigator.pop(ctx); _downloadDocUrl(_cloudinaryCleanUrl(pdfUrl)); },
                 icon: const Icon(Icons.download_rounded, size: 16),
                 label: const Text('Download', style: TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
@@ -261,16 +280,6 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     );
   }
 
-  /// Adds fl_attachment to force download via Cloudinary CDN
-  String _cloudinaryDownloadUrl(String url) {
-    try {
-      return url
-          .replaceFirst('/image/upload/', '/image/upload/fl_attachment/')
-          .replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
-    } catch (_) {
-      return url;
-    }
-  }
 
   // Shown when Image.network fails — still gives user a way to open the file
   Widget _urlFallback(BuildContext ctx, String url) {
