@@ -34,6 +34,8 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   String _selectedCategory = 'All';
   List<dynamic> _posts = [];
   bool _isLoading = true;
+  // Track which posts have comments section expanded — survives reloads
+  final Set<String> _expandedPostIds = {};
 
   @override
   void initState() {
@@ -318,10 +320,30 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
                   post['imageUrl'].toString(),
-                  height: 200,
+                  height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      height: 240,
+                      color: const Color(0xFFF1F5F9),
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  },
+                  errorBuilder: (_, error, __) {
+                    debugPrint('Image load failed: $error — url: ${post['imageUrl']}');
+                    return Container(
+                      height: 100,
+                      color: const Color(0xFFFEE2E2),
+                      child: const Center(
+                        child: Text(
+                          'Image failed to load',
+                          style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -348,14 +370,18 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                   AppColors.primaryColor,
                   () {
                     setState(() {
-                      post['_showComments'] = !(post['_showComments'] ?? false);
+                      if (_expandedPostIds.contains(postId)) {
+                        _expandedPostIds.remove(postId);
+                      } else {
+                        _expandedPostIds.add(postId);
+                      }
                     });
                   },
                 ),
                 const Spacer(),
               ],
             ),
-            if (post['_showComments'] == true) ...[
+            if (_expandedPostIds.contains(postId)) ...[
               const Divider(height: 32, color: Color(0xFFEDF2F7)),
               _buildInlineCommentInput(postId),
               const SizedBox(height: 16),
@@ -409,18 +435,20 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                     size: 20,
                   ),
                   onPressed: () async {
-                    if (controller.text.trim().isEmpty) return;
+                    final text = controller.text.trim();
+                    if (text.isEmpty) return;
+                    controller.clear();
                     try {
-                      await _courseService.addForumComment(
-                        postId,
-                        controller.text,
-                      );
-                      _loadPosts(); // Refresh for latest comments
+                      await _courseService.addForumComment(postId, text);
+                      // Ensure this post stays expanded after the reload
+                      _expandedPostIds.add(postId);
+                      await _loadPosts();
                     } catch (e) {
-                      if (mounted)
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Something went wrong. Please try again.')),
+                        );
+                      }
                     }
                   },
                 ),
@@ -530,35 +558,6 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () {},
-                              child: const Text(
-                                'Like',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            InkWell(
-                              onTap: () {},
-                              child: const Text(
-                                'Reply',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -662,7 +661,13 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // Compress aggressively — large images cause Vercel/Cloudinary upload failures
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    );
     setState(() => _imageFile = image);
   }
 
@@ -840,9 +845,20 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         }
       }
 
-      await _courseService.createForumPost(data);
+      final result = await _courseService.createForumPost(data);
       widget.onPostSuccess();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+        final hadImage = _imageFile != null;
+        final imageUrl = result['post']?['imageUrl']?.toString();
+        final imageFailed = hadImage && (imageUrl == null || imageUrl.isEmpty);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(imageFailed
+              ? 'Post created — but image upload failed. Try a smaller image.'
+              : 'Posted successfully!'),
+          backgroundColor: imageFailed ? Colors.orange : Colors.green,
+        ));
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isPosting = false);
