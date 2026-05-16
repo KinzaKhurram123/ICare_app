@@ -17,12 +17,14 @@ const pharmacyOrderSchema = new mongoose.Schema({
   delivery_fee:     { type: Number, default: 0 },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed'],
+    enum: ['pending', 'confirmed', 'preparing', 'out-for-delivery', 'delivered', 'cancelled', 'completed', 'rejected'],
     default: 'pending',
   },
   order_number:         { type: String },   // always set at creation — no unique constraint here
   expected_delivery_time: String,
   cancellation_reason:  { type: String, default: '' },
+  /** Set when pharmacy rejects the order (distinct from patient cancellation). */
+  rejection_reason:     { type: String, default: '' },
   items:               [orderItemSchema],
 }, { timestamps: true });
 

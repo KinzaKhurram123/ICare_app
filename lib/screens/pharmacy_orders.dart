@@ -133,11 +133,112 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
     }
   }
 
-  Future<void> _updateOrderStatus(String orderId, String newStatus, {String? expectedDelivery}) async {
+  Future<void> _promptRejectOrder(String orderId) async {
+    final custom = TextEditingController();
+    String category = 'stock';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Text('Reject order'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select a reason for the prescribing doctor / admin logs:'),
+                const SizedBox(height: 8),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('No referrer'),
+                  subtitle: const Text('Admin reporting only — hidden from doctor Clinical Flags'),
+                  value: 'no_referrer',
+                  groupValue: category,
+                  onChanged: (v) => setSt(() => category = v ?? category),
+                ),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Stock / availability'),
+                  value: 'stock',
+                  groupValue: category,
+                  onChanged: (v) => setSt(() => category = v ?? category),
+                ),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Invalid prescription'),
+                  value: 'invalid',
+                  groupValue: category,
+                  onChanged: (v) => setSt(() => category = v ?? category),
+                ),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Other'),
+                  value: 'other',
+                  groupValue: category,
+                  onChanged: (v) => setSt(() => category = v ?? category),
+                ),
+                if (category == 'other') ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: custom,
+                    decoration: const InputDecoration(
+                      hintText: 'Describe reason',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Reject', style: TextStyle(color: Color(0xFFEF4444))),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true) {
+      custom.dispose();
+      return;
+    }
+
+    String reason;
+    switch (category) {
+      case 'no_referrer':
+        reason = 'No referrer';
+        break;
+      case 'stock':
+        reason = 'Stock / availability';
+        break;
+      case 'invalid':
+        reason = 'Invalid prescription';
+        break;
+      default:
+        reason = custom.text.trim().isNotEmpty ? custom.text.trim() : 'Other';
+    }
+    custom.dispose();
+
+    await _updateOrderStatus(orderId, 'rejected', rejectionReason: reason);
+  }
+
+  Future<void> _updateOrderStatus(String orderId, String newStatus,
+      {String? expectedDelivery, String? rejectionReason}) async {
     try {
       debugPrint('🔄 Attempting to update order $orderId to $newStatus');
 
-      await _pharmacyService.updateOrderStatus(orderId, newStatus);
+      await _pharmacyService.updateOrderStatus(
+        orderId,
+        newStatus,
+        rejectionReason: rejectionReason,
+      );
       debugPrint('✅ Order status updated successfully');
 
       if (mounted) {
@@ -875,8 +976,7 @@ class _PharmacyOrdersState extends State<PharmacyOrders>
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _updateOrderStatus(order['_id'], 'rejected'),
+                          onPressed: () => _promptRejectOrder(order['_id']),
                           icon: const Icon(Icons.close_rounded, size: 18),
                           label: const Text('Reject'),
                           style: OutlinedButton.styleFrom(

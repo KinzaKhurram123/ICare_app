@@ -6,9 +6,20 @@ const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
 const Appointment = require('../models/Appointment');
 const { authMiddleware } = require('../middleware/auth');
+const MedicalRecord = require('../models/MedicalRecord');
+const EnhancedPrescription = require('../models/EnhancedPrescription');
+const PharmacyOrder = require('../models/PharmacyOrder');
 
 function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
+}
+
+/** Pharmacy rejection reasons that must appear only on Admin reporting, not Doctor Clinical Flags. */
+function isNoReferrerReason(raw) {
+  if (raw == null) return false;
+  const n = String(raw).toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!n) return false;
+  return n === 'no referrer' || n.includes('no referrer');
 }
 
 // ─── DOCTOR STATS ─────────────────────────────────────────────────────────────
@@ -307,6 +318,87 @@ router.get('/patients/:patientId/history', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch patient history' });
+  }
+});
+
+// ─── CLINICAL FLAGS: pharmacy rejections on this doctor's prescriptions ───────
+// "No referrer" rejections are omitted here and should be surfaced only to Admin.
+router.get('/clinical-rejection-flags', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    if (req.user.role?.toLowerCase() !== 'doctor') {
+      return res.status(403).json({ success: false, message: 'Only doctors can access clinical rejection flags' });
+    }
+
+    const doctorId = toId(req.user.id);
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+
+    const [medRecords, epRows] = await Promise.all([
+      MedicalRecord.find({ doctor: doctorId }).select('_id').lean(),
+      EnhancedPrescription.find({ doctorId }).select('_id').lean(),
+    ]);
+
+    const mrIdSet = new Set(medRecords.map((r) => r._id.toString()));
+    const epIdSet = new Set(epRows.map((p) => p._id.toString()));
+    const prescIds = [...new Set([...mrIdSet, ...epIdSet])];
+
+    if (prescIds.length === 0) {
+      return res.json({ success: true, flags: [], totalRejections: 0 });
+    }
+
+    const orders = await PharmacyOrder.find({
+      status: 'rejected',
+      prescription_id: { $in: prescIds },
+    })
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .lean();
+
+    const patientIdStrings = [...new Set(orders.map((o) => o.patient_id?.toString()).filter(Boolean))];
+    const patients = patientIdStrings.length
+      ? await User.find({ _id: { $in: patientIdStrings.map(toId) } }).lean()
+      : [];
+    const pMap = {};
+    patients.forEach((p) => {
+      pMap[p._id.toString()] = p;
+    });
+
+    const flags = [];
+    for (const o of orders) {
+      const pid = o.prescription_id;
+      if (!pid || !prescIds.includes(pid)) continue;
+
+      const reason = o.rejection_reason || o.cancellation_reason || '';
+      if (isNoReferrerReason(reason)) continue;
+
+      const ptId = o.patient_id?.toString() || '';
+      const pt = pMap[ptId];
+      const patientName = pt?.username || pt?.name || 'Patient';
+
+      const prescriptionSource = mrIdSet.has(pid) ? 'medical_record' : 'enhanced_prescription';
+
+      flags.push({
+        orderId: o._id.toString(),
+        orderNumber: o.order_number || `#${o._id.toString().slice(-8).toUpperCase()}`,
+        prescriptionId: pid,
+        prescriptionSource,
+        patientId: ptId,
+        patientName,
+        rejectionReason: reason || 'Rejected by pharmacy',
+        rejectedAt: o.updatedAt || o.createdAt,
+      });
+    }
+
+    const totalRejections = flags.length;
+
+    res.json({
+      success: true,
+      flags,
+      totalRejections,
+    });
+  } catch (e) {
+    console.error('clinical-rejection-flags error:', e);
+    res.status(500).json({ success: false, message: e.message || 'Failed to load clinical flags' });
   }
 });
 

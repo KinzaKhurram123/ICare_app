@@ -4,10 +4,18 @@ const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const { connectMongoDB } = require('../config/mongodb');
 const User = require('../models/User');
+const PharmacyOrder = require('../models/PharmacyOrder');
 const { authMiddleware } = require('../middleware/auth');
 
 function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
+}
+
+function isNoReferrerReason(raw) {
+  if (raw == null) return false;
+  const n = String(raw).toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!n) return false;
+  return n === 'no referrer' || n.includes('no referrer');
 }
 
 // Admin-only middleware
@@ -210,6 +218,38 @@ router.post('/reject-user/:userId', authMiddleware, adminOnly, async (req, res) 
   } catch (err) {
     console.error('reject-user error:', err);
     res.status(500).json({ success: false, message: 'Failed to reject user' });
+  }
+});
+
+// ─── PHARMACY REJECTION STATS (Admin dashboard / compliance) ────────────────
+// Includes all rejections; use noReferrerRejections vs otherRejections for reporting.
+router.get('/pharmacy-rejection-stats', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const rejected = await PharmacyOrder.find({ status: 'rejected' }).select('rejection_reason cancellation_reason prescription_id').lean();
+
+    let noReferrerRejections = 0;
+    for (const o of rejected) {
+      const r = o.rejection_reason || o.cancellation_reason || '';
+      if (isNoReferrerReason(r)) noReferrerRejections += 1;
+    }
+
+    const totalPharmacyRejections = rejected.length;
+    const otherRejections = totalPharmacyRejections - noReferrerRejections;
+    const withPrescriptionId = rejected.filter((o) => !!o.prescription_id).length;
+
+    res.json({
+      success: true,
+      totals: {
+        totalPharmacyRejections,
+        noReferrerRejections,
+        otherRejections,
+        withPrescriptionId,
+      },
+    });
+  } catch (err) {
+    console.error('pharmacy-rejection-stats error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Failed to load stats' });
   }
 });
 

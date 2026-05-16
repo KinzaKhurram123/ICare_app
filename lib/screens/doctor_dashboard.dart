@@ -20,10 +20,14 @@ import 'package:icare/screens/doctor_availability.dart';
 import 'package:icare/screens/courses.dart';
 import 'package:icare/screens/my_learning.dart';
 import 'package:icare/screens/clinical_audit_screen.dart';
-import 'package:icare/screens/soap_notes_screen.dart';
 import 'package:icare/screens/doctor_forum_screen.dart';
 import 'package:icare/screens/credential_vault_screen.dart';
 import 'package:icare/screens/profile_or_appointement_view.dart';
+import 'package:icare/models/medical_record.dart';
+import 'package:icare/services/medical_record_service.dart';
+import 'package:icare/services/consultation_service.dart';
+import 'package:icare/screens/medical_record_detail.dart';
+import 'package:icare/screens/prescription_detail_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,6 +44,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   final DoctorService _doctorService = DoctorService();
   List<AppointmentDetail> _appointments = [];
   Map<String, dynamic> _stats = {};
+  List<Map<String, dynamic>> _clinicalRejectionFlags = [];
   bool _isLoading = true;
   bool _availableForInstantConsultation = true;
   bool _isInConsultation = false;
@@ -76,17 +81,25 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       final results = await Future.wait([
         _appointmentService.getMyAppointmentsDetailed(),
         _doctorService.getStats().catchError((_) => <String, dynamic>{'success': false, 'stats': {}}),
+        _doctorService.getClinicalRejectionFlags().catchError((_) => <String, dynamic>{'success': false, 'flags': []}),
       ]);
 
       if (mounted) {
         setState(() {
           final appResult = results[0];
           final statsResult = results[1];
+          final rejResult = results[2] as Map<String, dynamic>;
           if (appResult['success'] == true) {
             _appointments = appResult['appointments'] as List<AppointmentDetail>;
           }
           if (statsResult['success'] == true) {
             _stats = statsResult['stats'] ?? {};
+          }
+          if (rejResult['success'] == true) {
+            _clinicalRejectionFlags =
+                List<Map<String, dynamic>>.from(rejResult['flags'] ?? []);
+          } else {
+            _clinicalRejectionFlags = [];
           }
           _isLoading = false;
         });
@@ -180,7 +193,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         _buildPendingAppointmentsCard(),
                         const SizedBox(height: 24),
 
-                        // 5. Clinical Flags (SOAP notes alerts)
+                        // 5. Clinical Flags (pharmacy rejection alerts — not SOAP)
                         _buildClinicalFlags(),
                         const SizedBox(height: 24),
 
@@ -1308,12 +1321,66 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     return '$n';
   }
 
+  Future<void> _openClinicalRejectionDetail(Map<String, dynamic> flag) async {
+    final prescId = flag['prescriptionId']?.toString() ?? '';
+    final source = flag['prescriptionSource']?.toString() ?? '';
+    if (prescId.isEmpty) return;
+
+    try {
+      if (source == 'medical_record') {
+        final res = await MedicalRecordService().getRecordById(prescId);
+        if (!mounted) return;
+        if (res['success'] == true && res['record'] != null) {
+          final recMap = Map<String, dynamic>.from(res['record'] as Map);
+          final record = MedicalRecord.fromJson(recMap);
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => MedicalRecordDetailScreen(record: record),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open medical record'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        final rx = await ConsultationService().getPrescription(prescId);
+        if (!mounted) return;
+        if (rx != null) {
+          final pmap = Map<String, dynamic>.from(rx as Map);
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (ctx) => PrescriptionDetailScreen(prescription: pmap),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open prescription'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Clinical flag navigation error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open record: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildClinicalFlags() {
-    // Completed appointments that likely need SOAP notes
-    final flagged = _appointments
-        .where((a) => a.status == 'completed')
-        .take(5)
-        .toList();
+    final totalRejections = _clinicalRejectionFlags.length;
+    final flagged = _clinicalRejectionFlags.take(5).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1331,7 +1398,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
               ),
             ),
             const SizedBox(width: 10),
-            if (flagged.isNotEmpty)
+            if (totalRejections > 0)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1339,7 +1406,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${flagged.length} pending',
+                  '$totalRejections rejection${totalRejections == 1 ? '' : 's'}',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -1374,12 +1441,14 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                         size: 24,
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'All SOAP notes are up to date.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF10B981),
-                          fontWeight: FontWeight.w600,
+                      const Expanded(
+                        child: Text(
+                          'No pharmacy rejections on your prescriptions. Rejections marked as having no referrer are reported only to admin.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF10B981),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -1387,7 +1456,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 )
               : Column(
                   children: [
-                    // Info banner
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: const BoxDecoration(
@@ -1404,7 +1472,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
-                              'These appointments are missing SOAP notes. Tap to complete.',
+                              'A pharmacy rejected an order linked to your prescription. Tap a row to review.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFFDC2626),
@@ -1417,21 +1485,25 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                     ),
                     ...flagged.asMap().entries.map((entry) {
                       final i = entry.key;
-                      final appt = entry.value;
+                      final item = entry.value;
+                      final patientName = item['patientName']?.toString() ?? 'Patient';
+                      final orderNum = item['orderNumber']?.toString() ?? '';
+                      final reason = item['rejectionReason']?.toString() ?? 'Rejected';
+                      DateTime? at;
+                      final rawAt = item['rejectedAt'];
+                      if (rawAt is String) {
+                        at = DateTime.tryParse(rawAt);
+                      }
+                      final dateStr = at != null
+                          ? DateFormat('dd MMM yyyy, hh:mm a').format(at.toLocal())
+                          : '';
+
                       return Column(
                         children: [
                           if (i > 0)
                             const Divider(height: 1, color: Color(0xFFF1F5F9)),
                           InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => SoapNotesScreen(
-                                    appointment: appt,
-                                  ),
-                                ),
-                              );
-                            },
+                            onTap: () => _openClinicalRejectionDetail(item),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
@@ -1444,7 +1516,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
-                                      Icons.assignment_late_rounded,
+                                      Icons.local_pharmacy_rounded,
                                       color: Color(0xFFDC2626),
                                       size: 18,
                                     ),
@@ -1455,7 +1527,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'This appointment with ${appt.patient?.name ?? 'Patient'}',
+                                          'Order $orderNum · $patientName',
                                           style: const TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w700,
@@ -1464,7 +1536,7 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                                         ),
                                         const SizedBox(height: 3),
                                         Text(
-                                          '#${appt.id.length > 8 ? appt.id.substring(appt.id.length - 8).toUpperCase() : appt.id.toUpperCase()}  ·  ${DateFormat('dd MMM yyyy, hh:mm a').format(appt.date)}',
+                                          dateStr.isNotEmpty ? '$reason  ·  $dateStr' : reason,
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: Color(0xFF64748B),

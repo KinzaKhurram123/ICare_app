@@ -242,6 +242,23 @@ class DoctorService {
     }
   }
 
+  /// Pharmacy rejections on this doctor's prescriptions (excludes "No referrer" — admin-only).
+  Future<Map<String, dynamic>> getClinicalRejectionFlags() async {
+    try {
+      final response = await _apiService.get('/doctors/clinical-rejection-flags');
+      if (response.statusCode == 200 && response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return {'success': false, 'flags': <dynamic>[]};
+    } on DioException catch (e) {
+      debugPrint('clinical-rejection-flags: ${e.message}');
+      return {'success': false, 'flags': <dynamic>[]};
+    } catch (e) {
+      debugPrint('clinical-rejection-flags: $e');
+      return {'success': false, 'flags': <dynamic>[]};
+    }
+  }
+
   /// Get doctor stats including current consultation fee
   Future<Map<String, dynamic>> getDoctorStats() async {
     try {

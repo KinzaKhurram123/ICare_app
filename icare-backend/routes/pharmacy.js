@@ -382,6 +382,7 @@ router.get('/orders/pharmacy/list', authMiddleware, async (req, res) => {
         expectedDeliveryTime: o.expected_delivery_time || '',
         createdAt: o.createdAt,
         prescriptionId: o.prescription_id || null,
+        rejectionReason: o.rejection_reason || '',
         user: {
           _id: pt?._id?.toString() || '',
           name: pt?.username || pt?.name || 'Patient',
@@ -496,7 +497,7 @@ router.put('/update_order_status/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    let { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime, rejectionReason } = req.body;
 
     // Normalize underscore vs hyphen variants
     if (status === 'out_for_delivery') status = 'out-for-delivery';
@@ -508,6 +509,13 @@ router.put('/update_order_status/:id', authMiddleware, async (req, res) => {
 
     const update = { status };
     if (expectedDeliveryTime) update.expected_delivery_time = expectedDeliveryTime;
+    if (status === 'rejected') {
+      if (rejectionReason != null && String(rejectionReason).trim()) {
+        update.rejection_reason = String(rejectionReason).trim().slice(0, 500);
+      }
+    } else {
+      update.rejection_reason = '';
+    }
 
     const order = await PharmacyOrder.findOneAndUpdate(
       { _id: toId(req.params.id), $or: [{ patient_id: userId }, { pharmacy_id: userId }] },
@@ -527,7 +535,7 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const userId = toId(req.user.id);
-    let { status, expectedDeliveryTime } = req.body;
+    let { status, expectedDeliveryTime, rejectionReason } = req.body;
 
     // Normalize underscore vs hyphen variants
     if (status === 'out_for_delivery') status = 'out-for-delivery';
@@ -539,6 +547,13 @@ router.put('/orders/:id', authMiddleware, async (req, res) => {
 
     const update = { status };
     if (expectedDeliveryTime) update.expected_delivery_time = expectedDeliveryTime;
+    if (status === 'rejected') {
+      if (rejectionReason != null && String(rejectionReason).trim()) {
+        update.rejection_reason = String(rejectionReason).trim().slice(0, 500);
+      }
+    } else {
+      update.rejection_reason = '';
+    }
 
     const order = await PharmacyOrder.findOneAndUpdate(
       { _id: toId(req.params.id), $or: [{ patient_id: userId }, { pharmacy_id: userId }] },

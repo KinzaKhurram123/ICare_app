@@ -262,12 +262,17 @@ class PharmacyService {
 
   Future<Map<String, dynamic>> updateOrderStatus(
     String orderId,
-    String status,
-  ) async {
+    String status, {
+    String? rejectionReason,
+  }) async {
     debugPrint('🔄 Updating order $orderId to status: $status');
+    final body = <String, dynamic>{'status': status};
+    if (rejectionReason != null && rejectionReason.trim().isNotEmpty) {
+      body['rejectionReason'] = rejectionReason.trim();
+    }
     final response = await _apiService.put(
       '/pharmacy/orders/$orderId',
-      {'status': status},
+      body,
     );
     debugPrint('✅ Order status updated successfully');
     return response.data['order'] ?? {};
