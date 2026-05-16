@@ -9,6 +9,7 @@ const { authMiddleware } = require('../middleware/auth');
 const MedicalRecord = require('../models/MedicalRecord');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 const PharmacyOrder = require('../models/PharmacyOrder');
+const Consultation = require('../models/Consultation');
 
 function toId(id) {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
@@ -27,7 +28,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const doctorId = toId(req.user.id);
-    const [total, pending, confirmed, completed, cancelled, missed, profile] = await Promise.all([
+    const [total, pending, confirmed, completed, cancelled, missed, profile, consultations] = await Promise.all([
       Appointment.countDocuments({ doctor_id: doctorId }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'pending' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'confirmed' }),
@@ -35,7 +36,15 @@ router.get('/stats', authMiddleware, async (req, res) => {
       Appointment.countDocuments({ doctor_id: doctorId, status: 'cancelled' }),
       Appointment.countDocuments({ doctor_id: doctorId, status: 'missed' }),
       DoctorProfile.findOne({ user_id: doctorId }).lean(),
+      Consultation.find({ doctorId, status: 'completed', duration: { $gt: 0 } }).select('duration').lean(),
     ]);
+
+    // Average consultation time in minutes (duration stored in seconds)
+    let avgConsultationMinutes = null;
+    if (consultations.length > 0) {
+      const totalSeconds = consultations.reduce((sum, c) => sum + (c.duration || 0), 0);
+      avgConsultationMinutes = Math.round((totalSeconds / consultations.length / 60) * 10) / 10;
+    }
 
     // Revenue = completed appointments × consultation fee
     const consultationFee = profile?.consultation_fee || 0;
@@ -62,6 +71,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
         satisfaction,
         avgRating,
         consultationFee,
+        avgConsultationMinutes,
       },
     });
   } catch (e) {

@@ -51,14 +51,16 @@ class AppointmentDetail {
     try {
       if (json['patient'] != null && json['patient'] is Map) {
         patient = User.fromJson(json['patient'] as Map<String, dynamic>);
-      } else if (json['patient_name'] != null || json['patient_email'] != null) {
+      } else if (json['patient_name'] != null || json['patient_id'] != null) {
         // Flat format from backend
         patient = User(
           id: json['patient_id']?.toString() ?? '',
           name: json['patient_name']?.toString() ?? 'Patient',
-          email: json['patient_email']?.toString() ?? '',
-          phoneNumber: json['patient_phone']?.toString() ?? '',
+          email: '',
+          phoneNumber: '',
           role: 'patient',
+          age: json['patient_age']?.toString(),
+          gender: json['patient_gender']?.toString(),
         );
       }
     } catch (e) {

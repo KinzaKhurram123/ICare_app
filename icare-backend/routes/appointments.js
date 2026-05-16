@@ -31,15 +31,19 @@ async function getAppointments(userId, userRole) {
     const patients = await User.find({ _id: { $in: patientIds.map(id => toId(id)) } }).lean();
     const pMap = {};
     patients.forEach(p => { pMap[p._id.toString()] = p; });
-    return appointments.map(a => ({
-      ...a,
-      id: a._id.toString(),
-      _id: a._id.toString(),
-      patient_id: a.patient_id.toString(),
-      patient_name: pMap[a.patient_id.toString()]?.username || pMap[a.patient_id.toString()]?.name,
-      patient_email: pMap[a.patient_id.toString()]?.email,
-      patient_phone: pMap[a.patient_id.toString()]?.phone,
-    }));
+    return appointments.map(a => {
+      const p = pMap[a.patient_id.toString()];
+      return {
+        ...a,
+        id: a._id.toString(),
+        _id: a._id.toString(),
+        patient_id: a.patient_id.toString(),
+        patient_name: p?.username || p?.name,
+        patient_age: p?.age?.toString() ?? null,
+        patient_gender: p?.gender ?? null,
+        // contact details intentionally excluded from doctor view
+      };
+    });
   } else {
     appointments = await Appointment.find({ patient_id: uid }).lean();
     const doctorIds = [...new Set(appointments.map(a => a.doctor_id.toString()))];

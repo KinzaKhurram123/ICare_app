@@ -119,6 +119,9 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
     }
   }
 
+  String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+
   /// Extract channel name from appointment (for video call rejoin)
   String _getChannelName(AppointmentDetail appointment) {
     final notes = appointment.reason ?? '';
@@ -531,7 +534,43 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
                                   color: Color(0xFF0F172A),
                                 ),
                               ),
-                              // Patient contact details hidden from doctor
+                              if (appointment.patient?.age != null ||
+                                  appointment.patient?.gender != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (appointment.patient?.age != null) ...[
+                                      const Icon(Icons.cake_rounded,
+                                          size: 13, color: Color(0xFF64748B)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${appointment.patient!.age} yrs',
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF64748B),
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                    if (appointment.patient?.age != null &&
+                                        appointment.patient?.gender != null)
+                                      const SizedBox(width: 10),
+                                    if (appointment.patient?.gender != null) ...[
+                                      const Icon(Icons.person_outline_rounded,
+                                          size: 13, color: Color(0xFF64748B)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _capitalize(
+                                            appointment.patient!.gender!),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF64748B),
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                              // contact details intentionally excluded from doctor view
                             ],
                           ),
                         ),

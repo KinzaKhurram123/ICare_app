@@ -162,6 +162,13 @@ class _DoctorAnalyticsState extends State<DoctorAnalytics> {
   num    get _allTimeRevenue => (_stats['revenue'] is num) ? _stats['revenue'] as num : 0;
   String get _avgRating => '${_stats['avgRating'] ?? _stats['rating'] ?? '0.0'}';
   String get _satisfaction => '${_stats['satisfaction'] ?? '0%'}';
+  String get _avgConsultationTime {
+    final v = _stats['avgConsultationMinutes'];
+    if (v == null) return '—';
+    final mins = (v is num) ? v.toDouble() : double.tryParse('$v');
+    if (mins == null) return '—';
+    return '${mins % 1 == 0 ? mins.toInt() : mins} min';
+  }
 
   // Last-month revenue
   double get _lastMonthRevenue {
@@ -365,13 +372,17 @@ class _DoctorAnalyticsState extends State<DoctorAnalytics> {
       }),
       _StatItem('Satisfaction', _satisfaction, Icons.sentiment_very_satisfied_rounded, const Color(0xFF6366F1)),
       _StatItem('Avg. Rating', _avgRating, Icons.star_rounded, const Color(0xFFF59E0B)),
+      _StatItem('Avg. Consult', _avgConsultationTime, Icons.timer_rounded, const Color(0xFF0EA5E9)),
     ];
 
     if (isWide) {
       return Column(children: [
-        Row(children: cards.take(3).map((c) => Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _statCard(c)))).toList()),
+        Row(children: cards.take(4).map((c) => Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _statCard(c)))).toList()),
         const SizedBox(height: 12),
-        Row(children: cards.skip(3).map((c) => Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _statCard(c)))).toList()),
+        Row(children: [
+          ...cards.skip(4).map((c) => Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _statCard(c)))),
+          const Expanded(child: SizedBox()),
+        ]),
       ]);
     }
     return Column(children: [
@@ -380,6 +391,8 @@ class _DoctorAnalyticsState extends State<DoctorAnalytics> {
       Row(children: [Expanded(child: _statCard(cards[2])), const SizedBox(width: 12), Expanded(child: _statCard(cards[3]))]),
       const SizedBox(height: 12),
       Row(children: [Expanded(child: _statCard(cards[4])), const SizedBox(width: 12), Expanded(child: _statCard(cards[5]))]),
+      const SizedBox(height: 12),
+      Row(children: [Expanded(child: _statCard(cards[6])), const Expanded(child: SizedBox())]),
     ]);
   }
 
