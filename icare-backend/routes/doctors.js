@@ -250,9 +250,77 @@ router.get('/availability/me', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── NAMED-PATH ALIASES (must be before /:id catch-all) ──────────────────────
+// clinical-rejection-flags, leave-requests, availability/me are defined AFTER
+// /:id below; re-register them here so Express matches them first.
+
+router.get('/clinical-rejection-flags', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    if (req.user.role?.toLowerCase() !== 'doctor') return res.status(403).json({ success: false, message: 'Forbidden' });
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.json({ success: true, flags: [], totalRejections: 0 });
+    const [medRecords, epRows] = await Promise.all([
+      MedicalRecord.find({ doctor: doctorId }).select('_id').lean(),
+      EnhancedPrescription.find({ doctorId }).select('_id').lean(),
+    ]);
+    const mrIdSet = new Set(medRecords.map(r => r._id.toString()));
+    const epIdSet = new Set(epRows.map(p => p._id.toString()));
+    const prescIds = [...new Set([...mrIdSet, ...epIdSet])];
+    if (prescIds.length === 0) return res.json({ success: true, flags: [], totalRejections: 0 });
+    const orders = await PharmacyOrder.find({ status: 'rejected', prescription_id: { $in: prescIds } }).sort({ updatedAt: -1 }).limit(50).lean();
+    const patientIdStrings = [...new Set(orders.map(o => o.patient_id?.toString()).filter(Boolean))];
+    const patients = patientIdStrings.length ? await User.find({ _id: { $in: patientIdStrings.map(toId) } }).lean() : [];
+    const pMap = {};
+    patients.forEach(p => { pMap[p._id.toString()] = p; });
+    function isNoReferrer(raw) {
+      if (!raw) return false;
+      const n = String(raw).toLowerCase().replace(/[_-]+/g,' ').trim();
+      return n === 'no referrer' || n.includes('no referrer');
+    }
+    const flags = [];
+    for (const o of orders) {
+      const pid = o.prescription_id;
+      if (!pid || !prescIds.includes(pid)) continue;
+      const reason = o.rejection_reason || o.cancellation_reason || '';
+      if (isNoReferrer(reason)) continue;
+      const ptId = o.patient_id?.toString() || '';
+      const pt = pMap[ptId];
+      const patientName = pt?.username || pt?.name || 'Patient';
+      flags.push({ orderId: o._id.toString(), orderNumber: o.order_number || `#${o._id.toString().slice(-8).toUpperCase()}`, prescriptionId: pid, prescriptionSource: mrIdSet.has(pid) ? 'medical_record' : 'enhanced_prescription', patientId: ptId, patientName, rejectionReason: reason || 'Rejected by pharmacy', rejectedAt: o.updatedAt || o.createdAt });
+    }
+    res.json({ success: true, flags, totalRejections: flags.length });
+  } catch (e) { console.error('clinical-rejection-flags error:', e); res.status(500).json({ success: false, message: e.message }); }
+});
+
+router.get('/leave-requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.json({ success: true, leaveRequests: [] });
+    const profile = await DoctorProfile.findOne({ user_id: doctorId }).lean();
+    const requests = (profile?.leaveRequests || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, leaveRequests: requests });
+  } catch (e) { console.error('leave-requests GET error:', e); res.status(500).json({ success: false, message: e.message }); }
+});
+
+router.post('/leave-requests', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const doctorId = toId(req.user.id || req.user._id || req.user.userId);
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Invalid doctor id' });
+    const { fromDate, toDate, reason } = req.body;
+    if (!fromDate || !toDate) return res.status(400).json({ success: false, message: 'fromDate and toDate are required' });
+    const from = new Date(fromDate); const to = new Date(toDate);
+    if (isNaN(from) || isNaN(to) || from > to) return res.status(400).json({ success: false, message: 'Invalid date range' });
+    const conflicting = await Appointment.countDocuments({ doctor_id: doctorId, status: { $in: ['pending','confirmed'] }, appointmentDate: { $gte: from, $lte: to } });
+    await DoctorProfile.findOneAndUpdate({ user_id: doctorId }, { $push: { leaveRequests: { fromDate: from, toDate: to, reason: reason||'', status:'pending', conflictingAppointments: conflicting, createdAt: new Date() } } }, { upsert: true });
+    res.json({ success: true, message: 'Leave request submitted. Pending admin approval.', conflictingAppointments: conflicting });
+  } catch (e) { console.error('leave-requests POST error:', e); res.status(500).json({ success: false, message: e.message }); }
+});
+
 // ─── GET DOCTOR BY ID ─────────────────────────────────────────────────────────
-// Restrict to valid MongoDB ObjectIds so named routes below are not swallowed.
-router.get('/:id([0-9a-fA-F]{24})', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     await connectMongoDB();
     const id = toId(req.params.id);
