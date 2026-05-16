@@ -42,20 +42,31 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     }
   }
 
-  /// Converts a Cloudinary PDF URL to a page-1 JPEG thumbnail URL.
-  /// Works for both /image/upload/ and /raw/upload/ Cloudinary URLs.
+  /// Page-1 JPEG thumbnail — for showing preview inside the modal
   String _cloudinaryPdfThumbnail(String pdfUrl) {
-    // Strategy: insert transformation f_jpg,pg_1 into the upload path
-    // /image/upload/ → /image/upload/f_jpg,pg_1/
-    // /raw/upload/   → /image/upload/f_jpg,pg_1/  (switch to image delivery)
     try {
-      var url = pdfUrl
+      return pdfUrl
           .replaceFirst('/raw/upload/', '/image/upload/f_jpg,pg_1/')
           .replaceFirstMapped(
             RegExp(r'/image/upload/(?!f_jpg,pg_1/)'),
             (_) => '/image/upload/f_jpg,pg_1/',
           );
-      return url;
+    } catch (_) {
+      return pdfUrl;
+    }
+  }
+
+  /// Inline URL — browser opens PDF in its built-in PDF viewer (new tab)
+  String _cloudinaryInlineUrl(String pdfUrl) {
+    try {
+      // fl_inline → Content-Disposition: inline → browser shows PDF viewer
+      if (pdfUrl.contains('/raw/upload/')) {
+        return pdfUrl.replaceFirst('/raw/upload/', '/raw/upload/fl_inline/');
+      }
+      return pdfUrl.replaceFirstMapped(
+        RegExp(r'/image/upload/(?!fl_)'),
+        (_) => '/image/upload/fl_inline/',
+      );
     } catch (_) {
       return pdfUrl;
     }
@@ -210,13 +221,14 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
             ),
           ),
         ),
-        // Open + Download row
+        // Open (inline viewer) + Download row
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () { Navigator.pop(ctx); _openDocUrl(pdfUrl); },
+                // fl_inline → browser opens PDF in built-in PDF viewer tab
+                onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryInlineUrl(pdfUrl)); },
                 icon: const Icon(Icons.open_in_new_rounded, size: 16),
                 label: const Text('Open PDF', style: TextStyle(fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
@@ -230,6 +242,7 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton.icon(
+                // fl_attachment → forces browser to download the file
                 onPressed: () { Navigator.pop(ctx); _openDocUrl(_cloudinaryDownloadUrl(pdfUrl)); },
                 icon: const Icon(Icons.download_rounded, size: 16),
                 label: const Text('Download', style: TextStyle(fontWeight: FontWeight.w700)),
