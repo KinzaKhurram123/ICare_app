@@ -1,11 +1,8 @@
-import 'dart:convert';
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:icare/services/api_service.dart';
-import 'package:icare/services/api_config.dart';
-import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -57,11 +54,22 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
   }
 
   void _viewDocument(dynamic cred) {
-    final docUrl = cred['documentUrl'] as String? ?? '';
+    // documentUrl can be stored under different keys — check both
+    final docUrl = (cred['documentUrl'] as String?)?.trim() ??
+                   (cred['document_url'] as String?)?.trim() ?? '';
     final title  = cred['title']?.toString() ?? 'Document';
     final type   = cred['type']?.toString() ?? '';
-    final isImage = docUrl.isNotEmpty &&
-        RegExp(r'\.(jpg|jpeg|png|gif|webp)(\?|$)', caseSensitive: false).hasMatch(docUrl);
+
+    // Cloudinary image URLs contain /image/upload/ OR end in known image exts
+    final isImage = docUrl.isNotEmpty && (
+      docUrl.contains('/image/upload/') ||
+      RegExp(r'\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$', caseSensitive: false).hasMatch(docUrl)
+    );
+    // Cloudinary raw/PDF URLs contain /raw/upload/ OR end in .pdf
+    final isPdf = docUrl.isNotEmpty && (
+      docUrl.contains('/raw/upload/') ||
+      RegExp(r'\.pdf(\?.*)?$', caseSensitive: false).hasMatch(docUrl)
+    );
 
     showDialog(
       context: context,
@@ -93,11 +101,15 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
               // Document preview
               Expanded(
                 child: docUrl.isEmpty
+                    // ── No URL stored ─────────────────────────────────────────
                     ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.description_outlined, size: 64, color: Colors.grey.shade300),
+                        Icon(Icons.upload_file_rounded, size: 64, color: Colors.grey.shade300),
                         const SizedBox(height: 12),
-                        const Text('No document uploaded yet', style: TextStyle(color: Color(0xFF94A3B8))),
+                        const Text('No document attached to this certificate.', style: TextStyle(color: Color(0xFF94A3B8))),
+                        const SizedBox(height: 6),
+                        const Text('Upload a new certificate to attach a file.', style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
                       ]))
+                    // ── Image preview ─────────────────────────────────────────
                     : isImage
                     ? Padding(
                         padding: const EdgeInsets.all(16),
@@ -106,30 +118,53 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                           child: Image.network(
                             docUrl,
                             fit: BoxFit.contain,
-                            loadingBuilder: (_, child, prog) => prog == null ? child
+                            loadingBuilder: (_, child, prog) => prog == null
+                                ? child
                                 : const Center(child: CircularProgressIndicator()),
-                            errorBuilder: (_, __, ___) => _docFallback(docUrl),
+                            errorBuilder: (_, __, ___) => _urlFallback(ctx, docUrl),
                           ),
                         ),
                       )
+                    // ── PDF or other (open in browser) ────────────────────────
                     : Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Container(
                             padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(color: AppColors.primaryColor.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(16)),
-                            child: Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.primaryColor),
+                            decoration: BoxDecoration(
+                              color: isPdf
+                                  ? const Color(0xFFEF4444).withValues(alpha: 0.08)
+                                  : AppColors.primaryColor.withValues(alpha: 0.07),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
+                              size: 64,
+                              color: isPdf ? const Color(0xFFEF4444) : AppColors.primaryColor,
+                            ),
                           ),
                           const SizedBox(height: 16),
-                          const Text('PDF Document', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                          Text(
+                            isPdf ? 'PDF Document' : 'Document File',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                          ),
                           const SizedBox(height: 8),
-                          const Text('Tap "Open in Browser" to view the full document', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                          const Text(
+                            'Tap the button below to open it in your browser.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                          ),
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
                             onPressed: () { Navigator.pop(ctx); _openDocUrl(docUrl); },
                             icon: const Icon(Icons.open_in_new_rounded, size: 18),
                             label: const Text('Open in Browser', style: TextStyle(fontWeight: FontWeight.w700)),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
                           ),
                         ]),
                       ),
@@ -157,28 +192,54 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
     );
   }
 
-  Widget _docFallback(String url) {
+  // Shown when Image.network fails — still gives user a way to open the file
+  Widget _urlFallback(BuildContext ctx, String url) {
     return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey.shade300),
-      const SizedBox(height: 8),
-      const Text('Could not load image', style: TextStyle(color: Color(0xFF94A3B8))),
+      const SizedBox(height: 12),
+      const Text('Could not render preview.', style: TextStyle(color: Color(0xFF94A3B8))),
+      const SizedBox(height: 16),
+      ElevatedButton.icon(
+        onPressed: () { Navigator.pop(ctx); _openDocUrl(url); },
+        icon: const Icon(Icons.open_in_new_rounded, size: 16),
+        label: const Text('Open in Browser'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
     ]);
   }
 
 
+  // Upload using Dio FormData — same auth headers as all other API calls.
+  // package:http MultipartRequest was failing silently because it doesn't
+  // share the Dio auth token injection logic.
   Future<String?> _uploadFileToBackend(Uint8List bytes, String fileName) async {
     try {
-      final token = await SharedPref().getToken();
-      final uri = Uri.parse('${ApiConfig.baseUrl}/upload/prescription');
-      final request = http.MultipartRequest('POST', uri)
-        ..headers['Authorization'] = 'Bearer $token'
-        ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
-      final streamed = await request.send();
-      final body = await streamed.stream.bytesToString();
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      if (json['success'] == true) return json['url'] as String?;
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          bytes,
+          filename: fileName,
+          // Guess content type from extension
+          contentType: fileName.toLowerCase().endsWith('.pdf')
+              ? DioMediaType('application', 'pdf')
+              : DioMediaType('image', 'jpeg'),
+        ),
+      });
+      final response = await _apiService.postMultipart('/upload/prescription', formData);
+      debugPrint('Upload response: ${response.data}');
+      if (response.data['success'] == true) {
+        return response.data['url'] as String?;
+      }
+      debugPrint('Upload failed: ${response.data}');
       return null;
-    } catch (_) { return null; }
+    } catch (e) {
+      debugPrint('Upload exception: $e');
+      return null;
+    }
   }
 
   void _showUploadDialog() {
@@ -368,18 +429,31 @@ class _CredentialVaultScreenState extends State<CredentialVaultScreen> {
                           }
                           setModalState(() => isUploading = true);
                           try {
-                            // Upload file to Cloudinary via backend
-                            final url = await _uploadFileToBackend(pickedBytes!, pickedFileName ?? 'document.pdf');
+                            // Step 1: upload file → get Cloudinary URL
+                            final url = await _uploadFileToBackend(
+                              pickedBytes!, pickedFileName ?? 'document');
+                            if (url == null || url.isEmpty) {
+                              setModalState(() => isUploading = false);
+                              if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('File upload failed. Check your connection and try again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                            // Step 2: save credential record with the returned URL
                             await _apiService.post('/credentials', {
                               'type': type,
                               'title': titleController.text.trim(),
-                              'documentUrl': url ?? '',
+                              'documentUrl': url,
                             });
                             if (ctx.mounted) Navigator.pop(ctx);
                             _fetchCredentials();
                           } catch (e) {
                             setModalState(() => isUploading = false);
-                            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+                            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
                           }
                         },
                 ),
