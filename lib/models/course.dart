@@ -178,6 +178,7 @@ class Lesson {
   final String title;
   final String content;
   final String? videoUrl;
+  final String? documentUrl;
   final int? duration; // minutes
   final int order;
   final List<LessonResource> resources;
@@ -187,6 +188,7 @@ class Lesson {
     required this.title,
     required this.content,
     this.videoUrl,
+    this.documentUrl,
     this.duration,
     required this.order,
     this.resources = const [],
@@ -198,6 +200,7 @@ class Lesson {
       title: json['title'] ?? '',
       content: json['content'] ?? '',
       videoUrl: json['videoUrl'] ?? json['video_url'],
+      documentUrl: json['documentUrl'] ?? json['document_url'],
       duration: json['duration'] ?? json['duration_minutes'],
       order: json['order'] ?? 0,
       resources:
@@ -213,6 +216,7 @@ class Lesson {
       'title': title,
       'content': content,
       if (videoUrl != null) 'videoUrl': videoUrl,
+      if (documentUrl != null) 'documentUrl': documentUrl,
       if (duration != null) 'duration': duration,
       'order': order,
       'resources': resources.map((r) => r.toJson()).toList(),
@@ -320,7 +324,7 @@ class CourseRating {
   }
 }
 
-enum CourseCategory { healthProgram, professionalCourse }
+enum CourseCategory { healthProgram, professionalCourse, fcpsPart1 }
 
 extension CourseCategoryExtension on CourseCategory {
   String get value {
@@ -329,6 +333,8 @@ extension CourseCategoryExtension on CourseCategory {
         return 'HealthProgram';
       case CourseCategory.professionalCourse:
         return 'ProfessionalCourse';
+      case CourseCategory.fcpsPart1:
+        return 'FCPSPart1';
     }
   }
 
@@ -338,6 +344,8 @@ extension CourseCategoryExtension on CourseCategory {
         return 'Health Program';
       case CourseCategory.professionalCourse:
         return 'Professional Course';
+      case CourseCategory.fcpsPart1:
+        return 'FCPS Part 1';
     }
   }
 
@@ -347,6 +355,8 @@ extension CourseCategoryExtension on CourseCategory {
         return CourseCategory.healthProgram;
       case 'ProfessionalCourse':
         return CourseCategory.professionalCourse;
+      case 'FCPSPart1':
+        return CourseCategory.fcpsPart1;
       default:
         return CourseCategory.healthProgram;
     }
