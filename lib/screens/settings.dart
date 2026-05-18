@@ -9,7 +9,9 @@ import 'package:icare/screens/change_password.dart' show ChangePassword;
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/courses.dart' show Courses;
 import 'package:icare/screens/create_profile.dart' show CreateProfile;
+import 'package:icare/screens/doctor_profile_setup.dart' show DoctorProfileSetup;
 import 'package:icare/screens/help_and_support.dart' show HelpAndSupport;
+import 'package:icare/screens/notification_settings.dart' show NotificationSettings;
 import 'package:icare/screens/privacy_policy.dart' show PrivacyPolicy;
 import 'package:icare/screens/terms_and_conditions.dart' show TermsAndConditions;
 import 'package:icare/utils/theme.dart';
@@ -40,6 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _healthGoals = '';
   int _waterReminderMinutes = 60;
   String _selectedLanguage = 'English';
+  String _selectedCountry = 'Pakistan';
   String _savedDeliveryAddress = '';
 
   final Map<String, bool> _trackerToggles = {
@@ -314,6 +317,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     )));
   }
 
+  void _showCountryRegionDialog(BuildContext ctx) {
+    final role = ref.read(authProvider).userRole ?? '';
+    final isPatient = role == 'Patient';
+    
+    // For patients: only Pakistan, others coming soon
+    // For doctors: all regions available
+    final countries = isPatient 
+      ? ['Pakistan']
+      : ['Pakistan', 'India', 'Bangladesh', 'United States', 'United Kingdom', 'Canada', 'Australia'];
+    
+    String selected = _selectedCountry;
+    showDialog(context: ctx, builder: (dc) => StatefulBuilder(builder: (ctx2, setS) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(children: [Icon(Icons.public_outlined, color: Color(0xFF64748B), size: 22), SizedBox(width: 10), Text('Country & Region', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16))]),
+      content: SizedBox(width: 300, child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (isPatient) const Text('Currently available in Pakistan only. More countries coming soon!', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        if (!isPatient) const Text('Select your country/region', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        const SizedBox(height: 16),
+        ...List.generate(countries.length, (i) {
+          final country = countries[i];
+          final isSel = selected == country;
+          final isComingSoon = !isPatient && country != 'Pakistan';
+          return Padding(padding: const EdgeInsets.only(bottom: 8), child: InkWell(
+            onTap: isComingSoon ? null : () => setS(() => selected = country), 
+            borderRadius: BorderRadius.circular(10), 
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+              decoration: BoxDecoration(
+                color: isSel ? const Color(0xFFEFF6FF) : (isComingSoon ? const Color(0xFFFAFAFA) : const Color(0xFFF8FAFC)), 
+                borderRadius: BorderRadius.circular(10), 
+                border: Border.all(color: isSel ? AppColors.primaryColor : const Color(0xFFE2E8F0), width: isSel ? 1.5 : 1)
+              ), 
+              child: Row(children: [
+                Icon(isSel ? Icons.radio_button_checked : Icons.radio_button_off, color: isSel ? AppColors.primaryColor : (isComingSoon ? const Color(0xFFE2E8F0) : const Color(0xFFCBD5E1)), size: 20), 
+                const SizedBox(width: 12), 
+                Expanded(child: Text(country, style: TextStyle(fontSize: 14, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500, color: isSel ? const Color(0xFF1E293B) : (isComingSoon ? const Color(0xFF94A3B8) : const Color(0xFF64748B))))),
+                if (isComingSoon) Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(6)),
+                  child: const Text('Coming Soon', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B))),
+                ),
+              ])
+            )
+          ));
+        }),
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(dc), child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B)))), ElevatedButton(onPressed: () { setState(() => _selectedCountry = selected); Navigator.pop(dc); ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Country set to $selected'), backgroundColor: Colors.green)); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('Apply'))],
+    )));
+  }
+
   void _showDeliveryAddressDialog(BuildContext ctx) {
     final c = TextEditingController(text: _savedDeliveryAddress);
     showDialog(context: ctx, builder: (dc) => AlertDialog(
@@ -402,6 +455,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       medicalConditions: _medicalConditions, allergies: _allergies,
       currentMedications: _currentMedications, healthGoals: _healthGoals,
       waterReminderMinutes: _waterReminderMinutes, selectedLanguage: _selectedLanguage,
+      selectedCountry: _selectedCountry,
       savedDeliveryAddress: _savedDeliveryAddress,
       savedPaymentMethods: _savedPaymentMethods, billingHistory: _billingHistory,
       onToggle2FA: _toggle2FA, onToggleBiometrics: _toggleBiometrics,
@@ -412,6 +466,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onShowMedicalConditions: _showMedicalConditionsDialog, onShowAllergies: _showAllergiesDialog,
       onShowCurrentMedications: _showCurrentMedicationsDialog, onShowHealthGoals: _showHealthGoalsDialog,
       onShowWaterReminder: _showWaterReminderDialog, onShowLanguage: _showLanguageDialog,
+      onShowCountryRegion: _showCountryRegionDialog,
       onShowDeliveryAddress: _showDeliveryAddressDialog, onDownloadHealthData: _downloadHealthData,
       onShowPaymentMethods: _showPaymentMethodsDialog, onShowBillingHistory: _showBillingHistoryDialog,
     );
@@ -433,7 +488,7 @@ class _SettingsLayoutParams {
   final List<String> selectedConditions;
   final String medicalConditions, allergies, currentMedications, healthGoals;
   final int waterReminderMinutes;
-  final String selectedLanguage, savedDeliveryAddress;
+  final String selectedLanguage, selectedCountry, savedDeliveryAddress;
   final List<String> savedPaymentMethods, billingHistory;
   final Map<String, bool> trackerToggles;
   final void Function(bool) onToggle2FA, onToggleBiometrics;
@@ -443,6 +498,7 @@ class _SettingsLayoutParams {
   final void Function(BuildContext) onReportIssue, onDeleteAccount, onShowFeeDialog;
   final void Function(BuildContext) onShowMedicalConditions, onShowAllergies, onShowCurrentMedications;
   final void Function(BuildContext) onShowHealthGoals, onShowWaterReminder, onShowLanguage;
+  final void Function(BuildContext) onShowCountryRegion;
   final void Function(BuildContext) onShowDeliveryAddress, onDownloadHealthData;
   final void Function(BuildContext) onShowPaymentMethods, onShowBillingHistory;
 
@@ -455,6 +511,7 @@ class _SettingsLayoutParams {
     required this.medicalConditions, required this.allergies,
     required this.currentMedications, required this.healthGoals,
     required this.waterReminderMinutes, required this.selectedLanguage,
+    required this.selectedCountry,
     required this.savedDeliveryAddress, required this.savedPaymentMethods,
     required this.billingHistory, required this.trackerToggles,
     required this.onToggle2FA, required this.onToggleBiometrics,
@@ -464,6 +521,11 @@ class _SettingsLayoutParams {
     required this.onShowFeeDialog, required this.onShowMedicalConditions,
     required this.onShowAllergies, required this.onShowCurrentMedications,
     required this.onShowHealthGoals, required this.onShowWaterReminder,
+    required this.onShowLanguage, required this.onShowCountryRegion,
+    required this.onShowDeliveryAddress,
+    required this.onDownloadHealthData, required this.onShowPaymentMethods,
+    required this.onShowBillingHistory,
+  });
     required this.onShowLanguage, required this.onShowDeliveryAddress,
     required this.onDownloadHealthData, required this.onShowPaymentMethods,
     required this.onShowBillingHistory,
@@ -481,8 +543,9 @@ class _WebSettingsLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true, backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text('Settings', style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w700)), centerTitle: true, backgroundColor: Colors.white, foregroundColor: AppColors.primaryColor, elevation: 0, surfaceTintColor: Colors.white),
       body: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Center(child: Container(constraints: const BoxConstraints(maxWidth: 800), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Remove any blue background header - using clean white layout
         _ProfileEditCard(p: p), const SizedBox(height: 24),
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 24)],
         _notificationsCard(context), const SizedBox(height: 24),
@@ -494,6 +557,7 @@ class _WebSettingsLayout extends StatelessWidget {
         if (p.isPatient) ...[_pharmacyCard(context), const SizedBox(height: 24)],
         if (p.isStudent || p.isInstructor) ...[_learningCard(context), const SizedBox(height: 24)],
         _securityCard(context), const SizedBox(height: 24),
+        if (p.isDoctor) ...[_notificationSettingsCard(context), const SizedBox(height: 24)],
         _languageCard(context), const SizedBox(height: 24),
         if (p.isPatient) ...[_healthModeCard(context), const SizedBox(height: 24)],
         _aboutCard(context), const SizedBox(height: 32),
@@ -671,6 +735,15 @@ class _WebSettingsLayout extends StatelessWidget {
       ])));
   }
 
+  // ── NOTIFICATION SETTINGS (Doctor only) ──
+  Widget _notificationSettingsCard(BuildContext context) {
+    return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _sectionLabel('Notifications'), const SizedBox(height: 16),
+        _settingsTile(icon: Icons.notifications_active_outlined, iconColor: const Color(0xFF3B82F6), title: 'Notification Settings', subtitle: 'Manage notification preferences', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationSettings()))),
+      ])));
+  }
+
   // ── LANGUAGE ──
   Widget _languageCard(BuildContext context) {
     return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -750,7 +823,7 @@ class _MobileSettingsLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true, backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text('Settings', style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w700)), centerTitle: true, backgroundColor: Colors.white, foregroundColor: AppColors.primaryColor, elevation: 0, surfaceTintColor: Colors.white),
       body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _ProfileEditCard(p: p), const SizedBox(height: 16),
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 16)],
@@ -763,6 +836,7 @@ class _MobileSettingsLayout extends StatelessWidget {
         if (p.isPatient) ...[_pharmacyCard(context), const SizedBox(height: 16)],
         if (p.isStudent || p.isInstructor) ...[_learningCard(context), const SizedBox(height: 16)],
         _securityCard(context), const SizedBox(height: 16),
+        if (p.isDoctor) ...[_notificationSettingsCard(context), const SizedBox(height: 16)],
         _languageCard(context), const SizedBox(height: 16),
         if (p.isPatient) ...[_healthModeCard(context), const SizedBox(height: 16)],
         _aboutCard(context), const SizedBox(height: 24),
@@ -908,6 +982,14 @@ class _MobileSettingsLayout extends StatelessWidget {
       ])));
   }
 
+  Widget _notificationSettingsCard(BuildContext context) {
+    return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _sectionLabel('Notifications'), const SizedBox(height: 12),
+        _settingsTile(icon: Icons.notifications_active_outlined, iconColor: const Color(0xFF3B82F6), title: 'Notification Settings', subtitle: 'Manage preferences', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationSettings()))),
+      ])));
+  }
+
   Widget _languageCard(BuildContext context) {
     return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -954,7 +1036,7 @@ class _MobileSettingsLayout extends StatelessWidget {
   }
 
   Widget _sectionLabel(String title) {
-    return Row(children: [const Icon(Icons.circle, size: 7, color: AppColors.primaryColor), const SizedBox(width: 7), Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))]);
+    return Row(children: [const Icon(Icons.circle, size: 7, color: AppColors.primaryColor), const SizedBox(width: 7), Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.primaryColor))]);
   }
 
   Widget _settingsTile({required IconData icon, required Color iconColor, required String title, required String subtitle, required VoidCallback onTap}) {

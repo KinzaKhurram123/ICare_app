@@ -38,6 +38,17 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   final List<String> _conditionsTreated = [];
   final TextEditingController _conditionInputCtrl = TextEditingController();
 
+  // Spoken Languages — Pakistani languages
+  final List<String> _spokenLanguages = [
+    'Urdu',
+    'Punjabi',
+    'Pashto',
+    'Sindhi',
+    'Balochi',
+    'English'
+  ];
+  final List<String> _selectedLanguages = [];
+
   static const _commonConditions = [
     'Hypertension', 'Diabetes', 'Heart Disease', 'Asthma', 'Back Pain',
     'Headache / Migraine', 'Fever', 'Allergy', 'Anxiety', 'Depression',
@@ -134,6 +145,15 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       try {
         await ApiService().post('/doctors/add_doctor_details', {
           'conditionsTreated': _conditionsTreated,
+        });
+      } catch (_) {}
+    }
+
+    // Save spoken languages separately
+    if (_selectedLanguages.isNotEmpty) {
+      try {
+        await ApiService().post('/doctors/add_doctor_details', {
+          'spokenLanguages': _selectedLanguages,
         });
       } catch (_) {}
     }
@@ -348,6 +368,15 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                 ),
                 const SizedBox(height: 12),
                 _buildConditionsTreated(),
+                const SizedBox(height: 32),
+                _buildSectionTitle("Languages You Speak"),
+                const SizedBox(height: 8),
+                Text(
+                  'Select all languages you speak to help patients find you.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 12),
+                _buildLanguagesSelector(),
                 const SizedBox(height: 32),
                 _buildSectionTitle("Availability"),
                 const SizedBox(height: 16),
@@ -568,6 +597,38 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                         ),
                         const SizedBox(height: 40),
                         const Text(
+                          "Conditions You Treat",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Select or add conditions you commonly treat.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildConditionsTreated(),
+                        const SizedBox(height: 40),
+                        const Text(
+                          "Languages You Speak",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Select all languages you speak to help patients find you.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLanguagesSelector(),
+                        const SizedBox(height: 40),
+                        const Text(
                           "Availability Schedule",
                           style: TextStyle(
                             fontSize: 20,
@@ -711,6 +772,29 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
           Text('${_conditionsTreated.length} condition(s) selected', style: const TextStyle(fontSize: 12, color: AppColors.primaryColor, fontWeight: FontWeight.w600)),
         ],
       ],
+    );
+  }
+
+  Widget _buildLanguagesSelector() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _spokenLanguages.map((lang) {
+        final isSelected = _selectedLanguages.contains(lang);
+        return FilterChip(
+          label: Text(lang, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : const Color(0xFF475569))),
+          selected: isSelected,
+          onSelected: (v) => setState(() {
+            if (v) _selectedLanguages.add(lang);
+            else _selectedLanguages.remove(lang);
+          }),
+          selectedColor: AppColors.primaryColor,
+          backgroundColor: const Color(0xFFF1F5F9),
+          checkmarkColor: Colors.white,
+          side: BorderSide(color: isSelected ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+        );
+      }).toList(),
     );
   }
 

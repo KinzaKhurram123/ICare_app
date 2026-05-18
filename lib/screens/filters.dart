@@ -53,10 +53,10 @@ class _FiltersScreenState extends State<FiltersScreen> {
   final List<String> languageArray = [
     "English",
     "Urdu",
-    "Spanish",
-    "French",
-    "German",
-    "Arabic",
+    "Punjabi",
+    "Pashto",
+    "Sindhi",
+    "Balochi",
   ];
 
   String? _selectedSpeciality;
