@@ -28,7 +28,9 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
   String _category = 'HealthProgram';
   String _targetAudience = 'Patient';
   String _difficulty = 'Beginner';
-  int _duration = 4;
+  final _durationDaysController = TextEditingController();
+  final _durationWeeksController = TextEditingController();
+  final _durationMonthsController = TextEditingController();
   bool _isPublished = false;
   bool _uploadingThumbnail = false;
   String? _thumbnailUrl;
@@ -117,7 +119,9 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
         'category': _category,
         'targetAudience': _targetAudience,
         'difficulty': _difficulty,
-        'duration': _duration,
+        'duration': (int.tryParse(_durationDaysController.text) ?? 0) +
+            (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
+            (int.tryParse(_durationMonthsController.text) ?? 0) * 30,
         'isPublished': _isPublished,
         'modules': _modules,
       };
@@ -424,6 +428,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
                 ),
                 items: const [
                   DropdownMenuItem(value: 'HealthProgram', child: Text('Health Program')),
+                  DropdownMenuItem(value: 'FCPSPart1', child: Text('FCPS Part 1')),
                   DropdownMenuItem(value: 'Medical Training', child: Text('Medical Training')),
                   DropdownMenuItem(value: 'Wellness', child: Text('Wellness')),
                   DropdownMenuItem(value: 'Nutrition', child: Text('Nutrition')),
@@ -463,17 +468,37 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
               ),
               const SizedBox(height: 20),
               
-              TextFormField(
-                initialValue: _duration.toString(),
-                decoration: const InputDecoration(
-                  labelText: 'Duration (weeks)',
-                  border: OutlineInputBorder(),
-                  suffixText: 'weeks',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  setState(() => _duration = int.tryParse(value) ?? 4);
-                },
+              const Text(
+                'Course Duration',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _durationDaysController,
+                      decoration: const InputDecoration(labelText: 'Days', border: OutlineInputBorder(), suffixText: 'd'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _durationWeeksController,
+                      decoration: const InputDecoration(labelText: 'Weeks', border: OutlineInputBorder(), suffixText: 'w'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _durationMonthsController,
+                      decoration: const InputDecoration(labelText: 'Months', border: OutlineInputBorder(), suffixText: 'm'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               
@@ -576,6 +601,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
 
   Widget _buildModuleCard(int index) {
     final module = _modules[index];
+    final lessons = module['lessons'] as List;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: ExpansionTile(
@@ -583,50 +609,69 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
           backgroundColor: AppColors.primaryColor,
           child: Text('${index + 1}', style: const TextStyle(color: Colors.white)),
         ),
-        title: Text(module['title'] ?? 'Module ${index + 1}'),
-        subtitle: Text('${(module['lessons'] as List).length} lessons'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.red),
-          onPressed: () => setState(() => _modules.removeAt(index)),
+        title: Text(module['title'] ?? 'Module ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text('${lessons.length} lesson${lessons.length == 1 ? '' : 's'}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppColors.primaryColor, size: 20),
+              tooltip: 'Edit Module',
+              onPressed: () => _editModule(index),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              tooltip: 'Delete Module',
+              onPressed: () => setState(() => _modules.removeAt(index)),
+            ),
+          ],
         ),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(module['description'] ?? 'No description'),
-                const SizedBox(height: 16),
-                const Text(
-                  'Lessons:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ...(module['lessons'] as List).map((lesson) {
-                  return ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.play_circle_outline, size: 20),
-                    title: Text(lesson['title']),
-                    subtitle: Text('${lesson['duration']} min'),
-                  );
-                }).toList(),
-              ],
+          if (lessons.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if ((module['description'] ?? '').toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(module['description'], style: const TextStyle(color: Color(0xFF64748B))),
+                    ),
+                  ...lessons.asMap().entries.map((e) {
+                    final lesson = e.value as Map<String, dynamic>;
+                    return ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(radius: 12, backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1), child: Text('${e.key + 1}', style: const TextStyle(fontSize: 10, color: AppColors.primaryColor))),
+                      title: Text(lesson['title'] ?? '', style: const TextStyle(fontSize: 13)),
+                      subtitle: Row(children: [
+                        if ((lesson['duration'] ?? 0) > 0) Text('${lesson['duration']} min', style: const TextStyle(fontSize: 11)),
+                        if (lesson['videoUrl'] != null && (lesson['videoUrl'] as String).isNotEmpty) ...[const SizedBox(width: 8), const Icon(Icons.videocam_rounded, size: 14, color: Color(0xFF3B82F6))],
+                        if (lesson['documentUrl'] != null && (lesson['documentUrl'] as String).isNotEmpty) ...[const SizedBox(width: 6), const Icon(Icons.description_outlined, size: 14, color: Color(0xFF10B981))],
+                      ]),
+                    );
+                  }),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  void _addModule() {
-    showDialog(
-      context: context,
-      builder: (context) => _ModuleDialog(
-        onSave: (module) {
-          setState(() => _modules.add(module));
-        },
-      ),
+  Future<void> _addModule() async {
+    final module = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (_) => const _ModuleEditorPage()),
     );
+    if (module != null) setState(() => _modules.add(module));
+  }
+
+  Future<void> _editModule(int index) async {
+    final module = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (_) => _ModuleEditorPage(existingModule: _modules[index])),
+    );
+    if (module != null) setState(() => _modules[index] = module);
   }
 
   Widget _buildNavigationButtons() {
@@ -664,154 +709,362 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
   }
 }
 
-// Module Dialog
-class _ModuleDialog extends StatefulWidget {
-  final Function(Map<String, dynamic>) onSave;
-  
-  const _ModuleDialog({required this.onSave});
+// ─── Full-page Module Editor with inline lesson forms ────────────────────────
 
-  @override
-  State<_ModuleDialog> createState() => _ModuleDialogState();
+class _LmsLessonForm {
+  final TextEditingController titleCtrl = TextEditingController();
+  final TextEditingController contentCtrl = TextEditingController();
+  final TextEditingController durationCtrl = TextEditingController();
+  String? videoUrl;
+  String? documentUrl;
+  String? documentName;
+
+  _LmsLessonForm({Map<String, dynamic>? existing}) {
+    if (existing != null) {
+      titleCtrl.text = existing['title']?.toString() ?? '';
+      contentCtrl.text = existing['content']?.toString() ?? '';
+      durationCtrl.text = existing['duration']?.toString() ?? '';
+      videoUrl = existing['videoUrl']?.toString();
+      documentUrl = existing['documentUrl']?.toString();
+      documentName = existing['documentName']?.toString();
+    }
+  }
+
+  Map<String, dynamic> toMap(int order) => {
+        'title': titleCtrl.text.trim(),
+        'content': contentCtrl.text.trim(),
+        'duration': int.tryParse(durationCtrl.text.trim()) ?? 0,
+        'order': order,
+        if (videoUrl != null && videoUrl!.isNotEmpty) 'videoUrl': videoUrl,
+        if (documentUrl != null && documentUrl!.isNotEmpty) 'documentUrl': documentUrl,
+        if (documentName != null) 'documentName': documentName,
+      };
+
+  void dispose() {
+    titleCtrl.dispose();
+    contentCtrl.dispose();
+    durationCtrl.dispose();
+  }
 }
 
-class _ModuleDialogState extends State<_ModuleDialog> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final List<Map<String, dynamic>> _lessons = [];
+class _ModuleEditorPage extends StatefulWidget {
+  final Map<String, dynamic>? existingModule;
+  const _ModuleEditorPage({this.existingModule});
+
+  @override
+  State<_ModuleEditorPage> createState() => _ModuleEditorPageState();
+}
+
+class _ModuleEditorPageState extends State<_ModuleEditorPage> {
+  final _titleCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final List<_LmsLessonForm> _lessonForms = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final m = widget.existingModule;
+    if (m != null) {
+      _titleCtrl.text = m['title']?.toString() ?? '';
+      _descCtrl.text = m['description']?.toString() ?? '';
+      final existing = (m['lessons'] as List?) ?? [];
+      for (final l in existing) {
+        _lessonForms.add(_LmsLessonForm(existing: l as Map<String, dynamic>));
+      }
+    }
+    if (_lessonForms.isEmpty) _lessonForms.add(_LmsLessonForm());
+  }
+
+  void _save() {
+    if (_titleCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter module title')));
+      return;
+    }
+    final lessons = <Map<String, dynamic>>[];
+    for (int i = 0; i < _lessonForms.length; i++) {
+      if (_lessonForms[i].titleCtrl.text.trim().isNotEmpty) {
+        lessons.add(_lessonForms[i].toMap(i + 1));
+      }
+    }
+    Navigator.of(context).pop({
+      'title': _titleCtrl.text.trim(),
+      'description': _descCtrl.text.trim(),
+      'lessons': lessons,
+      'order': 0,
+    });
+  }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    for (final f in _lessonForms) { f.dispose(); }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Module'),
-      content: SizedBox(
-        width: 500,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Module Title',
-                  border: OutlineInputBorder(),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18), onPressed: () => Navigator.pop(context)),
+        title: Text(widget.existingModule == null ? 'Add Module' : 'Edit Module',
+            style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+        actions: [
+          TextButton(onPressed: _save, child: const Text('Save Module', style: TextStyle(fontWeight: FontWeight.w700))),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Module Title *', border: OutlineInputBorder()),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _descCtrl,
+                  decoration: const InputDecoration(labelText: 'Module Description (optional)', border: OutlineInputBorder()),
+                  maxLines: 2,
                 ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Lessons', style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextButton.icon(
-                    onPressed: _addLesson,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add Lesson'),
+                const SizedBox(height: 28),
+                Row(children: [
+                  const Icon(Icons.play_lesson_rounded, color: AppColors.primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Lessons', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  const Spacer(),
+                  Text('${_lessonForms.length} added', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                ]),
+                const SizedBox(height: 12),
+                ..._lessonForms.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final form = entry.value;
+                  return _LmsInlineLessonWidget(
+                    key: ObjectKey(form),
+                    form: form,
+                    number: i + 1,
+                    onRemove: _lessonForms.length > 1 ? () => setState(() { form.dispose(); _lessonForms.removeAt(i); }) : null,
+                    onChanged: () => setState(() {}),
+                  );
+                }),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => setState(() => _lessonForms.add(_LmsLessonForm())),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Add Another Lesson'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryColor,
+                      side: const BorderSide(color: AppColors.primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
-                ],
-              ),
-              ..._lessons.map((lesson) {
-                return ListTile(
-                  dense: true,
-                  title: Text(lesson['title']),
-                  subtitle: Text('${lesson['duration']} min'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () => setState(() => _lessons.remove(lesson)),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Save Module', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
-                );
-              }).toList(),
-            ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+    );
+  }
+}
+
+// ─── Inline lesson widget for LMS wizard ─────────────────────────────────────
+
+class _LmsInlineLessonWidget extends StatefulWidget {
+  final _LmsLessonForm form;
+  final int number;
+  final VoidCallback? onRemove;
+  final VoidCallback onChanged;
+
+  const _LmsInlineLessonWidget({
+    super.key,
+    required this.form,
+    required this.number,
+    this.onRemove,
+    required this.onChanged,
+  });
+
+  @override
+  State<_LmsInlineLessonWidget> createState() => _LmsInlineLessonWidgetState();
+}
+
+class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
+  bool _uploadingVideo = false;
+  bool _uploadingDoc = false;
+
+  static const _cloud = 'dzlcnyxgb';
+  static const _preset = 'icare_videos';
+
+  Future<void> _pickVideo() async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Video'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.link_rounded, color: Color(0xFF3B82F6)), title: const Text('Paste Video URL'), subtitle: const Text('YouTube, Vimeo, or .mp4 link'), onTap: () => Navigator.pop(ctx, 'url')),
+          const Divider(),
+          ListTile(leading: const Icon(Icons.upload_file_rounded, color: Color(0xFF10B981)), title: const Text('Upload Video File'), subtitle: const Text('MP4, MOV (max 100MB)'), onTap: () => Navigator.pop(ctx, 'file')),
+        ]),
+      ),
+    );
+    if (choice == 'url') {
+      final c = TextEditingController(text: widget.form.videoUrl ?? '');
+      final r = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Paste Video URL'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('YouTube, Vimeo, or .mp4 link:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            TextField(controller: c, decoration: const InputDecoration(hintText: 'https://...', border: OutlineInputBorder()), autofocus: true),
+          ]),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')), ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('Save'))],
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_titleController.text.isNotEmpty) {
-              widget.onSave({
-                'title': _titleController.text,
-                'description': _descriptionController.text,
-                'lessons': _lessons,
-                'order': 0,
-              });
-              Navigator.pop(context);
-            }
-          },
-          child: const Text('Save Module'),
-        ),
-      ],
+      );
+      if (r != null && r.isNotEmpty) setState(() { widget.form.videoUrl = r; widget.onChanged(); });
+    } else if (choice == 'file') {
+      try {
+        final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false, withData: true);
+        if (result == null || result.files.isEmpty) return;
+        final file = result.files.first;
+        if (file.bytes == null || file.size > 100 * 1024 * 1024) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 100MB'), backgroundColor: Colors.red));
+          return;
+        }
+        setState(() => _uploadingVideo = true);
+        final fd = FormData.fromMap({'file': MultipartFile.fromBytes(file.bytes!, filename: file.name), 'upload_preset': _preset});
+        final res = await Dio().post('https://api.cloudinary.com/v1_1/$_cloud/auto/upload', data: fd);
+        if (res.statusCode == 200) {
+          setState(() { widget.form.videoUrl = res.data['secure_url'] as String; _uploadingVideo = false; });
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Video uploaded!'), backgroundColor: Colors.green));
+        }
+      } catch (e) {
+        setState(() => _uploadingVideo = false);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'],
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null || file.size > 50 * 1024 * 1024) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 50MB'), backgroundColor: Colors.red));
+        return;
+      }
+      setState(() => _uploadingDoc = true);
+      final fd = FormData.fromMap({'file': MultipartFile.fromBytes(file.bytes!, filename: file.name), 'upload_preset': _preset, 'resource_type': 'raw'});
+      final res = await Dio().post('https://api.cloudinary.com/v1_1/$_cloud/raw/upload', data: fd);
+      if (res.statusCode == 200) {
+        setState(() { widget.form.documentUrl = res.data['secure_url'] as String; widget.form.documentName = file.name; _uploadingDoc = false; });
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Document uploaded!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      setState(() => _uploadingDoc = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final f = widget.form;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withValues(alpha: 0.06),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+            ),
+            child: Row(children: [
+              CircleAvatar(radius: 13, backgroundColor: AppColors.primaryColor, child: Text('${widget.number}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))),
+              const SizedBox(width: 10),
+              const Text('Lesson', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryColor)),
+              const Spacer(),
+              if (widget.onRemove != null) GestureDetector(onTap: widget.onRemove, child: const Icon(Icons.close_rounded, size: 18, color: Colors.red)),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              TextField(controller: f.titleCtrl, decoration: const InputDecoration(labelText: 'Lesson Title *', border: OutlineInputBorder())),
+              const SizedBox(height: 12),
+              TextField(controller: f.contentCtrl, decoration: const InputDecoration(labelText: 'Notes / Description (optional)', border: OutlineInputBorder()), maxLines: 3),
+              const SizedBox(height: 12),
+              TextField(controller: f.durationCtrl, decoration: const InputDecoration(labelText: 'Duration (minutes)', border: OutlineInputBorder(), suffixText: 'min'), keyboardType: TextInputType.number),
+              const SizedBox(height: 14),
+              _uploadTile(icon: Icons.play_circle_outline_rounded, color: const Color(0xFF3B82F6), title: 'Video', subtitle: f.videoUrl ?? 'YouTube, Vimeo, or upload .mp4', has: f.videoUrl != null, loading: _uploadingVideo, onTap: _pickVideo, onClear: () => setState(() { f.videoUrl = null; })),
+              const SizedBox(height: 10),
+              _uploadTile(icon: Icons.description_outlined, color: const Color(0xFF10B981), title: 'Document', subtitle: f.documentName ?? (f.documentUrl != null ? 'Attached' : 'PDF, DOC, PPT, XLS (max 50MB)'), has: f.documentUrl != null, loading: _uploadingDoc, onTap: _pickDocument, onClear: () => setState(() { f.documentUrl = null; f.documentName = null; })),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 
-  void _addLesson() {
-    final titleController = TextEditingController();
-    final durationController = TextEditingController(text: '15');
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Lesson'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Lesson Title',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: durationController,
-              decoration: const InputDecoration(
-                labelText: 'Duration (minutes)',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+  Widget _uploadTile({required IconData icon, required Color color, required String title, required String subtitle, required bool has, required bool loading, required VoidCallback onTap, required VoidCallback onClear}) {
+    return GestureDetector(
+      onTap: loading ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: has ? color.withValues(alpha: 0.06) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: has ? color.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isNotEmpty) {
-                setState(() {
-                  _lessons.add({
-                    'title': titleController.text,
-                    'duration': int.tryParse(durationController.text) ?? 15,
-                    'order': _lessons.length,
-                  });
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+        child: Row(children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: has ? color : const Color(0xFF1E293B))),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+          ])),
+          if (loading) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+          else if (has) GestureDetector(onTap: onClear, child: const Icon(Icons.close_rounded, size: 16, color: Colors.red))
+          else Icon(Icons.add_circle_outline_rounded, color: color, size: 18),
+        ]),
       ),
     );
   }
