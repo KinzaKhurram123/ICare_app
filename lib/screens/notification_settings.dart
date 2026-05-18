@@ -51,10 +51,9 @@ class NotificationSettings extends ConsumerWidget {
         {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
       ];
     } else {
+      // Doctor — patient/customer-support messages removed per product spec
       settingsList = [
         {"id": "1", "title": "New Appointment Bookings", "onPress": () {}},
-        {"id": "2", "title": "Patient Messages", "onPress": () {}},
-        {"id": "3", "title": "Customer Support Messages", "onPress": () {}},
       ];
     }
     if (MediaQuery.of(context).size.width > 600) {
@@ -220,11 +219,8 @@ class _WebNotificationSettingsScreenState
         "Customer Support Messages": false,
       };
     } else {
-      settingsState = {
-        "New Appointment Bookings": true,
-        "Patient Messages": true,
-        "Customer Support Messages": false,
-      };
+      // Doctor — patient/customer-support messages removed per product spec
+      settingsState = { "New Appointment Bookings": true };
     }
   }
 
@@ -277,10 +273,6 @@ class _WebNotificationSettingsScreenState
       return {
         "New Appointment Bookings":
             "Get notified when a patient books a new appointment with you.",
-        "Patient Messages":
-            "Receive alerts when a patient sends you a message or follow-up.",
-        "Customer Support Messages":
-            "Receive instant alerts when the support team responds to your queries.",
       };
     }
   }
@@ -315,11 +307,7 @@ class _WebNotificationSettingsScreenState
         "Customer Support Messages": Icons.support_agent_rounded,
       };
     } else {
-      return {
-        "New Appointment Bookings": Icons.event_available_rounded,
-        "Patient Messages": Icons.chat_bubble_outline_rounded,
-        "Customer Support Messages": Icons.support_agent_rounded,
-      };
+      return { "New Appointment Bookings": Icons.event_available_rounded };
     }
   }
 

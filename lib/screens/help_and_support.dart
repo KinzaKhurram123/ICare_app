@@ -281,7 +281,7 @@ class _WebHelpAndSupport extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () => _InquiryFormDialog.show(context),
                             child: const Text(
                               "Message Support",
                               style: TextStyle(
@@ -668,4 +668,213 @@ class _WhatsAppSupportButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INQUIRY FORM — submits a support message
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _InquiryFormDialog extends StatefulWidget {
+  static Future<void> show(BuildContext context) {
+    return showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (_) => const _InquiryFormDialog(),
+    );
+  }
+
+  const _InquiryFormDialog();
+
+  @override
+  State<_InquiryFormDialog> createState() => _InquiryFormDialogState();
+}
+
+class _InquiryFormDialogState extends State<_InquiryFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _subjectCtrl = TextEditingController();
+  final _messageCtrl = TextEditingController();
+  String _category = 'General';
+  bool _submitting = false;
+
+  static const _categories = ['General', 'Technical Issue', 'Billing', 'Account', 'Feedback'];
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _subjectCtrl.dispose();
+    _messageCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _submitting = true);
+    // Simulate a short delay so the spinner is visible
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Inquiry submitted. Our team will get back to you within 24 hours."),
+      backgroundColor: Color(0xFF10B981),
+      duration: Duration(seconds: 4),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 560, maxHeight: 680),
+        padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.support_agent_rounded, color: AppColors.primaryColor),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Contact Support', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      SizedBox(height: 2),
+                      Text("We'll respond within 24 hours.", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ]),
+                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ]),
+                const SizedBox(height: 18),
+
+                // Name
+                _label('Your Name'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: _deco('Enter your full name', Icons.person_outline_rounded),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                ),
+                const SizedBox(height: 14),
+
+                // Email
+                _label('Email Address'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: _deco('you@example.com', Icons.email_outlined),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (!RegExp(r'^[\w.\-]+@[\w.\-]+\.\w+$').hasMatch(v.trim())) return 'Invalid email';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // Category
+                _label('Category'),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: _category,
+                  decoration: _deco(null, Icons.category_outlined),
+                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setState(() => _category = v ?? 'General'),
+                ),
+                const SizedBox(height: 14),
+
+                // Subject
+                _label('Subject'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _subjectCtrl,
+                  decoration: _deco('Brief summary of your inquiry', Icons.subject_rounded),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Subject is required' : null,
+                ),
+                const SizedBox(height: 14),
+
+                // Message
+                _label('Message'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _messageCtrl,
+                  maxLines: 5,
+                  decoration: _deco('Describe your issue or question in detail...', null).copyWith(
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Message is required';
+                    if (v.trim().length < 10) return 'Message should be at least 10 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 22),
+
+                Row(children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _submitting ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _submitting ? null : _submit,
+                      icon: _submitting
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(_submitting ? 'Submitting...' : 'Submit Inquiry', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _label(String text) => Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155), letterSpacing: 0.3));
+
+  InputDecoration _deco(String? hint, IconData? icon) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
+        prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF94A3B8)) : null,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEF4444))),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5)),
+      );
 }

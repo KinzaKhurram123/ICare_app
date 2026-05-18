@@ -8,6 +8,7 @@ import 'package:icare/screens/about_us.dart' show AboutUs;
 import 'package:icare/screens/change_password.dart' show ChangePassword;
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/courses.dart' show Courses;
+import 'package:icare/screens/create_profile.dart' show CreateProfile;
 import 'package:icare/screens/help_and_support.dart' show HelpAndSupport;
 import 'package:icare/screens/privacy_policy.dart' show PrivacyPolicy;
 import 'package:icare/screens/terms_and_conditions.dart' show TermsAndConditions;
@@ -1090,9 +1091,19 @@ class _ProfileEditCardState extends State<_ProfileEditCard> {
                     ),
                   ),
                   // Edit toggle button (only visible in view mode)
+                  // Doctors → open the full CreateProfile editor (same as top-right edit
+                  //          on the profile page). Others → inline edit mode.
                   if (!_editMode)
                     TextButton.icon(
-                      onPressed: () => setState(() => _editMode = true),
+                      onPressed: () {
+                        if (widget.p.isDoctor) {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => const CreateProfile(isEdit: true),
+                          ));
+                        } else {
+                          setState(() => _editMode = true);
+                        }
+                      },
                       icon: const Icon(Icons.edit_rounded, size: 15),
                       label: const Text('Edit', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       style: TextButton.styleFrom(
