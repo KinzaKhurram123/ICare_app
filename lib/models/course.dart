@@ -54,6 +54,9 @@ class Course {
       instructorId = instructor['_id'] ?? instructor['id'] ?? '';
       instructorName = instructor['name'];
       instructorEmail = instructor['email'];
+    } else if (json['instructor_id'] != null) {
+      // Backend stores as instructor_id
+      instructorId = json['instructor_id'].toString();
     } else {
       instructorId = '';
     }
@@ -79,19 +82,19 @@ class Course {
       difficulty: json['difficulty'] != null
           ? CourseDifficultyExtension.fromString(json['difficulty'])
           : null,
-      duration: json['duration'],
+      duration: _parseDuration(json['duration']),
       modules:
           (json['modules'] as List?)
               ?.map((m) => CourseModule.fromJson(m))
               .toList() ??
           [],
-      thumbnail: json['thumbnail'],
-      isPublished: json['isPublished'] ?? false,
+      thumbnail: json['thumbnail'] ?? json['thumbnail_url'],
+      isPublished: json['isPublished'] == true || json['visibility'] == 'public',
       publishedAt: json['publishedAt'] != null
           ? DateTime.parse(json['publishedAt'])
           : null,
       enrollmentCount: json['enrollmentCount'] ?? 0,
-      rating: CourseRating.fromJson(json['rating'] ?? {}),
+      rating: CourseRating.fromJson(json['rating']),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
@@ -99,6 +102,19 @@ class Course {
         json['updatedAt'] ?? DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  static int? _parseDuration(dynamic duration) {
+    if (duration == null) return null;
+    if (duration is int) return duration;
+    if (duration is String) {
+      // Handle strings like "15 minutes" or "2 hours"
+      final match = RegExp(r'(\d+)').firstMatch(duration);
+      if (match != null) {
+        return int.tryParse(match.group(1)!);
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -162,6 +178,7 @@ class Lesson {
   final String title;
   final String content;
   final String? videoUrl;
+  final String? documentUrl;
   final int? duration; // minutes
   final int order;
   final List<LessonResource> resources;
@@ -171,6 +188,7 @@ class Lesson {
     required this.title,
     required this.content,
     this.videoUrl,
+    this.documentUrl,
     this.duration,
     required this.order,
     this.resources = const [],
@@ -181,8 +199,9 @@ class Lesson {
       id: json['_id'],
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      videoUrl: json['videoUrl'],
-      duration: json['duration'],
+      videoUrl: json['videoUrl'] ?? json['video_url'],
+      documentUrl: json['documentUrl'] ?? json['document_url'],
+      duration: json['duration'] ?? json['duration_minutes'],
       order: json['order'] ?? 0,
       resources:
           (json['resources'] as List?)
@@ -197,6 +216,7 @@ class Lesson {
       'title': title,
       'content': content,
       if (videoUrl != null) 'videoUrl': videoUrl,
+      if (documentUrl != null) 'documentUrl': documentUrl,
       if (duration != null) 'duration': duration,
       'order': order,
       'resources': resources.map((r) => r.toJson()).toList(),
@@ -288,11 +308,15 @@ class CourseRating {
 
   CourseRating({this.average = 0.0, this.count = 0});
 
-  factory CourseRating.fromJson(Map<String, dynamic> json) {
-    return CourseRating(
-      average: (json['average'] ?? 0).toDouble(),
-      count: json['count'] ?? 0,
-    );
+  factory CourseRating.fromJson(dynamic json) {
+    if (json is num) return CourseRating(average: json.toDouble());
+    if (json is Map<String, dynamic>) {
+      return CourseRating(
+        average: (json['average'] ?? 0).toDouble(),
+        count: json['count'] ?? 0,
+      );
+    }
+    return CourseRating();
   }
 
   Map<String, dynamic> toJson() {
@@ -300,7 +324,7 @@ class CourseRating {
   }
 }
 
-enum CourseCategory { healthProgram, professionalCourse }
+enum CourseCategory { healthProgram, professionalCourse, fcpsPart1 }
 
 extension CourseCategoryExtension on CourseCategory {
   String get value {
@@ -309,6 +333,8 @@ extension CourseCategoryExtension on CourseCategory {
         return 'HealthProgram';
       case CourseCategory.professionalCourse:
         return 'ProfessionalCourse';
+      case CourseCategory.fcpsPart1:
+        return 'FCPSPart1';
     }
   }
 
@@ -318,6 +344,8 @@ extension CourseCategoryExtension on CourseCategory {
         return 'Health Program';
       case CourseCategory.professionalCourse:
         return 'Professional Course';
+      case CourseCategory.fcpsPart1:
+        return 'FCPS Part 1';
     }
   }
 
@@ -327,6 +355,8 @@ extension CourseCategoryExtension on CourseCategory {
         return CourseCategory.healthProgram;
       case 'ProfessionalCourse':
         return CourseCategory.professionalCourse;
+      case 'FCPSPart1':
+        return CourseCategory.fcpsPart1;
       default:
         return CourseCategory.healthProgram;
     }
@@ -369,9 +399,9 @@ extension TargetAudienceExtension on TargetAudience {
   String get displayName {
     switch (this) {
       case TargetAudience.patient:
-        return 'Patients';
+        return 'For Patients (Diet Plan & Health Courses)';
       case TargetAudience.doctor:
-        return 'Doctors';
+        return 'For Healthcare Professionals (Training Programs)';
       case TargetAudience.laboratory:
         return 'Laboratories';
       case TargetAudience.pharmacy:
@@ -381,9 +411,9 @@ extension TargetAudienceExtension on TargetAudience {
       case TargetAudience.instructor:
         return 'Instructors';
       case TargetAudience.both:
-        return 'Both';
+        return 'Both Patients & Professionals';
       case TargetAudience.all:
-        return 'All';
+        return 'All Users';
     }
   }
 

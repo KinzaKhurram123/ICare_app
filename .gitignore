@@ -48,3 +48,14 @@ app.*.map.json
 
 # Backend (separate repository)
 Icare_backend-main/
+
+# Python embed files
+python-embed/
+python-embed.zip
+get-pip.py
+build.bat
+
+.vercel
+.env*.local
+
+.vercel

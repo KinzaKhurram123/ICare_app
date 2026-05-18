@@ -19,6 +19,8 @@ class SharedPref {
           'token',
           'userRole',
           'walkthrough',
+          'biometricEnabled',
+          'biometricEmail',
         },
       ),
     );
@@ -51,7 +53,8 @@ class SharedPref {
   /// Get authentication token
   Future<String?> getToken() async {
     final SharedPreferencesWithCache pref = await _prefs;
-    return pref.getString('token');
+    final token = pref.getString('token');
+    return token?.trim();
   }
 
   Future<void> setUserWalkthrough(bool value) async {
@@ -90,5 +93,29 @@ class SharedPref {
   Future<bool> isLoggedIn() async {
     final SharedPreferencesWithCache pref = await _prefs;
     return pref.containsKey('token');
+  }
+
+  // ── Biometric helpers ──────────────────────────────────────────────────
+
+  /// Whether the user has enabled biometric sign-in on this device
+  Future<void> setBiometricEnabled(bool value) async {
+    final pref = await _prefs;
+    await pref.setBool('biometricEnabled', value);
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    final pref = await _prefs;
+    return pref.getBool('biometricEnabled') ?? false;
+  }
+
+  /// Store the email used for biometric login (so we know which account to restore)
+  Future<void> setBiometricEmail(String email) async {
+    final pref = await _prefs;
+    await pref.setString('biometricEmail', email);
+  }
+
+  Future<String?> getBiometricEmail() async {
+    final pref = await _prefs;
+    return pref.getString('biometricEmail');
   }
 }

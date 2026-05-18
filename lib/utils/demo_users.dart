@@ -80,7 +80,7 @@ class DemoUsers {
       'email': 'hassan.doctor@icare.demo',
       'phone': '+923001234601',
       'role': 'Doctor',
-      'specialty': 'General Physician',
+      'specialty': 'General Practitioner',
     },
     {
       'name': 'Dr. Sana Tariq',

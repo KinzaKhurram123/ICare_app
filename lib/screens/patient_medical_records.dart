@@ -165,11 +165,12 @@ class _PatientMedicalRecordsState extends ConsumerState<PatientMedicalRecords> {
                               if (!_isLoading && _searchQuery.isEmpty) ...[
                                 const SizedBox(height: 8),
                                 const Text(
-                                  'Check console logs for details',
+                                  'Your doctor\'s records will appear here after a consultation',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF94A3B8),
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ],

@@ -226,13 +226,39 @@ class _PrescriptionTemplatesScreenState
             ),
             ElevatedButton(
               onPressed: () async {
-                if (nameController.text.isNotEmpty && currentDrugs.isNotEmpty) {
-                  await _efficiencyService.createPrescriptionTemplate({
-                    'name': nameController.text,
-                    'drugs': currentDrugs,
-                  });
+                if (nameController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a template name')),
+                  );
+                  return;
+                }
+                if (currentDrugs.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please add at least one drug')),
+                  );
+                  return;
+                }
+                final result = await _efficiencyService.createPrescriptionTemplate({
+                  'name': nameController.text,
+                  'drugs': currentDrugs,
+                });
+                if (!context.mounted) return;
+                if (result['success'] == true) {
                   Navigator.pop(context);
                   _fetchTemplates();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Template saved successfully'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to save: ${result['message'] ?? 'Unknown error'}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               },
               child: const Text('Save Template'),

@@ -1,8 +1,12 @@
+import 'dart:convert' show base64Encode;
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/widgets/icare_app_bar.dart';
 import 'package:icare/widgets/custom_button.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +23,7 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   final CourseService _courseService = CourseService();
   final List<String> _categories = [
     'All',
+    'General',
     'Diabetes',
     'Heart Health',
     'Mental Wellness',
@@ -29,6 +34,8 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
   String _selectedCategory = 'All';
   List<dynamic> _posts = [];
   bool _isLoading = true;
+  // Track which posts have comments section expanded — survives reloads
+  final Set<String> _expandedPostIds = {};
 
   @override
   void initState() {
@@ -59,16 +66,29 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         leading: const CustomBackButton(),
-        title: const Text(
-          'Health Community',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset('assets/images/icare-Logo.svg', height: 24),
+            const SizedBox(width: 8),
+            const Text(
+              'Health Community',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                fontFamily: 'Gilroy-Bold',
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
       body: Column(
@@ -293,6 +313,48 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 color: Color(0xFF334155),
               ),
             ),
+            // Display post image if available — tap to open full-screen preview
+            if (post['imageUrl'] != null && post['imageUrl'].toString().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => _showImagePreview(post['imageUrl'].toString()),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    color: const Color(0xFFF1F5F9),
+                    constraints: const BoxConstraints(
+                      minHeight: 200,
+                      maxHeight: 420,
+                    ),
+                    width: double.infinity,
+                    child: Image.network(
+                      post['imageUrl'].toString(),
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const SizedBox(
+                          height: 240,
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        );
+                      },
+                      errorBuilder: (_, error, __) {
+                        debugPrint('Image load failed: $error — url: ${post['imageUrl']}');
+                        return Container(
+                          height: 100,
+                          color: const Color(0xFFFEE2E2),
+                          child: const Center(
+                            child: Text(
+                              'Image failed to load',
+                              style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
             const SizedBox(height: 16),
@@ -300,7 +362,8 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
               children: [
                 _buildInteractionButton(
                   Icons.favorite_rounded,
-                  (post['likes'] ?? 0).toString(),
+                  // Backend returns 'likeCount', also fallback to array length or 'likes'
+                  ((post['likeCount'] ?? (post['likes'] is List ? (post['likes'] as List).length : post['likes'])) ?? 0).toString(),
                   const Color(0xFFEF4444),
                   () async {
                     await _courseService.likeForumPost(postId);
@@ -310,18 +373,23 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                 const SizedBox(width: 24),
                 _buildInteractionButton(
                   Icons.chat_bubble_rounded,
-                  (post['replies'] ?? 0).toString(),
+                  // Backend returns 'commentCount', also fallback to 'replies' or array length
+                  ((post['commentCount'] ?? (post['comments'] is List ? (post['comments'] as List).length : post['replies'])) ?? 0).toString(),
                   AppColors.primaryColor,
                   () {
                     setState(() {
-                      post['_showComments'] = !(post['_showComments'] ?? false);
+                      if (_expandedPostIds.contains(postId)) {
+                        _expandedPostIds.remove(postId);
+                      } else {
+                        _expandedPostIds.add(postId);
+                      }
                     });
                   },
                 ),
                 const Spacer(),
               ],
             ),
-            if (post['_showComments'] == true) ...[
+            if (_expandedPostIds.contains(postId)) ...[
               const Divider(height: 32, color: Color(0xFFEDF2F7)),
               _buildInlineCommentInput(postId),
               const SizedBox(height: 16),
@@ -375,18 +443,20 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                     size: 20,
                   ),
                   onPressed: () async {
-                    if (controller.text.trim().isEmpty) return;
+                    final text = controller.text.trim();
+                    if (text.isEmpty) return;
+                    controller.clear();
                     try {
-                      await _courseService.addForumComment(
-                        postId,
-                        controller.text,
-                      );
-                      _loadPosts(); // Refresh for latest comments
+                      await _courseService.addForumComment(postId, text);
+                      // Ensure this post stays expanded after the reload
+                      _expandedPostIds.add(postId);
+                      await _loadPosts();
                     } catch (e) {
-                      if (mounted)
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Something went wrong. Please try again.')),
+                        );
+                      }
                     }
                   },
                 ),
@@ -496,35 +566,6 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () {},
-                              child: const Text(
-                                'Like',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            InkWell(
-                              onTap: () {},
-                              child: const Text(
-                                'Reply',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -550,6 +591,62 @@ class _HealthCommunityScreenState extends State<HealthCommunityScreen> {
           fontSize: 10,
           fontWeight: FontWeight.w900,
           color: Color(0xFF64748B),
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreview(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            // Tap outside image to dismiss
+            GestureDetector(
+              onTap: () => Navigator.of(ctx).pop(),
+              child: Container(color: Colors.transparent),
+            ),
+            // Zoomable image
+            Center(
+              child: InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text(
+                      'Image failed to load',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Close button (top-right)
+            Positioned(
+              top: 40,
+              right: 16,
+              child: Material(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -628,7 +725,13 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // Compress aggressively — large images cause Vercel/Cloudinary upload failures
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    );
     setState(() => _imageFile = image);
   }
 
@@ -705,7 +808,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                               'Nutrition',
                               'Pregnancy',
                               'COVID-19',
-                            ]
+                            ] // General first, then alphabetical health topics
                             .map(
                               (String val) => DropdownMenuItem(
                                 value: val,
@@ -790,14 +893,36 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     if (_contentController.text.trim().isEmpty) return;
     setState(() => _isPosting = true);
     try {
-      await _courseService.createForumPost({
+      final data = <String, dynamic>{
         'content': _contentController.text,
         'category': _selectedCategory,
-        // In a real app, you'd upload the image to a storage bucket first
-        'image': _imageFile?.path,
-      });
+      };
+
+      // If an image is selected, convert to base64 before sending
+      if (_imageFile != null) {
+        try {
+          final bytes = await _imageFile!.readAsBytes();
+          final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+          data['image'] = base64Image;
+        } catch (e) {
+          debugPrint('Error converting image to base64: $e');
+        }
+      }
+
+      final result = await _courseService.createForumPost(data);
       widget.onPostSuccess();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+        final hadImage = _imageFile != null;
+        final imageUrl = result['post']?['imageUrl']?.toString();
+        final imageFailed = hadImage && (imageUrl == null || imageUrl.isEmpty);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(imageFailed
+              ? 'Post created — but image upload failed. Try a smaller image.'
+              : 'Posted successfully!'),
+          backgroundColor: imageFailed ? Colors.orange : Colors.green,
+        ));
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isPosting = false);

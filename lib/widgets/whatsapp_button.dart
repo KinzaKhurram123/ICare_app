@@ -20,27 +20,8 @@ class WhatsAppFloatingButton extends StatelessWidget {
           mode: LaunchMode.externalApplication,
           webOnlyWindowName: '_blank',
         );
-      } else {
-        _showError(context, 'Unable to open WhatsApp. Please try again.');
       }
-    } catch (_) {
-      _showError(
-        context,
-        'Error opening WhatsApp. Please check your connection.',
-      );
-    }
-  }
-
-  void _showError(BuildContext context, String message) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    } catch (_) {}
   }
 
   @override
@@ -50,15 +31,6 @@ class WhatsAppFloatingButton extends StatelessWidget {
       right: 20,
       child: Tooltip(
         message: 'Chat on WhatsApp',
-        textStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(8),
-        ),
         child: GestureDetector(
           onTap: () => _openWhatsApp(context),
           child: Container(

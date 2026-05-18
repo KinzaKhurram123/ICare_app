@@ -27,7 +27,8 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
   double get _totalPrice {
     double total = 0;
     for (var test in widget.selectedTests) {
-      total += (test.price as num).toDouble();
+      final price = (test.price as num).toDouble();
+      total += price > 0 ? price : 3000;
     }
     return total;
   }
@@ -36,15 +37,20 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
     setState(() => _isLoading = true);
     try {
       final labId = widget.bookingData['labId'];
+      final testNames = widget.selectedTests.map((e) => e.name).join(', ');
       final bookingDetails = {
-        'testName': widget.selectedTests.map((e) => e.name).join(', '),
+        'testType': testNames,
+        'test_type': testNames,
+        'testName': testNames,
         'date': widget.bookingData['date'],
+        'testDate': widget.bookingData['date'],
         'time': widget.bookingData['time'],
         'contactLocation': widget.bookingData['address'],
         'city': widget.bookingData['city'],
         'homeSample': widget.bookingData['homeSample'],
+        'collection_type': widget.bookingData['homeSample'] == true ? 'home' : 'walk-in',
         'totalAmount': _totalPrice,
-        'contactName': 'Patient User', // Ideally from profile
+        'contactName': 'Patient User',
         'contactPhone': '0000000000',
         'age': 25,
       };
@@ -180,7 +186,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
               _buildSectionHeader('Selected Tests'),
               _buildDetailCard(
                 widget.selectedTests
-                    .map((t) => _buildTestLine(t.name, '\$${t.price}'))
+                    .map((t) => _buildTestLine(t.name, 'PKR ${(t.price as num) > 0 ? t.price : 3000}'))
                     .toList(),
               ),
               const SizedBox(height: 24),
@@ -198,7 +204,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                       ),
                     ),
                     Text(
-                      '\$$_totalPrice',
+                      'PKR $_totalPrice',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,

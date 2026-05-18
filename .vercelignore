@@ -1,0 +1,20 @@
+# Flutter build output — built on Vercel servers, don't upload locally built artifacts
+build/
+.dart_tool/
+
+# Android/iOS/desktop platform builds — web only on Vercel
+android/
+ios/
+macos/
+windows/
+linux/
+
+# Large development assets
+.pub-cache/
+
+# Git
+.git/
+
+# Misc
+*.log
+.DS_Store

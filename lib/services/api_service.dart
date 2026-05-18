@@ -11,8 +11,8 @@ class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
       headers: {'Content-Type': 'application/json'},
     ),
   );
@@ -33,6 +33,7 @@ class ApiService {
     }
 
     if (token != null) {
+      token = token.trim();
       _dio.options.headers['Authorization'] = 'Bearer $token';
       debugPrint("✅ ApiService: Authorization header set");
     } else {
@@ -70,6 +71,15 @@ class ApiService {
   Future<Response> delete(String endpoint, {String? token}) async {
     await _setAuthToken(providedToken: token);
     return await _dio.delete(endpoint);
+  }
+
+  /// Force-set the Authorization header immediately (without reading SharedPref).
+  /// Call this right after a successful login/signup to ensure the next
+  /// API requests are authenticated without a SharedPref read delay.
+  void forceSetToken(String token) {
+    final trimmed = token.trim();
+    _dio.options.headers['Authorization'] = 'Bearer $trimmed';
+    debugPrint('✅ ApiService: Token force-set directly on Dio headers');
   }
 
   // Support for file uploads

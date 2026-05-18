@@ -139,4 +139,32 @@ class AppointmentService {
       return {'success': false, 'message': 'An unexpected error occurred'};
     }
   }
+
+  Future<void> rateAppointment({
+    required String appointmentId,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      await _apiService.post('/appointments/$appointmentId/rate', {
+        'rating': rating,
+        'comment': comment,
+      });
+    } catch (e) {
+      debugPrint('❌ Rate appointment error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getDoctorProfile(String doctorId) async {
+    try {
+      final response = await _apiService.get('/doctors/$doctorId');
+      final data = response.data as Map<String, dynamic>;
+      if (data['success'] == true) return data['doctor'] as Map<String, dynamic>?;
+      return null;
+    } catch (e) {
+      debugPrint('❌ Get doctor profile error: $e');
+      return null;
+    }
+  }
 }

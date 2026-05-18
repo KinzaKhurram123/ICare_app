@@ -3,8 +3,10 @@ import '../services/laboratory_service.dart';
 import 'package:intl/intl.dart';
 import 'package:icare/screens/lab_bookings_management.dart';
 import 'package:icare/screens/lab_tests_management.dart';
+import 'package:icare/screens/lab_reports_screen.dart';
 import 'package:icare/screens/lab_analytics.dart';
 import 'package:icare/screens/settings.dart';
+import 'package:icare/screens/lab_settings_screen.dart';
 import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/tasks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -55,7 +57,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
   }
 
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 45), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted && !_isLoading) {
         _checkForNewBookings();
       }
@@ -70,9 +72,15 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
 
       if (currentCount > _lastKnownBookingCount && _lastKnownBookingCount > 0) {
         _showNewBookingNotification();
-        _loadData(); // Full refresh to update UI
       }
       _lastKnownBookingCount = currentCount;
+
+      // Always update stats so completed/pending counts stay live
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
+      }
     } catch (e) {
       debugPrint('Error auto-refreshing: $e');
     }
@@ -146,15 +154,23 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
     });
 
     try {
+      debugPrint('🔍 LAB DASHBOARD - Loading profile...');
       final profile = await _labService.getProfile();
+      debugPrint('🔍 LAB DASHBOARD - Profile loaded: ${profile['labName'] ?? profile['lab_name']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile _id: ${profile['_id']}');
+      debugPrint('🔍 LAB DASHBOARD - Profile keys: ${profile.keys.toList()}');
+      
+      debugPrint('🔍 LAB DASHBOARD - Fetching dashboard stats for labId: ${profile['_id']}');
       final stats = await _labService.getDashboardStats(profile['_id']);
+      debugPrint('✅ LAB DASHBOARD - Stats loaded: $stats');
 
-      // Load low stock alerts
+      // Load low stock alerts (optional feature, don't fail if endpoint missing)
       try {
         final lowStockData = await LabSupplyService.getLowStockAlerts();
         _lowStockCount = lowStockData['count'] ?? 0;
       } catch (e) {
-        debugPrint('Error loading low stock alerts: $e');
+        // Endpoint may not exist yet - gracefully ignore
+        debugPrint('Low stock alerts not available: $e');
         _lowStockCount = 0;
       }
 
@@ -166,6 +182,7 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
       });
       _animationController?.forward();
     } catch (e) {
+      debugPrint('❌ LAB DASHBOARD - Error loading data: $e');
       setState(() {
         _error = ErrorHandler.getFriendlyMessage(e);
         _isLoading = false;
@@ -245,6 +262,8 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                               const SizedBox(height: 24),
                             ],
                             _buildStatsGrid(isMobile),
+                            const SizedBox(height: 16),
+                            _buildLabRevenueCard(),
                             const SizedBox(height: 32),
                             _buildQuickActions(isMobile),
                             const SizedBox(height: 32),
@@ -262,6 +281,8 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                             const SizedBox(height: 24),
                           ],
                           _buildStatsGrid(isMobile),
+                          const SizedBox(height: 16),
+                          _buildLabRevenueCard(),
                           const SizedBox(height: 32),
                           _buildQuickActions(isMobile),
                           const SizedBox(height: 32),
@@ -365,11 +386,14 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
+                      ),
+                    );
+                    _loadData();
+                  },
                   icon: const Icon(
                     Icons.notifications_none_rounded,
                     color: Colors.white,
@@ -467,10 +491,74 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
     );
   }
 
+  Widget _buildLabRevenueCard() {
+    final revenue = (_stats?['revenue'] as num?)?.toInt() ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0B2D6E), Color(0xFF1565C0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B2D6E).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.payments_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rs. $revenue',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Total Revenue',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatsGrid(bool isMobile) {
     final stats = [
       {
-        'title': 'Total Requests',
+        'title': 'Today',
+        'value': _stats?['todayBookings']?.toString() ?? '0',
+        'icon': Icons.today_rounded,
+        'trend': 'New',
+      },
+      {
+        'title': 'Total',
         'value': _stats?['totalBookings']?.toString() ?? '0',
         'icon': Icons.calendar_month_rounded,
         'trend': '+12%',
@@ -486,12 +574,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
         'value': _stats?['completedBookings']?.toString() ?? '0',
         'icon': Icons.task_alt_rounded,
         'trend': '+8%',
-      },
-      {
-        'title': 'Today',
-        'value': _stats?['todayBookings']?.toString() ?? '0',
-        'icon': Icons.today_rounded,
-        'trend': 'New',
       },
     ];
 
@@ -651,50 +733,50 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
               runSpacing: 16,
               children: [
                 _buildActionButton(
-                  'Diagnostic Queue',
-                  Icons.assignment_ind_rounded,
+                  'New Requests',
+                  Icons.pending_actions_rounded,
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(
+                          title: 'New Requests',
+                          initialFilter: 'pending',
+                        ),
+                      ),
+                    );
+                    _loadData();
+                  },
+                  isMobile,
+                ),
+                _buildActionButton(
+                  'Records',
+                  Icons.folder_copy_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Diagnostic Queue',
-                        initialFilter: 'pending',
-                      ),
+                      builder: (ctx) => const LabReportsScreen(),
                     ),
                   ),
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Result Entry',
-                  Icons.biotech_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Result Entry',
-                        initialFilter: 'confirmed',
+                  'Orders',
+                  Icons.list_alt_rounded,
+                  () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) => const LabBookingsManagement(),
                       ),
-                    ),
-                  ),
+                    );
+                    _loadData();
+                  },
                   isMobile,
                 ),
                 _buildActionButton(
-                  'Clinical Archive',
-                  Icons.history_rounded,
+                  'Test Catalog',
+                  Icons.science_rounded,
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (ctx) => const LabBookingsManagement(
-                        title: 'Clinical Archive',
-                        initialFilter: 'completed',
-                      ),
-                    ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Supplies',
-                  Icons.inventory_2_outlined,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => const LabSuppliesManagement(),
+                      builder: (ctx) => const LabTestsManagement(),
                     ),
                   ),
                   isMobile,
@@ -714,22 +796,6 @@ class _LaboratoryDashboardState extends State<LaboratoryDashboard>
                     MaterialPageRoute(
                       builder: (ctx) => const PaymentInvoices(),
                     ),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Tasks',
-                  Icons.task_alt_rounded,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const TaskScreen()),
-                  ),
-                  isMobile,
-                ),
-                _buildActionButton(
-                  'Settings',
-                  Icons.settings_outlined,
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
                   ),
                   isMobile,
                 ),

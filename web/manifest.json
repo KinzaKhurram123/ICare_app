@@ -1,11 +1,11 @@
 {
-    "name": "icare",
-    "short_name": "icare",
+    "name": "iCare",
+    "short_name": "iCare",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "iCare - Your Virtual Healthcare Platform",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

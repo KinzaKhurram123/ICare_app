@@ -13,13 +13,13 @@ class LabAppointments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Lab> lab_appointments = [
+    final List<Lab> lab_orders = [
       Lab(
         id: "1",
         title: "Green Lab",
         // rating: "4.9",
         delivery: "Home Sample",
-        appointmentFee: "20",
+        testFee: "20",
         address: "20 Cooper Square, USA",
         photo: ImagePaths.lab1,
         tests: ["Blood Sugar test"],
@@ -29,16 +29,16 @@ class LabAppointments extends StatelessWidget {
       appBar: AppBar(
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
-        title: CustomText(text: "Lab Appointment"),
+        title: CustomText(text: "Lab Test Orders"),
       ),
 
       body: ListView.builder(
-        itemCount: lab_appointments.length,
+        itemCount: lab_orders.length,
         padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(15)),
 
         itemBuilder: (ctx, i) {
           return (LabWidget(
-            lab: lab_appointments[i],
+            lab: lab_orders[i],
             actionText: "Pay Now",
             onActionBtnPressed: () {
               Navigator.of(context).push(

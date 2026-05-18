@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:icare/services/laboratory_service.dart';
+import 'package:icare/services/medical_record_service.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -20,14 +22,19 @@ class LabReportsScreen extends StatefulWidget {
 class _LabReportsScreenState extends State<LabReportsScreen>
     with SingleTickerProviderStateMixin {
   final LaboratoryService _labService = LaboratoryService();
+  final MedicalRecordService _medService = MedicalRecordService();
   bool _isLoading = true;
   List<dynamic> _completedBookings = [];
+  List<dynamic> _advisedPrescriptions = []; // prescriptions with lab tests
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _searchFilter = 'patient'; // patient, mr_number, doctor, contact
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _fetchReports();
   }
 
@@ -40,13 +47,12 @@ class _LabReportsScreenState extends State<LabReportsScreen>
   Future<void> _fetchReports() async {
     setState(() => _isLoading = true);
     try {
-      // Read role via the correct SharedPref utility (key = 'userRole')
       final role = (await SharedPref().getUserRole())?.toLowerCase();
+      final userData = await SharedPref().getUserData();
+      final patientId = userData?.id ?? '';
 
       List<dynamic> bookings = [];
 
-      // Patients and students see their own bookings.
-      // Lab/lab_technician roles see their lab's bookings.
       if (role == 'patient' || role == 'student') {
         bookings = await _labService.getMyBookings();
       } else if (role == 'laboratory' || role == 'lab_technician') {
@@ -55,12 +61,28 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         if (labId == null) throw 'Laboratory profile ID not found';
         bookings = await _labService.getBookings(labId);
       } else {
-        // Fallback for other roles — try personal bookings
         bookings = await _labService.getMyBookings();
+      }
+
+      // For patients/students: also fetch prescriptions with lab tests
+      List<dynamic> advised = [];
+      if ((role == 'patient' || role == 'student') && patientId.isNotEmpty) {
+        try {
+          final medResult = await _medService.getMyRecords();
+          if (medResult['success'] == true) {
+            final records = medResult['records'] as List<dynamic>;
+            advised = records.where((r) {
+              final labTests = (r['labTests'] as List?) ??
+                  (r['prescription'] is Map ? (r['prescription']['labTests'] as List?) : null) ?? [];
+              return labTests.isNotEmpty;
+            }).toList();
+          }
+        } catch (_) {}
       }
 
       setState(() {
         _completedBookings = List<dynamic>.from(bookings);
+        _advisedPrescriptions = advised;
         _isLoading = false;
       });
     } catch (e) {
@@ -69,15 +91,39 @@ class _LabReportsScreenState extends State<LabReportsScreen>
     }
   }
 
+  List<dynamic> _filterBookings(List<dynamic> bookings) {
+    if (_searchQuery.isEmpty) return bookings;
+
+    return bookings.where((booking) {
+      final query = _searchQuery.toLowerCase();
+      switch (_searchFilter) {
+        case 'patient':
+          final patientName = (booking['patient']?['name'] ?? booking['patientName'] ?? '').toString().toLowerCase();
+          return patientName.contains(query);
+        case 'mr_number':
+          final mrNumber = (booking['patient']?['mrNumber'] ?? booking['mrNumber'] ?? '').toString().toLowerCase();
+          return mrNumber.contains(query);
+        case 'doctor':
+          final doctorName = (booking['referredBy'] ?? booking['referred_by'] ?? '').toString().toLowerCase();
+          return doctorName.contains(query);
+        case 'contact':
+          final contact = (booking['patient']?['contact'] ?? booking['contact'] ?? '').toString().toLowerCase();
+          return contact.contains(query);
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 700;
-    final completed = _completedBookings
+    final completed = _filterBookings(_completedBookings
         .where((b) => b['status'] == 'completed')
-        .toList();
-    final pending = _completedBookings
+        .toList());
+    final pending = _filterBookings(_completedBookings
         .where((b) => b['status'] != 'completed' && b['status'] != 'cancelled')
-        .toList();
+        .toList());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -87,7 +133,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
         leading: const CustomBackButton(),
         automaticallyImplyLeading: false,
         title: const Text(
-          'Lab Reports',
+          'Records',
           style: TextStyle(
             fontSize: 18,
             fontFamily: 'Gilroy-Bold',
@@ -126,6 +172,7 @@ class _LabReportsScreenState extends State<LabReportsScreen>
                   tabs: [
                     Tab(text: 'COMPLETED (${completed.length})'),
                     Tab(text: 'PENDING (${pending.length})'),
+                    Tab(text: 'ADVISED (${_advisedPrescriptions.length})'),
                   ],
                 ),
               ),
@@ -135,28 +182,313 @@ class _LabReportsScreenState extends State<LabReportsScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
-          : Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 900 : double.infinity,
-                ),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildReportList(
-                      completed,
-                      showResults: true,
-                      isDesktop: isDesktop,
+          : Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 900 : double.infinity,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (value) {
+                                setState(() => _searchQuery = value);
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Search records...',
+                                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear_rounded, size: 20),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => _searchQuery = '');
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: primaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: DropdownButton<String>(
+                              value: _searchFilter,
+                              underline: const SizedBox(),
+                              icon: const Icon(Icons.arrow_drop_down_rounded, color: primaryColor),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'patient', child: Text('Patient Name')),
+                                DropdownMenuItem(value: 'mr_number', child: Text('MR Number')),
+                                DropdownMenuItem(value: 'doctor', child: Text('Doctor Name')),
+                                DropdownMenuItem(value: 'contact', child: Text('Contact Number')),
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _searchFilter = value);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _buildReportList(
-                      pending,
-                      showResults: false,
-                      isDesktop: isDesktop,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 900 : double.infinity,
+                      ),
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildReportList(
+                            completed,
+                            showResults: true,
+                            isDesktop: isDesktop,
+                          ),
+                          _buildReportList(
+                            pending,
+                            showResults: false,
+                            isDesktop: isDesktop,
+                          ),
+                          _buildAdvisedList(isDesktop: isDesktop),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+    );
+  }
+
+  Widget _buildAdvisedList({required bool isDesktop}) {
+    if (_advisedPrescriptions.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.biotech_outlined, size: 56, color: Color(0xFF94A3B8)),
+              SizedBox(height: 16),
+              Text('No advised lab tests',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+              SizedBox(height: 8),
+              Text('Tests your doctor has advised will appear here',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _advisedPrescriptions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        final rx = _advisedPrescriptions[i] as Map<String, dynamic>;
+        final doctorName = (rx['doctor']?['name'] ?? rx['doctorName'] ?? 'Doctor').toString();
+        final dateStr = rx['createdAt'] != null
+            ? DateFormat('MMM dd, yyyy').format(DateTime.parse(rx['createdAt'].toString()).toLocal())
+            : '';
+        final labTests = (rx['labTests'] as List?) ??
+            (rx['prescription'] is Map ? (rx['prescription']['labTests'] as List?) : null) ?? [];
+        final diagnosis = (rx['diagnosis'] ?? rx['diagnoses']?[0]?['diagnosis'] ?? '').toString();
+
+        return GestureDetector(
+          onTap: () => _showAdvisedTestsDialog(context, doctorName, dateStr, labTests, diagnosis),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFDDD6FE), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.person_outline_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(doctorName,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                        if (dateStr.isNotEmpty)
+                          Text(dateStr,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('${labTests.length} test${labTests.length == 1 ? '' : 's'}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6))),
+                  ),
+                ]),
+                if (diagnosis.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('Diagnosis: $diagnosis',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontStyle: FontStyle.italic)),
+                ],
+                const SizedBox(height: 10),
+                ...labTests.take(3).map((t) {
+                  final testName = t is Map
+                      ? (t['testName'] ?? t['name'] ?? '').toString()
+                      : t.toString();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(children: [
+                      const Icon(Icons.biotech_rounded, size: 14, color: Color(0xFF8B5CF6)),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(testName, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)))),
+                    ]),
+                  );
+                }),
+                if (labTests.length > 3)
+                  Text('+${labTests.length - 3} more — tap to view all',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAdvisedTestsDialog(BuildContext context, String doctorName, String date,
+      List labTests, String diagnosis) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Advised Lab Tests', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      Text('$doctorName • $date', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(ctx),
+                  child: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
+                ),
+              ]),
+              if (diagnosis.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(8)),
+                  child: Text('Diagnosis: $diagnosis',
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF065F46))),
+                ),
+              ],
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              ...labTests.map((t) {
+                final testName = t is Map
+                    ? (t['testName'] ?? t['name'] ?? '').toString()
+                    : t.toString();
+                final instructions = t is Map ? (t['instructions'] ?? '').toString() : '';
+                final isUrgent = t is Map ? (t['isUrgent'] == true) : false;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.biotech_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(testName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                          if (instructions.isNotEmpty)
+                            Text(instructions, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                    if (isUrgent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('URGENT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFEF4444))),
+                      ),
+                  ]),
+                );
+              }).toList(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

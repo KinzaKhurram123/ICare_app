@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/doctor.dart';
+import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/book_appointment.dart';
-import 'package:icare/screens/chat_screen.dart';
+import 'package:icare/screens/login.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_text.dart';
 
-class DoctorDetailScreen extends StatelessWidget {
+class DoctorDetailScreen extends ConsumerWidget {
   const DoctorDetailScreen({super.key, required this.doctor});
 
   final Doctor doctor;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bool isDesktop = Utils.windowWidth(context) > 600;
     final averageRating = doctor.averageRating;
+    final selectedRole = ref.watch(authProvider).userRole;
 
     // Mobile view with standard AppBar
     if (!isDesktop) {
@@ -125,7 +128,9 @@ class DoctorDetailScreen extends StatelessWidget {
                   child: _buildStatCard(
                     icon: Icons.work_history_rounded,
                     label: 'Experience',
-                    value: doctor.experience ?? 'N/A',
+                    value: (doctor.experience != null && doctor.experience!.isNotEmpty && doctor.experience != '0')
+                        ? doctor.experience!
+                        : 'Not set',
                     color: const Color(0xFF3B82F6),
                   ),
                 ),
@@ -136,7 +141,7 @@ class DoctorDetailScreen extends StatelessWidget {
                     label: 'Rating',
                     value: averageRating > 0
                         ? averageRating.toStringAsFixed(1)
-                        : 'N/A',
+                        : 'New',
                     color: const Color(0xFFF59E0B),
                   ),
                 ),
@@ -149,30 +154,43 @@ class DoctorDetailScreen extends StatelessWidget {
                     color: const Color(0xFF10B981),
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.payments_rounded,
+                    label: 'Fee',
+                    value: (doctor.consultationFee != null && doctor.consultationFee! > 0)
+                        ? 'Rs. ${doctor.consultationFee!.toInt()}'
+                        : 'Free',
+                    color: const Color(0xFF8B5CF6),
+                  ),
+                ),
               ],
             ),
 
             const SizedBox(height: 16),
 
-            // Contact Information
-            _buildInfoCard(
-              title: 'Contact Information',
-              icon: Icons.contact_phone_rounded,
-              iconColor: const Color(0xFF3B82F6),
-              children: [
-                _buildInfoItem(
-                  icon: Icons.email_rounded,
-                  label: 'Email',
-                  value: doctor.user.email,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoItem(
-                  icon: Icons.phone_rounded,
-                  label: 'Phone',
-                  value: doctor.user.phoneNumber,
-                ),
-              ],
-            ),
+            // Contact Information (Doctor-only view)
+            if (selectedRole == 'Doctor') ...[
+              _buildInfoCard(
+                title: 'Contact Information',
+                icon: Icons.contact_phone_rounded,
+                iconColor: const Color(0xFF3B82F6),
+                children: [
+                  _buildInfoItem(
+                    icon: Icons.email_rounded,
+                    label: 'Email',
+                    value: doctor.user.email,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoItem(
+                    icon: Icons.phone_rounded,
+                    label: 'Phone',
+                    value: doctor.user.phoneNumber,
+                  ),
+                ],
+              ),
+            ],
 
             // Qualifications
             if (doctor.degrees.isNotEmpty ||
@@ -313,55 +331,50 @@ class DoctorDetailScreen extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Chat Button
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryColor, width: 2),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.primaryColor,
-                    ),
-                    onPressed: () {
-                      if (doctor.user.id.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Unable to start chat: Doctor ID is missing',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      debugPrint('🚀 Opening chat with doctor:');
-                      debugPrint('   ID: ${doctor.user.id}');
-                      debugPrint('   Name: ${doctor.user.name}');
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            userId: doctor.user.id,
-                            userName: doctor.user.name,
-                            userImage: doctor.user.profilePicture,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
                 // Book Appointment Button
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
+                      final isLoggedIn = ref.read(authProvider).isLoggedIn;
+                      if (!isLoggedIn) {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                SizedBox(width: 10),
+                                Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                            content: const Text(
+                              'You need to be logged in to book an appointment. Please sign in to continue.',
+                              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => LoginScreen()),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0036BC),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) =>
@@ -612,7 +625,9 @@ class DoctorDetailScreen extends StatelessWidget {
                           child: _buildGlassStatCard(
                             icon: Icons.work_history_rounded,
                             label: 'Experience',
-                            value: doctor.experience ?? 'N/A',
+                            value: (doctor.experience != null && doctor.experience!.isNotEmpty && doctor.experience != '0')
+                                ? doctor.experience!
+                                : 'Not set',
                             color: const Color(0xFF3B82F6),
                           ),
                         ),
@@ -623,7 +638,7 @@ class DoctorDetailScreen extends StatelessWidget {
                             label: 'Rating',
                             value: averageRating > 0
                                 ? averageRating.toStringAsFixed(1)
-                                : 'N/A',
+                                : 'New',
                             color: const Color(0xFFF59E0B),
                           ),
                         ),
@@ -642,34 +657,36 @@ class DoctorDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Contact Information Card
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 24 : 16,
-                    ),
-                    child: _buildModernCard(
-                      title: 'Contact Information',
-                      icon: Icons.contact_phone_rounded,
-                      iconColor: const Color(0xFF3B82F6),
-                      child: Column(
-                        children: [
-                          _buildContactItem(
-                            icon: Icons.email_rounded,
-                            label: 'Email Address',
-                            value: doctor.user.email,
-                            color: const Color(0xFF3B82F6),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildContactItem(
-                            icon: Icons.phone_rounded,
-                            label: 'Phone Number',
-                            value: doctor.user.phoneNumber,
-                            color: const Color(0xFF10B981),
-                          ),
-                        ],
+                  // Contact Information Card (Doctor-only view)
+                  if (selectedRole == 'Doctor') ...[
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 24 : 16,
+                      ),
+                      child: _buildModernCard(
+                        title: 'Contact Information',
+                        icon: Icons.contact_phone_rounded,
+                        iconColor: const Color(0xFF3B82F6),
+                        child: Column(
+                          children: [
+                            _buildContactItem(
+                              icon: Icons.email_rounded,
+                              label: 'Email Address',
+                              value: doctor.user.email,
+                              color: const Color(0xFF3B82F6),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildContactItem(
+                              icon: Icons.phone_rounded,
+                              label: 'Phone Number',
+                              value: doctor.user.phoneNumber,
+                              color: const Color(0xFF10B981),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
 
                   // Qualifications Card
                   if (doctor.degrees.isNotEmpty ||
@@ -955,59 +972,6 @@ class DoctorDetailScreen extends StatelessWidget {
           margin: EdgeInsets.all(isDesktop ? 24 : 16),
           child: Row(
             children: [
-              // Chat Button
-              Container(
-                width: isDesktop ? 64 : 56,
-                height: isDesktop ? 64 : 56,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryColor, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryColor.withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.chat_bubble_outline,
-                    color: AppColors.primaryColor,
-                    size: isDesktop ? 28 : 24,
-                  ),
-                  onPressed: () {
-                    if (doctor.user.id.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Unable to start chat: Doctor ID is missing',
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    debugPrint('🚀 Opening chat with doctor (desktop):');
-                    debugPrint('   ID: ${doctor.user.id}');
-                    debugPrint('   Name: ${doctor.user.name}');
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(
-                          userId: doctor.user.id,
-                          userName: doctor.user.name,
-                          userImage: doctor.user.profilePicture,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
               // Book Appointment Button
               Expanded(
                 child: Container(
@@ -1031,6 +995,46 @@ class DoctorDetailScreen extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
+                        final isLoggedIn = ref.read(authProvider).isLoggedIn;
+                        if (!isLoggedIn) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Row(
+                                children: [
+                                  Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                  SizedBox(width: 10),
+                                  Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                              content: const Text(
+                                'You need to be logged in to book an appointment. Please sign in to continue.',
+                                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => LoginScreen()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0036BC),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (ctx) =>

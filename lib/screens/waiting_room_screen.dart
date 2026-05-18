@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
-import 'package:icare/screens/video_call.dart';
+import 'package:icare/screens/consultation_chat_screen.dart';
+import 'package:icare/services/consultation_service.dart';
 import 'package:intl/intl.dart';
 
 class WaitingRoomScreen extends StatefulWidget {
@@ -12,6 +13,8 @@ class WaitingRoomScreen extends StatefulWidget {
 }
 
 class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
+  final ConsultationService _consultationService = ConsultationService();
+
   final List<Map<String, dynamic>> _waitingPatients = [
     {
       'id': '1',
@@ -42,16 +45,48 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
     },
   ];
 
-  void _startConsultation(Map<String, dynamic> patient) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => VideoCallScreen(
-          appointmentId: patient['id'],
-          userName: patient['name'],
-        ),
-      ),
+  Future<void> _startConsultation(Map<String, dynamic> patient) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
     );
+
+    // Start consultation via API
+    final result = await _consultationService.startConsultationV2(
+      appointmentId: '',
+      patientId: patient['id'],
+      doctorId: '', // Will be filled by backend
+    );
+
+    if (mounted) Navigator.pop(context); // Close loading
+
+    if (result['success']) {
+      final consultation = result['consultation'];
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => ConsultationChatScreen(
+              consultationId: consultation['_id'] ?? consultation['id'],
+              doctorName: 'Your Name', // TODO: Get from user profile
+              patientName: patient['name'],
+              isDoctor: true,
+            ),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start consultation: ${result['message']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _notifyPatient(String name) {

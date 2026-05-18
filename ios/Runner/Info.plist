@@ -43,7 +43,13 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+ 	<key>UIApplicationSupportsIndirectInputEvents</key>
+ 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access for video consultations</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access for audio during calls</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>iCare uses Face ID to securely sign you in without entering your password each time.</string>
 </dict>
 </plist>

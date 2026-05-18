@@ -133,11 +133,12 @@ class AuthService {
   }
 
   Future<void> _saveToken(String token) async {
-    await _sharedPref.setToken(token);
+    await _sharedPref.setToken(token.trim());
   }
 
   Future<String?> getToken() async {
-    return await _sharedPref.getToken();
+    final token = await _sharedPref.getToken();
+    return token?.trim();
   }
 
   Future<void> logout() async {

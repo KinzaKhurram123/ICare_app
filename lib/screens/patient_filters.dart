@@ -56,10 +56,20 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
     "Veterinary",
   ];
 
+  final List<String> spokenLanguagesList = [
+    'Urdu',
+    'Punjabi',
+    'Pashto',
+    'Sindhi',
+    'Balochi',
+    'English',
+  ];
+
   String? _selectedSpeciality;
   String? _selectedReviews;
   String? _selectedSortByOption;
   String? _selectedPharmacyType;
+  String? _selectedSpokenLanguage;
   bool _medicineAvailablity = false;
   bool _homeAvailablity = false;
 
@@ -126,6 +136,19 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedSortByOption = value!;
+                  });
+                },
+              ),
+              CustomDropdown<String>(
+                title: "Spoken Language",
+                selectedItem: _selectedSpokenLanguage,
+                margin: EdgeInsets.symmetric(
+                  vertical: ScallingConfig.verticalScale(6),
+                ),
+                items: spokenLanguagesList,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSpokenLanguage = value!;
                   });
                 },
               ),
@@ -271,6 +294,14 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                       },
                     ),
                     _buildWebDropdown(
+                      "Spoken Language",
+                      spokenLanguagesList,
+                      _selectedSpokenLanguage,
+                      (val) {
+                        setState(() => _selectedSpokenLanguage = val);
+                      },
+                    ),
+                    _buildWebDropdown(
                       "Pharmacy Type (Optional)",
                       pharmacyTypeList,
                       _selectedPharmacyType,
@@ -341,6 +372,7 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                             _selectedReviews = null;
                             _selectedSortByOption = null;
                             _selectedPharmacyType = null;
+                            _selectedSpokenLanguage = null;
                             _medicineAvailablity = false;
                             _homeAvailablity = false;
                           });
