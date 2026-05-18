@@ -14,7 +14,9 @@ import 'package:icare/screens/lab_profile_setup.dart';
 import 'package:icare/screens/pharmacy_profile_setup.dart';
 import 'package:icare/screens/student_profile_setup.dart';
 import 'package:icare/services/auth_service.dart';
+import 'package:icare/services/biometric_service.dart';
 import 'package:icare/services/user_service.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/models/user.dart' as app_user;
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -47,11 +49,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
+  final BiometricService _biometricService = BiometricService();
+
   bool rememberMe = false;
   bool isLogin = true;
   bool isLoading = false;
   bool agreedToTerms = false;
   String selectedSignupRole = 'Patient';
+
+  // Biometric state
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+  bool _biometricLoading = false;
 
   @override
   void initState() {
@@ -71,6 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
     _logoController.forward();
     _checkExistingRole();
+    _initBiometrics();
   }
 
   @override
@@ -98,6 +108,138 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         isLogin = true; // Force login mode
       });
     }
+  }
+
+  // ── Biometric helpers ────────────────────────────────────────────────────
+
+  Future<void> _initBiometrics() async {
+    final available = await _biometricService.isAvailable();
+    final enabled = await _biometricService.isBiometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = available;
+      _biometricEnabled = enabled;
+    });
+    // Auto-trigger biometric prompt if enabled and user has a saved token
+    if (available && enabled) {
+      // Small delay so the screen renders first
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) _triggerBiometricLogin();
+    }
+  }
+
+  /// Called automatically on app open when biometrics are enabled,
+  /// or when the user taps the fingerprint button.
+  Future<void> _triggerBiometricLogin() async {
+    if (_biometricLoading) return;
+    setState(() => _biometricLoading = true);
+
+    final label = await _biometricService.getBiometricLabel();
+    final result = await _biometricService.authenticate(
+      reason: 'Sign in to iCare with $label',
+    );
+
+    if (!mounted) return;
+    setState(() => _biometricLoading = false);
+
+    switch (result) {
+      case BiometricResult.success:
+        // Token already stored from last login — go straight to dashboard
+        final token = await SharedPref().getToken();
+        if (token != null && token.isNotEmpty) {
+          // Re-hydrate user from stored data
+          final user = await SharedPref().getUserData();
+          if (user != null && mounted) {
+            await ref.read(authProvider.notifier).setUserToken(token);
+            await ref.read(authProvider.notifier).setUser(user);
+            if (mounted) context.go('/dashboard');
+          } else {
+            _showError('Session expired. Please sign in with your password.');
+          }
+        } else {
+          _showError('Session expired. Please sign in with your password.');
+        }
+        break;
+      case BiometricResult.notAvailable:
+        _showError('Biometric authentication is not available on this device.');
+        break;
+      case BiometricResult.lockedOut:
+        _showError('Too many attempts. Please use your password to sign in.');
+        break;
+      case BiometricResult.cancelled:
+      case BiometricResult.failed:
+        // User dismissed — do nothing, let them use password
+        break;
+    }
+  }
+
+  /// After a successful password login, offer to enable biometrics.
+  Future<void> _offerBiometricSetup(String email) async {
+    if (!_biometricAvailable || _biometricEnabled) return;
+    final label = await _biometricService.getBiometricLabel();
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            label == 'Face ID' ? Icons.face_retouching_natural : Icons.fingerprint,
+            color: AppColors.primaryColor,
+            size: 36,
+          ),
+        ),
+        title: Text(
+          'Enable $label Sign-In?',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
+        content: Text(
+          'Sign in faster next time using $label instead of your password.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Not Now', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _biometricService.enableBiometrics(email);
+              setState(() => _biometricEnabled = true);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$label sign-in enabled!'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              elevation: 0,
+            ),
+            child: Text('Enable $label'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<Widget> _buildDynamicFields({bool isMobile = false}) {
@@ -911,6 +1053,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   ImagePaths.google_icon,
                                   "Continue with Google",
                                 ),
+                                // Biometric sign-in button (desktop)
+                                if (_biometricAvailable && _biometricEnabled) ...[
+                                  const SizedBox(height: 12),
+                                  _buildBiometricButton(isDesktop: true),
+                                ],
                               ],
                             ],
                           ),
@@ -1463,7 +1610,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const Text("Or Continue With", style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 15),
         _socialButton(ImagePaths.google_icon, "Google"),
+        // Biometric sign-in button (mobile)
+        if (_biometricAvailable && _biometricEnabled) ...[
+          const SizedBox(height: 12),
+          _buildBiometricButton(isDesktop: false),
+        ],
       ],
+    );
+  }
+
+  Widget _buildBiometricButton({required bool isDesktop}) {
+    return FutureBuilder<String>(
+      future: _biometricService.getBiometricLabel(),
+      builder: (ctx, snap) {
+        final label = snap.data ?? 'Biometrics';
+        final icon = label == 'Face ID'
+            ? Icons.face_retouching_natural
+            : Icons.fingerprint;
+        if (isDesktop) {
+          return GestureDetector(
+            onTap: _biometricLoading ? null : _triggerBiometricLogin,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryColor.withOpacity(0.4), width: 1.5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _biometricLoading
+                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Icon(icon, color: AppColors.primaryColor, size: 24),
+                  const SizedBox(width: 10),
+                  Text(
+                    _biometricLoading ? 'Authenticating…' : 'Sign in with $label',
+                    style: TextStyle(
+                      color: AppColors.primaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        // Mobile
+        return GestureDetector(
+          onTap: _biometricLoading ? null : _triggerBiometricLogin,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: AppColors.primaryColor.withOpacity(0.4)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _biometricLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(icon, color: AppColors.primaryColor, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  _biometricLoading ? 'Authenticating…' : 'Sign in with $label',
+                  style: TextStyle(color: AppColors.primaryColor, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1618,6 +1837,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             debugPrint(
               "✅ Logged in as: ${user.name} (${user.email}) - Role: ${user.role}",
             );
+
+            // Offer biometric setup after first successful password login
+            await _offerBiometricSetup(usernameController.text.trim());
 
             context.go('/dashboard');
           } else {

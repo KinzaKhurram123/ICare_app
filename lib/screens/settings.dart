@@ -16,6 +16,7 @@ import 'package:icare/screens/privacy_policy.dart' show PrivacyPolicy;
 import 'package:icare/screens/terms_and_conditions.dart' show TermsAndConditions;
 import 'package:icare/utils/theme.dart';
 import 'package:icare/services/security_service.dart';
+import 'package:icare/services/biometric_service.dart';
 import 'package:icare/services/health_settings_service.dart';
 import 'package:icare/services/api_service.dart';
 
@@ -33,9 +34,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SecurityService _securityService = SecurityService();
   final HealthSettingsService _healthSettingsService = HealthSettingsService();
+  final BiometricService _biometricService = BiometricService();
 
   bool _is2FAEnabled = false;
-  bool _isBiometricEnabled = true;
+  bool _isBiometricEnabled = false;
+  bool _biometricAvailable = false;
   String _medicalConditions = '';
   String _allergies = '';
   String _currentMedications = '';
@@ -61,6 +64,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadHealthSettings();
     _loadUserData();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await _biometricService.isAvailable();
+    final enabled = await _biometricService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = available;
+        _isBiometricEnabled = enabled;
+      });
+    }
   }
 
   void _loadUserData() {
@@ -177,14 +192,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool value) async {
-    try {
-      await _securityService.updateBiometricPreference(value);
-      setState(() => _isBiometricEnabled = value);
-    } catch (e) {
+    if (value) {
+      // Verify with biometrics before enabling
+      final result = await _biometricService.authenticate(
+        reason: 'Confirm your identity to enable biometric sign-in',
+      );
+      if (result == BiometricResult.success) {
+        final email = ref.read(authProvider).user?.email ?? '';
+        await _biometricService.enableBiometrics(email);
+        setState(() => _isBiometricEnabled = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Biometric sign-in enabled'), backgroundColor: Colors.green),
+          );
+        }
+      } else if (result == BiometricResult.notAvailable) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Biometrics not available on this device')),
+          );
+        }
+      }
+    } else {
+      await _biometricService.disableBiometrics();
+      setState(() => _isBiometricEnabled = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Something went wrong.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Biometric sign-in disabled')),
+        );
       }
     }
+    // Also sync preference to backend
+    try {
+      await _securityService.updateBiometricPreference(value);
+    } catch (_) {}
   }
 
   void _handleLogout() {
@@ -450,6 +491,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       isPatient: isPatient, isPharmacy: isPharmacy, isLaboratory: isLaboratory,
       isDoctor: isDoctor, isStudent: isStudent, isInstructor: isInstructor,
       is2FAEnabled: _is2FAEnabled, isBiometricEnabled: _isBiometricEnabled,
+      biometricAvailable: _biometricAvailable,
       trackerToggles: _trackerToggles, healthModeEnabled: _healthModeEnabled,
       selectedConditions: _selectedConditions,
       medicalConditions: _medicalConditions, allergies: _allergies,
@@ -484,7 +526,7 @@ class _SettingsLayoutParams {
   final String role;
   final app_user.User? user;
   final bool isPatient, isPharmacy, isLaboratory, isDoctor, isStudent, isInstructor;
-  final bool is2FAEnabled, isBiometricEnabled, healthModeEnabled;
+  final bool is2FAEnabled, isBiometricEnabled, biometricAvailable, healthModeEnabled;
   final List<String> selectedConditions;
   final String medicalConditions, allergies, currentMedications, healthGoals;
   final int waterReminderMinutes;
@@ -507,6 +549,7 @@ class _SettingsLayoutParams {
     required this.isPatient, required this.isPharmacy, required this.isLaboratory,
     required this.isDoctor, required this.isStudent, required this.isInstructor,
     required this.is2FAEnabled, required this.isBiometricEnabled,
+    required this.biometricAvailable,
     required this.healthModeEnabled, required this.selectedConditions,
     required this.medicalConditions, required this.allergies,
     required this.currentMedications, required this.healthGoals,
@@ -723,9 +766,12 @@ class _WebSettingsLayout extends StatelessWidget {
         _settingsTile(icon: Icons.lock_outline, iconColor: const Color(0xFF64748B), title: 'Change Password', subtitle: 'Update your password', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePassword()))),
         const Divider(height: 1),
         _settingsTile(icon: Icons.history_outlined, iconColor: const Color(0xFF64748B), title: 'Login Activity', subtitle: 'Review recent login sessions', onTap: () => p.onComingSoon(context, 'Login Activity')),
-        if (p.isPatient) ...[
+        // Biometric — shown for all roles if device supports it
+        if (p.biometricAvailable) ...[
           const Divider(height: 1),
-          _switchTile(icon: Icons.fingerprint, title: 'Biometric Authentication', subtitle: 'Use fingerprint or face ID', value: p.isBiometricEnabled, onChanged: p.onToggleBiometrics),
+          _switchTile(icon: Icons.fingerprint, title: 'Biometric Sign-In', subtitle: p.isBiometricEnabled ? 'Tap to disable fingerprint / Face ID' : 'Enable fingerprint or Face ID sign-in', value: p.isBiometricEnabled, onChanged: p.onToggleBiometrics),
+        ],
+        if (p.isPatient) ...[
           const Divider(height: 1),
           _switchTile(icon: Icons.verified_user_outlined, title: 'Two-Factor Authentication (2FA)', subtitle: p.is2FAEnabled ? 'Enabled' : 'Extra layer of security', value: p.is2FAEnabled, onChanged: p.onToggle2FA),
         ],
@@ -1014,8 +1060,11 @@ class _MobileSettingsLayout extends StatelessWidget {
         _sectionLabel('Security'), const SizedBox(height: 12),
         _settingsTile(icon: Icons.lock_outline, iconColor: const Color(0xFF64748B), title: 'Change Password', subtitle: 'Update password', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePassword()))),
         const Divider(height: 1), _settingsTile(icon: Icons.history_outlined, iconColor: const Color(0xFF64748B), title: 'Login Activity', subtitle: 'Review sessions', onTap: () => p.onComingSoon(context, 'Login Activity')),
+        // Biometric — shown for all roles if device supports it
+        if (p.biometricAvailable) ...[
+          const Divider(height: 1), _switchTile(icon: Icons.fingerprint, title: 'Biometric Sign-In', subtitle: p.isBiometricEnabled ? 'Tap to disable' : 'Enable fingerprint / Face ID', value: p.isBiometricEnabled, onChanged: p.onToggleBiometrics),
+        ],
         if (p.isPatient) ...[
-          const Divider(height: 1), _switchTile(icon: Icons.fingerprint, title: 'Biometric', subtitle: 'Use fingerprint', value: p.isBiometricEnabled, onChanged: p.onToggleBiometrics),
           const Divider(height: 1), _switchTile(icon: Icons.verified_user_outlined, title: '2FA', subtitle: p.is2FAEnabled ? 'Enabled' : 'Extra security', value: p.is2FAEnabled, onChanged: p.onToggle2FA),
         ],
       ])));
