@@ -61,6 +61,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
   final _durationWeeksController = TextEditingController();
   final _durationMonthsController = TextEditingController();
   DateTime? _startDate;
+  String _courseType = 'self-paced'; // 'self-paced' or 'pragmatic'
   bool _isPublished = false;
   bool _uploadingThumbnail = false;
   String? _thumbnailUrl;
@@ -153,6 +154,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
             (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
             (int.tryParse(_durationMonthsController.text) ?? 0) * 30,
         if (_startDate != null) 'startDate': _startDate!.toIso8601String(),
+        'courseType': _courseType,
         'isPublished': _isPublished,
         'modules': _modules,
       };
@@ -591,6 +593,49 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
               ],
               const SizedBox(height: 20),
               
+              // Course type
+              const Text('Course Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _courseType = 'self-paced'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _courseType == 'self-paced' ? const Color(0xFF10B981).withValues(alpha: 0.08) : const Color(0xFFF8FAFC),
+                      border: Border.all(color: _courseType == 'self-paced' ? const Color(0xFF10B981) : const Color(0xFFE2E8F0), width: _courseType == 'self-paced' ? 2 : 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(children: [
+                      Icon(Icons.self_improvement_rounded, color: _courseType == 'self-paced' ? const Color(0xFF10B981) : const Color(0xFF94A3B8), size: 24),
+                      const SizedBox(height: 6),
+                      Text('Self-paced', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _courseType == 'self-paced' ? const Color(0xFF10B981) : const Color(0xFF64748B))),
+                      const SizedBox(height: 3),
+                      const Text('Student unlocks next module on completion', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), textAlign: TextAlign.center),
+                    ]),
+                  ),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _courseType = 'pragmatic'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _courseType == 'pragmatic' ? const Color(0xFF6366F1).withValues(alpha: 0.08) : const Color(0xFFF8FAFC),
+                      border: Border.all(color: _courseType == 'pragmatic' ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0), width: _courseType == 'pragmatic' ? 2 : 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(children: [
+                      Icon(Icons.timeline_rounded, color: _courseType == 'pragmatic' ? const Color(0xFF6366F1) : const Color(0xFF94A3B8), size: 24),
+                      const SizedBox(height: 6),
+                      Text('Pragmatic', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _courseType == 'pragmatic' ? const Color(0xFF6366F1) : const Color(0xFF64748B))),
+                      const SizedBox(height: 3),
+                      const Text('Next module unlocks only on scheduled date', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), textAlign: TextAlign.center),
+                    ]),
+                  ),
+                )),
+              ]),
+              const SizedBox(height: 20),
               SwitchListTile(
                 title: const Text('Publish immediately'),
                 subtitle: const Text('Make this course visible to students'),

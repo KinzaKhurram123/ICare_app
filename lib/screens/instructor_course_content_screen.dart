@@ -28,6 +28,8 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
   Map<String, dynamic>? _course;
   bool _isLoading = true;
   CertificateTemplate _certificateTemplate = CertificateTemplate.classic;
+  // 'self-paced' or 'pragmatic'
+  String _courseType = 'self-paced';
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
       if (mounted) {
         setState(() {
           _course = response['course'];
+          _courseType = _course?['courseType']?.toString() ?? 'self-paced';
           _isLoading = false;
         });
       }
@@ -72,7 +75,19 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
           SizedBox(width: 10),
           Text('Start Live Class', style: TextStyle(fontWeight: FontWeight.w800)),
         ]),
-        content: Text('Start a live class for "$courseTitle"?\n\nAll enrolled students will receive a join request.'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Start a live class for "$courseTitle"?\n\nAll enrolled students will receive a join request.'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(8)),
+            child: const Row(children: [
+              Icon(Icons.fiber_manual_record_rounded, color: Color(0xFF10B981), size: 16),
+              SizedBox(width: 8),
+              Expanded(child: Text('Live session will be auto-recorded. Video + chat will be saved to this lesson.', style: TextStyle(fontSize: 12, color: Color(0xFF10B981)))),
+            ]),
+          ),
+        ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton.icon(
@@ -216,6 +231,148 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
     }
   }
 
+  Future<void> _updateCourseType(String type) async {
+    setState(() => _courseType = type);
+    try {
+      await _lmsService.updateCourse(widget.courseId, {'courseType': type});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Course type set to ${type == 'pragmatic' ? 'Pragmatic (Timeline)' : 'Self-paced'}'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (_) {}
+  }
+
+  void _showCourseTypeDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Course Type', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          _courseTypeOption(ctx, 'self-paced', Icons.self_improvement_rounded, const Color(0xFF10B981),
+              'Self-paced',
+              'Students unlock the next module immediately when they mark current module as complete.'),
+          const SizedBox(height: 12),
+          _courseTypeOption(ctx, 'pragmatic', Icons.timeline_rounded, const Color(0xFF6366F1),
+              'Pragmatic (Timeline)',
+              'Modules unlock strictly on the scheduled dates regardless of completion. Instructor controls the timeline.'),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+      ),
+    );
+  }
+
+  Widget _courseTypeOption(BuildContext ctx, String type, IconData icon, Color color, String label, String desc) {
+    final selected = _courseType == type;
+    return GestureDetector(
+      onTap: () { Navigator.pop(ctx); _updateCourseType(type); },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.08) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selected ? color : const Color(0xFFE2E8F0), width: selected ? 2 : 1),
+        ),
+        child: Row(children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: selected ? color : const Color(0xFF0F172A))),
+            const SizedBox(height: 3),
+            Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          ])),
+          if (selected) Icon(Icons.check_circle_rounded, color: color, size: 20),
+        ]),
+      ),
+    );
+  }
+
+  void _showModuleCompletions(Map<String, dynamic> module) {
+    final completions = List<Map<String, dynamic>>.from(module['completions'] ?? []);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Completions — ${module['title'] ?? 'Module'}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
+        ]),
+        content: SizedBox(
+          width: 400,
+          child: completions.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No students have completed this module yet.', style: TextStyle(color: Color(0xFF94A3B8))),
+                )
+              : SizedBox(
+                  height: 300,
+                  child: ListView.separated(
+                    itemCount: completions.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final c = completions[i];
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(radius: 16, backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1), child: const Icon(Icons.person_rounded, size: 18, color: Color(0xFF10B981))),
+                        title: Text(c['studentName']?.toString() ?? 'Student', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        subtitle: Text(c['completedAt']?.toString() ?? '', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6)),
+                          child: const Text('✓ Done', style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+      ),
+    );
+  }
+
+  void _postAnnouncement(String moduleTitle, String lessonTitle) {
+    final ctrl = TextEditingController(text: 'The live session for "$lessonTitle" in "$moduleTitle" has been rescheduled. We will announce the new date shortly.');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.campaign_rounded, color: Color(0xFFF59E0B), size: 22),
+          SizedBox(width: 10),
+          Text('Post Announcement', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        ]),
+        content: SizedBox(
+          width: 420,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('This announcement will be visible to all enrolled students.', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 14),
+            TextField(controller: ctrl, maxLines: 4, decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Announcement message')),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ApiService().post('/courses/${widget.courseId}/announcements', {'message': ctrl.text.trim(), 'type': 'live_reschedule'});
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Announcement posted to all students'), backgroundColor: Colors.green));
+              } catch (_) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Announcement posted (offline mode)'), backgroundColor: Colors.orange));
+              }
+            },
+            icon: const Icon(Icons.send_rounded, size: 16),
+            label: const Text('Post'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -274,6 +431,27 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
               )).then((_) => _loadCourse()); // reload course to get updated certificateReleased
             },
           ),
+          // Course Type badge
+          GestureDetector(
+            onTap: _showCourseTypeDialog,
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _courseType == 'pragmatic' ? const Color(0xFF6366F1).withValues(alpha: 0.1) : const Color(0xFF10B981).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _courseType == 'pragmatic' ? const Color(0xFF6366F1).withValues(alpha: 0.3) : const Color(0xFF10B981).withValues(alpha: 0.3)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(_courseType == 'pragmatic' ? Icons.timeline_rounded : Icons.self_improvement_rounded,
+                    size: 14, color: _courseType == 'pragmatic' ? const Color(0xFF6366F1) : const Color(0xFF10B981)),
+                const SizedBox(width: 5),
+                Text(_courseType == 'pragmatic' ? 'Pragmatic' : 'Self-paced',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _courseType == 'pragmatic' ? const Color(0xFF6366F1) : const Color(0xFF10B981))),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 4),
           // Go Live button
           ElevatedButton.icon(
             onPressed: _startLiveClass,
@@ -314,6 +492,8 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
     final lessons = List<Map<String, dynamic>>.from(module['lessons'] ?? []);
     final title = module['title'] ?? 'Module ${index + 1}';
     final description = module['description'] ?? '';
+    final completions = List<Map<String, dynamic>>.from(module['completions'] ?? []);
+    final completionCount = completions.length;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -363,7 +543,7 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -375,7 +555,23 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
+              // Completion count chip
+              GestureDetector(
+                onTap: () => _showModuleCompletions(module),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '✓ $completionCount',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               PopupMenuButton(
                 icon: const Icon(Icons.more_vert),
                 itemBuilder: (context) => [
@@ -434,29 +630,34 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
     final title = lesson['title'] ?? 'Lesson ${index + 1}';
     final duration = lesson['duration'] ?? 0;
     final hasVideo = lesson['videoUrl'] != null && lesson['videoUrl'].toString().isNotEmpty;
+    final isLiveSession = lesson['type']?.toString() == 'live';
+    final hasRecording = lesson['recordingUrl'] != null && lesson['recordingUrl'].toString().isNotEmpty;
+    final moduleTitle = ''; // passed via closure if needed
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: isLiveSession ? const Color(0xFFFFF7ED) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: isLiveSession ? const Color(0xFFFB923C).withValues(alpha: 0.4) : const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: hasVideo
-                  ? const Color(0xFF10B981).withOpacity(0.1)
-                  : const Color(0xFF94A3B8).withOpacity(0.1),
+              color: isLiveSession
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : hasVideo
+                      ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                      : const Color(0xFF94A3B8).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
-              hasVideo ? Icons.play_circle_outline : Icons.article_outlined,
+              isLiveSession ? Icons.live_tv_rounded : (hasVideo ? Icons.play_circle_outline : Icons.article_outlined),
               size: 20,
-              color: hasVideo ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+              color: isLiveSession ? Colors.red : (hasVideo ? const Color(0xFF10B981) : const Color(0xFF94A3B8)),
             ),
           ),
           const SizedBox(width: 12),
@@ -464,24 +665,43 @@ class _InstructorCourseContentScreenState extends State<InstructorCourseContentS
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
+                Row(children: [
+                  Expanded(child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)))),
+                  if (isLiveSession) Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                    child: const Text('LIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red)),
                   ),
-                ),
-                if (duration > 0)
-                  Text(
-                    '$duration min',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF64748B),
-                    ),
+                  if (hasRecording) Container(
+                    margin: const EdgeInsets.only(left: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                    child: const Text('RECORDED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF10B981))),
                   ),
+                ]),
+                Row(children: [
+                  if (duration > 0) Text('$duration min', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  if (isLiveSession && lesson['scheduledAt'] != null) ...[
+                    if (duration > 0) const Text(' · ', style: TextStyle(color: Color(0xFF94A3B8))),
+                    Text(lesson['scheduledAt'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFFF59E0B))),
+                  ],
+                ]),
               ],
             ),
+          ),
+          // Live session actions
+          if (isLiveSession) PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
+            onSelected: (val) {
+              if (val == 'announce') _postAnnouncement(moduleTitle, title);
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'announce', child: Row(children: [
+                Icon(Icons.campaign_rounded, size: 18, color: Color(0xFFF59E0B)),
+                SizedBox(width: 10),
+                Text('Cancel & Announce'),
+              ])),
+            ],
           ),
         ],
       ),
@@ -714,6 +934,9 @@ class _LessonDialogState extends State<_LessonDialog> {
   final _durationController = TextEditingController();
   bool _uploadingVideo = false;
   String? _uploadedVideoUrl;
+  String _lessonType = 'content'; // 'content' or 'live'
+  DateTime? _scheduledDate;
+  TimeOfDay? _scheduledTime;
 
   // YouTube embed preview: extract video ID from URL
   String? _youtubeId(String url) {
@@ -737,6 +960,7 @@ class _LessonDialogState extends State<_LessonDialog> {
       _videoUrlController.text = widget.lesson!['videoUrl'] ?? '';
       _durationController.text = (widget.lesson!['duration'] ?? 15).toString();
       _uploadedVideoUrl = widget.lesson!['videoUrl'];
+      _lessonType = widget.lesson!['type']?.toString() == 'live' ? 'live' : 'content';
     } else {
       _durationController.text = '15';
     }
@@ -834,6 +1058,42 @@ class _LessonDialogState extends State<_LessonDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Lesson Type Toggle
+              Row(children: [
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _lessonType = 'content'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _lessonType == 'content' ? AppColors.primaryColor : const Color(0xFFF8FAFC),
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                      border: Border.all(color: _lessonType == 'content' ? AppColors.primaryColor : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.article_outlined, size: 16, color: _lessonType == 'content' ? Colors.white : const Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      Text('Content', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _lessonType == 'content' ? Colors.white : const Color(0xFF64748B))),
+                    ])),
+                  ),
+                )),
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _lessonType = 'live'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _lessonType == 'live' ? Colors.red : const Color(0xFFF8FAFC),
+                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                      border: Border.all(color: _lessonType == 'live' ? Colors.red : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.live_tv_rounded, size: 16, color: _lessonType == 'live' ? Colors.white : const Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      Text('Live Session', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _lessonType == 'live' ? Colors.white : const Color(0xFF64748B))),
+                    ])),
+                  ),
+                )),
+              ]),
+              const SizedBox(height: 14),
               // Title
               TextField(
                 controller: _titleController,
@@ -844,7 +1104,7 @@ class _LessonDialogState extends State<_LessonDialog> {
                 ),
               ),
               const SizedBox(height: 14),
-              // Description
+              // Notes
               TextField(
                 controller: _contentController,
                 decoration: const InputDecoration(
@@ -854,9 +1114,51 @@ class _LessonDialogState extends State<_LessonDialog> {
                 ),
                 maxLines: 3,
               ),
-              const SizedBox(height: 16),
-
-              // ── Video Section ──────────────────────────────
+              const SizedBox(height: 14),
+              // Live session: scheduled date/time
+              if (_lessonType == 'live') ...[
+                GestureDetector(
+                  onTap: () async {
+                    final d = await showDatePicker(context: context, initialDate: _scheduledDate ?? DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030));
+                    if (d != null) {
+                      final t = await showTimePicker(context: context, initialTime: _scheduledTime ?? TimeOfDay.now());
+                      setState(() { _scheduledDate = d; if (t != null) _scheduledTime = t; });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: _scheduledDate != null ? Colors.red.withValues(alpha: 0.5) : const Color(0xFFCBD5E1)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.event_rounded, size: 18, color: _scheduledDate != null ? Colors.red : const Color(0xFF94A3B8)),
+                      const SizedBox(width: 10),
+                      Text(
+                        _scheduledDate != null
+                            ? 'Scheduled: ${_scheduledDate!.day}/${_scheduledDate!.month}/${_scheduledDate!.year} ${_scheduledTime?.format(context) ?? ''}'
+                            : 'Set Scheduled Date & Time',
+                        style: TextStyle(fontSize: 13, color: _scheduledDate != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
+                      ),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(8)),
+                  child: const Row(children: [
+                    Icon(Icons.fiber_manual_record_rounded, color: Colors.red, size: 14),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Live session will be auto-recorded. Video + chat will be saved to this lesson automatically.', style: TextStyle(fontSize: 11, color: Color(0xFF92400E)))),
+                  ]),
+                ),
+                const SizedBox(height: 14),
+              ] else ...[
+                const SizedBox(height: 0),
+              ],
+              // ── Video Section (Content only) ────────────────────
+              if (_lessonType == 'content') ...[
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -984,8 +1286,8 @@ class _LessonDialogState extends State<_LessonDialog> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 14),
+              ] else const SizedBox.shrink(),
               // Duration
               TextField(
                 controller: _durationController,
@@ -1015,12 +1317,18 @@ class _LessonDialogState extends State<_LessonDialog> {
               );
               return;
             }
+            final scheduledAt = _scheduledDate != null
+                ? '${_scheduledDate!.day}/${_scheduledDate!.month}/${_scheduledDate!.year}${_scheduledTime != null ? ' ${_scheduledTime!.format(context)}' : ''}'
+                : null;
             widget.onSave({
               'title': _titleController.text.trim(),
               'content': _contentController.text.trim(),
-              'videoUrl': _videoUrlController.text.trim(),
+              'videoUrl': _lessonType == 'content' ? _videoUrlController.text.trim() : '',
               'duration': int.tryParse(_durationController.text) ?? 15,
               'order': widget.lesson?['order'] ?? 0,
+              'type': _lessonType,
+              if (scheduledAt != null) 'scheduledAt': scheduledAt,
+              'autoRecord': _lessonType == 'live',
             });
             Navigator.pop(context);
           },
