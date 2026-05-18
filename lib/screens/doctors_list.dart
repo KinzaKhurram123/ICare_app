@@ -33,6 +33,8 @@ class _DoctorsListState extends State<DoctorsList> {
   String? _genderFilter; // male, female, all
   String? _languageFilter;
   Set<String> _languages = {};
+  // Static Pakistani languages shown as fallback when API returns none
+  static const _defaultLanguages = ['Urdu', 'Punjabi', 'Pashto', 'Sindhi', 'Balochi', 'English'];
   String _sortBy = 'rating'; // rating, experience, fees
   late final TextEditingController _searchController;
 
@@ -414,31 +416,31 @@ class _DoctorsListState extends State<DoctorsList> {
                           ),
                           
                           // Language
-                          if (_languages.isNotEmpty)
-                            SizedBox(
-                              width: isDesktop ? 150 : double.infinity,
-                              child: DropdownButtonFormField<String>(
-                                value: _languageFilter,
-                                decoration: InputDecoration(
-                                  labelText: 'Language',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  isDense: true,
+                          SizedBox(
+                            width: isDesktop ? 150 : double.infinity,
+                            child: DropdownButtonFormField<String>(
+                              value: _languageFilter,
+                              decoration: InputDecoration(
+                                labelText: 'Language',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                items: [
-                                  const DropdownMenuItem(value: null, child: Text('All')),
-                                  ..._languages.map((l) => DropdownMenuItem(value: l, child: Text(l))),
-                                ],
-                                onChanged: (v) {
-                                  setState(() {
-                                    _languageFilter = v;
-                                    _filterDoctors();
-                                  });
-                                },
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                isDense: true,
                               ),
+                              items: [
+                                const DropdownMenuItem(value: null, child: Text('All')),
+                                ...(_languages.isNotEmpty ? _languages : _defaultLanguages.toSet())
+                                    .map((l) => DropdownMenuItem(value: l, child: Text(l))),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _languageFilter = v;
+                                  _filterDoctors();
+                                });
+                              },
                             ),
+                          ),
                         ],
                       ),
                       

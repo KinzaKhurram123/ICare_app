@@ -11,6 +11,7 @@ import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/screens/doctor_appointments.dart';
 import 'package:icare/screens/doctor_profile_setup.dart';
+import 'package:icare/screens/settings.dart';
 import 'package:icare/screens/patient_records_list.dart';
 import 'package:icare/screens/doctor_schedule_calendar.dart';
 import 'package:icare/screens/doctor_analytics.dart';
@@ -151,10 +152,11 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outline, color: Color(0xFF0F172A)),
+            icon: const Icon(Icons.settings_outlined, color: Color(0xFF0F172A)),
+            tooltip: 'Settings',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
+                MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
               );
             },
           ),

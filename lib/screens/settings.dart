@@ -8,7 +8,6 @@ import 'package:icare/screens/about_us.dart' show AboutUs;
 import 'package:icare/screens/change_password.dart' show ChangePassword;
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/courses.dart' show Courses;
-import 'package:icare/screens/create_profile.dart' show CreateProfile;
 import 'package:icare/screens/doctor_profile_setup.dart' show DoctorProfileSetup;
 import 'package:icare/screens/help_and_support.dart' show HelpAndSupport;
 import 'package:icare/screens/notification_settings.dart' show NotificationSettings;
@@ -526,10 +525,6 @@ class _SettingsLayoutParams {
     required this.onDownloadHealthData, required this.onShowPaymentMethods,
     required this.onShowBillingHistory,
   });
-    required this.onShowLanguage, required this.onShowDeliveryAddress,
-    required this.onDownloadHealthData, required this.onShowPaymentMethods,
-    required this.onShowBillingHistory,
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -751,7 +746,7 @@ class _WebSettingsLayout extends StatelessWidget {
         _sectionLabel('Language & Region'), const SizedBox(height: 16),
         _settingsTile(icon: Icons.translate_rounded, iconColor: const Color(0xFF64748B), title: 'Language', subtitle: p.selectedLanguage, onTap: () => p.onShowLanguage(context)),
         const Divider(height: 1),
-        _settingsTile(icon: Icons.public_outlined, iconColor: const Color(0xFF64748B), title: 'Country & Region', subtitle: 'Coming soon', onTap: () => p.onComingSoon(context, 'Country & Region')),
+        _settingsTile(icon: Icons.public_outlined, iconColor: const Color(0xFF64748B), title: 'Country & Region', subtitle: p.selectedCountry, onTap: () => p.onShowCountryRegion(context)),
       ])));
   }
 
@@ -995,7 +990,7 @@ class _MobileSettingsLayout extends StatelessWidget {
       child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _sectionLabel('Language & Region'), const SizedBox(height: 12),
         _settingsTile(icon: Icons.translate_rounded, iconColor: const Color(0xFF64748B), title: 'Language', subtitle: p.selectedLanguage, onTap: () => p.onShowLanguage(context)),
-        const Divider(height: 1), _settingsTile(icon: Icons.public_outlined, iconColor: const Color(0xFF64748B), title: 'Country & Region', subtitle: 'Coming soon', onTap: () => p.onComingSoon(context, 'Country & Region')),
+        const Divider(height: 1), _settingsTile(icon: Icons.public_outlined, iconColor: const Color(0xFF64748B), title: 'Country & Region', subtitle: p.selectedCountry, onTap: () => p.onShowCountryRegion(context)),
       ])));
   }
 
@@ -1173,14 +1168,13 @@ class _ProfileEditCardState extends State<_ProfileEditCard> {
                     ),
                   ),
                   // Edit toggle button (only visible in view mode)
-                  // Doctors → open the full CreateProfile editor (same as top-right edit
-                  //          on the profile page). Others → inline edit mode.
+                  // Doctors → open DoctorProfileSetup. Others → inline edit mode.
                   if (!_editMode)
                     TextButton.icon(
                       onPressed: () {
                         if (widget.p.isDoctor) {
                           Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => const CreateProfile(isEdit: true),
+                            builder: (_) => const DoctorProfileSetup(),
                           ));
                         } else {
                           setState(() => _editMode = true);
