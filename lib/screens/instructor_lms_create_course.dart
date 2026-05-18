@@ -1,9 +1,38 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
+
+// Helper: get signed Cloudinary upload params from backend then upload directly
+Future<String?> _signedCloudinaryUpload({
+  required Uint8List bytes,
+  required String filename,
+  required String folder,
+  String resourceType = 'auto',
+}) async {
+  final signRes = await ApiService().get('/upload/sign?folder=$folder&resource_type=$resourceType');
+  if (signRes.data['success'] != true) throw Exception('Could not get upload signature');
+  final cloudName = signRes.data['cloud_name']?.toString() ?? 'dzlcnyxgb';
+  final formData = FormData.fromMap({
+    'file': MultipartFile.fromBytes(bytes, filename: filename),
+    'signature': signRes.data['signature'],
+    'timestamp': signRes.data['timestamp'].toString(),
+    'api_key': signRes.data['api_key'],
+    'folder': folder,
+  });
+  final res = await Dio().post(
+    'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload',
+    data: formData,
+    options: Options(validateStatus: (s) => s != null && s < 600),
+  );
+  if (res.statusCode == 200 && res.data['secure_url'] != null) {
+    return res.data['secure_url'] as String;
+  }
+  throw Exception('Upload failed: ${res.data}');
+}
 
 /// Course Creation Wizard - Google Classroom/Moodle style
 class InstructorLmsCreateCourseScreen extends StatefulWidget {
@@ -31,6 +60,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
   final _durationDaysController = TextEditingController();
   final _durationWeeksController = TextEditingController();
   final _durationMonthsController = TextEditingController();
+  DateTime? _startDate;
   bool _isPublished = false;
   bool _uploadingThumbnail = false;
   String? _thumbnailUrl;
@@ -122,6 +152,7 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
         'duration': (int.tryParse(_durationDaysController.text) ?? 0) +
             (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
             (int.tryParse(_durationMonthsController.text) ?? 0) * 30,
+        if (_startDate != null) 'startDate': _startDate!.toIso8601String(),
         'isPublished': _isPublished,
         'modules': _modules,
       };
@@ -501,6 +532,64 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
                 ],
               ),
               const SizedBox(height: 20),
+              // Course Start Date
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _startDate ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) setState(() => _startDate = picked);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _startDate != null ? AppColors.primaryColor : const Color(0xFFCBD5E1)),
+                    borderRadius: BorderRadius.circular(4),
+                    color: _startDate != null ? AppColors.primaryColor.withValues(alpha: 0.04) : Colors.white,
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.calendar_today_outlined, size: 18, color: _startDate != null ? AppColors.primaryColor : const Color(0xFF94A3B8)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(
+                      _startDate != null
+                          ? 'Start Date: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                          : 'Course Start Date (optional)',
+                      style: TextStyle(fontSize: 14, color: _startDate != null ? AppColors.primaryColor : const Color(0xFF94A3B8)),
+                    )),
+                    if (_startDate != null) GestureDetector(
+                      onTap: () => setState(() => _startDate = null),
+                      child: const Icon(Icons.close_rounded, size: 16, color: Colors.red),
+                    ),
+                  ]),
+                ),
+              ),
+              // Auto-calculated end date preview
+              if (_startDate != null) ...[
+                const SizedBox(height: 8),
+                Builder(builder: (context) {
+                  final totalDays = (int.tryParse(_durationDaysController.text) ?? 0) +
+                      (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
+                      (int.tryParse(_durationMonthsController.text) ?? 0) * 30;
+                  if (totalDays == 0) return const SizedBox.shrink();
+                  final endDate = _startDate!.add(Duration(days: totalDays));
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                    child: Row(children: [
+                      const Icon(Icons.timeline_rounded, size: 16, color: AppColors.primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Timeline: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year} → ${endDate.day}/${endDate.month}/${endDate.year} ($totalDays days)',
+                        style: const TextStyle(fontSize: 12, color: AppColors.primaryColor, fontWeight: FontWeight.w500),
+                      ),
+                    ]),
+                  );
+                }),
+              ],
+              const SizedBox(height: 20),
               
               SwitchListTile(
                 title: const Text('Publish immediately'),
@@ -599,9 +688,25 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
     );
   }
 
+  // Calculate timeline start for a module based on its index and previous module durations
+  DateTime? _moduleStartDate(int index) {
+    if (_startDate == null) return null;
+    int offset = 0;
+    for (int i = 0; i < index; i++) {
+      offset += (_modules[i]['durationDays'] as int? ?? 0);
+    }
+    return _startDate!.add(Duration(days: offset));
+  }
+
   Widget _buildModuleCard(int index) {
     final module = _modules[index];
     final lessons = module['lessons'] as List;
+    final moduleStart = _moduleStartDate(index);
+    final durationDays = module['durationDays'] as int? ?? 0;
+    final moduleEnd = moduleStart != null && durationDays > 0 ? moduleStart.add(Duration(days: durationDays)) : null;
+    final timelineText = moduleStart != null && moduleEnd != null
+        ? '${moduleStart.day}/${moduleStart.month}/${moduleStart.year} → ${moduleEnd.day}/${moduleEnd.month}/${moduleEnd.year}'
+        : null;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: ExpansionTile(
@@ -610,7 +715,14 @@ class _InstructorLmsCreateCourseScreenState extends State<InstructorLmsCreateCou
           child: Text('${index + 1}', style: const TextStyle(color: Colors.white)),
         ),
         title: Text(module['title'] ?? 'Module ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${lessons.length} lesson${lessons.length == 1 ? '' : 's'}'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${lessons.length} lesson${lessons.length == 1 ? '' : 's'}${durationDays > 0 ? ' · $durationDays days' : ''}'),
+            if (timelineText != null)
+              Text(timelineText, style: const TextStyle(fontSize: 11, color: AppColors.primaryColor)),
+          ],
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -758,6 +870,7 @@ class _ModuleEditorPage extends StatefulWidget {
 class _ModuleEditorPageState extends State<_ModuleEditorPage> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+  final _durationDaysCtrl = TextEditingController();
   final List<_LmsLessonForm> _lessonForms = [];
 
   @override
@@ -767,6 +880,7 @@ class _ModuleEditorPageState extends State<_ModuleEditorPage> {
     if (m != null) {
       _titleCtrl.text = m['title']?.toString() ?? '';
       _descCtrl.text = m['description']?.toString() ?? '';
+      _durationDaysCtrl.text = m['durationDays']?.toString() ?? '';
       final existing = (m['lessons'] as List?) ?? [];
       for (final l in existing) {
         _lessonForms.add(_LmsLessonForm(existing: l as Map<String, dynamic>));
@@ -789,6 +903,7 @@ class _ModuleEditorPageState extends State<_ModuleEditorPage> {
     Navigator.of(context).pop({
       'title': _titleCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
+      'durationDays': int.tryParse(_durationDaysCtrl.text.trim()) ?? 0,
       'lessons': lessons,
       'order': 0,
     });
@@ -798,6 +913,7 @@ class _ModuleEditorPageState extends State<_ModuleEditorPage> {
   void dispose() {
     _titleCtrl.dispose();
     _descCtrl.dispose();
+    _durationDaysCtrl.dispose();
     for (final f in _lessonForms) { f.dispose(); }
     super.dispose();
   }
@@ -833,6 +949,17 @@ class _ModuleEditorPageState extends State<_ModuleEditorPage> {
                   controller: _descCtrl,
                   decoration: const InputDecoration(labelText: 'Module Description (optional)', border: OutlineInputBorder()),
                   maxLines: 2,
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _durationDaysCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Module Duration (days) — for timeline',
+                    border: OutlineInputBorder(),
+                    suffixText: 'days',
+                    hintText: 'e.g. 7',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 28),
                 Row(children: [
@@ -917,56 +1044,25 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
   bool _uploadingVideo = false;
   bool _uploadingDoc = false;
 
-  static const _cloud = 'dzlcnyxgb';
-  static const _preset = 'icare_videos';
-
   Future<void> _pickVideo() async {
-    final choice = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Video'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.link_rounded, color: Color(0xFF3B82F6)), title: const Text('Paste Video URL'), subtitle: const Text('YouTube, Vimeo, or .mp4 link'), onTap: () => Navigator.pop(ctx, 'url')),
-          const Divider(),
-          ListTile(leading: const Icon(Icons.upload_file_rounded, color: Color(0xFF10B981)), title: const Text('Upload Video File'), subtitle: const Text('MP4, MOV (max 100MB)'), onTap: () => Navigator.pop(ctx, 'file')),
-        ]),
-      ),
-    );
-    if (choice == 'url') {
-      final c = TextEditingController(text: widget.form.videoUrl ?? '');
-      final r = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Paste Video URL'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('YouTube, Vimeo, or .mp4 link:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-            const SizedBox(height: 12),
-            TextField(controller: c, decoration: const InputDecoration(hintText: 'https://...', border: OutlineInputBorder()), autofocus: true),
-          ]),
-          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')), ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('Save'))],
-        ),
-      );
-      if (r != null && r.isNotEmpty) setState(() { widget.form.videoUrl = r; widget.onChanged(); });
-    } else if (choice == 'file') {
-      try {
-        final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false, withData: true);
-        if (result == null || result.files.isEmpty) return;
-        final file = result.files.first;
-        if (file.bytes == null || file.size > 100 * 1024 * 1024) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 100MB'), backgroundColor: Colors.red));
-          return;
-        }
-        setState(() => _uploadingVideo = true);
-        final fd = FormData.fromMap({'file': MultipartFile.fromBytes(file.bytes!, filename: file.name), 'upload_preset': _preset});
-        final res = await Dio().post('https://api.cloudinary.com/v1_1/$_cloud/auto/upload', data: fd);
-        if (res.statusCode == 200) {
-          setState(() { widget.form.videoUrl = res.data['secure_url'] as String; _uploadingVideo = false; });
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Video uploaded!'), backgroundColor: Colors.green));
-        }
-      } catch (e) {
-        setState(() => _uploadingVideo = false);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+    try {
+      final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false, withData: true);
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+      if (file.size > 100 * 1024 * 1024) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 100MB for videos'), backgroundColor: Colors.red));
+        return;
       }
+      setState(() => _uploadingVideo = true);
+      final url = await _signedCloudinaryUpload(bytes: file.bytes!, filename: file.name, folder: 'icare/lessons/videos');
+      if (url != null) {
+        setState(() { widget.form.videoUrl = url; _uploadingVideo = false; });
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Video uploaded!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      setState(() => _uploadingVideo = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red));
     }
   }
 
@@ -980,20 +1076,20 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      if (file.bytes == null || file.size > 50 * 1024 * 1024) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 50MB'), backgroundColor: Colors.red));
+      if (file.bytes == null) return;
+      if (file.size > 50 * 1024 * 1024) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max 50MB for documents'), backgroundColor: Colors.red));
         return;
       }
       setState(() => _uploadingDoc = true);
-      final fd = FormData.fromMap({'file': MultipartFile.fromBytes(file.bytes!, filename: file.name), 'upload_preset': _preset, 'resource_type': 'raw'});
-      final res = await Dio().post('https://api.cloudinary.com/v1_1/$_cloud/raw/upload', data: fd);
-      if (res.statusCode == 200) {
-        setState(() { widget.form.documentUrl = res.data['secure_url'] as String; widget.form.documentName = file.name; _uploadingDoc = false; });
+      final url = await _signedCloudinaryUpload(bytes: file.bytes!, filename: file.name, folder: 'icare/lessons/docs', resourceType: 'raw');
+      if (url != null) {
+        setState(() { widget.form.documentUrl = url; widget.form.documentName = file.name; _uploadingDoc = false; });
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Document uploaded!'), backgroundColor: Colors.green));
       }
     } catch (e) {
       setState(() => _uploadingDoc = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red));
     }
   }
 
@@ -1030,7 +1126,7 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               TextField(controller: f.titleCtrl, decoration: const InputDecoration(labelText: 'Lesson Title *', border: OutlineInputBorder())),
               const SizedBox(height: 12),
-              TextField(controller: f.contentCtrl, decoration: const InputDecoration(labelText: 'Notes / Description (optional)', border: OutlineInputBorder()), maxLines: 3),
+              TextField(controller: f.contentCtrl, decoration: const InputDecoration(labelText: 'Notes (optional)', border: OutlineInputBorder()), maxLines: 3),
               const SizedBox(height: 12),
               TextField(controller: f.durationCtrl, decoration: const InputDecoration(labelText: 'Duration (minutes)', border: OutlineInputBorder(), suffixText: 'min'), keyboardType: TextInputType.number),
               const SizedBox(height: 14),

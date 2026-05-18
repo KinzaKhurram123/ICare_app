@@ -848,7 +848,7 @@ class _LessonDialogState extends State<_LessonDialog> {
               TextField(
                 controller: _contentController,
                 decoration: const InputDecoration(
-                  labelText: 'Description / Notes',
+                  labelText: 'Notes',
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -880,44 +880,6 @@ class _LessonDialogState extends State<_LessonDialog> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // YouTube / paste URL
-                    TextField(
-                      controller: _videoUrlController,
-                      onChanged: (v) => setState(() => _uploadedVideoUrl = v.trim().isEmpty ? null : v.trim()),
-                      decoration: InputDecoration(
-                        labelText: 'Paste YouTube / Vimeo URL',
-                        hintText: 'https://youtube.com/watch?v=...',
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        prefixIcon: const Icon(Icons.link_rounded, size: 18),
-                        suffixIcon: currentUrl.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 16),
-                                onPressed: () => setState(() {
-                                  _videoUrlController.clear();
-                                  _uploadedVideoUrl = null;
-                                }),
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Divider with OR
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('OR',
-                              style: TextStyle(
-                                  fontSize: 12, color: Color(0xFF94A3B8))),
-                        ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
 
                     // Upload video button
                     SizedBox(

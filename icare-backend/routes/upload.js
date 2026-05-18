@@ -76,11 +76,13 @@ router.post('/product', protect, upload.single('file'), async (req, res) => {
 });
 
 // GET /api/upload/sign — returns Cloudinary signature for direct client-side upload
-// Frontend uses this to upload large files (videos/images) directly to Cloudinary
+// Frontend uses this to upload large files (videos/images/docs) directly to Cloudinary
 // bypassing Vercel's 4.5MB body limit
+// Query params: folder (optional), resource_type (optional: image|video|raw|auto)
 router.get('/sign', protect, async (req, res) => {
   try {
     const folder = req.query.folder || 'icare/media';
+    const resourceType = req.query.resource_type || 'auto';
     const timestamp = Math.round(Date.now() / 1000);
     const paramsToSign = { timestamp, folder };
 
@@ -96,6 +98,7 @@ router.get('/sign', protect, async (req, res) => {
       api_key: process.env.CLOUDINARY_API_KEY || cloudinary.config().api_key,
       cloud_name: cloudinary.config().cloud_name,
       folder,
+      resource_type: resourceType,
     });
   } catch (err) {
     console.error('Sign error:', err);
