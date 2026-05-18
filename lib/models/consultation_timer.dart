@@ -5,7 +5,7 @@ import 'dart:async';
 
 class ConsultationTimer {
   static const Duration minDuration = Duration(minutes: 15);
-  static const Duration maxDuration = Duration(minutes: 30);
+  static Duration maxDuration = Duration(minutes: 30); // Admin can change this
   static const Duration warningBeforeEnd = Duration(minutes: 2);
 
   Duration _elapsed = Duration.zero;

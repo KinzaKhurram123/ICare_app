@@ -10,6 +10,7 @@ class AppointmentDetail {
   final String status;
   final String? channelName;
   final String? consultationType;
+  final int? durationMinutes;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +24,7 @@ class AppointmentDetail {
     required this.status,
     this.channelName,
     this.consultationType,
+    this.durationMinutes,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -83,6 +85,9 @@ class AppointmentDetail {
       status: json['status']?.toString() ?? 'pending',
       channelName: json['channel_name']?.toString(),
       consultationType: json['consultation_type']?.toString(),
+      durationMinutes: json['durationMinutes'] is num
+          ? (json['durationMinutes'] as num).toInt()
+          : int.tryParse(json['durationMinutes']?.toString() ?? ''),
       createdAt: DateTime.tryParse(
         json['createdAt']?.toString() ?? '',
       ) ?? DateTime.now(),

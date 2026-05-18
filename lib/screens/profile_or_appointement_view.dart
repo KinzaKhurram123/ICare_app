@@ -177,31 +177,6 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
 
             if (selectedRole == "Doctor") ...[
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (ctx) =>
-                            CreateMedicalRecordScreen(appointment: appointment),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.medical_services_rounded, size: 20),
-                  label: const Text("Create Medical Record"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

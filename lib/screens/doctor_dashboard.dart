@@ -130,6 +130,8 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       _appointments.where((a) => a.status == 'confirmed').length;
   int get _completedCount =>
       _appointments.where((a) => a.status == 'completed').length;
+  int get _missedCount =>
+      _appointments.where((a) => a.status.toLowerCase() == 'missed').length;
 
   @override
   Widget build(BuildContext context) {
@@ -461,6 +463,12 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
         const Color(0xFFF59E0B),
       ),
       _buildStatCard(
+        'Missed',
+        _missedCount,
+        Icons.event_busy_rounded,
+        const Color(0xFFEF4444),
+      ),
+      _buildStatCard(
         'rating'.tr(),
         avgRating,
         Icons.star_rounded,
@@ -496,6 +504,12 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
           Expanded(child: cards[2]),
           const SizedBox(width: 12),
           Expanded(child: cards[3]),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: cards[4]),
+          const SizedBox(width: 12),
+          const Expanded(child: SizedBox()),
         ]),
       ],
     );
@@ -1384,10 +1398,19 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   List<AppointmentDetail> get _missedConsultations =>
       _appointments.where((a) => a.status.toLowerCase() == 'missed').toList();
 
+  // Appointments that ran over the 30-min consultation limit
+  List<AppointmentDetail> get _timeExceededConsultations =>
+      _appointments.where((a) =>
+        a.status.toLowerCase() == 'completed' &&
+        a.durationMinutes != null &&
+        a.durationMinutes! > 30
+      ).toList();
+
   Widget _buildClinicalFlags() {
     final totalRejections = _clinicalRejectionFlags.length;
     final flagged = _clinicalRejectionFlags.take(5).toList();
     final missed = _missedConsultations;
+    final timeExceeded = _timeExceededConsultations;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1428,6 +1451,20 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 child: Text(
                   '${missed.length} missed',
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
+                ),
+              ),
+            ],
+            if (timeExceeded.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${timeExceeded.length} time exceeded',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEF4444)),
                 ),
               ),
             ],
@@ -1662,11 +1699,95 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
             ),
           ),
         ],
+        // ── Time-Exceeded Consultations ───────────────────────────────────
+        if (timeExceeded.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.timer_off_rounded, color: Color(0xFFEF4444), size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Consultations that exceeded the 30-minute limit.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFFEF4444), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ...timeExceeded.take(5).toList().asMap().entries.map<Widget>((entry) {
+                  final i = entry.key;
+                  final appt = entry.value;
+                  final mins = appt.durationMinutes ?? 0;
+                  final over = mins - 30;
+                  return Column(
+                    children: [
+                      if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.timer_off_rounded, color: Color(0xFFEF4444), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    appt.patient?.name ?? 'Patient',
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${appt.timeSlot}  ·  ${DateFormat('dd MMM yyyy').format(appt.date)}  ·  ${mins}min total',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('+${over}min', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFEF4444))),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
-
-  Widget _buildQuickActions(bool isDesktop, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

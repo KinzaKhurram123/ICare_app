@@ -1567,7 +1567,7 @@ class _WebTopBar extends ConsumerWidget {
                   // Navigate to role-specific profile edit page
                   if (role == 'Doctor') {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
+                      MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
                     );
                   } else if (role == 'Pharmacy') {
                     Navigator.of(context).push(

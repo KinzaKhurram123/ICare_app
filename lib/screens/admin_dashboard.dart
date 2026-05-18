@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:icare/models/consultation_timer.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/services/medical_record_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -271,6 +272,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                     _leaveRequests.where((r) => r['status'] == 'pending').length),
                 _buildTabItemBadge('Certificates', Icons.workspace_premium_rounded,
                     _certificates.where((c) => c['status'] == 'pending').length),
+                _buildTabItem('Commission', Icons.monetization_on_rounded),
               ],
             ),
           ),
@@ -278,6 +280,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       ),
       floatingActionButton: _currentTab != 'Pending' && _currentTab != 'PatientRecords'
           && _currentTab != 'LeaveRequests' && _currentTab != 'Certificates'
+          && _currentTab != 'Commission'
           ? FloatingActionButton.extended(
               onPressed: () => _showAddUserDialog(),
               backgroundColor: AppColors.primaryColor,
@@ -295,6 +298,8 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
           ? _buildLeaveRequestsTab()
           : _currentTab == 'Certificates'
           ? _buildCertificatesTab()
+          : _currentTab == 'Commission'
+          ? _buildCommissionTab()
           : _currentTab == 'PatientRecords'
           ? _buildPatientRecordsTab()
           : _isLoading
@@ -1003,6 +1008,316 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ── Commission Tab (Admin only) ────────────────────────────────────────────
+  Widget _buildCommissionTab() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _apiService.get('/admin/commission-stats').then((r) =>
+          r.data is Map ? Map<String, dynamic>.from(r.data as Map) : <String, dynamic>{}),
+      builder: (context, snap) {
+        final data = snap.data ?? {};
+        final totalRevenue = data['totalRevenue'] ?? 0;
+        final iCareCommission = data['iCareCommission'] ?? data['platformCommission'] ?? 0;
+        final doctorEarnings = data['doctorEarnings'] ?? 0;
+        final commissionRate = data['commissionRate'] ?? 10;
+        final transactions = (data['transactions'] as List?) ?? [];
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0036BC), Color(0xFF3B82F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('iCare Platform Commission',
+                              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('Rs. ${_fmt(iCareCommission)}',
+                              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                          Text('$commissionRate% of total revenue',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Stats row
+              Row(
+                children: [
+                  Expanded(child: _commissionBox('Total Revenue', 'Rs. ${_fmt(totalRevenue)}', const Color(0xFF10B981))),
+                  const SizedBox(width: 12),
+                  Expanded(child: _commissionBox('Doctor Earnings', 'Rs. ${_fmt(doctorEarnings)}', const Color(0xFF8B5CF6))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Commission rate setting
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.percent_rounded, color: AppColors.primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Commission Rate', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                          Text('Currently $commissionRate% per consultation',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => _showCommissionRateDialog(commissionRate),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        elevation: 0,
+                      ),
+                      child: const Text('Edit Rate', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Consultation time limit setting
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer_rounded, color: Color(0xFF8B5CF6), size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Max Consultation Duration', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                          Text('Default: ${ConsultationTimer.maxDuration.inMinutes} minutes per session',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => _showConsultationTimeLimitDialog(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        elevation: 0,
+                      ),
+                      child: const Text('Edit Limit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Recent transactions
+              if (snap.connectionState == ConnectionState.waiting)
+                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+              else if (transactions.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+                  child: const Center(child: Text('No commission transactions yet.', style: TextStyle(color: Color(0xFF64748B)))),
+                )
+              else ...[
+                const Text('Recent Transactions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+                  child: Column(
+                    children: transactions.take(20).toList().asMap().entries.map((e) {
+                      final i = e.key;
+                      final t = e.value as Map;
+                      return Column(
+                        children: [
+                          if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                              child: const Icon(Icons.receipt_rounded, color: Color(0xFF10B981), size: 18),
+                            ),
+                            title: Text(t['doctorName']?.toString() ?? 'Doctor', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            subtitle: Text(t['date']?.toString() ?? '', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                            trailing: Text('Rs. ${_fmt(t['commission'] ?? 0)}',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF10B981))),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _commissionBox(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        ],
+      ),
+    );
+  }
+
+  String _fmt(dynamic val) {
+    final n = (val is num) ? val.toInt() : int.tryParse('$val') ?? 0;
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return '$n';
+  }
+
+  void _showCommissionRateDialog(dynamic currentRate) {
+    final ctrl = TextEditingController(text: '$currentRate');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Set Commission Rate', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter the platform commission percentage (0–100)', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'e.g. 10',
+                suffixText: '%',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final rate = double.tryParse(ctrl.text.trim());
+              if (rate == null || rate < 0 || rate > 100) return;
+              Navigator.pop(ctx);
+              try {
+                await _apiService.post('/admin/commission-rate', {'rate': rate});
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Commission rate updated to $rate%'), backgroundColor: Colors.green),
+                  );
+                  setState(() {}); // refresh
+                }
+              } catch (_) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to update rate'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showConsultationTimeLimitDialog() {
+    final ctrl = TextEditingController(text: '${ConsultationTimer.maxDuration.inMinutes}');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Max Consultation Duration', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Set the maximum consultation time in minutes (default: 30)',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(height: 12),
+          TextField(controller: ctrl, keyboardType: TextInputType.number, autofocus: true,
+            decoration: InputDecoration(hintText: 'e.g. 30', suffixText: 'min',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              filled: true, fillColor: const Color(0xFFF8FAFC))),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final mins = int.tryParse(ctrl.text.trim());
+              if (mins == null || mins < 5 || mins > 120) return;
+              ConsultationTimer.maxDuration = Duration(minutes: mins);
+              Navigator.pop(ctx);
+              try {
+                await _apiService.post('/admin/consultation-settings', {'maxDurationMinutes': mins});
+              } catch (_) {}
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Max consultation time set to $mins minutes'), backgroundColor: Colors.green));
+                setState(() {});
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

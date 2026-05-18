@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   flutter_volume_controller
   iris_method_channel
+  local_auth_windows
   permission_handler_windows
   printing
   screen_brightness_windows
