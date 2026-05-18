@@ -8,6 +8,7 @@ import 'package:icare/screens/about_us.dart' show AboutUs;
 import 'package:icare/screens/change_password.dart' show ChangePassword;
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/screens/courses.dart' show Courses;
+import 'package:icare/screens/doctor_availability.dart' show DoctorAvailability;
 import 'package:icare/screens/doctor_profile_setup.dart' show DoctorProfileSetup;
 import 'package:icare/screens/help_and_support.dart' show HelpAndSupport;
 import 'package:icare/screens/notification_settings.dart' show NotificationSettings;
@@ -542,6 +543,7 @@ class _WebSettingsLayout extends StatelessWidget {
       body: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Center(child: Container(constraints: const BoxConstraints(maxWidth: 800), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Remove any blue background header - using clean white layout
         _ProfileEditCard(p: p), const SizedBox(height: 24),
+        if (p.isDoctor) ...[_doctorProfessionalCard(context), const SizedBox(height: 24)],
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 24)],
         _notificationsCard(context), const SizedBox(height: 24),
         if (p.isPatient) ...[_waterReminderCard(context), const SizedBox(height: 24)],
@@ -739,6 +741,47 @@ class _WebSettingsLayout extends StatelessWidget {
       ])));
   }
 
+  // ── DOCTOR PROFESSIONAL SETTINGS ──
+  Widget _doctorProfessionalCard(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionLabel('Professional Settings'),
+          const SizedBox(height: 16),
+          // Consultation Fee
+          _settingsTile(
+            icon: Icons.attach_money_rounded,
+            iconColor: const Color(0xFF10B981),
+            title: 'Consultation Fee',
+            subtitle: 'Set your consultation fee (Rs.)',
+            onTap: () => p.onShowFeeDialog(context),
+          ),
+          const Divider(height: 1),
+          // Availability & Schedule
+          _settingsTile(
+            icon: Icons.calendar_month_outlined,
+            iconColor: const Color(0xFF6366F1),
+            title: 'Availability & Schedule',
+            subtitle: 'Manage your working hours & days',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorAvailability())),
+          ),
+          const Divider(height: 1),
+          // Medical License
+          _settingsTile(
+            icon: Icons.badge_outlined,
+            iconColor: const Color(0xFF0EA5E9),
+            title: 'Medical License',
+            subtitle: 'View & update license details',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorProfileSetup())),
+          ),
+        ]),
+      ),
+    );
+  }
+
   // ── LANGUAGE ──
   Widget _languageCard(BuildContext context) {
     return Card(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -821,6 +864,7 @@ class _MobileSettingsLayout extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings', style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w700)), centerTitle: true, backgroundColor: Colors.white, foregroundColor: AppColors.primaryColor, elevation: 0, surfaceTintColor: Colors.white),
       body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _ProfileEditCard(p: p), const SizedBox(height: 16),
+        if (p.isDoctor) ...[_doctorProfessionalCard(context), const SizedBox(height: 16)],
         if (p.isPatient) ...[_healthProfile(context), const SizedBox(height: 16)],
         _notificationsCard(context), const SizedBox(height: 16),
         if (p.isPatient) ...[_waterReminderCard(context), const SizedBox(height: 16)],
@@ -983,6 +1027,44 @@ class _MobileSettingsLayout extends StatelessWidget {
         _sectionLabel('Notifications'), const SizedBox(height: 12),
         _settingsTile(icon: Icons.notifications_active_outlined, iconColor: const Color(0xFF3B82F6), title: 'Notification Settings', subtitle: 'Manage preferences', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationSettings()))),
       ])));
+  }
+
+  // ── DOCTOR PROFESSIONAL SETTINGS ──
+  Widget _doctorProfessionalCard(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionLabel('Professional Settings'),
+          const SizedBox(height: 12),
+          _settingsTile(
+            icon: Icons.attach_money_rounded,
+            iconColor: const Color(0xFF10B981),
+            title: 'Consultation Fee',
+            subtitle: 'Set your consultation fee (Rs.)',
+            onTap: () => p.onShowFeeDialog(context),
+          ),
+          const Divider(height: 1),
+          _settingsTile(
+            icon: Icons.calendar_month_outlined,
+            iconColor: const Color(0xFF6366F1),
+            title: 'Availability & Schedule',
+            subtitle: 'Manage working hours & days',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorAvailability())),
+          ),
+          const Divider(height: 1),
+          _settingsTile(
+            icon: Icons.badge_outlined,
+            iconColor: const Color(0xFF0EA5E9),
+            title: 'Medical License',
+            subtitle: 'View & update license details',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorProfileSetup())),
+          ),
+        ]),
+      ),
+    );
   }
 
   Widget _languageCard(BuildContext context) {

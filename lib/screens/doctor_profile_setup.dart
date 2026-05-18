@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/providers/auth_provider.dart';
@@ -30,6 +31,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
   final TextEditingController clinicAddressController = TextEditingController();
   final TextEditingController startTimeController = TextEditingController();
   final TextEditingController endTimeController = TextEditingController();
+
+  // License expiry date
+  DateTime? _licenseValidTill;
 
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
@@ -99,6 +103,42 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
       setState(() {
         controller.text = picked.format(context);
       });
+    }
+  }
+
+  /// Opens a date picker for license expiry and schedules a 30-day admin reminder.
+  Future<void> _pickLicenseExpiry() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _licenseValidTill ?? now.add(const Duration(days: 365)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 20),
+      helpText: 'Select License Expiry Date',
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primaryColor,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() => _licenseValidTill = picked);
+      // Schedule 30-day admin notification (saved to backend)
+      await _saveLicenseExpiry(picked);
+    }
+  }
+
+  /// Saves license expiry to backend. Backend will send admin notification 30 days before.
+  Future<void> _saveLicenseExpiry(DateTime expiryDate) async {
+    try {
+      await DoctorService().updateLicenseExpiry(expiryDate);
+    } catch (e) {
+      debugPrint('⚠️ Could not save license expiry: $e');
     }
   }
 
@@ -353,11 +393,23 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
-                  controller: licenseController,
-                  label: "License Number",
-                  icon: Icons.badge_outlined,
-                  hint: "Medical license number",
+                // License Number + Valid Till side by side
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: licenseController,
+                        label: "License Number",
+                        icon: Icons.badge_outlined,
+                        hint: "Medical license number",
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildValidTillField(),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 _buildSectionTitle("Conditions You Treat"),
@@ -595,6 +647,9 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        // Valid Till — full width row below license
+                        _buildValidTillField(),
                         const SizedBox(height: 40),
                         const Text(
                           "Conditions You Treat",
@@ -795,6 +850,106 @@ class _DoctorProfileSetupState extends ConsumerState<DoctorProfileSetup> {
           padding: const EdgeInsets.symmetric(horizontal: 4),
         );
       }).toList(),
+    );
+  }
+
+  /// "Valid Till" date picker field for license expiry
+  Widget _buildValidTillField() {
+    final hasDate = _licenseValidTill != null;
+    final dateStr = hasDate
+        ? '${_licenseValidTill!.day.toString().padLeft(2, '0')}/'
+          '${_licenseValidTill!.month.toString().padLeft(2, '0')}/'
+          '${_licenseValidTill!.year}'
+        : '';
+
+    // Warn if expiry is within 30 days
+    final isExpiringSoon = hasDate &&
+        _licenseValidTill!.difference(DateTime.now()).inDays <= 30;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Valid Till',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickLicenseExpiry,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isExpiringSoon
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFFE2E8F0),
+                width: isExpiringSoon ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                  color: isExpiringSoon
+                      ? const Color(0xFFF59E0B)
+                      : AppColors.primaryColor,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    hasDate ? dateStr : 'Select expiry date',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: hasDate
+                          ? (isExpiringSoon
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF0F172A))
+                          : const Color(0xFF94A3B8),
+                      fontWeight: hasDate ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+                if (isExpiringSoon)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Expiring Soon',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFF59E0B),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (hasDate)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Admin will be notified 30 days before expiry',
+              style: TextStyle(
+                fontSize: 11,
+                color: isExpiringSoon
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

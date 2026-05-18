@@ -297,6 +297,20 @@ class DoctorService {
     }
   }
 
+  /// Save license expiry date. Backend sends admin notification 30 days before expiry.
+  Future<void> updateLicenseExpiry(DateTime expiryDate) async {
+    try {
+      await _apiService.post('/doctors/add_doctor_details', {
+        'licenseValidTill': expiryDate.toIso8601String(),
+        'licenseExpiryReminderDays': 30, // backend uses this to schedule reminder
+      });
+      debugPrint('✅ License expiry saved: $expiryDate');
+    } catch (e) {
+      debugPrint('Error saving license expiry: $e');
+      rethrow;
+    }
+  }
+
   /// Set doctor online/offline status
   Future<void> setOnlineStatus(bool isOnline) async {
     try {
