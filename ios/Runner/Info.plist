@@ -93,5 +93,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>iCare uses your location while you are using the app to provide location-based services.</string>
 </dict>
 </plist>
