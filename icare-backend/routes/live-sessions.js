@@ -1119,10 +1119,29 @@ router.post('/:id/end-and-save', authMiddleware, async (req, res) => {
     const session = await LiveSession.findById(toId(req.params.id)).lean();
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
 
+    // Only the instructor who STARTED the session may end it for everyone.
+    // The client used to decide this on its own and got it wrong: a co-teacher
+    // joining from Course Content was handed isSessionOwner:true, so leaving
+    // ended the whole class while the lead instructor was still teaching
+    // (confirmed live 2026-09-08). The client is fixed too, but this is the
+    // guard that makes it impossible rather than merely unlikely.
+    if (session.instructorId && req.user?.id
+        && session.instructorId.toString() !== req.user.id.toString()) {
+      console.log(`end-and-save: refused — ${req.user.id} is not the owner of session ${req.params.id}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Only the instructor who started this session can end it for everyone.',
+      });
+    }
+
     // Use startedAt (set on go-live) — createdAt can be days old for reused session docs
     const durationMinutes = Math.round((Date.now() - new Date(session.startedAt || session.createdAt).getTime()) / 60000);
 
-    const resolvedLessonId = lessonId || session.linkedLessonId;
+    // Never let the caller's lessonId overwrite a good link with the session's
+    // own id — that is exactly how linkedLessonId ended up self-referential.
+    const callerLessonId = lessonId && lessonId.toString() !== req.params.id.toString()
+      ? lessonId : null;
+    const resolvedLessonId = callerLessonId || session.linkedLessonId;
     const resolvedModuleId = moduleId || session.linkedModuleId;
 
     // Mark session as completed

@@ -19,6 +19,7 @@ import 'package:icare/widgets/video_player_widget.dart';
 import 'package:icare/widgets/attachment_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:icare/widgets/back_button.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/widgets/tap_area.dart';
 
 /// Course Content Management - Moodle/Udemy style
@@ -446,7 +447,14 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
     );
   }
 
-  Future<void> _startLiveSession(Map<String, dynamic> lesson) async {
+  /// [lesson] is the Course lesson when starting fresh, but the LiveSession doc
+  /// when joining one already in progress (see the Join Live tile). [realLessonId]
+  /// therefore has to be passed separately: reading lesson['_id'] in the join case
+  /// yields the SESSION id, and that value was being sent on as lessonId — which
+  /// end-and-save then wrote back as linkedLessonId. That is how the running
+  /// session on 2026-09-08 ended up with linkedLessonId pointing at its own _id,
+  /// breaking the lesson-to-session link the Join Live tile depends on.
+  Future<void> _startLiveSession(Map<String, dynamic> lesson, {String? realLessonId}) async {
     final meetingLink = lesson['meetingLink']?.toString() ?? '';
     final meetingId = lesson['meetingId']?.toString() ?? '';
     final meetingPassword = lesson['meetingPassword']?.toString() ?? '';
@@ -458,12 +466,25 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
 
     if (meetingLink.isEmpty) {
       // No external link → launch iCare native live session.
-      // Any instructor opening a session from the instructor dashboard is the
-      // owner — they can stop recording and end the session for all. The backend
-      // set-live already handles co-teachers by returning the existing session
-      // ID; isSessionOwner:true here just ensures the end-session flow works
-      // regardless of whether the lesson was already "live" in the DB.
       final sessionId = lesson['_id']?.toString() ?? '';
+
+      // Ownership is NOT "whoever opened this screen". This used to be
+      // hardcoded true, so a co-teacher joining someone else's session was
+      // treated as its owner — and leaving ran endAndSaveSession +
+      // setSessionLive(false), marking the whole class 'completed' while the
+      // lead instructor was still teaching in it (confirmed live 2026-09-08).
+      // When joining an in-progress session `lesson` is the LiveSession doc, so
+      // instructorId is present and authoritative. When it is a plain lesson the
+      // user is starting the session themselves and does own it.
+      bool isOwner = true;
+      final sessionInstructorId = lesson['instructorId']?.toString() ?? '';
+      if (sessionInstructorId.isNotEmpty) {
+        try {
+          final me = (await SharedPref().getUserData())?.id.toString() ?? '';
+          if (me.isNotEmpty) isOwner = sessionInstructorId == me;
+        } catch (_) {}
+      }
+
       if (!mounted) return;
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => LmsLiveSessionScreen(
@@ -471,8 +492,8 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
           courseId: widget.courseId,
           sessionTitle: lesson['title']?.toString() ?? 'Live Session',
           isInstructor: true,
-          isSessionOwner: true,
-          lessonId: lesson['_id']?.toString(),
+          isSessionOwner: isOwner,
+          lessonId: realLessonId ?? lesson['_id']?.toString(),
         ),
       ));
       return;
@@ -1391,15 +1412,37 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
     // course owner or another instructor already kicked it off. The Course
     // lesson's own status field is only updated by the initiating instructor;
     // _liveSessions is the realtime source of truth.
+    // Matching on linkedLessonId alone was too fragile. Confirmed live on
+    // 2026-09-08: a running session had linkedLessonId pointing at its OWN _id
+    // (6aa0227348d854ea32026cab) instead of the lesson (6aa021ca48d854ea32026c8d),
+    // and the lesson's liveSessionId was never set either — both ends of the
+    // link were broken. The lesson therefore rendered "Start" while the session
+    // was genuinely live, so a co-teacher who left had no way back in: pressing
+    // Start would have begun a second session rather than rejoining.
+    //
+    // So try the id links first, then fall back to "is any session for this
+    // course live right now". That fallback is safe because the backend allows
+    // only one live session per course — set-live returns the existing one
+    // rather than creating a rival (see its existingLive branch) — so a live
+    // session found here IS the one this lesson's tile should join.
+    final lessonLiveSessionId = lesson['liveSessionId']?.toString() ?? '';
     Map? _activeLiveSessionForLesson;
-    if (isLiveSession && lessonId.isNotEmpty) {
+    if (isLiveSession) {
       for (final s in _liveSessions) {
         final m = s as Map;
-        if (m['linkedLessonId']?.toString() == lessonId && m['status']?.toString() == 'live') {
+        if (m['status']?.toString() != 'live') continue;
+        final sid = m['_id']?.toString() ?? '';
+        final linked = m['linkedLessonId']?.toString() ?? '';
+        if ((lessonId.isNotEmpty && linked == lessonId) ||
+            (lessonLiveSessionId.isNotEmpty && sid == lessonLiveSessionId)) {
           _activeLiveSessionForLesson = m;
           break;
         }
       }
+      // Fallback: no id link matched, but this course has a live session.
+      _activeLiveSessionForLesson ??= _liveSessions
+          .cast<Map?>()
+          .firstWhere((m) => m?['status']?.toString() == 'live', orElse: () => null);
     }
     final effectiveStatus = _activeLiveSessionForLesson != null ? 'live' : sessionStatus;
 
@@ -1551,6 +1594,9 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
                   _activeLiveSessionForLesson != null
                       ? Map<String, dynamic>.from(_activeLiveSessionForLesson)
                       : lesson,
+                  // Always the Course lesson's own id, never the session's —
+                  // this is what keeps linkedLessonId pointing at the lesson.
+                  realLessonId: lessonId,
                 ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
