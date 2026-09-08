@@ -76,6 +76,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   // consultation record instead of trusting what was passed in.
   bool _roleIsDoctor = false;
   AppointmentDetail? _fetchedAppointment;
+  String _lastCallType = 'video'; // track most recent call type for ended message
 
   bool get _isDoctor => widget.isDoctor || _roleIsDoctor;
   AppointmentDetail? get _appointment => widget.appointment ?? _fetchedAppointment;
@@ -201,12 +202,9 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       // Backend already created the session and sent consent messages — just load
       if (widget.consultationId != null && widget.consultationId!.isNotEmpty) {
         _consultationId = widget.consultationId;
-        // Names for the header — needed when this screen was opened straight
-        // from /consultation/<id> (a page reload), where there's no appointment
-        // object and no remoteUserName to fall back on.
-        if (_appointment == null) {
-          _loadParticipantNames(widget.consultationId!);
-        }
+        // Always load names: appointment may lack doctor/patient name details,
+        // and a URL-only open has no appointment at all.
+        _loadParticipantNames(widget.consultationId!);
         // Load messages with a timeout — don't block UI if backend is slow
         await _loadMessages().timeout(
           const Duration(seconds: 10),
@@ -507,6 +505,7 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
   }
 
   Future<void> _initiateCall({required bool audioOnly}) async {
+    _lastCallType = audioOnly ? 'audio' : 'video';
     // Determine the other party's ID to send them a ring signal. After a page
     // reload there's no appointment object, so fall back to the ids on the
     // consultation record — otherwise calling was simply impossible from a
@@ -637,17 +636,28 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     );
   }
 
-  // Navigator.pop leaves the screen exactly where it was whenever this
-  // route is the bottom of the stack — which is always the case after a
-  // page refresh (or opening the /consultation/:id URL directly), since
-  // GoRouter rebuilds the whole navigator from that one location. With
-  // no route underneath to pop back to, "end consultation" silently did
-  // nothing and the user was stuck staring at a blank page. Going to the
-  // role's dashboard by location always lands somewhere real, regardless
-  // of what (if anything) is under this route on the stack.
+  // Leaving needs BOTH halves, because this screen reaches the user two
+  // different ways:
+  //
+  //  • PUSHED on top of the dashboard (incoming-call listener, appointment
+  //    card, rejoin) — GoRouter is then already sitting at the dashboard
+  //    location, so go() re-resolves the same route and changes nothing
+  //    visible; the pushed route stays on top and the user is stranded on a
+  //    finished consultation. Confirmed live: "ROUTER ALLOW: path=/patient/home"
+  //    fired on every end-consultation while the chat stayed on screen.
+  //  • As the router's OWN route (page refresh, /consultation/:id opened
+  //    directly) — nothing to pop, so only go() gets the user anywhere.
+  //
+  // So: tear down any pushed routes first, then navigate by location.
   void _exitToDashboard() {
     if (!mounted) return;
-    context.go(_isDoctor ? '/doctor/dashboard' : '/patient/home');
+    final target = _isDoctor ? '/doctor/dashboard' : '/patient/home';
+    // Resolve the router BEFORE popping — popping disposes this widget, and a
+    // dead context can no longer look GoRouter up.
+    final router = GoRouter.of(context);
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (nav.canPop()) nav.popUntil((r) => r.isFirst);
+    router.go(target);
   }
 
   Future<void> _endConsultation({bool skipPrescriptionCheck = false}) async {
@@ -697,7 +707,67 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
       }
     }
 
-    // Show confirmation dialog
+    // Patient flow: show rating dialog first, then end on backend and redirect.
+    // Doctor flow: show confirmation dialog, then end on backend and redirect.
+    if (!_isDoctor) {
+      // Resolve appointment/doctor IDs needed for the review.
+      var apptId = _appointment?.id ?? '';
+      var doctorId = _appointment?.doctor?.id ?? '';
+      if ((apptId.isEmpty || doctorId.isEmpty) && _consultationId != null) {
+        try {
+          final res = await _consultationService.getConsultationV2(_consultationId!);
+          final c = (res['consultation'] ?? res) as Map<String, dynamic>?;
+          if (c != null) {
+            if (apptId.isEmpty) apptId = c['appointmentId']?.toString() ?? '';
+            if (doctorId.isEmpty) {
+              final d = c['doctorId'];
+              doctorId = (d is Map ? d['_id'] : d)?.toString() ?? '';
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+
+      // Show rating dialog immediately — this serves as the patient's confirmation.
+      if (doctorId.isNotEmpty) {
+        await showRatingDialog(
+          context: context,
+          title: 'Rate Your Doctor',
+          subtitle: 'How was your consultation experience?',
+          onSubmit: (rating, satisfied, comment) async {
+            try {
+              await ReviewService().submitReview(
+                appointmentId: apptId,
+                doctorId: doctorId,
+                starRating: rating,
+                satisfied: satisfied,
+                reviewText: comment.isNotEmpty ? comment : null,
+              );
+            } catch (_) {}
+          },
+        );
+      }
+
+      if (!mounted) return;
+
+      // End the consultation on the backend. Fire-and-forget — the patient is
+      // redirected regardless so a network hiccup never strands them here.
+      _timer.stop();
+      await _clearConsultationState();
+      if (_consultationId != null) {
+        _consultationService.endConsultationV2(
+          consultationId: _consultationId!,
+          duration: _timer.elapsed.inSeconds,
+          callType: _lastCallType,
+          endedBy: 'patient',
+        ).catchError((_) => <String, dynamic>{});
+      }
+      if (mounted) _exitToDashboard();
+      return;
+    }
+
+    // ── Doctor flow ──────────────────────────────────────────────────────────
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -727,68 +797,16 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
             ? await _consultationService.endConsultationV2(
                 consultationId: _consultationId!,
                 duration: _timer.elapsed.inSeconds,
+                callType: _lastCallType,
+                endedBy: 'doctor',
               )
             : {'success': false, 'message': 'No active consultation session'};
 
         if (result['success'] == true && mounted) {
           _timer.stop();
           await _clearConsultationState();
-          
-          // Show rating dialog to patient immediately after consultation ends
-          if (mounted && !_isDoctor) {
-            var apptId = _appointment?.id ?? '';
-            var doctorId = _appointment?.doctor?.id ?? '';
-            // An instant "Connect Now" consultation is opened without an
-            // appointment object, so both ids were blank and the patient was
-            // sent to the dashboard without ever being asked to rate. Fall
-            // back to the consultation record, which always has them.
-            if ((apptId.isEmpty || doctorId.isEmpty) && _consultationId != null) {
-              try {
-                final res = await _consultationService.getConsultationV2(_consultationId!);
-                final c = (res['consultation'] ?? res) as Map<String, dynamic>?;
-                if (c != null) {
-                  if (apptId.isEmpty) apptId = c['appointmentId']?.toString() ?? '';
-                  if (doctorId.isEmpty) {
-                    final d = c['doctorId'];
-                    doctorId = (d is Map ? d['_id'] : d)?.toString() ?? '';
-                  }
-                }
-              } catch (_) {}
-            }
-            if (doctorId.isNotEmpty && mounted) {
-              await showRatingDialog(
-                context: context,
-                title: 'Rate Your Doctor',
-                subtitle: 'How was your consultation experience?',
-                onSubmit: (rating, satisfied, comment) async {
-                  // Never let a failed review keep the patient on this screen —
-                  // the consultation has already ended by this point.
-                  if (apptId.isEmpty) return;
-                  try {
-                    await ReviewService().submitReview(
-                      appointmentId: apptId,
-                      doctorId: doctorId,
-                      starRating: rating,
-                      satisfied: satisfied,
-                      reviewText: comment.isNotEmpty ? comment : null,
-                    );
-                  } catch (_) {}
-                },
-              );
-            }
-            if (!mounted) return;
-            // Go straight to the patient's dashboard. The prescription (if
-            // any) is available from their Prescriptions page — stopping here
-            // to show a FutureBuilder screen left the patient stranded because
-            // the screen required a manual "Go to Dashboard" tap rather than
-            // redirecting automatically.
-            _exitToDashboard();
-          } else {
-            // Doctor side - just go back
-            _exitToDashboard();
-          }
+          _exitToDashboard();
         } else if (mounted) {
-          // Backend returned success: false — show error with force-exit option
           final errorMsg = result['message']?.toString() ?? 'Server error';
           final forceEnd = await showDialog<bool>(
             context: context,
@@ -1118,11 +1136,9 @@ class _ConsultationChatScreenV2State extends State<ConsultationChatScreenV2> {
     final apptPatientName = _appointment?.patient?.name;
     final patientName = (apptPatientName != null && apptPatientName != 'Patient' && apptPatientName.isNotEmpty)
         ? apptPatientName
-        // _fetchedPatientName covers the reload case: opening
-        // /consultation/<id> by URL has no appointment and no remoteUserName,
-        // so the header used to fall back to the literal "Patient"/"Doctor".
         : (!_isDoctor
-            ? widget.currentUserName
+            // Patient sees their own name; fall back to fetched name if currentUserName is empty
+            ? (widget.currentUserName.isNotEmpty ? widget.currentUserName : (_fetchedPatientName ?? 'Patient'))
             : (_fetchedPatientName ?? widget.remoteUserName ?? 'Patient'));
     final apptDoctorName = _appointment?.doctor?.name;
     final doctorName = (apptDoctorName != null && apptDoctorName != 'Doctor' && apptDoctorName.isNotEmpty)

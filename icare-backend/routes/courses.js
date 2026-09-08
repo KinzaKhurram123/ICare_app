@@ -1266,16 +1266,23 @@ router.post('/:id/invite-teacher', authMiddleware, async (req, res) => {
 router.post('/:id/co-teacher/accept', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
-    const course = await Course.findById(toId(req.params.id));
+    const course = await Course.findById(toId(req.params.id)).select('coTeachers').lean();
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
 
     const entry = (course.coTeachers || []).find(t => t.userId?.toString() === req.user.id);
     if (!entry) return res.status(404).json({ success: false, message: 'No pending invite found for this user' });
 
-    entry.status = 'accepted';
-    await course.save();
+    // Use findByIdAndUpdate + arrayFilters so we only touch the one sub-document
+    // and never trigger full-document Mongoose validation (which would fail if
+    // other fields like installmentPlan have stale/invalid data in the DB).
+    await Course.findByIdAndUpdate(
+      toId(req.params.id),
+      { $set: { 'coTeachers.$[elem].status': 'accepted' } },
+      { arrayFilters: [{ 'elem.userId': entry.userId }], runValidators: false }
+    );
     res.json({ success: true, message: 'Invitation accepted' });
   } catch (e) {
+    console.error('[CO-TEACHER ACCEPT ERROR]', e);
     res.status(500).json({ success: false, message: e.message });
   }
 });

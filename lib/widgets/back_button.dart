@@ -13,10 +13,23 @@ void goBackOrHome(BuildContext context) {
   // Use GoRouter's canPop/pop — Navigator.of(context).canPop() is unreliable
   // inside a ShellRoute where the inner Navigator may report canPop=true even
   // when there is only one logical route on the stack.
+  //
+  // Exception: screens pushed via Navigator.push() (e.g. instructor classroom
+  // view) have no GoRouter RouteMatch, so context.pop() crashes with a null
+  // check error even though context.canPop() returns true. Fall back to
+  // Navigator.of(context).pop() in that case.
   final canPop = context.canPop();
   debugPrint('⬅️ BACK TAP fired: canPop=$canPop');
   if (canPop) {
-    context.pop();
+    try {
+      context.pop();
+    } catch (_) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        context.go('/dashboard');
+      }
+    }
   } else {
     context.go('/dashboard');
   }

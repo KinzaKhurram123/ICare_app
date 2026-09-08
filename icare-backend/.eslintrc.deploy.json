@@ -1,0 +1,15 @@
+{
+  "root": true,
+  "env": { "node": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022, "sourceType": "script" },
+  "rules": {
+    "no-undef": "error",
+    "no-dupe-args": "error",
+    "no-unreachable": "error",
+    "no-cond-assign": "error",
+    "no-const-assign": "error",
+    "no-obj-calls": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error"
+  }
+}

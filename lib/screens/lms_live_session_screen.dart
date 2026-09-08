@@ -16,6 +16,10 @@ class LmsLiveSessionScreen extends StatefulWidget {
   final String courseId;
   final String sessionTitle;
   final bool isInstructor;
+  // true = this user started the session (course owner / lead instructor).
+  // false = co-teacher who joined an already-running session.
+  // Controls whether leaving stops recording + ends the session for everyone.
+  final bool isSessionOwner;
   final String? lessonId;   // linked lesson for auto-save
   final String? moduleId;
 
@@ -28,6 +32,7 @@ class LmsLiveSessionScreen extends StatefulWidget {
     required this.courseId,
     required this.sessionTitle,
     this.isInstructor = false,
+    this.isSessionOwner = true,
     this.lessonId,
     this.moduleId,
   });
@@ -569,7 +574,10 @@ class _LmsLiveSessionScreenState extends State<LmsLiveSessionScreen>
     // Show "saving" overlay instead of the (now dead) Jitsi iframe
     if (mounted) setState(() {});
 
-    if (widget.isInstructor) {
+    // Only the session owner (the instructor who started it) should stop
+    // recording and end the session. A co-teacher leaving must not kill
+    // the session for the main instructor and all students still in the room.
+    if (widget.isInstructor && widget.isSessionOwner) {
       // Jibri only finalizes + uploads once it gets an explicit stop
       // command — disposing the Jitsi iframe/WebView (lmsLeaveChannel, below)
       // does NOT stop it, it just keeps recording forever server-side with
@@ -589,7 +597,7 @@ class _LmsLiveSessionScreenState extends State<LmsLiveSessionScreen>
       try { await _lms.recordLiveSessionLeave(_sessionDocId); } catch (_) {}
     }
 
-    if (widget.isInstructor) {
+    if (widget.isInstructor && widget.isSessionOwner) {
       if (_sessionDocId.isNotEmpty && _sessionDocId != widget.courseId) {
         try {
           await _lms.endAndSaveSession(

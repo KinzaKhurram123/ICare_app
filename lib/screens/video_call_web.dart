@@ -987,16 +987,17 @@ class _VideoCallWebState extends State<VideoCall> {
     if (mounted) setState(() => _camOff = false);
   }
 
-  /// Red button — leave video but keep consultation "in progress"
+  /// Red button — leave call but keep consultation "in progress"
   Future<void> _leaveVideo() async {
+    final callLabel = widget.isAudioOnly ? 'Audio Call' : 'Video';
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Leave Video?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text(
-            'Do you want to leave the video? You can rejoin from the chat screen.'),
+        title: Text('Leave $callLabel?',
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(
+            'Do you want to leave the $callLabel? You can rejoin from the chat screen.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -1009,7 +1010,7 @@ class _VideoCallWebState extends State<VideoCall> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Leave Video'),
+            child: Text('Leave $callLabel'),
           ),
         ],
       ),

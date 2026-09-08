@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.cartzlinkv2.icare"
         minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        targetSdk = 36
         // Read from pubspec.yaml's `version:` (the `+N` suffix is the code)
         // rather than hardcoding. These were pinned at 1 / "1.0.0", which
         // silently overrode every pubspec bump — so bumping pubspec to +2 and
@@ -73,7 +73,7 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("androidx.multidex:multidex:2.0.1")

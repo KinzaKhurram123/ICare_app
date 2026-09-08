@@ -286,13 +286,14 @@ class _VideoCallMobileState extends State<VideoCall> {
     }
   }
 
-  /// Leave video call only (red button) - with confirmation
+  /// Leave call (red button) - with confirmation
   Future<void> _leaveCall() async {
+    final callLabel = widget.isAudioOnly ? 'Audio Call' : 'Video Call';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Leave Video Call'),
-        content: const Text('Do you want to leave the video call? You can rejoin from the chat screen.'),
+        title: Text('Leave $callLabel'),
+        content: Text('Do you want to leave the $callLabel? You can rejoin from the chat screen.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),

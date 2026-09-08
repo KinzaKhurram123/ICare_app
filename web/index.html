@@ -133,6 +133,7 @@
     var _consultSubject = null;
     var _consultFilePoller = null;
     var _consultFileCursor = 0;
+    var _consultIsAudio = false; // true for audio-only calls — drives icare-context mode
 
     // Globals for LMS live-session file upload (mirrors the consultation
     // ones above — lmsJitsiJoin never set any of this, so files picked in
@@ -183,7 +184,7 @@
         // asynchronously inside the iframe, so a single postMessage right
         // after iframe creation can arrive before its listener exists and be
         // silently dropped (exactly what happened: _mode never got set).
-        _postToJitsi({ type: 'icare-context', mode: 'consultation' });
+        _postToJitsi({ type: 'icare-context', mode: _consultIsAudio ? 'audio-consultation' : 'consultation' });
         var token = _consultAuthToken || _lsToken();
         if (!token || !_consultChatChannel) return;
         fetch('https://icare.com.co/api/call-chat/messages/'
@@ -499,6 +500,7 @@
       _consultChatChannel = chatChannelName || roomName;
       _consultSenderName = displayName || 'User';
       _consultSubject = subject || null;
+      _consultIsAudio = audioOnly === true;
 
       return new Promise(function(resolve) {
         var checkContainer = function(retries) {
@@ -571,7 +573,7 @@
               });
 
               _startConsultFilePoller();
-              _postToJitsi({ type: 'icare-context', mode: 'consultation' });
+              _postToJitsi({ type: 'icare-context', mode: _consultIsAudio ? 'audio-consultation' : 'consultation' });
               setTimeout(window.raiseFlutterLayer, 1200);
               console.log('Jitsi: joining room', roomName, 'as', displayName, '| subject:', subject);
               resolve('ok');
@@ -1199,15 +1201,30 @@
             });
           }
 
-          // Auto-start Jibri (server-side) recording for the instructor as soon as they've joined.
+          // Auto-start Jibri (server-side) recording for the instructor.
+          // Guard: if a co-teacher joins the same room, recording is already
+          // running. We listen for recordingStatusChanged first; if it fires
+          // within 3 s of joining (recording already active from another
+          // participant), we skip the startRecording command so Jitsi doesn't
+          // throw "Recording failed to start" on the co-teacher's screen.
           if (isInstructor) {
+            var _lmsRecordingAlreadyActive = false;
+            _lmsJitsiApi.on('recordingStatusChanged', function(e) {
+              if (e && e.on) _lmsRecordingAlreadyActive = true;
+            });
             _lmsJitsiApi.on('videoConferenceJoined', function() {
-              try {
-                _lmsJitsiApi.executeCommand('startRecording', { mode: 'file' });
-                console.log('LMS Jitsi: auto-starting Jibri recording');
-              } catch(e) {
-                console.warn('LMS Jitsi: could not auto-start recording:', e.message);
-              }
+              setTimeout(function() {
+                if (_lmsRecordingAlreadyActive) {
+                  console.log('LMS Jitsi: recording already active, skipping auto-start');
+                  return;
+                }
+                try {
+                  _lmsJitsiApi.executeCommand('startRecording', { mode: 'file' });
+                  console.log('LMS Jitsi: auto-starting Jibri recording');
+                } catch(e) {
+                  console.warn('LMS Jitsi: could not auto-start recording:', e.message);
+                }
+              }, 3000);
             });
           }
 

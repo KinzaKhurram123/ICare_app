@@ -109,6 +109,66 @@ async function markLivePresent(session, studentId) {
   }
 }
 
+// Ensures Course.modules[moduleId].lessons has an entry for this session.
+// Called from POST / and PUT /:id — sessions created via the Live Sessions
+// tab previously stored linkedModuleId but never touched Course.modules[].lessons,
+// so students could not see them (classroom_course_view reads only lessons, not
+// linkedModuleId). The opposite path (Course Content → add live lesson) already
+// creates both via syncLiveSessions, so this helper short-circuits if
+// linkedLessonId is already set.
+async function ensureModuleLesson(session) {
+  const moduleId = session.linkedModuleId;
+  if (!moduleId || session.linkedLessonId) return;
+  const courseId = session.courseId;
+  if (!courseId) return;
+
+  try {
+    const Course = require('../models/Course');
+    // Read the target module to get current lesson count for ordering
+    const courseSnap = await Course.findOne(
+      { _id: toId(courseId), 'modules._id': toId(moduleId) },
+      { 'modules.$': 1 }
+    );
+    if (!courseSnap?.modules?.length) return;
+
+    const existingLessons = courseSnap.modules[0].lessons || [];
+    const newLesson = {
+      title: session.title || 'Live Session',
+      type: 'live',
+      status: 'scheduled',
+      liveSessionId: session._id,
+      scheduledAt: session.scheduledAt,
+      liveSessionDateTime: session.scheduledAt,
+      duration: session.duration || 60,
+      order: existingLessons.length,
+      createdBy: session.instructorId,
+      ...(session.meetingLink ? { meetingLink: session.meetingLink } : {}),
+    };
+
+    // Push lesson; findOneAndUpdate with positional $ returns the updated module
+    // so we can grab the auto-generated lesson _id immediately.
+    const updated = await Course.findOneAndUpdate(
+      { _id: toId(courseId), 'modules._id': toId(moduleId) },
+      { $push: { 'modules.$.lessons': newLesson } },
+      { new: true, projection: { 'modules.$': 1 } }
+    );
+
+    // The new lesson is the last one matching our liveSessionId
+    const addedLesson = (updated?.modules?.[0]?.lessons || [])
+      .slice().reverse()
+      .find(l => l.liveSessionId?.toString() === session._id.toString());
+    if (!addedLesson) return;
+
+    // Persist the link back onto the LiveSession doc so end-and-save,
+    // jibri-recording-complete and other routes can find the lesson to update.
+    await LiveSession.findByIdAndUpdate(session._id, { linkedLessonId: addedLesson._id });
+    console.log(`ensureModuleLesson: lesson ${addedLesson._id} linked to session ${session._id}`);
+  } catch (e) {
+    // Lesson creation failing must never lose the session
+    console.error('ensureModuleLesson error:', e.message);
+  }
+}
+
 // ── INSTRUCTOR: Create live session ─────────────────────────────────────────
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -117,6 +177,8 @@ router.post('/', authMiddleware, async (req, res) => {
       ...req.body,
       instructorId: toId(req.user.id)
     });
+    // Fire-and-forget: if lesson creation fails, the session is still saved.
+    ensureModuleLesson(session).catch(() => {});
     res.status(201).json({ success: true, session });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
@@ -311,21 +373,66 @@ router.post('/course/:courseId/set-live', authMiddleware, async (req, res) => {
       return res.json({ success: true, sessionId: existingLive._id.toString() });
     }
 
-    // No active session — this instructor is starting fresh
-    // Resolve title: use provided title, or inherit from the scheduled session template
+    // FIX 3: Before creating a brand-new session document, check whether the
+    // instructor already has a session with a very recent heartbeat (within the
+    // last 2 minutes) regardless of its current status.  This handles the race
+    // where the heartbeat arrived just before the status was written as
+    // 'completed' / 'ended', causing the next set-live to create a duplicate.
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const recentHeartbeat = await LiveSession.findOne({
+      courseId: toId(req.params.courseId),
+      instructorHeartbeat: { $gte: twoMinutesAgo },
+    }).lean();
+
+    if (recentHeartbeat) {
+      // Revive — reset status to 'live' and refresh heartbeat.
+      // Also stamp linkedLessonId if the client told us which lesson this is.
+      const reviveUpdate = { status: 'live', instructorHeartbeat: new Date() };
+      if (sessionId && sessionId !== req.params.courseId && !recentHeartbeat.linkedLessonId) {
+        try { reviveUpdate.linkedLessonId = toId(sessionId); } catch (_) {}
+      }
+      const revived = await LiveSession.findByIdAndUpdate(
+        recentHeartbeat._id,
+        reviveUpdate,
+        { new: true }
+      );
+      console.log(`set-live: revived recent session=${revived._id} (was ${recentHeartbeat.status})`);
+      return res.json({ success: true, sessionId: revived._id.toString() });
+    }
+
+    // No active session — this instructor is starting fresh.
+    // sessionId here is the Course lesson's _id (passed by the client so we
+    // can inherit the session title and, crucially, link the LiveSession back
+    // to that lesson so co-teachers see "Join Live" instead of "Start").
     let sessionTitle = title || 'Live Session';
+    let linkedLessonId = null;
+    // Declared out here on purpose: the LiveSession.create() below also reads
+    // template.linkedModuleId. Declaring it with `const` inside the if-block
+    // left it out of scope down there, so building the create() payload threw
+    // ReferenceError: template is not defined — a 500 on every FRESH go-live.
+    // It looked intermittent because the two early-return paths above (an
+    // already-'live' session, or a <2min heartbeat to revive) never reach the
+    // create, so it only broke once those were cleaned up.
+    let template = null;
     if (sessionId && sessionId !== req.params.courseId) {
-      const template = await LiveSession.findById(toId(sessionId)).select('title scheduledAt').lean();
-      if (template?.title) sessionTitle = template.title;
-      // A session scheduled for a specific future time can't be started
-      // early — "Go Live" stays locked client-side too, but the backend
-      // is the real gate since the client's clock/lock state can't be trusted.
-      if (template?.scheduledAt && new Date(template.scheduledAt) > new Date()) {
-        return res.status(403).json({
-          success: false,
-          message: `This session is scheduled for ${new Date(template.scheduledAt).toISOString()} and cannot be started early.`,
-          scheduledAt: template.scheduledAt,
-        });
+      // Try to find a scheduled LiveSession template to inherit the title/time
+      template = await LiveSession.findById(toId(sessionId)).select('title scheduledAt linkedLessonId linkedModuleId').lean();
+      if (template) {
+        if (template.title) sessionTitle = template.title;
+        if (template.scheduledAt && new Date(template.scheduledAt) > new Date()) {
+          return res.status(403).json({
+            success: false,
+            message: `This session is scheduled for ${new Date(template.scheduledAt).toISOString()} and cannot be started early.`,
+            scheduledAt: template.scheduledAt,
+          });
+        }
+        // Inherit linkedLessonId from the template so jibri-recording-complete
+        // can always find the Course Content lesson to attach the recording.
+        if (template.linkedLessonId) linkedLessonId = template.linkedLessonId;
+      } else {
+        // sessionId is a Course lesson _id (not a LiveSession _id) — store it
+        // so co-teachers can match this LiveSession back to the lesson tile.
+        try { linkedLessonId = toId(sessionId); } catch (_) {}
       }
     }
 
@@ -344,11 +451,17 @@ router.post('/course/:courseId/set-live', authMiddleware, async (req, res) => {
       raisedHands: [],
       chatMessages: [],
       polls: [],
+      ...(linkedLessonId ? { linkedLessonId } : {}),
+      ...(template?.linkedModuleId ? { linkedModuleId: template.linkedModuleId } : {}),
     });
 
     console.log(`set-live: course=${req.params.courseId} new session=${resultSession._id}`);
     res.json({ success: true, sessionId: resultSession._id.toString() });
   } catch (e) {
+    // Log the stack, not just the message. Without this the ReferenceError
+    // above surfaced only as a bare 500 in the browser — nothing reached the
+    // server logs, so a hard crash looked like a mystery network failure.
+    console.error('set-live FAILED:', `course=${req.params.courseId}`, e);
     res.status(500).json({ success: false, message: e.message });
   }
 });
@@ -537,6 +650,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
+
+    // If the caller set linkedModuleId but not linkedLessonId, materialise the
+    // lesson so students can see the session in their course content view.
+    ensureModuleLesson(session).catch(() => {});
 
     res.json({ success: true, session });
   } catch (e) {

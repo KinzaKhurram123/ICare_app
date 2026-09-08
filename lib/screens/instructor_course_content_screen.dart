@@ -457,7 +457,12 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
     else if (meetingLink.contains('teams.microsoft.com')) platform = 'Microsoft Teams';
 
     if (meetingLink.isEmpty) {
-      // No external link → launch iCare native live session
+      // No external link → launch iCare native live session.
+      // Any instructor opening a session from the instructor dashboard is the
+      // owner — they can stop recording and end the session for all. The backend
+      // set-live already handles co-teachers by returning the existing session
+      // ID; isSessionOwner:true here just ensures the end-session flow works
+      // regardless of whether the lesson was already "live" in the DB.
       final sessionId = lesson['_id']?.toString() ?? '';
       if (!mounted) return;
       Navigator.push(context, MaterialPageRoute(
@@ -466,6 +471,7 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
           courseId: widget.courseId,
           sessionTitle: lesson['title']?.toString() ?? 'Live Session',
           isInstructor: true,
+          isSessionOwner: true,
           lessonId: lesson['_id']?.toString(),
         ),
       ));
@@ -945,6 +951,22 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
               ),
             ),
           )
+        else if (isLive)
+          GestureDetector(
+            onTap: () => _startLiveSession(session),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.live_tv_rounded, color: Colors.white, size: 14),
+                SizedBox(width: 4),
+                Text('Join Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              ]),
+            ),
+          )
         else
           GestureDetector(
             onTap: isLockedByTime ? () {
@@ -956,7 +978,7 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: isLockedByTime ? Colors.grey[400] : (isLive ? Colors.red : AppColors.primaryColor),
+                color: isLockedByTime ? Colors.grey[400] : AppColors.primaryColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -964,7 +986,7 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
                   padding: EdgeInsets.only(right: 4),
                   child: Icon(Icons.lock_outline_rounded, size: 12, color: Colors.white),
                 ),
-                Text(isLockedByTime ? 'Locked' : (isLive ? 'Join Live' : 'Start'),
+                Text(isLockedByTime ? 'Locked' : 'Start',
                     style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
               ]),
             ),
@@ -1169,7 +1191,12 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
   Widget _buildModuleCard(Map<String, dynamic> module, int index) {
     final lessons = List<Map<String, dynamic>>.from(module['lessons'] ?? []);
     final moduleId = module['_id']?.toString();
-    final linkedSessions = _liveSessions.where((s) => (s as Map)['linkedModuleId']?.toString() == moduleId).toList();
+    // Exclude sessions that have linkedLessonId — those are already rendered
+    // inside their lesson tile (_buildLessonItem) after ensureModuleLesson ran.
+    final linkedSessions = _liveSessions.where((s) {
+      final m = s as Map;
+      return m['linkedModuleId']?.toString() == moduleId && m['linkedLessonId'] == null;
+    }).toList();
     final title = module['title'] ?? 'Module ${index + 1}';
     final description = module['description'] ?? '';
     final completions = List<Map<String, dynamic>>.from(module['completions'] ?? []);
@@ -1357,6 +1384,25 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
     final isQuiz = lessonType == 'quiz';
     final hasRecording = lesson['recordingUrl'] != null && lesson['recordingUrl'].toString().isNotEmpty;
     final sessionStatus = lesson['status']?.toString() ?? 'scheduled';
+    final lessonId = lesson['_id']?.toString() ?? '';
+
+    // Cross-reference _liveSessions so a co-teacher (or any instructor who
+    // didn't start the session) sees "Join Live" instead of "Start" when the
+    // course owner or another instructor already kicked it off. The Course
+    // lesson's own status field is only updated by the initiating instructor;
+    // _liveSessions is the realtime source of truth.
+    Map? _activeLiveSessionForLesson;
+    if (isLiveSession && lessonId.isNotEmpty) {
+      for (final s in _liveSessions) {
+        final m = s as Map;
+        if (m['linkedLessonId']?.toString() == lessonId && m['status']?.toString() == 'live') {
+          _activeLiveSessionForLesson = m;
+          break;
+        }
+      }
+    }
+    final effectiveStatus = _activeLiveSessionForLesson != null ? 'live' : sessionStatus;
+
     // Mirrors the isLockedByTime check used for the other session-card
     // renderer in this file — the Start button here had no such guard, so
     // it stayed clickable (and misleadingly "unlocked"-looking) for sessions
@@ -1364,8 +1410,8 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
     // set-live route already rejects starting them early.
     final scheduledAtRaw = lesson['scheduledAt']?.toString() ?? lesson['liveSessionDateTime']?.toString() ?? '';
     final lessonScheduledDt = scheduledAtRaw.isNotEmpty ? _parseScheduledAt(scheduledAtRaw) : null;
-    final isLockedByTime = isLiveSession && sessionStatus != 'live' && sessionStatus != 'ended' &&
-        sessionStatus != 'completed' && lessonScheduledDt != null && lessonScheduledDt.isAfter(DateTime.now());
+    final isLockedByTime = isLiveSession && effectiveStatus != 'live' && effectiveStatus != 'ended' &&
+        effectiveStatus != 'completed' && lessonScheduledDt != null && lessonScheduledDt.isAfter(DateTime.now());
 
     // Determine icon/color by type
     IconData typeIcon;
@@ -1471,7 +1517,7 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
                   ]),
                 ),
               )
-            else if (sessionStatus == 'ended' || sessionStatus == 'completed')
+            else if (effectiveStatus == 'ended' || effectiveStatus == 'completed')
               // Ended but no recording
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1494,6 +1540,25 @@ class InstructorCourseContentScreenState extends State<InstructorCourseContentSc
                     Icon(Icons.lock_rounded, color: Colors.black45, size: 14),
                     SizedBox(width: 4),
                     Text('Locked', style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              )
+            else if (effectiveStatus == 'live')
+              GestureDetector(
+                // Join using the active LiveSession doc when available, so
+                // co-teachers get the correct session ID (not the lesson ID).
+                onTap: () => _startLiveSession(
+                  _activeLiveSessionForLesson != null
+                      ? Map<String, dynamic>.from(_activeLiveSessionForLesson)
+                      : lesson,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(8)),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.live_tv_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('Join Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
                   ]),
                 ),
               )

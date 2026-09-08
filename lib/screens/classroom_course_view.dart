@@ -3575,8 +3575,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           ),
           const Divider(color: Color(0xFF1A73E8), thickness: 1.5),
           const SizedBox(height: 8),
-          // Lead instructor
-          _personRow(instructorName, isTeacher: true, roleLabel: 'Lead Instructor'),
+          // Lead instructor — isLead drives BOTH the chip text ('Lead' vs
+          // 'Co-Teacher') and the avatar colour in _personRow. Omitting it here
+          // let it default to false, so the course owner was labelled
+          // "Lead Instructor" underneath but chipped "Co-Teacher", making it
+          // look like the course had two co-teachers and no lead.
+          _personRow(instructorName, isTeacher: true, roleLabel: 'Lead Instructor', isLead: true),
           // Co-teachers
           ...coTeachers.map((ct) {
             final ctName = ct['name']?.toString() ?? ct['email']?.toString() ?? 'Co-Teacher';

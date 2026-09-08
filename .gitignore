@@ -81,3 +81,14 @@ build-v3.tar.gz
 google-services (*).json
 icare-invoice-*.html
 icare-web.tgz
+
+# Deploy tarballs — rebuilt every deploy, ~160MB combined, never belong in git
+build.tar.gz
+build_web.tar.gz
+web_build.tar
+icare_web*.tar.gz
+
+# Generated prescription/report PDFs land in the repo root with a UUID name and
+# contain REAL PATIENT DATA (name, MR number, diagnosis, medications).
+# Never commit these.
+[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*.pdf

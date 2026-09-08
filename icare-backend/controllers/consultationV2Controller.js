@@ -4,6 +4,7 @@ const ConsultationMessage = require('../models/ConsultationMessage');
 const EnhancedPrescription = require('../models/EnhancedPrescription');
 const User = require('../models/User');
 const Appointment = require('../models/Appointment');
+const CallSignal = require('../models/CallSignal');
 const { connectMongoDB } = require('../config/mongodb');
 
 const isValidObjectId = (id) => id && mongoose.Types.ObjectId.isValid(id);
@@ -295,7 +296,7 @@ exports.endConsultation = async (req, res) => {
   try {
     await connectMongoDB();
     const { consultationId } = req.params;
-    const { duration, prescriptionId } = req.body;
+    const { duration, prescriptionId, callType, endedBy } = req.body;
 
     // Verify consultation exists
     const consultation = await Consultation.findById(consultationId);
@@ -355,11 +356,8 @@ exports.endConsultation = async (req, res) => {
       ).catch(() => {});
     }
 
-    // Send system message. Name who ended it — the other side just saw a bare
-    // "Consultation has ended." and couldn't tell whether the person had left
-    // or something had gone wrong.
-    const endedByPatient = req.user?.id
-      && consultation.patientId?.toString() === req.user.id.toString();
+    // Send system message. Name who ended it and what kind of call it was.
+    const endedByPatient = endedBy === 'patient';
     const endedMessage = endedByPatient
       ? 'The patient ended the consultation and has left.'
       : 'The doctor ended the consultation.';
@@ -374,6 +372,13 @@ exports.endConsultation = async (req, res) => {
     });
 
     await systemMessage.save();
+
+    // Clean up any pending/accepted call signals for this consultation so
+    // the patient's incoming-call poller does not re-ring after the call ends.
+    CallSignal.updateMany(
+      { channelName: consultationId, status: { $in: ['pending', 'accepted'] } },
+      { status: 'ended' }
+    ).catch(() => {});
 
     res.json({
       success: true,

@@ -171,6 +171,8 @@ class ConsultationService {
     required String consultationId,
     required int duration,
     String? prescriptionId,
+    String callType = 'video',
+    String? endedBy,
   }) async {
     try {
       final token = await _sharedPref.getToken();
@@ -178,7 +180,9 @@ class ConsultationService {
         '/consultations-v2/$consultationId/end',
         data: {
           'duration': duration,
+          'callType': callType,
           if (prescriptionId != null) 'prescriptionId': prescriptionId,
+          if (endedBy != null) 'endedBy': endedBy,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

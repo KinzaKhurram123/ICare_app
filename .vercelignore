@@ -1,4 +1,10 @@
 # Flutter build output — build/web uploaded as outputDirectory
+# Android/iOS/desktop build artifacts are huge — exclude them
+/build/app/
+/build/ios/
+/build/macos/
+/build/windows/
+/build/linux/
 .dart_tool/
 
 # Android/iOS/desktop platform builds — web only on Vercel
