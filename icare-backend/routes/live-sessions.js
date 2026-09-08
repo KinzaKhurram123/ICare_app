@@ -55,15 +55,36 @@ async function backupSessionRecordingToDrive(session, { fileBuffer, sourceUrl } 
     // driveBackupUrl never made it into the lesson object the classroom UI
     // reads (it only ever checked session.driveBackupUrl on the standalone
     // LiveSession doc, which the module-lesson tile doesn't see).
+    const lessonPatch = {
+      'modules.$[].lessons.$[lesson].driveBackupUrl': result.webViewLink,
+      'modules.$[].lessons.$[lesson].recordingUrl': session.recordingUrl || sourceUrl,
+    };
+    let patched = 0;
     if (session.linkedLessonId) {
-      await Course.updateOne(
+      const r = await Course.updateOne(
         { _id: session.courseId },
-        { $set: {
-            'modules.$[].lessons.$[lesson].driveBackupUrl': result.webViewLink,
-            'modules.$[].lessons.$[lesson].recordingUrl': session.recordingUrl || sourceUrl,
-          } },
+        { $set: lessonPatch },
         { arrayFilters: [{ 'lesson._id': toId(session.linkedLessonId) }] }
       );
+      patched = r.modifiedCount || 0;
+    }
+    // Fall back to the lesson that points AT this session. Drive upload finishes
+    // minutes after the recording, and on 2026-09-08 it landed while
+    // linkedLessonId was still self-referential (pointing at the session's own
+    // _id) — so this filter matched no lesson, driveBackupUrl was never written,
+    // and the tile sat on "Recording is processing" forever even though the
+    // upload had succeeded. Matching the other way round recovers that case.
+    if (!patched) {
+      const r2 = await Course.updateOne(
+        { _id: session.courseId },
+        { $set: lessonPatch },
+        { arrayFilters: [{ 'lesson.liveSessionId': session._id }] }
+      );
+      if (r2.modifiedCount) {
+        console.log(`Drive backup: lesson matched via liveSessionId for session ${session._id}`);
+      } else {
+        console.warn(`Drive backup: NO lesson matched for session ${session._id} — tile will show "processing"`);
+      }
     }
     return { ok: true, url: result.webViewLink };
   } catch (e) {
@@ -1139,10 +1160,16 @@ router.post('/:id/end-and-save', authMiddleware, async (req, res) => {
 
     // Never let the caller's lessonId overwrite a good link with the session's
     // own id — that is exactly how linkedLessonId ended up self-referential.
+    //
+    // toId() is not optional here. Storing this straight from the request body
+    // leaves it a STRING, and Mongo's arrayFilters compare by type: a string
+    // "6aa021ca…" never matches a lesson whose _id is ObjectId("6aa021ca…"),
+    // even though they print identically. That silently breaks every later
+    // lesson update keyed on linkedLessonId.
     const callerLessonId = lessonId && lessonId.toString() !== req.params.id.toString()
-      ? lessonId : null;
-    const resolvedLessonId = callerLessonId || session.linkedLessonId;
-    const resolvedModuleId = moduleId || session.linkedModuleId;
+      ? toId(lessonId) : null;
+    const resolvedLessonId = callerLessonId || toId(session.linkedLessonId);
+    const resolvedModuleId = moduleId ? toId(moduleId) : toId(session.linkedModuleId);
 
     // Mark session as completed
     await LiveSession.findByIdAndUpdate(toId(req.params.id), {
