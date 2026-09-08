@@ -1216,8 +1216,23 @@
             var _lmsRecordingAlreadyActive = false;
             _lmsStoppingRecording = false;
             _lmsRecordingRestarts = 0;
+            // Only true once recording has actually been seen RUNNING. Without
+            // this gate the watchdog below also fired on the on:false event
+            // Jitsi emits while reporting initial state on join — so it queued
+            // a startRecording that landed on top of the auto-start one, and
+            // the instructor got two "This session is already being recorded"
+            // toasts seconds after joining.
+            var _lmsRecordingWasOn = false;
             _lmsJitsiApi.on('recordingStatusChanged', function(e) {
-              if (e && e.on) { _lmsRecordingAlreadyActive = true; return; }
+              if (e && e.on) {
+                _lmsRecordingAlreadyActive = true;
+                _lmsRecordingWasOn = true;
+                return;
+              }
+              // Recording reported OFF, but only treat that as a fault if we
+              // had actually seen it running — otherwise this is just the
+              // initial "not recording yet" state.
+              if (!_lmsRecordingWasOn) return;
               // Recording just went OFF. Jibri stops on its own for reasons
               // that have nothing to do with the class being over — on
               // 2026-09-08 it ended a live 41-minute session because everyone
