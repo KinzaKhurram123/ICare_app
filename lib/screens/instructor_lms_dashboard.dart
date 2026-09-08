@@ -387,7 +387,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
 
   Widget _buildTopBar(bool isWide) {
     final titles = {
-      _NavPage.home: 'Classroom',
+      _NavPage.home: 'iCare Academy',
       _NavPage.calendar: 'Calendar',
       _NavPage.todo: 'To do',
       _NavPage.settings: 'Settings',
@@ -409,7 +409,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
             const SizedBox(width: 6),
           ],
           Text(
-            titles[_activePage] ?? 'Classroom',
+            titles[_activePage] ?? 'iCare Academy',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400, color: Color(0xFF202124)),
           ),
           const Spacer(),
@@ -525,7 +525,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
                   children: [
                     Image.asset('assets/Asset 1.png', height: 36, fit: BoxFit.contain),
                     const SizedBox(width: 10),
-                    const Text('Classroom', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
+                    const Text('iCare Academy', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
                   ],
                 ),
               ),
@@ -537,7 +537,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
                 children: [
                   Image.asset('assets/Asset 1.png', height: 40, fit: BoxFit.contain),
                   const SizedBox(width: 10),
-                  const Text('Classroom', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
+                  const Text('iCare Academy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
                 ],
               ),
             ),

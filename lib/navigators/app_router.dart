@@ -471,6 +471,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Shared sidebar targets (must stay inside the shell)
           GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
           GoRoute(path: '/help', builder: (_, _) => const HelpAndSupport()),
+          // Shared (unprefixed) so a Student can open it too — the existing
+          // /patient/icare-clinics is gated by the role guard above and would
+          // bounce any non-Patient straight to /dashboard.
+          GoRoute(path: '/icare-clinics', builder: (_, _) => const ICareClinicsListScreen()),
           GoRoute(path: '/reminders', builder: (_, _) => const ReminderList()),
           GoRoute(path: '/community', builder: (_, _) => const HealthCommunityScreen()),
           GoRoute(path: '/rewards', builder: (_, _) => const GamificationScreen()),

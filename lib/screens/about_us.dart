@@ -144,7 +144,7 @@ class _MobileAboutUs extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
-                      'assets/images/doctor_banner2.png',
+                      'assets/images/doctor_banner2.webp',
                       width: double.infinity,
                       height: 150,
                       fit: BoxFit.cover,
@@ -288,7 +288,7 @@ class _WebAboutUs extends StatelessWidget {
                     icon: Icons.info_outline_rounded,
                     title: 'Welcome to iCare',
                     body: 'Welcome to iCare, a premier digital health ecosystem engineered to redefine the relationship between patients, healthcare professionals, and medical wellness. We believe that the future of medicine shouldn\'t be fragmented, complex, or inaccessible. It should be seamless, inclusive, and built entirely around you.',
-                    imagePath: 'assets/images/icare-banner.png',
+                    imagePath: 'assets/images/icare-banner.webp',
                     imageRight: false,
                   ),
                   const SizedBox(height: 24),
@@ -312,7 +312,7 @@ class _WebAboutUs extends StatelessWidget {
                     icon: Icons.rocket_launch_rounded,
                     title: 'Empowering the Future',
                     body: 'Beyond connecting patients with care, iCare is dedicated to elevating the entire medical industry. We support the next generation of healthcare professionals by introducing advanced clinical insights, fostering leadership, and helping clinicians adapt to a rapidly evolving digital world.\n\nWe aren\'t just adapting to the future of healthcare — we are actively creating it.',
-                    imagePath: 'assets/images/doctor_banner2.png',
+                    imagePath: 'assets/images/doctor_banner2.webp',
                     imageRight: false,
                   ),
                   const SizedBox(height: 32),
@@ -469,14 +469,14 @@ class _WebAboutUs extends StatelessWidget {
         'We replace traditional, chaotic healthcare hurdles with a streamlined, intelligent experience that prioritises your time and health.',
         Icons.hub_rounded,
         Color(0xFF8B5CF6),
-        'assets/images/lab2.png',
+        'assets/images/lab2.webp',
       ),
       (
         'Excellence & Trust',
         'Backed by leading healthcare frameworks and a commitment to global standards, we ensure a safe, secure, and world-class digital environment.',
         Icons.verified_rounded,
         Color(0xFF10B981),
-        'assets/images/lab3.png',
+        'assets/images/lab3.webp',
       ),
     ];
 

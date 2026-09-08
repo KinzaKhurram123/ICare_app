@@ -555,9 +555,22 @@ class _WebContactItem extends StatelessWidget {
     required this.subtitle,
   });
 
+  /// An email or phone row is only useful if it actually does something — these
+  /// used to be plain text, so "Email Us" left the user to copy the address by
+  /// hand. mailto:/tel: hand off to whatever the device already uses (Gmail,
+  /// Outlook, the dialer). Address rows stay non-interactive.
+  Uri? get _launchUri {
+    final v = subtitle.trim();
+    if (v.contains('@') && !v.contains(' ')) return Uri(scheme: 'mailto', path: v);
+    final digits = v.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.length >= 7 && !v.contains('\n')) return Uri(scheme: 'tel', path: digits);
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final uri = _launchUri;
+    final row = Row(
       children: [
         Container(
           padding: const EdgeInsets.all(10),
@@ -583,15 +596,30 @@ class _WebContactItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
+                color: uri != null ? const Color(0xFF1A73E8) : const Color(0xFF1E293B),
+                decoration: uri != null ? TextDecoration.underline : null,
+                decorationColor: const Color(0xFF1A73E8),
               ),
             ),
           ],
         ),
       ],
+    );
+
+    if (uri == null) return row;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        },
+        child: row,
+      ),
     );
   }
 }

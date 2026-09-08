@@ -80,7 +80,7 @@ class _CoursesState extends ConsumerState<Courses>
           text: isPatient
               ? "Health Programs"
               : (isStudent
-                    ? (widget.browse ? "Browse Courses" : "My Courses")
+                    ? (widget.browse ? "Browse Courses" : "iCare Academy")
                     : "Courses"),
           fontFamily: "Gilroy-Bold",
           fontSize: 16.78,
@@ -140,13 +140,13 @@ class _CoursesState extends ConsumerState<Courses>
                     ),
                   ] else if (isStudent) ...[
                     CustomText(
-                      text: "My Courses",
+                      text: "All Courses",
                       padding: const EdgeInsets.only(bottom: 5),
                       width: Utils.windowWidth(context) * 0.45,
                       textAlign: TextAlign.center,
                     ),
                     CustomText(
-                      text: "My Progress",
+                      text: "Enrolled Courses",
                       padding: const EdgeInsets.only(bottom: 5),
                       width: Utils.windowWidth(context) * 0.45,
                       textAlign: TextAlign.center,
@@ -245,7 +245,7 @@ class _WebCoursesScreen extends StatelessWidget {
           text: isPatient
               ? "All Programs"
               : (isStudent
-                    ? (browse ? "Browse Courses" : "My Courses")
+                    ? (browse ? "Browse Courses" : "iCare Academy")
                     : "Courses"),
           fontFamily: "Gilroy-Bold",
           fontSize: 20,
@@ -383,8 +383,8 @@ class _WebCoursesScreen extends StatelessWidget {
                         const Tab(text: "Paid Courses"),
                         const Tab(text: "Free Courses"),
                       ] else if (isStudent) ...[
-                        const Tab(text: "My Courses"),
-                        const Tab(text: "My Progress"),
+                        const Tab(text: "All Courses"),
+                        const Tab(text: "Enrolled Courses"),
                       ] else ...[
                         Tab(
                           text: isPatient ? "All Programs" : "All Courses",

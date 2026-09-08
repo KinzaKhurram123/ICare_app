@@ -1671,23 +1671,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
           // Modules
           if (_modules.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _courseType == 'pragmatic' ? const Color(0xFFEEF2FF) : const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _courseType == 'pragmatic' ? 'Pragmatic — modules unlock on schedule' : 'Self-paced — complete a module to unlock the next',
-                  style: TextStyle(
-                    fontSize: 11.5, fontWeight: FontWeight.w700,
-                    color: _courseType == 'pragmatic' ? const Color(0xFF4F46E5) : const Color(0xFF15803D),
-                  ),
-                ),
-              ),
-            ),
+            // The course-type banner ("Self-paced — complete a module to unlock
+            // the next" / "Pragmatic — modules unlock on schedule") was removed
+            // at the client's request: the locking behaviour is already obvious
+            // from the module cards themselves, so the strip was just noise
+            // above every course.
             ..._modules.asMap().entries.map((e) => _buildModuleCard(e.value, e.key)),
           ] else ...[
             Center(child: Padding(
@@ -3912,7 +3900,18 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               final stars = submission?['stars'];
               final starCount = stars != null ? (stars as num).toInt() : 0;
 
-              return Container(
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _showAssignmentGradeDetail(
+                  title: title,
+                  status: status,
+                  obtained: obtained,
+                  totalMarks: totalMarks,
+                  starCount: starCount,
+                  feedback: feedback,
+                  submission: submission is Map ? submission : null,
+                ),
+                child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -3926,6 +3925,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                     const SizedBox(width: 8),
                     Expanded(child: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF202124), fontWeight: FontWeight.w500))),
                     _gradeChip(status, obtained, totalMarks),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9AA0A6)),
                   ]),
                   if (starCount > 0) ...[
                     const SizedBox(height: 8),
@@ -3950,6 +3951,7 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                     ),
                   ],
                 ]),
+                ),
               );
             }),
             const SizedBox(height: 16),
@@ -3966,7 +3968,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               final score = attempt['score']?.toString() ?? attempt['obtainedMarks']?.toString() ?? '--';
               final total = attempt['totalMarks']?.toString() ?? attempt['quiz']?['totalMarks']?.toString() ?? '--';
               final passed = attempt['passed'] == true;
-              return Container(
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _showQuizAttemptDetail(attempt as Map),
+                child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -3990,7 +3995,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                           color: passed ? const Color(0xFF188038) : const Color(0xFFD93025)),
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9AA0A6)),
                 ]),
+                ),
               );
             }),
             const SizedBox(height: 16),
@@ -4159,6 +4167,159 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
       child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg)),
+    );
+  }
+
+  // ── Grade detail sheets ──────────────────────────────────────────────
+  // The Grades rows only ever showed marks and feedback inline, and only once
+  // an assignment was graded — so a student looking at a "Submitted" row saw a
+  // status chip and nothing else. Tapping a row now opens everything the
+  // instructor recorded: marks, stars, feedback and the relevant dates.
+
+  Widget _detailRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF70757A))),
+        ),
+        Expanded(
+          child: Text(value,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: valueColor ?? const Color(0xFF202124))),
+        ),
+      ]),
+    );
+  }
+
+  String _fmtWhen(dynamic raw) {
+    if (raw == null) return '—';
+    final d = DateTime.tryParse(raw.toString());
+    if (d == null) return raw.toString();
+    final l = d.toLocal();
+    return '${l.day.toString().padLeft(2, '0')}/${l.month.toString().padLeft(2, '0')}/${l.year}  '
+        '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showAssignmentGradeDetail({
+    required String title,
+    required String status,
+    required String? obtained,
+    required String totalMarks,
+    required int starCount,
+    required String feedback,
+    required Map? submission,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.assignment_outlined, color: Color(0xFF1A73E8), size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+        ]),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _detailRow('Status', status,
+                valueColor: status == 'Graded'
+                    ? const Color(0xFF188038)
+                    : status == 'Submitted'
+                        ? const Color(0xFFE37400)
+                        : const Color(0xFF70757A)),
+            _detailRow('Marks', obtained != null ? '$obtained / $totalMarks' : 'Not graded yet'),
+            if (starCount > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(children: [
+                  const SizedBox(
+                      width: 120,
+                      child: Text('Rating', style: TextStyle(fontSize: 13, color: Color(0xFF70757A)))),
+                  ...List.generate(5, (i) => Icon(
+                        i < starCount ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 18,
+                        color: i < starCount ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                      )),
+                ]),
+              ),
+            _detailRow('Submitted on', _fmtWhen(submission?['submittedAt'])),
+            if (submission?['gradedAt'] != null)
+              _detailRow('Graded on', _fmtWhen(submission?['gradedAt'])),
+            const SizedBox(height: 10),
+            const Text('Instructor remarks',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF202124))),
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Text(
+                feedback.isNotEmpty ? feedback : 'No remarks from the instructor yet.',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: feedback.isNotEmpty ? const Color(0xFF5F6368) : const Color(0xFF9AA0A6),
+                    fontStyle: feedback.isNotEmpty ? FontStyle.normal : FontStyle.italic),
+              ),
+            ),
+          ]),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+      ),
+    );
+  }
+
+  void _showQuizAttemptDetail(Map attempt) {
+    final quizTitle = attempt['quizTitle']?.toString() ?? attempt['quiz']?['title']?.toString() ?? 'Quiz';
+    final score = attempt['score']?.toString() ?? attempt['obtainedMarks']?.toString() ?? '--';
+    final total = attempt['totalMarks']?.toString() ?? attempt['quiz']?['totalMarks']?.toString() ?? '--';
+    final passed = attempt['passed'] == true;
+    final pct = attempt['percentage'];
+    final feedback = attempt['feedback']?.toString() ?? '';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.quiz_outlined, color: Color(0xFF9334E6), size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(quizTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+        ]),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _detailRow('Result', passed ? 'Passed' : 'Not passed',
+                valueColor: passed ? const Color(0xFF188038) : const Color(0xFFD93025)),
+            _detailRow('Score', '$score / $total'),
+            if (pct != null) _detailRow('Percentage', '${(pct as num).toStringAsFixed(0)}%'),
+            if (attempt['attemptNumber'] != null)
+              _detailRow('Attempt', attempt['attemptNumber'].toString()),
+            _detailRow('Taken on', _fmtWhen(attempt['submittedAt'] ?? attempt['createdAt'])),
+            if (feedback.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Text('Instructor remarks',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF202124))),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(feedback, style: const TextStyle(fontSize: 13, color: Color(0xFF5F6368))),
+              ),
+            ],
+          ]),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+      ),
     );
   }
 

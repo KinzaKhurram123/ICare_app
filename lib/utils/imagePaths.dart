@@ -2,8 +2,8 @@ class ImagePaths {
   static const basePath = "assets/images";
 
   static const logo = '$basePath/icare-Logo.svg';
-  static const banner = '$basePath/icare-banner.png';
-  static const newBanner = '$basePath/newban.png';
+  static const banner = '$basePath/icare-banner.webp';
+  static const newBanner = '$basePath/newban.webp';
   static const backgroundImage = '$basePath/bgImage.jpeg';
 
   static const google = '$basePath/google.svg';
@@ -18,14 +18,14 @@ class ImagePaths {
   static const userType2 = '$basePath/doctor.png';
   static const userType3 = '$basePath/pharmacist.png';
   static const userType4 = '$basePath/lab-tech.png';
-  static const userType5 = '$basePath/instructor.png';
-  static const userType6 = '$basePath/student.png';
+  static const userType5 = '$basePath/instructor.webp';
+  static const userType6 = '$basePath/student.webp';
 
   static const marker3 = '$basePath/marker3.svg';
 
-  static const user10 = '$basePath/user10.png';
+  static const user10 = '$basePath/user10.webp';
   static const user11 = '$basePath/user11.png';
-  static const user12 = '$basePath/user12.png';
+  static const user12 = '$basePath/user12.webp';
 
   static const attachment = '$basePath/attachment.png';
 
@@ -114,9 +114,9 @@ class ImagePaths {
   static const delievry = '$basePath/delievry.svg';
 
   static const lab1 = '$basePath/lab1.png';
-  static const lab2 = '$basePath/lab2.png';
-  static const lab3 = '$basePath/lab3.png';
-  static const user13 = '$basePath/user13.png';
+  static const lab2 = '$basePath/lab2.webp';
+  static const lab3 = '$basePath/lab3.webp';
+  static const user13 = '$basePath/user13.webp';
 
   static const receipt = '$basePath/receipt.png';
 
@@ -130,7 +130,7 @@ class ImagePaths {
   static const vitamins = '$basePath/vitamins.svg';
   static const pain = '$basePath/pain.svg';
 
-  static const capsule = '$basePath/liver_capsule.png';
+  static const capsule = '$basePath/liver_capsule.webp';
   static const capsule2 = '$basePath/capsule2.png';
 
   static const cart = '$basePath/cart.svg';

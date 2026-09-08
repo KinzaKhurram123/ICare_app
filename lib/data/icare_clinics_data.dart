@@ -47,7 +47,7 @@ const List<Clinic> kICareClinics = [
     mapQuery: 'iCare Clinics, Mezzanine Floor, Mall Square, Zamzama Boulevard, DHA Phase 5, Clifton, Karachi',
     address: 'Mezzanine Floor, Mall Square, Zamzama Boulevard, DHA Phase 5, '
         'Clifton, Zamzama Commercial Area, Defence V, Karachi, 75600',
-    heroImage: 'assets/clinic_photos/c93a69b2-14fb-4ec6-b34f-89e2c6c59c3e.png',
+    heroImage: 'assets/clinic_photos/c93a69b2-14fb-4ec6-b34f-89e2c6c59c3e.webp',
     facilityPhotos: [
       'assets/clinic_photos/dental_reception.jpg',
       'assets/clinic_photos/dental_room.jpg',

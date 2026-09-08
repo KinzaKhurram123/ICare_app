@@ -98,10 +98,20 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
     final activeKey = currentRole == 'laboratory' ? 'lab' : currentRole;
     showModalBottomSheet(
       context: context,
+      // An account with several roles overflowed this sheet: it was a plain
+      // Column, so the last options were simply unreachable. Scrollable now,
+      // capped at 80% of the screen so it never covers the whole view.
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetCtx) => Padding(
+      builder: (sheetCtx) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetCtx).size.height * 0.8,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -178,6 +188,9 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
               );
             }),
           ],
+        ),
+            ),
+          ),
         ),
       ),
     );
@@ -374,14 +387,20 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         _drawerItem('Learning Dashboard', Icons.dashboard_outlined, () {
           context.go('/student/dashboard');
         }),
-        _drawerItem('My Courses', Icons.school_outlined, () {
+        // Renamed per the client: the catalogue-style page is "iCare Academy"
+        // (All Courses / Enrolled Courses), and the classroom — where a student
+        // actually works — is what they think of as "My Courses".
+        _drawerItem('iCare Academy', Icons.school_outlined, () {
           context.push('/courses');
         }),
-        _drawerItem('Open Classroom', Icons.class_outlined, () {
+        _drawerItem('My Courses', Icons.class_outlined, () {
           context.go('/student/classroom');
         }),
         _drawerItem('Browse Courses', Icons.travel_explore_outlined, () {
           context.push('/lms/catalog');
+        }),
+        _drawerItem('iCare Clinics', Icons.local_hospital_outlined, () {
+          context.push('/icare-clinics');
         }),
         _drawerItem('My Certificates', Icons.workspace_premium_outlined, () {
           context.go('/student/certificates');

@@ -1919,7 +1919,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
           // container instead of being a crop of the wide desktop one).
           if (!isMobile)
             Image.asset(
-              'assets/newban.png',
+              'assets/newban.webp',
               fit: BoxFit.cover,
               alignment: const Alignment(1.0, -0.85),
               filterQuality: FilterQuality.high,
@@ -1935,7 +1935,7 @@ class _BannerState extends State<_Banner> with SingleTickerProviderStateMixin {
             ),
           if (isMobile)
             Image.asset(
-              'assets/1f4a7e1d-a84a-4c8e-b5ac-ed681ff7ca28.png',
+              'assets/1f4a7e1d-a84a-4c8e-b5ac-ed681ff7ca28.webp',
               fit: BoxFit.cover,
               alignment: Alignment.centerRight,
               filterQuality: FilterQuality.high,
@@ -2119,11 +2119,11 @@ class _DoctorsSliderState extends State<_DoctorsSlider> {
     {'name': 'Dr. Ahmed Khan', 'spec': 'Cardiologist', 'exp': '15 years experience', 'rating': '4.9', 'reviews': '342', 'img': 'assets/images/user5.png', 'isOnline': true},
     {'name': 'Dr. Sara Malik', 'spec': 'Gynecologist', 'exp': '12 years experience', 'rating': '4.8', 'reviews': '289', 'img': 'assets/images/user1.png', 'isOnline': true},
     {'name': 'Dr. Bilal Ahmed', 'spec': 'Neurologist', 'exp': '10 years experience', 'rating': '4.7', 'reviews': '198', 'img': 'assets/images/user7.png', 'isOnline': true},
-    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'img': 'assets/images/user10.png', 'isOnline': true},
+    {'name': 'Dr. Hina Raza', 'spec': 'Dermatologist', 'exp': '8 years experience', 'rating': '4.9', 'reviews': '412', 'img': 'assets/images/user10.webp', 'isOnline': true},
     {'name': 'Dr. Usman Ali', 'spec': 'Pediatrician', 'exp': '14 years experience', 'rating': '4.8', 'reviews': '320', 'img': 'assets/images/user11.png', 'isOnline': true},
-    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'img': 'assets/images/user12.png', 'isOnline': true},
+    {'name': 'Dr. Ayesha Noor', 'spec': 'Psychiatrist', 'exp': '11 years experience', 'rating': '4.6', 'reviews': '175', 'img': 'assets/images/user12.webp', 'isOnline': true},
     {'name': 'Dr. Kamran Baig', 'spec': 'Orthopedic Surgeon', 'exp': '18 years experience', 'rating': '4.9', 'reviews': '511', 'img': 'assets/images/user5.png', 'isOnline': true},
-    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user13.png', 'isOnline': true},
+    {'name': 'Dr. Zara Sheikh', 'spec': 'ENT Specialist', 'exp': '9 years experience', 'rating': '4.8', 'reviews': '230', 'img': 'assets/images/user13.webp', 'isOnline': true},
   ];
 
   int get _totalPages {
@@ -3425,7 +3425,7 @@ class _AppDownloadBanner extends StatelessWidget {
         child: Column(
           children: [
             Image.asset(
-              'assets/images/mockup.png',
+              'assets/images/mockup.webp',
               height: 300,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
@@ -3652,7 +3652,7 @@ class _PhoneMockups extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/mockup.png',
+      'assets/images/mockup.webp',
       height: 750,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,

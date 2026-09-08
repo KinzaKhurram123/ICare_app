@@ -21,18 +21,34 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
   final NotificationService _notificationService = NotificationService();
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
-  String _filter = 'all'; // 'all' | 'unread' | a notification type
+  String _filter = 'all'; // 'all' | 'unread' | 'read' | a notification type
+
+  // This screen is shared by doctors, instructors and students. The type
+  // filters (Appointments / Reminders / Reviews / General) only mean something
+  // to a doctor — an instructor has no appointments at all, so for them those
+  // chips are dead weight and only All / Read / Unread are shown.
+  bool _isInstructor = false;
 
   List<Map<String, dynamic>> get _filteredNotifications {
     if (_filter == 'all') return _notifications;
     if (_filter == 'unread') return _notifications.where((n) => !n['read']).toList();
+    if (_filter == 'read') return _notifications.where((n) => n['read'] == true).toList();
     return _notifications.where((n) => n['type'] == _filter).toList();
   }
 
   @override
   void initState() {
     super.initState();
+    _resolveRole();
     _loadNotifications();
+  }
+
+  Future<void> _resolveRole() async {
+    try {
+      final user = await SharedPref().getUserData();
+      final isInst = (user?.role ?? '').toLowerCase() == 'instructor';
+      if (mounted && isInst) setState(() => _isInstructor = true);
+    } catch (_) {}
   }
 
   Future<void> _loadNotifications() async {
@@ -290,15 +306,23 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                             children: [
                               _buildFilterChip('all', 'All'),
                               const SizedBox(width: 8),
+                              _buildFilterChip('read', 'Read'),
+                              const SizedBox(width: 8),
                               _buildFilterChip('unread', 'Unread'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('appointment', 'Appointments'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('reminder', 'Reminders'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('review', 'Reviews'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('general', 'General'),
+                              // Doctors and students keep the type filters;
+                              // an instructor never has appointments,
+                              // reminders or reviews, so those chips are hidden
+                              // for them rather than removed for everyone.
+                              if (!_isInstructor) ...[
+                                const SizedBox(width: 8),
+                                _buildFilterChip('appointment', 'Appointments'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('reminder', 'Reminders'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('review', 'Reviews'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('general', 'General'),
+                              ],
                             ],
                           ),
                         ),

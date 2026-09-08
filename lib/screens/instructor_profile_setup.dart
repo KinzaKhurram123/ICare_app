@@ -28,15 +28,11 @@ class _InstructorProfileSetupScreenState
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _experienceController = TextEditingController();
-  final TextEditingController _specialtyController = TextEditingController();
+  final TextEditingController _designationController = TextEditingController();
   final TextEditingController _languageController = TextEditingController();
 
   String _selectedGender = 'Male';
-  List<String> _specialties = [];
   List<String> _languages = [];
-  List<String> _availabilityDays = [];
-  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
-  TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -52,10 +48,6 @@ class _InstructorProfileSetupScreenState
   static const Color _accent = Color(0xFF5C6BC0);
   static const Color _bg = Color(0xFFF0F2FF);
 
-  final List<String> _weekDays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday',
-  ];
 
   @override
   void initState() {
@@ -78,7 +70,7 @@ class _InstructorProfileSetupScreenState
     _ageController.dispose();
     _addressController.dispose();
     _experienceController.dispose();
-    _specialtyController.dispose();
+    _designationController.dispose();
     _languageController.dispose();
     super.dispose();
   }
@@ -106,27 +98,10 @@ class _InstructorProfileSetupScreenState
           _addressController.text = profile['address'] ?? '';
           _experienceController.text = profile['experience'] ?? '';
           _selectedGender = profile['gender'] ?? 'Male';
-          _specialties = List<String>.from(profile['specialties'] ?? []);
+          _designationController.text = profile['designation'] ?? '';
           _languages = List<String>.from(profile['languages'] ?? []);
-          _availabilityDays = List<String>.from(profile['availabilityDays'] ?? []);
           _existingProfilePictureUrl =
               (profile['profilePicture'] ?? profile['profile_image'])?.toString();
-          if (profile['availabilityTime'] != null) {
-            final start = profile['availabilityTime']['start']?.split(':');
-            final end = profile['availabilityTime']['end']?.split(':');
-            if (start != null && start.length == 2) {
-              _startTime = TimeOfDay(
-                hour: int.parse(start[0]),
-                minute: int.parse(start[1]),
-              );
-            }
-            if (end != null && end.length == 2) {
-              _endTime = TimeOfDay(
-                hour: int.parse(end[0]),
-                minute: int.parse(end[1]),
-              );
-            }
-          }
           _isLoading = false;
         });
         _animationController.forward();
@@ -149,14 +124,9 @@ class _InstructorProfileSetupScreenState
         'age': int.tryParse(_ageController.text),
         'gender': _selectedGender,
         'address': _addressController.text,
-        'specialties': _specialties,
+        'designation': _designationController.text.trim(),
         'languages': _languages,
         'experience': _experienceController.text,
-        'availabilityDays': _availabilityDays,
-        'availabilityTime': {
-          'start': '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-          'end': '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
-        },
         if (_imageBytes != null)
           'profilePicture': 'data:image/jpeg;base64,${base64Encode(_imageBytes!)}',
       });
@@ -208,15 +178,6 @@ class _InstructorProfileSetupScreenState
     }
   }
 
-  void _addSpecialty() {
-    if (_specialtyController.text.trim().isNotEmpty) {
-      setState(() {
-        _specialties.add(_specialtyController.text.trim());
-        _specialtyController.clear();
-      });
-    }
-  }
-
   void _addLanguage() {
     if (_languageController.text.trim().isNotEmpty) {
       setState(() {
@@ -224,16 +185,6 @@ class _InstructorProfileSetupScreenState
         _languageController.clear();
       });
     }
-  }
-
-  Future<void> _pickStartTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _startTime);
-    if (picked != null) setState(() => _startTime = picked);
-  }
-
-  Future<void> _pickEndTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _endTime);
-    if (picked != null) setState(() => _endTime = picked);
   }
 
   @override
@@ -352,35 +303,19 @@ class _InstructorProfileSetupScreenState
                             ],
                           ),
                           const SizedBox(height: 20),
+                          // Specialties replaced by a single Designation field:
+                          // an instructor has a job title, not a clinical
+                          // specialty list (that belongs to the doctor profile).
                           _buildSection(
-                            'Specialties',
-                            Icons.psychology_outlined,
+                            'Designation',
+                            Icons.badge_outlined,
                             [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildTextField(
-                                      controller: _specialtyController,
-                                      label: 'Add specialty',
-                                      icon: Icons.add_circle_outline,
-                                      hint: 'e.g. Mental Health',
-                                      onSubmitted: (_) => _addSpecialty(),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _addButton(_addSpecialty),
-                                ],
+                              _buildTextField(
+                                controller: _designationController,
+                                label: 'Designation',
+                                icon: Icons.badge_outlined,
+                                hint: 'e.g. Senior Lecturer',
                               ),
-                              if (_specialties.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _specialties
-                                      .map((s) => _chip(s, () => setState(() => _specialties.remove(s))))
-                                      .toList(),
-                                ),
-                              ],
                             ],
                           ),
                           const SizedBox(height: 20),
@@ -415,73 +350,9 @@ class _InstructorProfileSetupScreenState
                               ],
                             ],
                           ),
-                          const SizedBox(height: 20),
-                          _buildSection(
-                            'Availability',
-                            Icons.schedule_outlined,
-                            [
-                              const Text(
-                                'Available Days',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF475569),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _weekDays.map((day) {
-                                  final selected = _availabilityDays.contains(day);
-                                  return GestureDetector(
-                                    onTap: () => setState(() {
-                                      if (selected) {
-                                        _availabilityDays.remove(day);
-                                      } else {
-                                        _availabilityDays.add(day);
-                                      }
-                                    }),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: selected ? _primary : Colors.white,
-                                        border: Border.all(
-                                          color: selected ? _primary : const Color(0xFFE2E8F0),
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        day.substring(0, 3),
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: selected ? Colors.white : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Available Hours',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF475569),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Expanded(child: _timeButton('From', _startTime, _pickStartTime)),
-                                  const SizedBox(width: 14),
-                                  Expanded(child: _timeButton('To', _endTime, _pickEndTime)),
-                                ],
-                              ),
-                            ],
-                          ),
+                          // Availability (days + hours) removed — that is a
+                          // consulting-doctor concept; an instructor's teaching
+                          // times come from the course schedule, not here.
                           const SizedBox(height: 32),
                           _buildSaveButton(),
                           const SizedBox(height: 20),
@@ -564,9 +435,16 @@ class _InstructorProfileSetupScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Instructor Profile',
-                  style: TextStyle(
+                // The header said "Instructor Profile" for everyone, so an
+                // instructor opening their own profile saw no sign of whose it
+                // was. Show their name, falling back to the generic label only
+                // while auth state is still loading.
+                Text(
+                  () {
+                    final n = ref.watch(authProvider).user?.name.trim() ?? '';
+                    return n.isNotEmpty ? n : 'Instructor Profile';
+                  }(),
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
