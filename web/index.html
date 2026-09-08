@@ -996,6 +996,11 @@
     // ── LMS Jitsi Meet ────────────────────────────────────────────────────
     var _lmsJitsiClosed = false;
     var _lmsJitsiApi = null;
+    // Set only by lmsStopRecording() — the instructor deliberately ending the
+    // session. Any OTHER transition to "recording off" is treated as a fault
+    // and restarted by the watchdog in lmsJitsiJoin.
+    var _lmsStoppingRecording = false;
+    var _lmsRecordingRestarts = 0;
 
     window.lmsRaiseFlutterLayer = function() {
       document.querySelectorAll('flt-glass-pane,flt-text-editing-host').forEach(function(el) {
@@ -1209,8 +1214,39 @@
           // throw "Recording failed to start" on the co-teacher's screen.
           if (isInstructor) {
             var _lmsRecordingAlreadyActive = false;
+            _lmsStoppingRecording = false;
+            _lmsRecordingRestarts = 0;
             _lmsJitsiApi.on('recordingStatusChanged', function(e) {
-              if (e && e.on) _lmsRecordingAlreadyActive = true;
+              if (e && e.on) { _lmsRecordingAlreadyActive = true; return; }
+              // Recording just went OFF. Jibri stops on its own for reasons
+              // that have nothing to do with the class being over — on
+              // 2026-09-08 it ended a live 41-minute session because everyone
+              // had muted their mic and camera for 10 minutes (its CallEmpty
+              // check). The server-side timeouts for that are now set to 100
+              // hours, but a Jibri crash or a dropped XMPP connection can still
+              // stop it, and nothing here used to notice: this handler only
+              // ever recorded that recording had STARTED.
+              //
+              // Requirement is that recording runs until the moderator ends the
+              // session for all, so restart it. Skipped when the instructor is
+              // deliberately stopping, and capped so a Jibri that genuinely
+              // cannot record never turns into an endless start/stop loop.
+              if (_lmsStoppingRecording || _lmsJitsiClosed) return;
+              if (_lmsRecordingRestarts >= 10) {
+                console.warn('LMS Jitsi: recording stopped 10 times, giving up on auto-restart');
+                return;
+              }
+              _lmsRecordingRestarts++;
+              console.warn('LMS Jitsi: recording stopped unexpectedly — restarting (attempt ' + _lmsRecordingRestarts + ')');
+              setTimeout(function() {
+                if (_lmsStoppingRecording || _lmsJitsiClosed || !_lmsJitsiApi) return;
+                try {
+                  _lmsJitsiApi.executeCommand('startRecording', { mode: 'file' });
+                  console.log('LMS Jitsi: recording restarted by watchdog');
+                } catch(err) {
+                  console.warn('LMS Jitsi: watchdog restart failed:', err && err.message);
+                }
+              }, 5000);
             });
             _lmsJitsiApi.on('videoConferenceJoined', function() {
               setTimeout(function() {
@@ -1291,6 +1327,10 @@
     // Jibri only finalizes + uploads a recording once it receives an explicit stop command.
     // Call this BEFORE lmsJitsiLeave whenever the instructor ends a session.
     window.lmsStopRecording = function() {
+      // Tell the watchdog this stop is intentional, BEFORE the command goes out
+      // — otherwise recordingStatusChanged(off) would fire and it would dutifully
+      // start recording again just as the instructor is ending the session.
+      _lmsStoppingRecording = true;
       if (!_lmsJitsiApi) return;
       try {
         _lmsJitsiApi.executeCommand('stopRecording', 'file');
